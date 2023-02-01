@@ -1,0 +1,51 @@
+run:
+  timeout: 3m
+linters:
+  enable:
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - containedctx
+    - contextcheck
+    - decorder
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - execinquery
+    - exhaustive
+    - exportloopref
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - gofumpt
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - importas
+    - ineffassign
+    - lll
+    - makezero
+    - misspell
+    - nakedret
+    - nestif
+    - nilerr
+    - noctx
+    - nolintlint
+    - paralleltest
+    - prealloc
+    - staticcheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - wrapcheck
+    - wsl
+linters-settings:
+  govet:
+    enable-all: true
