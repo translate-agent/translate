@@ -1,6 +1,6 @@
 VERSION 0.6
-ARG go_version=1.19.4
-ARG golangci_lint_version=1.50.1
+ARG go_version=1.20
+ARG golangci_lint_version=1.51.0
 
 deps:
   FROM golang:$go_version-alpine
