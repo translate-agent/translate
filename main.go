@@ -1,7 +1,9 @@
 package main
 
-import "go.expect.digital/translate/cmd"
+import (
+	"go.expect.digital/translate/cmd/translate"
+)
 
 func main() {
-	cmd.Execute()
+	translate.Execute()
 }

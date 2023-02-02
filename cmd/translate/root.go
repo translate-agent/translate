@@ -1,4 +1,4 @@
-package cmd
+package translate
 
 import (
 	"fmt"
@@ -45,10 +45,9 @@ func initConfig() {
 		dir, err := os.Getwd()
 		cobra.CheckErr(err)
 
-		// Search config in home directory with name ".translateTest" (without extension).
+		// Search config in current directory with name ".translate" (without extension).
 		viper.AddConfigPath(dir)
-		viper.SetConfigType("yml")
-		viper.SetConfigName("translate")
+		viper.SetConfigFile("translate.yml")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

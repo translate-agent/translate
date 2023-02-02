@@ -1,4 +1,4 @@
-package cmd
+package translate
 
 import (
 	"github.com/spf13/cobra"
