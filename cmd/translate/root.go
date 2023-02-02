@@ -41,12 +41,7 @@ func initConfig() {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find current dir.
-		dir, err := os.Getwd()
-		cobra.CheckErr(err)
-
-		// Search config in current directory with name ".translate" (without extension).
-		viper.AddConfigPath(dir)
+		// Sets default config.
 		viper.SetConfigFile("translate.yml")
 	}
 
