@@ -49,7 +49,7 @@ func initConfig() {
 
 		// Search config in current directory with name ".translate.yml".
 		viper.AddConfigPath(dir)
-		viper.SetConfigFile("examples/translate.yml")
+		viper.SetConfigFile("translate.yml")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
