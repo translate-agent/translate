@@ -1,4 +1,4 @@
-package translate
+package main
 
 import (
 	"fmt"
@@ -20,6 +20,10 @@ var rootCmd = &cobra.Command{
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
+func main() {
+	Execute()
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -30,7 +34,6 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.AddCommand(translateCmd)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is translate/translate.yml)")
 }
 
