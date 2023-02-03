@@ -34,7 +34,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is translate/translate.yml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is cmd/translate/translate.yml)")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -43,8 +43,13 @@ func initConfig() {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Sets default config.
-		viper.SetConfigFile("translate.yml")
+		// Find current dir.
+		dir, err := os.Getwd()
+		cobra.CheckErr(err)
+
+		// Search config in current directory with name ".translate.yml".
+		viper.AddConfigPath(dir)
+		viper.SetConfigFile("cmd/translate/translate.yml")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
@@ -52,7 +57,5 @@ func initConfig() {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
-	} else {
-		fmt.Printf("%v", err)
 	}
 }
