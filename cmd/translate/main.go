@@ -85,7 +85,7 @@ func main() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is WORKDIR/translate.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./translate.yaml)")
 }
 
 // initConfig reads in config file and ENV variables if set.
