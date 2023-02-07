@@ -34,7 +34,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is examples/translate.yml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is WORKDIR/translate.yaml)")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -47,9 +47,9 @@ func initConfig() {
 		dir, err := os.Getwd()
 		cobra.CheckErr(err)
 
-		// Search config in current directory with name ".translate.yml".
+		// Search config in current directory with name "translate.yaml".
 		viper.AddConfigPath(dir)
-		viper.SetConfigFile("translate.yml")
+		viper.SetConfigFile("translate.yaml")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
