@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package translate.v1;
+
+import "google/api/annotations.proto";
+
+message Message {
+  string id = 1;
+  string translation = 2;
+  bool fuzzy = 3;
+}
+
+message Messages {
+  string language = 1;
+  repeated Message messages = 2;
+  map<string, string> labels = 3;
+}
+
+message UploadTranslationFileRequest {
+  string language = 1;
+  bytes data = 2;
+}
+
+message UploadTranslationFileResponse {}
+
+service TranslateService {
+  rpc UploadTranslationFile(UploadTranslationFileRequest) returns (UploadTranslationFileResponse) {
+    option (google.api.http) = {
+      put: "/v1/files/{language}"
+      body: "data"
+    };
+  }
+}
