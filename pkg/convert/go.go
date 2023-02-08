@@ -9,9 +9,9 @@ import (
 )
 
 func ToGo(m model.Messages) ([]byte, error) {
-	pipelineMsg := messagesToPipeline(m)
+	pipelineMsgs := messagesToPipeline(m)
 
-	msg, err := json.Marshal(pipelineMsg)
+	msg, err := json.Marshal(pipelineMsgs)
 	if err != nil {
 		return nil, fmt.Errorf("encode pipeline.Messages to JSON: %w", err)
 	}
@@ -20,16 +20,13 @@ func ToGo(m model.Messages) ([]byte, error) {
 }
 
 func FromGo(b []byte) (model.Messages, error) {
-	var pipelineMsg pipeline.Messages
+	var pipelineMsgs pipeline.Messages
 
-	err := json.Unmarshal(b, &pipelineMsg)
-	if err != nil {
-		return model.Messages{}, fmt.Errorf("decode JSON to pipeline.Messages: %w", err)
+	if err := json.Unmarshal(b, &pipelineMsgs); err != nil {
+		return model.Messages{}, fmt.Errorf("failed to decode JSON to pipeline.Messages: %w", err)
 	}
 
-	msg := messagesFromPipeline(pipelineMsg)
-
-	return msg, nil
+	return messagesFromPipeline(pipelineMsgs), nil
 }
 
 func messagesToPipeline(m model.Messages) pipeline.Messages {
@@ -40,10 +37,10 @@ func messagesToPipeline(m model.Messages) pipeline.Messages {
 
 	for _, value := range m.Messages {
 		pipelineMsg.Messages = append(pipelineMsg.Messages, pipeline.Message{
-			ID:      pipeline.IDList{value.ID},
-			Message: pipeline.Text{Msg: value.Message},
-			Meaning: value.Description,
-			Fuzzy:   value.Fuzzy,
+			ID:          pipeline.IDList{value.ID},
+			Translation: pipeline.Text{Msg: value.Message},
+			Meaning:     value.Description,
+			Fuzzy:       value.Fuzzy,
 		})
 	}
 
@@ -61,7 +58,7 @@ func messagesFromPipeline(m pipeline.Messages) model.Messages {
 			ID:          value.ID[0],
 			Fuzzy:       value.Fuzzy,
 			Description: value.Meaning,
-			Message:     value.Translation.Msg,
+			Message:     value.Message.Msg,
 		})
 	}
 
