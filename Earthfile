@@ -20,11 +20,26 @@ proto:
   RUN --mount=type=cache,target=$BUF_CACHE_DIR buf mod update
   RUN --mount=type=cache,target=$BUF_CACHE_DIR buf build
   RUN --mount=type=cache,target=$BUF_CACHE_DIR buf generate
+  
+  RUN sed -i'.bu' '/client.UploadTranslationFile/i \
+  \\tfile, _, err := req.FormFile("file")\n\
+	\t\tif err != nil {\n\
+		\t\t\treturn nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)\n\
+	\t\t}\n\
+	\n\
+	\tdata, err := io.ReadAll(file)\n\
+	\t\tif err != nil {\n\
+		\t\t\treturn nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)\n\
+	\t\t}\n\
+	\n\
+	\tprotoReq.Data = data\n' gen/proto/go/translate/v1/translate.pb.gw.go
+
+  RUN rm gen/proto/go/translate/v1/translate.pb.gw.go.bu
   SAVE ARTIFACT gen/proto/go/translate/v1 translate/v1 AS LOCAL pkg/server/translate/v1
 
 lint-go:
   FROM +deps
-  COPY --dir cmd .
+  COPY --dir cmd pkg .
   COPY --dir +proto/translate/v1 pkg/server/translate/v1
   COPY .golangci.yml .
   RUN golangci-lint run

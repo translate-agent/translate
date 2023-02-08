@@ -4,10 +4,18 @@ package translate.v1;
 
 import "google/api/annotations.proto";
 
+enum Schema {
+  SCHEMA_UNSPECIFIED = 0;
+  NG_LOCALISE = 1;
+  NGX_TRANSLATE = 2;
+  GO = 3;
+}
+
 message Message {
   string id = 1;
   string message = 2;
-  bool fuzzy = 3;
+  string description = 3;
+  bool fuzzy = 4;
 }
 
 message Messages {
@@ -18,15 +26,15 @@ message Messages {
 message UploadTranslationFileRequest {
   string language = 1;
   bytes data = 2;
+  Schema schema = 3;
 }
 
-message UploadTranslationFileResponse {}
+message UploadTranslationFileResponse {
+  repeated Messages messages = 1;
+}
 
 service TranslateService {
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (UploadTranslationFileResponse) {
-    option (google.api.http) = {
-      put: "/v1/files/{language}"
-      body: "data"
-    };
+    option (google.api.http) = {put: "/v1/files/{language}"};
   }
 }
