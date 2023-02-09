@@ -64,16 +64,15 @@ func request_TranslateService_UploadTranslationFile_0(ctx context.Context, marsh
 	}
 
 	file, _, err := req.FormFile("file")
-		if err != nil {
-			return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-		}
+	if err != nil {
+			return nil, metadata, status.Errorf(codes.InvalidArgument, "%s", "file is required")
+	}
+	defer file.Close()
 
-	data, err := io.ReadAll(file)
-		if err != nil {
-			return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-		}
-
-	protoReq.Data = data
+	protoReq.Data, err = io.ReadAll(file)
+	if err != nil {
+			return nil, metadata, status.Errorf(codes.Internal, "%v", err)
+	}
 
 	msg, err := client.UploadTranslationFile(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
