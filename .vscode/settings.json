@@ -6,6 +6,10 @@
         "match": "\\.proto$",
         "cmd": "earthly +proto"
       },
+      {
+        "match": "\\.mod$",
+        "cmd": "go mod tidy"
+      },
     ]
   }
 }
