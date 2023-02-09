@@ -10,3 +10,4 @@ lint:
     - DEFAULT
   except:
     - ENUM_VALUE_PREFIX
+    - RPC_RESPONSE_STANDARD_NAME
