@@ -91,6 +91,24 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			},
 			want: http.StatusBadRequest,
 		},
+		{
+			name: "Invalid language",
+			args: args{
+				language: "xyz-ZY-Latn",
+				text: []byte(`{
+					"messages":[
+						 {
+								"id":"1",
+								"meaning":"When you great someone",
+								"message":"hello",
+								"translation":"čau",
+								"fuzzy":false
+						 }
+					]
+			 }`),
+			},
+			want: http.StatusBadRequest,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -105,7 +123,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			req.Header.Add("Content-Type", contentType)
 			client := &http.Client{}
 			resp, err := client.Do(req)
-			if err != nil {
+			if err == nil {
 				defer resp.Body.Close()
 			}
 

@@ -98,6 +98,26 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 			},
 			want: codes.InvalidArgument,
 		},
+		{
+			name: "Invalid language",
+			args: args{
+				req: &pb.UploadTranslationFileRequest{
+					Language: "xyz-ZY-Latn",
+					Data: []byte(`{
+						"messages":[
+							 {
+									"id":"1",
+									"meaning":"When you great someone",
+									"message":"hello",
+									"translation":"čau",
+									"fuzzy":false
+							 }
+						]
+				 }`),
+				},
+			},
+			want: codes.InvalidArgument,
+		},
 	}
 
 	for _, tt := range tests {
