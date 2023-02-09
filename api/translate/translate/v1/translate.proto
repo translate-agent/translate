@@ -3,6 +3,7 @@ syntax = "proto3";
 package translate.v1;
 
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 
 enum Schema {
   SCHEMA_UNSPECIFIED = 0;
@@ -29,12 +30,8 @@ message UploadTranslationFileRequest {
   Schema schema = 3;
 }
 
-message UploadTranslationFileResponse {
-  repeated Messages messages = 1;
-}
-
 service TranslateService {
-  rpc UploadTranslationFile(UploadTranslationFileRequest) returns (UploadTranslationFileResponse) {
+  rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {put: "/v1/files/{language}"};
   }
 }

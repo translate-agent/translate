@@ -7,6 +7,7 @@ import (
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type TranslateServiceServer struct {
@@ -16,7 +17,7 @@ type TranslateServiceServer struct {
 func (t *TranslateServiceServer) UploadTranslationFile(
 	ctx context.Context,
 	req *pb.UploadTranslationFileRequest,
-) (*pb.UploadTranslationFileResponse, error) {
+) (*emptypb.Empty, error) {
 	var (
 		reqLanguage = req.GetLanguage()
 		reqData     = req.GetData()
@@ -24,7 +25,11 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	)
 
 	if len(reqLanguage) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "'language' is missing")
+		return nil, status.Errorf(codes.InvalidArgument, "'language' is required")
+	}
+
+	if len(reqData) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "'data' is required")
 	}
 
 	languageTag, err := language.Parse(reqLanguage)
@@ -38,7 +43,5 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 
 	// convert from `schema` to our messages
 
-	return &pb.UploadTranslationFileResponse{
-		Messages: []*pb.Messages{},
-	}, nil
+	return &emptypb.Empty{}, nil
 }
