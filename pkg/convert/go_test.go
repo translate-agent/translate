@@ -30,60 +30,33 @@ var modelMsg = model.Messages{
 func TestToGo(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		name    string
-		m       model.Messages
-		want    []byte
-		wantErr bool
+	test := struct {
+		m    model.Messages
+		want []byte
 	}{
-		{
-			name:    "When input is correct, then return expected result",
-			m:       modelMsg,
-			want:    []byte(`{"language":"en","messages":[{"id":"1","meaning":"description1","message":"","translation":"message1","fuzzy":true},{"id":"2","meaning":"description2","message":"","translation":"message2"}]}`), //nolint:lll
-			wantErr: false,
-		},
+		m:    modelMsg,
+		want: []byte(`{"language":"en","messages":[{"id":"1","meaning":"description1","message":"","translation":"message1","fuzzy":true},{"id":"2","meaning":"description2","message":"","translation":"message2"}]}`), //nolint:lll
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	result, err := ToGo(test.m)
 
-			result, err := ToGo(tt.m)
-
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, result)
-		})
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, test.want, result)
 }
 
 func TestFromGo(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		name    string
-		m       []byte
-		want    model.Messages
-		wantErr bool
+	test := struct {
+		m    []byte
+		want model.Messages
 	}{
-		{
-			name: "When input is correct, then return expected result",
-			m:    []byte(`{"language":"en","messages":[{"id":"1","meaning":"description1","message":"message1","translation":"","fuzzy":true},{"id":"2","meaning":"description2","message":"message2","translation":""}]}`), //nolint:lll
+		m: []byte(`{"language":"en","messages":[{"id":"1","meaning":"description1","message":"message1","translation":"","fuzzy":true},{"id":"2","meaning":"description2","message":"message2","translation":""}]}`), //nolint:lll
 
-			want:    modelMsg,
-			wantErr: false,
-		},
+		want: modelMsg,
 	}
+	result, err := FromGo(test.m)
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			result, err := FromGo(tt.m)
-
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, result)
-		})
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, test.want, result)
 }
