@@ -127,7 +127,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 				defer resp.Body.Close()
 			}
 
-			assert.Equal(t, tt.want, uint(resp.StatusCode))
+			assert.EqualValues(t, tt.want, resp.StatusCode)
 		})
 	}
 }
