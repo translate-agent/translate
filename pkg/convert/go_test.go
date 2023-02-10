@@ -53,9 +53,8 @@ func TestToGo(t *testing.T) {
 	}`)
 
 	buffer := new(bytes.Buffer)
-	if err := json.Compact(buffer, expected); err != nil {
-		assert.NoError(t, json.Compact(buffer, expected))
-	}
+
+	assert.NoError(t, json.Compact(buffer, expected))
 
 	result, err := ToGo(modelMsg)
 
@@ -87,9 +86,8 @@ func TestFromGo(t *testing.T) {
 	}`)
 
 	buffer := new(bytes.Buffer)
-	if err := json.Compact(buffer, b); err != nil {
-		assert.NoError(t, json.Compact(buffer, b))
-	}
+
+	assert.NoError(t, json.Compact(buffer, b))
 
 	result, err := FromGo(buffer.Bytes())
 
