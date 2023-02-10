@@ -40,7 +40,7 @@ func TestToGo(t *testing.T) {
 		m: modelMsg,
 		expected: []byte(`{"language":"en","messages":
 [{"id":"1","meaning":"description1","message":"","translation":"message1","fuzzy":true},
-{"id":"2","meaning":"description2","message":"","translation":"message2"}]}`), //nolint:lll
+{"id":"2","meaning":"description2","message":"","translation":"message2"}]}`),
 	}
 
 	buffer := new(bytes.Buffer)
@@ -63,7 +63,7 @@ func TestFromGo(t *testing.T) {
 	}{
 		m: []byte(`{"language":"en","messages":
 [{"id":"1","meaning":"description1","message":"message1","translation":"","fuzzy":true},
-{"id":"2","meaning":"description2","message":"message2","translation":""}]}`), //nolint:lll
+{"id":"2","meaning":"description2","message":"message2","translation":""}]}`),
 
 		expected: modelMsg,
 	}
