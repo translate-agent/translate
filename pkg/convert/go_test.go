@@ -1,6 +1,9 @@
 package convert
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,32 +34,47 @@ func TestToGo(t *testing.T) {
 	t.Parallel()
 
 	test := struct {
-		m    model.Messages
-		want []byte
+		m        model.Messages
+		expected []byte
 	}{
-		m:    modelMsg,
-		want: []byte(`{"language":"en","messages":[{"id":"1","meaning":"description1","message":"","translation":"message1","fuzzy":true},{"id":"2","meaning":"description2","message":"","translation":"message2"}]}`), //nolint:lll
+		m: modelMsg,
+		expected: []byte(`{"language":"en","messages":
+[{"id":"1","meaning":"description1","message":"","translation":"message1","fuzzy":true},
+{"id":"2","meaning":"description2","message":"","translation":"message2"}]}`), //nolint:lll
+	}
+
+	buffer := new(bytes.Buffer)
+	if err := json.Compact(buffer, test.expected); err != nil {
+		fmt.Println(err)
 	}
 
 	result, err := ToGo(test.m)
 
 	assert.NoError(t, err)
-	assert.Equal(t, test.want, result)
+	assert.Equal(t, buffer.Bytes(), result)
 }
 
 func TestFromGo(t *testing.T) {
 	t.Parallel()
 
 	test := struct {
-		m    []byte
-		want model.Messages
+		m        []byte
+		expected model.Messages
 	}{
-		m: []byte(`{"language":"en","messages":[{"id":"1","meaning":"description1","message":"message1","translation":"","fuzzy":true},{"id":"2","meaning":"description2","message":"message2","translation":""}]}`), //nolint:lll
+		m: []byte(`{"language":"en","messages":
+[{"id":"1","meaning":"description1","message":"message1","translation":"","fuzzy":true},
+{"id":"2","meaning":"description2","message":"message2","translation":""}]}`), //nolint:lll
 
-		want: modelMsg,
+		expected: modelMsg,
 	}
-	result, err := FromGo(test.m)
+
+	buffer := new(bytes.Buffer)
+	if err := json.Compact(buffer, test.m); err != nil {
+		fmt.Println(err)
+	}
+
+	result, err := FromGo(buffer.Bytes())
 
 	assert.NoError(t, err)
-	assert.Equal(t, test.want, result)
+	assert.Equal(t, test.expected, result)
 }
