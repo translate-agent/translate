@@ -33,22 +33,16 @@ var modelMsg = model.Messages{
 func TestToGo(t *testing.T) {
 	t.Parallel()
 
-	test := struct {
-		m        model.Messages
-		expected []byte
-	}{
-		m: modelMsg,
-		expected: []byte(`{"language":"en","messages":
+	expected := []byte(`{"language":"en","messages":
 [{"id":"1","meaning":"description1","message":"","translation":"message1","fuzzy":true},
-{"id":"2","meaning":"description2","message":"","translation":"message2"}]}`),
-	}
+{"id":"2","meaning":"description2","message":"","translation":"message2"}]}`)
 
 	buffer := new(bytes.Buffer)
-	if err := json.Compact(buffer, test.expected); err != nil {
+	if err := json.Compact(buffer, expected); err != nil {
 		fmt.Println(err)
 	}
 
-	result, err := ToGo(test.m)
+	result, err := ToGo(modelMsg)
 
 	assert.NoError(t, err)
 	assert.Equal(t, buffer.Bytes(), result)
@@ -57,24 +51,17 @@ func TestToGo(t *testing.T) {
 func TestFromGo(t *testing.T) {
 	t.Parallel()
 
-	test := struct {
-		m        []byte
-		expected model.Messages
-	}{
-		m: []byte(`{"language":"en","messages":
+	b := []byte(`{"language":"en","messages":
 [{"id":"1","meaning":"description1","message":"message1","translation":"","fuzzy":true},
-{"id":"2","meaning":"description2","message":"message2","translation":""}]}`),
-
-		expected: modelMsg,
-	}
+{"id":"2","meaning":"description2","message":"message2","translation":""}]}`)
 
 	buffer := new(bytes.Buffer)
-	if err := json.Compact(buffer, test.m); err != nil {
+	if err := json.Compact(buffer, b); err != nil {
 		fmt.Println(err)
 	}
 
 	result, err := FromGo(buffer.Bytes())
 
 	assert.NoError(t, err)
-	assert.Equal(t, test.expected, result)
+	assert.Equal(t, modelMsg, result)
 }
