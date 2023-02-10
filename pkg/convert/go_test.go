@@ -63,7 +63,8 @@ func TestFromGo(t *testing.T) {
 func bufferBytes(expected []byte) *bytes.Buffer {
 	buffer := new(bytes.Buffer)
 	if err := json.Compact(buffer, expected); err != nil {
-		fmt.Println(err)
+		fmt.Print(err)
 	}
+
 	return buffer
 }
