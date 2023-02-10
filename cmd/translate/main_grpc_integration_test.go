@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	pb "go.expect.digital/translate/pkg/server/translate/v1"
@@ -14,15 +12,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
-
-func TestMain(m *testing.M) {
-	go main()
-
-	// Needed to prevent panic, when service is not ready to receive requests
-	time.Sleep(time.Millisecond * 50)
-
-	os.Exit(m.Run())
-}
 
 func createConnection(ctx context.Context, t *testing.T) *grpc.ClientConn {
 	t.Helper()

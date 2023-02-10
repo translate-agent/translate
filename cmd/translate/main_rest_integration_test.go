@@ -6,11 +6,28 @@ import (
 	"fmt"
 	"log"
 	"mime/multipart"
+	"net"
 	"net/http"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestMain(m *testing.M) {
+	go main()
+
+	// Ensure that a connection can be established.
+	conn, err := net.DialTimeout("tcp", "localhost:8080", time.Second)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	conn.Close()
+
+	os.Exit(m.Run())
+}
 
 func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string) {
 	t.Helper()
@@ -123,9 +140,11 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			req.Header.Add("Content-Type", contentType)
 			client := &http.Client{}
 			resp, err := client.Do(req)
-			if err == nil {
-				defer resp.Body.Close()
+
+			if !assert.NoError(t, err) {
+				return
 			}
+			defer resp.Body.Close()
 
 			assert.EqualValues(t, tt.want, resp.StatusCode)
 		})
