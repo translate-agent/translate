@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	pb "go.expect.digital/translate/pkg/server/translate/v1"
@@ -16,6 +17,9 @@ import (
 
 func TestMain(m *testing.M) {
 	go main()
+
+	// Needed to prevent panic, when service is not ready to receive requests
+	time.Sleep(time.Millisecond * 50)
 
 	os.Exit(m.Run())
 }
