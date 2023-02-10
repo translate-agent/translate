@@ -37,10 +37,7 @@ func TestToGo(t *testing.T) {
 [{"id":"1","meaning":"description1","message":"","translation":"message1","fuzzy":true},
 {"id":"2","meaning":"description2","message":"","translation":"message2"}]}`)
 
-	buffer := new(bytes.Buffer)
-	if err := json.Compact(buffer, expected); err != nil {
-		fmt.Println(err)
-	}
+	buffer := bufferBytes(expected)
 
 	result, err := ToGo(modelMsg)
 
@@ -55,13 +52,18 @@ func TestFromGo(t *testing.T) {
 [{"id":"1","meaning":"description1","message":"message1","translation":"","fuzzy":true},
 {"id":"2","meaning":"description2","message":"message2","translation":""}]}`)
 
-	buffer := new(bytes.Buffer)
-	if err := json.Compact(buffer, b); err != nil {
-		fmt.Println(err)
-	}
+	buffer := bufferBytes(b)
 
 	result, err := FromGo(buffer.Bytes())
 
 	assert.NoError(t, err)
 	assert.Equal(t, modelMsg, result)
+}
+
+func bufferBytes(expected []byte) *bytes.Buffer {
+	buffer := new(bytes.Buffer)
+	if err := json.Compact(buffer, expected); err != nil {
+		fmt.Println(err)
+	}
+	return buffer
 }
