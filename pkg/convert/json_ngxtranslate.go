@@ -12,7 +12,7 @@ func FromNgxTranslate(b []byte) (messages model.Messages, err error) {
 	var dst map[string]interface{}
 
 	if err = json.Unmarshal(b, &dst); err != nil {
-		return messages, fmt.Errorf("unmarshal ngx translateOld: %w", err)
+		return messages, fmt.Errorf("unmarshal from ngx-translate to model.Messages: %w", err)
 	}
 
 	var traverseMap func(key string, value interface{}) error
@@ -54,7 +54,7 @@ func ToNgxTranslate(messages model.Messages) (b []byte, err error) {
 
 	b, err = json.Marshal(dst)
 	if err != nil {
-		return nil, fmt.Errorf("marshal to ngx translateOld : %w", err)
+		return nil, fmt.Errorf("marshal to ngx-translate from model.Messages : %w", err)
 	}
 
 	return b, nil

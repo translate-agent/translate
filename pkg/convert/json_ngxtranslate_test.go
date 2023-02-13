@@ -57,7 +57,7 @@ func Test_fromNgxTranslate(t *testing.T) {
 		},
 		{
 			name:       "Nested mixed",
-			serialized: []byte(`{"message.example":"message1","message":{"example":"message1"}}`),
+			serialized: []byte(`{"message.example":"message1","msg":{"example":"message2"}}`),
 			expected: model.Messages{
 				Messages: []model.Message{
 					{
@@ -65,8 +65,8 @@ func Test_fromNgxTranslate(t *testing.T) {
 						Message: "message1",
 					},
 					{
-						ID:      "message.example",
-						Message: "message1",
+						ID:      "msg.example",
+						Message: "message2",
 					},
 				},
 			},
