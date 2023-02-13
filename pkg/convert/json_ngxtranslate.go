@@ -20,7 +20,7 @@ func FromNgxTranslate(b []byte) (messages model.Messages, err error) {
 	traverseMap = func(key string, value interface{}) (err error) {
 		switch v := value.(type) {
 		default:
-			return errors.New("wrong key type")
+			return errors.New("unsupported value type")
 		case string:
 			messages.Messages = append(messages.Messages, model.Message{ID: key, Message: v})
 		case map[string]interface{}:
@@ -39,7 +39,7 @@ func FromNgxTranslate(b []byte) (messages model.Messages, err error) {
 	}
 
 	if err = traverseMap("", dst); err != nil {
-		return messages, fmt.Errorf("traverse ngx: %w", err)
+		return messages, fmt.Errorf("traverse ngx-translate: %w", err)
 	}
 
 	return messages, nil
