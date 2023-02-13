@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string) {
+func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string, error) {
 	t.Helper()
 
 	body := &bytes.Buffer{}
@@ -39,15 +39,15 @@ func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string) {
 
 	part, err := writer.CreateFormFile("file", "test.json")
 	if err != nil {
-		log.Panic(err)
+		return nil, "", fmt.Errorf("creating form file: %w", err)
 	}
 
 	_, err = part.Write(text)
 	if err != nil {
-		log.Panic(err)
+		return nil, "", fmt.Errorf("writing to file: %w", err)
 	}
 
-	return body, writer.FormDataContentType()
+	return body, writer.FormDataContentType(), nil
 }
 
 func Test_UploadTranslationFile_REST(t *testing.T) {
@@ -132,10 +132,15 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			body, contentType := attachFile(tt.args.text, t)
+			body, contentType, err := attachFile(tt.args.text, t)
+			if !assert.NoError(t, err) {
+				return
+			}
 
 			req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/%s", addr, tt.args.language), body)
-			assert.NoError(t, err)
+			if !assert.NoError(t, err) {
+				return
+			}
 
 			req.Header.Add("Content-Type", contentType)
 			client := &http.Client{}

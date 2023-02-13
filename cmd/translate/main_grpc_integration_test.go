@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func createConnection(ctx context.Context, t *testing.T) *grpc.ClientConn {
+func createConnection(ctx context.Context, t *testing.T) (*grpc.ClientConn, error) {
 	t.Helper()
 
 	conn, err := grpc.DialContext(
@@ -22,10 +22,10 @@ func createConnection(ctx context.Context, t *testing.T) *grpc.ClientConn {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		log.Panic("Failed to dial bufnet: %w", err)
+		return nil, fmt.Errorf("creating connection: %w", err)
 	}
 
-	return conn
+	return conn, nil
 }
 
 func Test_UploadTranslationFile_gRPC(t *testing.T) {
@@ -118,11 +118,15 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			conn := createConnection(ctx, t)
+			conn, err := createConnection(ctx, t)
+			if !assert.NoError(t, err) {
+				return
+			}
+
 			defer conn.Close()
 
 			client := pb.NewTranslateServiceClient(conn)
-			_, err := client.UploadTranslationFile(ctx, tt.args.req)
+			_, err = client.UploadTranslationFile(ctx, tt.args.req)
 
 			assert.Equal(t, tt.want, status.Code(err))
 		})
