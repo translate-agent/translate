@@ -68,12 +68,12 @@ func FromArb(data []byte) (model.Messages, error) {
 	var messages model.Messages
 
 	for key, value := range dst {
-		// if key starts with '@' we ignore it as it provides additional information not the message itself
+		// Ignore a key if it begins with '@' as it only supplies additional information and not the actual message.
 		if key[0] == '@' {
 			continue
 		}
 
-		// if there is no '@' prefix and value type is not string then file is not formatted correctly
+		// If a key does not have an '@' prefix and its value is not of type string, then file is not formatted correctly.
 		value, ok := value.(string)
 		if !ok {
 			return model.Messages{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
