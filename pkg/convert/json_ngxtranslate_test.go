@@ -72,7 +72,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 		{
 			name:        "Unsupported value type",
 			serialized:  []byte(`{"message": 1.0}`),
-			expectedErr: fmt.Errorf("traverse ngx-translate: usupported value type %T for key %s", 1.0, "message"),
+			expectedErr: fmt.Errorf("traverse ngx-translate: unsupported value type %T for key %s", 1.0, "message"),
 			expected:    model.Messages{},
 		},
 		{

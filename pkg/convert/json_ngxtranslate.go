@@ -53,7 +53,7 @@ func ToNgxTranslate(messages model.Messages) (b []byte, err error) {
 
 	b, err = json.Marshal(dst)
 	if err != nil {
-		return nil, fmt.Errorf("marshal to ngx-translate from model.Messages: %w", err)
+		return nil, fmt.Errorf("marshal from model.Messages to ngx-translate: %w", err)
 	}
 
 	return b, nil
