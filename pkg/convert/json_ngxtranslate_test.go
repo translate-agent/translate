@@ -1,20 +1,21 @@
 package convert
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/model"
 )
 
-func Test_fromNgxTranslate(t *testing.T) {
+func Test_FromNgxTranslate(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		serialized []byte
-		expected   model.Messages
-		wantErr    bool
+		name        string
+		serialized  []byte
+		expectedErr error
+		expected    model.Messages
 	}{
 		{
 			name:       "Not nested",
@@ -27,7 +28,6 @@ func Test_fromNgxTranslate(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
 		},
 		{
 			name:       "Nested normally",
@@ -40,7 +40,6 @@ func Test_fromNgxTranslate(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
 		},
 		{
 			name:       "Nested with dot",
@@ -53,7 +52,6 @@ func Test_fromNgxTranslate(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
 		},
 		{
 			name:       "Nested mixed",
@@ -70,7 +68,18 @@ func Test_fromNgxTranslate(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
+		},
+		{
+			name:        "Unsupported value type",
+			serialized:  []byte(`{"message": 1.0}`),
+			expectedErr: fmt.Errorf("traverse ngx-translate: usupported value type %T for key %s", 1.0, "message"),
+			expected:    model.Messages{},
+		},
+		{
+			name:        "Invalid JSON",
+			serialized:  []byte(`{"message": "example"`),
+			expectedErr: fmt.Errorf("unmarshal from ngx-translate to model.Messages: unexpected end of JSON input"),
+			expected:    model.Messages{},
 		},
 	}
 
@@ -80,50 +89,38 @@ func Test_fromNgxTranslate(t *testing.T) {
 			t.Parallel()
 
 			result, err := FromNgxTranslate(tt.serialized)
+			if err != nil {
+				assert.Equal(t, tt.expectedErr, fmt.Errorf(err.Error()))
+				return
+			}
 
-			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func Test_toNgxTranslate(t *testing.T) {
+func Test_ToNgxTranslate(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		name     string
-		messages model.Messages
-		expected []byte
-		wantErr  bool
-	}{
-		{
-			name: "Messages to NGX-Translate",
-			messages: model.Messages{
-				Messages: []model.Message{
-					{
-						ID:      "message",
-						Message: "example",
-					},
-					{
-						ID:      "message.example",
-						Message: "message1",
-					},
-				},
+	messages := model.Messages{
+		Messages: []model.Message{
+			{
+				ID:      "message",
+				Message: "example",
 			},
-			expected: []byte(`{"message":"example","message.example":"message1"}`),
-			wantErr:  false,
+			{
+				ID:      "message.example",
+				Message: "message1",
+			},
 		},
 	}
-	for _, tt := range tests {
-		tt := tt
 
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	expected := []byte(`{"message":"example","message.example":"message1"}`)
+	result, err := ToNgxTranslate(messages)
 
-			result, err := ToNgxTranslate(tt.messages)
-			assert.NoError(t, err)
-
-			assert.Equal(t, tt.expected, result)
-		})
+	if !assert.NoError(t, err) {
+		return
 	}
+
+	assert.Equal(t, expected, result)
 }

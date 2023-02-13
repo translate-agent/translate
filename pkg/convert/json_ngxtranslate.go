@@ -2,7 +2,6 @@ package convert
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"go.expect.digital/translate/pkg/model"
@@ -20,7 +19,7 @@ func FromNgxTranslate(b []byte) (messages model.Messages, err error) {
 	traverseMap = func(key string, value interface{}) (err error) {
 		switch v := value.(type) {
 		default:
-			return errors.New("unsupported value type")
+			return fmt.Errorf("usupported value type %T for key %s", value, key)
 		case string:
 			messages.Messages = append(messages.Messages, model.Message{ID: key, Message: v})
 		case map[string]interface{}:
@@ -54,7 +53,7 @@ func ToNgxTranslate(messages model.Messages) (b []byte, err error) {
 
 	b, err = json.Marshal(dst)
 	if err != nil {
-		return nil, fmt.Errorf("marshal to ngx-translate from model.Messages : %w", err)
+		return nil, fmt.Errorf("marshal to ngx-translate from model.Messages: %w", err)
 	}
 
 	return b, nil
