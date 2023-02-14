@@ -12,16 +12,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	pb "go.expect.digital/translate/pkg/server/translate/v1"
+	"go.expect.digital/translate/pkg/translate"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/soheilhy/cmux"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
-
-type TranslateServiceServer struct {
-	pb.UnimplementedTranslateServiceServer
-}
 
 var cfgFile string
 
@@ -33,6 +30,7 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		grpcSever := grpc.NewServer()
 		mux := runtime.NewServeMux()
+		pb.RegisterTranslateServiceServer(grpcSever, &translate.TranslateServiceServer{})
 		err := pb.RegisterTranslateServiceHandlerFromEndpoint(
 			context.Background(),
 			mux,

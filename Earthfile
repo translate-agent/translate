@@ -20,6 +20,21 @@ proto:
   RUN --mount=type=cache,target=$BUF_CACHE_DIR buf mod update
   RUN --mount=type=cache,target=$BUF_CACHE_DIR buf build
   RUN --mount=type=cache,target=$BUF_CACHE_DIR buf generate
+  
+  RUN sed -i'.bak' '/client.UploadTranslationFile/i \
+  \\tfile, _, err := req.FormFile("file")\n\
+	\tif err != nil {\n\
+		\t\t\treturn nil, metadata, status.Errorf(codes.InvalidArgument, "%s", "'file' is required")\n\
+	\t}\n\
+  \tdefer file.Close()\n\
+	\n\
+	\tprotoReq.Data, err = io.ReadAll(file)\n\
+	\tif err != nil {\n\
+		\t\t\treturn nil, metadata, status.Errorf(codes.Internal, "%v", err)\n\
+	\t}\n\
+  ' gen/proto/go/translate/v1/translate.pb.gw.go
+
+  RUN rm gen/proto/go/translate/v1/translate.pb.gw.go.bak
   SAVE ARTIFACT gen/proto/go/translate/v1 translate/v1 AS LOCAL pkg/server/translate/v1
 
 lint-go:
