@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/mitchellh/mapstructure"
 	"go.expect.digital/translate/pkg/model"
 )
 
@@ -43,26 +44,20 @@ func FromArb(data []byte) (model.Messages, error) {
 
 	findDescription := func(key string) (string, error) {
 		// if '@' prefix missing then no additional information is provided
-		subKey, ok := dst["@"+key]
+		subKeyMap, ok := dst["@"+key]
 		if !ok {
 			return "", nil
 		}
 
-		keyMap, ok := subKey.(map[string]interface{})
-		if !ok {
-			return "", fmt.Errorf("unsupported value type '%T' for key '%s'", subKey, "@"+key)
+		var meta struct {
+			Description string `json:"description"`
 		}
 
-		description, ok := keyMap["description"]
-		if !ok {
-			return "", nil
+		if err := mapstructure.Decode(subKeyMap, &meta); err != nil {
+			return "", fmt.Errorf("decode subKeyMap to meta: %w", err)
 		}
 
-		if descriptionValue, ok := description.(string); ok {
-			return descriptionValue, nil
-		} else {
-			return "", fmt.Errorf("unsupported value type '%T' for key 'description'", descriptionValue)
-		}
+		return meta.Description, nil
 	}
 
 	var messages model.Messages
@@ -73,22 +68,20 @@ func FromArb(data []byte) (model.Messages, error) {
 			continue
 		}
 
+		msg := model.Message{ID: key}
+
 		// If a key does not have an '@' prefix and its value is not of type string, then file is not formatted correctly.
-		value, ok := value.(string)
-		if !ok {
+		var ok bool
+		if msg.Message, ok = value.(string); !ok {
 			return model.Messages{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
 		}
 
-		description, err := findDescription(key)
-		if err != nil {
+		var err error
+		if msg.Description, err = findDescription(key); err != nil {
 			return model.Messages{}, fmt.Errorf("find description of '%s': %w", key, err)
 		}
 
-		messages.Messages = append(messages.Messages, model.Message{
-			ID:          key,
-			Message:     value,
-			Description: description,
-		})
+		messages.Messages = append(messages.Messages, msg)
 	}
 
 	return messages, nil
@@ -96,11 +89,11 @@ func FromArb(data []byte) (model.Messages, error) {
 
 // Converts model.Messages into a serialized data in ARB file format.
 func ToArb(messages model.Messages) ([]byte, error) {
-	dst := make(map[string]interface{}, len(messages.Messages))
+	dst := make(map[string]interface{}, len(messages.Messages)*2) //nolint:gomnd
 
 	for _, msg := range messages.Messages {
 		dst[msg.ID] = msg.Message
-		if len(msg.Description) != 0 {
+		if len(msg.Description) > 0 {
 			dst["@"+msg.ID] = map[string]string{"description": msg.Description}
 		}
 	}

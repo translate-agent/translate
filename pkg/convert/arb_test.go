@@ -1,6 +1,7 @@
 package convert
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,10 +12,10 @@ func Test_FromArb(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
+		want    model.Messages
+		wantErr error
 		name    string
 		data    []byte
-		want    model.Messages
-		wantErr bool
 	}{
 		{
 			name: "Combination of messages",
@@ -53,20 +54,20 @@ func Test_FromArb(t *testing.T) {
 					},
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
-			name: "Wrong value type for @key",
+			name: "Wrong value type for @title",
 			data: []byte(`
 			{
 				"title": "Hello World!",
 				"@title": "Message to greet the World"
 			}			
 					`),
-			wantErr: true,
+			wantErr: errors.New("expected a map, got 'string'"),
 		},
 		{
-			name: "Wrong value type for standard key",
+			name: "Wrong value type for greeting key",
 			data: []byte(`
 			{
 				"title": "Hello World!",
@@ -75,7 +76,7 @@ func Test_FromArb(t *testing.T) {
 				}
 			}			
 					`),
-			wantErr: true,
+			wantErr: errors.New("unsupported value type 'map[string]interface {}' for key 'greeting'"),
 		},
 		{
 			name: "Wrong value type for description key",
@@ -89,7 +90,7 @@ func Test_FromArb(t *testing.T) {
 				}
 			}			
 					`),
-			wantErr: true,
+			wantErr: errors.New("'Description' expected type 'string', got unconvertible type 'map[string]interface {}'"),
 		},
 	}
 	for _, tt := range tests {
@@ -98,9 +99,8 @@ func Test_FromArb(t *testing.T) {
 			t.Parallel()
 
 			res, err := FromArb(tt.data)
-
-			if tt.wantErr {
-				assert.Error(t, err)
+			if tt.wantErr != nil {
+				assert.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
@@ -108,7 +108,6 @@ func Test_FromArb(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, tt.want.Language, res.Language)
 			assert.ElementsMatch(t, tt.want.Messages, res.Messages)
 		})
 	}
