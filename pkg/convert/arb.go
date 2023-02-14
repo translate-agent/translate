@@ -39,7 +39,7 @@ app_fr.arb
 func FromArb(data []byte) (model.Messages, error) {
 	var dst map[string]interface{}
 	if err := json.Unmarshal(data, &dst); err != nil {
-		return model.Messages{}, fmt.Errorf("unmarshal from ARB to model.Messages: %w", err)
+		return model.Messages{}, fmt.Errorf("unmarshal ARB serialized data: %w", err)
 	}
 
 	findDescription := func(key string) (string, error) {
@@ -54,7 +54,7 @@ func FromArb(data []byte) (model.Messages, error) {
 		}
 
 		if err := mapstructure.Decode(subKeyMap, &meta); err != nil {
-			return "", fmt.Errorf("decode subKeyMap to meta: %w", err)
+			return "", fmt.Errorf("decode metadata map: %w", err)
 		}
 
 		return meta.Description, nil
@@ -63,7 +63,7 @@ func FromArb(data []byte) (model.Messages, error) {
 	var messages model.Messages
 
 	for key, value := range dst {
-		// Ignore a key if it begins with '@' as it only supplies additional information and not the actual message.
+		// Ignore a key if it begins with '@' as it only supplies metadata for message not the message itself.
 		if key[0] == '@' {
 			continue
 		}
