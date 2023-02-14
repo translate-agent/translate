@@ -9,6 +9,9 @@ import (
 )
 
 /* .arb files employ the key-value (key-translation) format, with separate files representing different languages.
+Specification: https://docs.flutter.dev/development/accessibility-and-localization/internationalization
+
+Example:
 
 app_en.arb
 {
