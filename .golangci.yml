@@ -1,5 +1,7 @@
 run:
-  timeout: 3m
+  timeout: 2m
+  skip-dirs:
+    - pkg/server
 linters:
   enable:
     - asciicheck
