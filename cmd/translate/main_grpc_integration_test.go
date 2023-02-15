@@ -132,3 +132,45 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		})
 	}
 }
+
+func Test_DownloadTranslationFile_gRPC(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	tests := []struct {
+		req  *pb.DownloadTranslationFileRequest
+		name string
+		want codes.Code
+	}{
+		{
+			name: "Happy path",
+			req:  &pb.DownloadTranslationFileRequest{Language: "lv-lv"},
+			want: codes.OK,
+		},
+		{
+			name: "Invalid argument",
+			req:  &pb.DownloadTranslationFileRequest{},
+			want: codes.InvalidArgument,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			conn, err := createConnection(ctx, t)
+			if !assert.NoError(t, err) {
+				return
+			}
+
+			defer conn.Close()
+
+			client := pb.NewTranslateServiceClient(conn)
+			_, err = client.DownloadTranslationFile(ctx, tt.req)
+
+			assert.Equal(t, tt.want, status.Code(err))
+		})
+	}
+}

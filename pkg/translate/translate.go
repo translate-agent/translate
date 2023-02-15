@@ -2,6 +2,7 @@ package translate
 
 import (
 	"context"
+	"fmt"
 
 	pb "go.expect.digital/translate/pkg/server/translate/v1"
 	"golang.org/x/text/language"
@@ -44,4 +45,49 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	// convert from `schema` to our messages
 
 	return &emptypb.Empty{}, nil
+}
+
+// ----------------------DownloadTranslationFile-------------------------------
+
+type LanguageData struct {
+	Tag language.Tag
+	Str string
+}
+
+type DownloadParams struct {
+	Language LanguageData
+	Schema   pb.Schema
+}
+
+// Validates parameters for DownloadTranslationFile.
+func (d *DownloadParams) validate() error {
+	if len(d.Language.Str) == 0 {
+		return fmt.Errorf("'language' is required")
+	}
+
+	var err error
+
+	if d.Language.Tag, err = language.Parse(d.Language.Str); err != nil {
+		return fmt.Errorf("parsing language '%s': %w", d.Language.Str, err)
+	}
+
+	return nil
+}
+
+func (t *TranslateServiceServer) DownloadTranslationFile(
+	ctx context.Context,
+	req *pb.DownloadTranslationFileRequest,
+) (*pb.DownloadTranslationFileResponse, error) {
+	reqParams := DownloadParams{
+		Schema: req.GetSchema(),
+		Language: LanguageData{
+			Str: req.GetLanguage(),
+		},
+	}
+
+	if err := reqParams.validate(); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	return &pb.DownloadTranslationFileResponse{}, nil
 }
