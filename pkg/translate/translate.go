@@ -15,32 +15,45 @@ type TranslateServiceServer struct {
 	pb.UnimplementedTranslateServiceServer
 }
 
+// ----------------------UploadTranslationFile-------------------------------
+
+type UploadParams struct {
+	Language LanguageData
+	Data     []byte
+	Schema   pb.Schema
+}
+
+// Validates request parameters for UploadTranslationFile.
+func (u *UploadParams) validate() error {
+	if len(u.Language.Str) == 0 {
+		return fmt.Errorf("'language' is required")
+	}
+
+	if len(u.Data) == 0 {
+		return fmt.Errorf("'data' is required")
+	}
+
+	var err error
+	if u.Language.Tag, err = language.Parse(u.Language.Str); err != nil {
+		return fmt.Errorf("parsing language '%s': %w", u.Language.Str, err)
+	}
+
+	return nil
+}
+
 func (t *TranslateServiceServer) UploadTranslationFile(
 	ctx context.Context,
 	req *pb.UploadTranslationFileRequest,
 ) (*emptypb.Empty, error) {
-	var (
-		reqLanguage = req.GetLanguage()
-		reqData     = req.GetData()
-		reqSchema   = req.GetSchema()
-	)
-
-	if len(reqLanguage) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "'language' is required")
+	reqParams := UploadParams{
+		Language: LanguageData{Str: req.GetLanguage()},
+		Data:     req.GetData(),
+		Schema:   req.GetSchema(),
 	}
 
-	if len(reqData) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "'data' is required")
+	if err := reqParams.validate(); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
-
-	languageTag, err := language.Parse(reqLanguage)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "parse language: %s", err)
-	}
-
-	_ = languageTag
-	_ = reqSchema
-	_ = reqData
 
 	// convert from `schema` to our messages
 
@@ -59,14 +72,13 @@ type DownloadParams struct {
 	Schema   pb.Schema
 }
 
-// Validates parameters for DownloadTranslationFile.
+// Validates request parameters for DownloadTranslationFile.
 func (d *DownloadParams) validate() error {
 	if len(d.Language.Str) == 0 {
 		return fmt.Errorf("'language' is required")
 	}
 
 	var err error
-
 	if d.Language.Tag, err = language.Parse(d.Language.Str); err != nil {
 		return fmt.Errorf("parsing language '%s': %w", d.Language.Str, err)
 	}
@@ -79,10 +91,8 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 	req *pb.DownloadTranslationFileRequest,
 ) (*pb.DownloadTranslationFileResponse, error) {
 	reqParams := DownloadParams{
-		Schema: req.GetSchema(),
-		Language: LanguageData{
-			Str: req.GetLanguage(),
-		},
+		Schema:   req.GetSchema(),
+		Language: LanguageData{Str: req.GetLanguage()},
 	}
 
 	if err := reqParams.validate(); err != nil {

@@ -58,75 +58,79 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	addr := "http://localhost:8080/v1/files"
-
-	type args struct {
-		language string
-		text     []byte
-	}
+	addr := baseAddr + "/v1/files"
 
 	tests := []struct {
-		name string
-		args args
-		want uint
+		name   string
+		params translate.UploadParams
+		want   uint
 	}{
 		{
 			name: "Happy Path",
-			args: args{
-				language: "lv-lv",
-				text: []byte(`{
-					"messages":[
-						 {
-								"id":"1",
-								"meaning":"When you great someone",
-								"message":"hello",
-								"translation":"čau",
-								"fuzzy":false
-						 }
+			params: translate.UploadParams{
+				Language: translate.LanguageData{Str: "lv-LV"},
+				Schema:   pb.Schema_GO,
+				Data: []byte(`{
+					"messages": [
+						{
+							"id": "1",
+							"meaning": "When you great someone",
+							"message": "hello",
+							"translation": "čau",
+							"fuzzy": false
+						}
 					]
-			 }`),
+				}
+				`),
 			},
 			want: http.StatusOK,
 		},
 		{
 			name: "Missing language",
-			args: args{
-				text: []byte(`{
-					"messages":[
-						 {
-								"id":"1",
-								"meaning":"When you great someone",
-								"message":"hello",
-								"translation":"čau",
-								"fuzzy":false
-						 }
+			params: translate.UploadParams{
+				Language: translate.LanguageData{},
+				Schema:   pb.Schema_GO,
+				Data: []byte(`{
+					"messages": [
+						{
+							"id": "1",
+							"meaning": "When you great someone",
+							"message": "hello",
+							"translation": "čau",
+							"fuzzy": false
+						}
 					]
-			 }`),
+				}
+				`),
 			},
 			want: http.StatusBadRequest,
 		},
 		{
 			name: "Missing file",
-			args: args{
-				language: "lv-lv",
+			params: translate.UploadParams{
+				Language: translate.LanguageData{Str: "lv-LV"},
+				Data:     []byte{},
+				Schema:   pb.Schema_GO,
 			},
 			want: http.StatusBadRequest,
 		},
 		{
-			name: "Invalid language",
-			args: args{
-				language: "xyz-ZY-Latn",
-				text: []byte(`{
-					"messages":[
-						 {
-								"id":"1",
-								"meaning":"When you great someone",
-								"message":"hello",
-								"translation":"čau",
-								"fuzzy":false
-						 }
+			name: "Malformed language tag",
+			params: translate.UploadParams{
+				Language: translate.LanguageData{Str: "xyz-ZY-Latn"},
+				Schema:   pb.Schema_GO,
+				Data: []byte(`{
+					"messages": [
+						{
+							"id": "1",
+							"meaning": "When you great someone",
+							"message": "hello",
+							"translation": "čau",
+							"fuzzy": false
+						}
 					]
-			 }`),
+				}
+				`),
 			},
 			want: http.StatusBadRequest,
 		},
@@ -136,20 +140,26 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			body, contentType, err := attachFile(tt.args.text, t)
+			body, contentType, err := attachFile(tt.params.Data, t)
 			if !assert.NoError(t, err) {
 				return
 			}
 
-			req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/%s", addr, tt.args.language), body)
+			req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/%s", addr, tt.params.Language.Str), body)
 			if !assert.NoError(t, err) {
 				return
+			}
+
+			// Add Schema as query parameter, if it is specified
+			if tt.params.Schema != pb.Schema_UNSPECIFIED {
+				q := req.URL.Query()
+				q.Add("schema", tt.params.Schema.String())
+				req.URL.RawQuery = q.Encode()
 			}
 
 			req.Header.Add("Content-Type", contentType)
-			client := &http.Client{}
-			resp, err := client.Do(req)
 
+			resp, err := http.DefaultClient.Do(req)
 			if !assert.NoError(t, err) {
 				return
 			}
