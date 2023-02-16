@@ -42,7 +42,7 @@ func Test_ParseUploadParams(t *testing.T) {
 				Data:     []byte(`{"key":"value"}`),
 				Schema:   pb.Schema_GO,
 			},
-			wantErr: errors.New("language: tag is not well-formed"),
+			wantErr: errors.New("tag is not well-formed"),
 		},
 	}
 
@@ -59,7 +59,7 @@ func Test_ParseUploadParams(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
-			assert.NotEmpty(t, parsed.Language)
+			assert.NotEmpty(t, parsed)
 		})
 	}
 }
@@ -116,32 +116,37 @@ func Test_ValidateUploadParams(t *testing.T) {
 	}
 }
 
-func Test_ValidateDownloadParams(t *testing.T) {
+func Test_ParseDownloadParams(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
+		req     *pb.DownloadTranslationFileRequest
 		wantErr error
-		params  DownloadParams
+		name    string
 	}{
 		{
 			name: "Happy Path",
-			params: DownloadParams{
-				Language: LanguageData{Str: "lv-LV"},
+			req: &pb.DownloadTranslationFileRequest{
+				Language: "lv-LV",
+				Schema:   pb.Schema_GO,
 			},
 			wantErr: nil,
 		},
 		{
 			name: "Malformed language tag",
-			params: DownloadParams{
-				Language: LanguageData{Str: "xyz-ZY-Latn"},
+			req: &pb.DownloadTranslationFileRequest{
+				Language: "xyz-ZY-Latn",
+				Schema:   pb.Schema_GO,
 			},
 			wantErr: errors.New("subtag \"xyz\" is well-formed but unknown"),
 		},
 		{
-			name:    "Missing language",
-			params:  DownloadParams{},
-			wantErr: errors.New("'language' is required"),
+			name: "Missing language",
+			req: &pb.DownloadTranslationFileRequest{
+				Language: "",
+				Schema:   pb.Schema_GO,
+			},
+			wantErr: errors.New("tag is not well-formed"),
 		},
 	}
 	for _, tt := range tests {
@@ -149,7 +154,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.params.validate()
+			parsed, err := parseDownloadParams(tt.req)
 
 			if tt.wantErr != nil {
 				assert.ErrorContains(t, err, tt.wantErr.Error())
@@ -157,7 +162,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
-			assert.NotEmpty(t, tt.params.Language.Tag)
+			assert.NotEmpty(t, parsed)
 		})
 	}
 }

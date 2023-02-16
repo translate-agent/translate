@@ -13,8 +13,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	pb "go.expect.digital/translate/pkg/server/translate/v1"
-	"go.expect.digital/translate/pkg/translate"
 )
 
 const baseAddr = "http://localhost:8080"
@@ -60,7 +58,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	ctx := context.Background()
 	addr := baseAddr + "/v1/files/"
 
-	type uploadParams struct {
+	type params struct {
 		Schema string
 		URL    string
 		Data   []byte
@@ -68,12 +66,12 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		params uploadParams
+		params params
 		want   uint
 	}{
 		{
 			name: "Happy Path",
-			params: uploadParams{
+			params: params{
 				Schema: "GO",
 				URL:    addr + "lv-LV",
 				Data: []byte(`{
@@ -93,9 +91,9 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 		},
 		{
 			name: "Invalid argument",
-			params: uploadParams{
+			params: params{
 				Schema: "GO",
-				URL:    addr + "/lv-LVas",
+				URL:    addr + "lv-LV-asd",
 				Data: []byte(`{
 					"messages": [
 						{
@@ -147,24 +145,33 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	addr := baseAddr + "/v1/files"
+	addr := baseAddr + "/v1/files/"
+
+	type params struct {
+		Schema string
+		URL    string
+	}
 
 	tests := []struct {
 		name   string
-		params translate.DownloadParams
+		params params
 		want   uint
 	}{
 		{
 			name: "Happy path",
-			params: translate.DownloadParams{
-				Language: translate.LanguageData{Str: "lv-LV"},
+			params: params{
+				Schema: "GO",
+				URL:    addr + "lv-LV",
 			},
 			want: http.StatusOK,
 		},
 		{
-			name:   "Invalid argument",
-			params: translate.DownloadParams{},
-			want:   http.StatusBadRequest,
+			name: "Invalid argument",
+			params: params{
+				Schema: "GO",
+				URL:    addr + "lv-LV-asd",
+			},
+			want: http.StatusBadRequest,
 		},
 	}
 	for _, tt := range tests {
@@ -172,17 +179,15 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/%s", addr, tt.params.Language.Str), nil)
+			req, err := http.NewRequestWithContext(ctx, "GET", tt.params.URL, nil)
 			if !assert.NoError(t, err) {
 				return
 			}
 
-			// Add Schema as query parameter, if it is specified
-			if tt.params.Schema != pb.Schema_UNSPECIFIED {
-				q := req.URL.Query()
-				q.Add("schema", tt.params.Schema.String())
-				req.URL.RawQuery = q.Encode()
-			}
+			// Add Schema as query parameter
+			q := req.URL.Query()
+			q.Add("schema", tt.params.Schema)
+			req.URL.RawQuery = q.Encode()
 
 			resp, err := http.DefaultClient.Do(req)
 			if !assert.NoError(t, err) {

@@ -31,11 +31,13 @@ func parseUploadParams(req *pb.UploadTranslationFileRequest) (*uploadParams, err
 		return nil, fmt.Errorf("parsing language '%s': %w", reqLanguage, err)
 	}
 
-	return &uploadParams{
+	params := uploadParams{
 		Language: tag,
 		Data:     req.GetData(),
 		Schema:   req.GetSchema(),
-	}, nil
+	}
+
+	return &params, nil
 }
 
 // Validates request parameters for UploadTranslationFile.
@@ -65,49 +67,42 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	// convert from `schema` to our messages
-
 	return &emptypb.Empty{}, nil
 }
 
 // ----------------------DownloadTranslationFile-------------------------------
 
-type LanguageData struct {
-	Tag language.Tag
-	Str string
-}
-
-type DownloadParams struct {
-	Language LanguageData
+type downloadParams struct {
+	Language language.Tag
 	Schema   pb.Schema
 }
 
-// Validates request parameters for DownloadTranslationFile.
-func (d *DownloadParams) validate() error {
-	if len(d.Language.Str) == 0 {
-		return fmt.Errorf("'language' is required")
+func parseDownloadParams(req *pb.DownloadTranslationFileRequest) (*downloadParams, error) {
+	reqLanguage := req.GetLanguage()
+
+	tag, err := language.Parse(reqLanguage)
+	if err != nil {
+		return nil, fmt.Errorf("parsing language '%s': %w", reqLanguage, err)
 	}
 
-	var err error
-	if d.Language.Tag, err = language.Parse(d.Language.Str); err != nil {
-		return fmt.Errorf("parsing language '%s': %w", d.Language.Str, err)
+	params := downloadParams{
+		Language: tag,
+		Schema:   req.GetSchema(),
 	}
 
-	return nil
+	return &params, nil
 }
 
 func (t *TranslateServiceServer) DownloadTranslationFile(
 	ctx context.Context,
 	req *pb.DownloadTranslationFileRequest,
 ) (*pb.DownloadTranslationFileResponse, error) {
-	reqParams := DownloadParams{
-		Schema:   req.GetSchema(),
-		Language: LanguageData{Str: req.GetLanguage()},
-	}
-
-	if err := reqParams.validate(); err != nil {
+	params, err := parseDownloadParams(req)
+	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
+
+	_ = params
 
 	return &pb.DownloadTranslationFileResponse{}, nil
 }
