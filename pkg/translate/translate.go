@@ -17,25 +17,36 @@ type TranslateServiceServer struct {
 
 // ----------------------UploadTranslationFile-------------------------------
 
-type UploadParams struct {
-	Language LanguageData
+type uploadParams struct {
+	Language language.Tag
 	Data     []byte
 	Schema   pb.Schema
 }
 
-// Validates request parameters for UploadTranslationFile.
-func (u *UploadParams) validate() error {
-	if len(u.Language.Str) == 0 {
-		return fmt.Errorf("'language' is required")
+func parseUploadParams(req *pb.UploadTranslationFileRequest) (*uploadParams, error) {
+	reqLanguage := req.GetLanguage()
+
+	tag, err := language.Parse(reqLanguage)
+	if err != nil {
+		return nil, fmt.Errorf("parsing language '%s': %w", reqLanguage, err)
 	}
 
+	return &uploadParams{
+		Language: tag,
+		Data:     req.GetData(),
+		Schema:   req.GetSchema(),
+	}, nil
+}
+
+// Validates request parameters for UploadTranslationFile.
+func (u *uploadParams) validate() error {
 	if len(u.Data) == 0 {
 		return fmt.Errorf("'data' is required")
 	}
 
-	var err error
-	if u.Language.Tag, err = language.Parse(u.Language.Str); err != nil {
-		return fmt.Errorf("parsing language '%s': %w", u.Language.Str, err)
+	// Enforce that schema is present. (Temporal solution)
+	if u.Schema == pb.Schema_UNSPECIFIED {
+		return fmt.Errorf("'schema' must be specified")
 	}
 
 	return nil
@@ -45,13 +56,12 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	ctx context.Context,
 	req *pb.UploadTranslationFileRequest,
 ) (*emptypb.Empty, error) {
-	reqParams := UploadParams{
-		Language: LanguageData{Str: req.GetLanguage()},
-		Data:     req.GetData(),
-		Schema:   req.GetSchema(),
+	params, err := parseUploadParams(req)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if err := reqParams.validate(); err != nil {
+	if err := params.validate(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 

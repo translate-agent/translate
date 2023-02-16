@@ -58,18 +58,24 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	addr := baseAddr + "/v1/files"
+	addr := baseAddr + "/v1/files/"
+
+	type uploadParams struct {
+		Schema string
+		URL    string
+		Data   []byte
+	}
 
 	tests := []struct {
 		name   string
-		params translate.UploadParams
+		params uploadParams
 		want   uint
 	}{
 		{
 			name: "Happy Path",
-			params: translate.UploadParams{
-				Language: translate.LanguageData{Str: "lv-LV"},
-				Schema:   pb.Schema_GO,
+			params: uploadParams{
+				Schema: "GO",
+				URL:    addr + "lv-LV",
 				Data: []byte(`{
 					"messages": [
 						{
@@ -86,39 +92,10 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			want: http.StatusOK,
 		},
 		{
-			name: "Missing language",
-			params: translate.UploadParams{
-				Language: translate.LanguageData{},
-				Schema:   pb.Schema_GO,
-				Data: []byte(`{
-					"messages": [
-						{
-							"id": "1",
-							"meaning": "When you great someone",
-							"message": "hello",
-							"translation": "čau",
-							"fuzzy": false
-						}
-					]
-				}
-				`),
-			},
-			want: http.StatusBadRequest,
-		},
-		{
-			name: "Missing file",
-			params: translate.UploadParams{
-				Language: translate.LanguageData{Str: "lv-LV"},
-				Data:     []byte{},
-				Schema:   pb.Schema_GO,
-			},
-			want: http.StatusBadRequest,
-		},
-		{
-			name: "Malformed language tag",
-			params: translate.UploadParams{
-				Language: translate.LanguageData{Str: "xyz-ZY-Latn"},
-				Schema:   pb.Schema_GO,
+			name: "Invalid argument",
+			params: uploadParams{
+				Schema: "GO",
+				URL:    addr + "/lv-LVas",
 				Data: []byte(`{
 					"messages": [
 						{
@@ -145,19 +122,15 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 				return
 			}
 
-			req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/%s", addr, tt.params.Language.Str), body)
+			req, err := http.NewRequestWithContext(ctx, "PUT", tt.params.URL, body)
 			if !assert.NoError(t, err) {
 				return
 			}
-
-			// Add Schema as query parameter, if it is specified
-			if tt.params.Schema != pb.Schema_UNSPECIFIED {
-				q := req.URL.Query()
-				q.Add("schema", tt.params.Schema.String())
-				req.URL.RawQuery = q.Encode()
-			}
-
 			req.Header.Add("Content-Type", contentType)
+
+			q := req.URL.Query()
+			q.Add("schema", tt.params.Schema)
+			req.URL.RawQuery = q.Encode()
 
 			resp, err := http.DefaultClient.Do(req)
 			if !assert.NoError(t, err) {
