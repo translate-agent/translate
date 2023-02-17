@@ -28,7 +28,15 @@ func TestMain(m *testing.M) {
 
 	conn.Close()
 
-	os.Exit(m.Run())
+	code := m.Run()
+
+	// To avoid tp.ForceFlush() from indefinitely blocking, allocate 5 seconds for exporting spans.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	tp.ForceFlush(ctx)
+	cancel()
+
+	os.Exit(code)
 }
 
 func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string, error) {

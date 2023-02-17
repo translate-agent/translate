@@ -9,18 +9,23 @@ import (
 	"os"
 	"time"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/soheilhy/cmux"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	pb "go.expect.digital/translate/pkg/server/translate/v1"
+	"go.expect.digital/translate/pkg/tracer"
 	"go.expect.digital/translate/pkg/translate"
-
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/soheilhy/cmux"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-var cfgFile string
+var (
+	cfgFile string
+	tp      *tracesdk.TracerProvider
+)
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
@@ -28,10 +33,22 @@ var rootCmd = &cobra.Command{
 	Short: "Enables translation for Cloud-native systems",
 	Long:  `Enables translation for Cloud-native systems`,
 	Run: func(cmd *cobra.Command, args []string) {
-		grpcSever := grpc.NewServer()
+		var err error
+
+		tp, err = tracer.TracerProvider("http://localhost:14268/api/traces", "translate")
+		if err != nil {
+			log.Panic(err)
+		}
+
+		grpcSever := grpc.NewServer(
+			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+		)
+
 		mux := runtime.NewServeMux()
 		pb.RegisterTranslateServiceServer(grpcSever, &translate.TranslateServiceServer{})
-		err := pb.RegisterTranslateServiceHandlerFromEndpoint(
+
+		err = pb.RegisterTranslateServiceHandlerFromEndpoint(
 			context.Background(),
 			mux,
 			"localhost:8080",
@@ -57,18 +74,18 @@ var rootCmd = &cobra.Command{
 		grpcL := m.Match(cmux.HTTP2())
 
 		go func() {
-			if err := server.Serve(httpL); err != nil {
+			if err = server.Serve(httpL); err != nil {
 				log.Fatal(err)
 			}
 		}()
 
 		go func() {
-			if err := grpcSever.Serve(grpcL); err != nil {
+			if err = grpcSever.Serve(grpcL); err != nil {
 				log.Fatal(err)
 			}
 		}()
 
-		if err := m.Serve(); err != nil {
+		if err = m.Serve(); err != nil {
 			log.Panic(err)
 		}
 	},
