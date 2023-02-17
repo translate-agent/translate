@@ -28,7 +28,7 @@ func parseUploadParams(req *pb.UploadTranslationFileRequest) (*uploadParams, err
 
 	tag, err := language.Parse(reqLanguage)
 	if err != nil {
-		return nil, fmt.Errorf("parsing language '%s': %w", reqLanguage, err)
+		return nil, fmt.Errorf("parse language '%s': %w", reqLanguage, err)
 	}
 
 	params := uploadParams{
@@ -48,7 +48,7 @@ func (u *uploadParams) validate() error {
 
 	// Enforce that schema is present. (Temporal solution)
 	if u.Schema == pb.Schema_UNSPECIFIED {
-		return fmt.Errorf("'schema' must be specified")
+		return fmt.Errorf("'schema' is required")
 	}
 
 	return nil
@@ -82,7 +82,7 @@ func parseDownloadParams(req *pb.DownloadTranslationFileRequest) (*downloadParam
 
 	tag, err := language.Parse(reqLanguage)
 	if err != nil {
-		return nil, fmt.Errorf("parsing language '%s': %w", reqLanguage, err)
+		return nil, fmt.Errorf("parse language '%s': %w", reqLanguage, err)
 	}
 
 	params := downloadParams{
