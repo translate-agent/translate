@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TranslateServiceClient interface {
 	UploadTranslationFile(ctx context.Context, in *UploadTranslationFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DownloadTranslationFile(ctx context.Context, in *DownloadTranslationFileRequest, opts ...grpc.CallOption) (*DownloadTranslationFileResponse, error)
 }
 
 type translateServiceClient struct {
@@ -43,11 +44,21 @@ func (c *translateServiceClient) UploadTranslationFile(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *translateServiceClient) DownloadTranslationFile(ctx context.Context, in *DownloadTranslationFileRequest, opts ...grpc.CallOption) (*DownloadTranslationFileResponse, error) {
+	out := new(DownloadTranslationFileResponse)
+	err := c.cc.Invoke(ctx, "/translate.v1.TranslateService/DownloadTranslationFile", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TranslateServiceServer is the server API for TranslateService service.
 // All implementations must embed UnimplementedTranslateServiceServer
 // for forward compatibility
 type TranslateServiceServer interface {
 	UploadTranslationFile(context.Context, *UploadTranslationFileRequest) (*emptypb.Empty, error)
+	DownloadTranslationFile(context.Context, *DownloadTranslationFileRequest) (*DownloadTranslationFileResponse, error)
 	mustEmbedUnimplementedTranslateServiceServer()
 }
 
@@ -57,6 +68,9 @@ type UnimplementedTranslateServiceServer struct {
 
 func (UnimplementedTranslateServiceServer) UploadTranslationFile(context.Context, *UploadTranslationFileRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UploadTranslationFile not implemented")
+}
+func (UnimplementedTranslateServiceServer) DownloadTranslationFile(context.Context, *DownloadTranslationFileRequest) (*DownloadTranslationFileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DownloadTranslationFile not implemented")
 }
 func (UnimplementedTranslateServiceServer) mustEmbedUnimplementedTranslateServiceServer() {}
 
@@ -89,6 +103,24 @@ func _TranslateService_UploadTranslationFile_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TranslateService_DownloadTranslationFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DownloadTranslationFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TranslateServiceServer).DownloadTranslationFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/translate.v1.TranslateService/DownloadTranslationFile",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TranslateServiceServer).DownloadTranslationFile(ctx, req.(*DownloadTranslationFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TranslateService_ServiceDesc is the grpc.ServiceDesc for TranslateService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -99,6 +131,10 @@ var TranslateService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UploadTranslationFile",
 			Handler:    _TranslateService_UploadTranslationFile_Handler,
+		},
+		{
+			MethodName: "DownloadTranslationFile",
+			Handler:    _TranslateService_DownloadTranslationFile_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -6,10 +6,11 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
 enum Schema {
-  SCHEMA_UNSPECIFIED = 0;
+  UNSPECIFIED = 0;
   NG_LOCALISE = 1;
   NGX_TRANSLATE = 2;
   GO = 3;
+  ARB = 4;
 }
 
 message Message {
@@ -30,8 +31,20 @@ message UploadTranslationFileRequest {
   Schema schema = 3;
 }
 
+message DownloadTranslationFileRequest {
+  string language = 1;
+  Schema schema = 2;
+}
+
+message DownloadTranslationFileResponse {
+  bytes data = 1;
+}
+
 service TranslateService {
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {put: "/v1/files/{language}"};
+  }
+  rpc DownloadTranslationFile(DownloadTranslationFileRequest) returns (DownloadTranslationFileResponse) {
+    option (google.api.http) = {get: "/v1/files/{language}"};
   }
 }
