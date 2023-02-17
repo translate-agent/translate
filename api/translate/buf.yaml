@@ -6,8 +6,9 @@ breaking:
   use:
     - FILE
 lint:
+  rpc_allow_google_protobuf_empty_responses: true
   use:
     - DEFAULT
   except:
     - ENUM_VALUE_PREFIX
-    - RPC_RESPONSE_STANDARD_NAME
+    - ENUM_ZERO_VALUE_SUFFIX

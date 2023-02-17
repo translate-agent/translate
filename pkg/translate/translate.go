@@ -2,6 +2,7 @@ package translate
 
 import (
 	"context"
+	"fmt"
 
 	pb "go.expect.digital/translate/pkg/server/translate/v1"
 	"golang.org/x/text/language"
@@ -14,34 +15,94 @@ type TranslateServiceServer struct {
 	pb.UnimplementedTranslateServiceServer
 }
 
+// ----------------------UploadTranslationFile-------------------------------
+
+type uploadParams struct {
+	Language language.Tag
+	Data     []byte
+	Schema   pb.Schema
+}
+
+func parseUploadParams(req *pb.UploadTranslationFileRequest) (*uploadParams, error) {
+	reqLanguage := req.GetLanguage()
+
+	tag, err := language.Parse(reqLanguage)
+	if err != nil {
+		return nil, fmt.Errorf("parse language '%s': %w", reqLanguage, err)
+	}
+
+	params := uploadParams{
+		Language: tag,
+		Data:     req.GetData(),
+		Schema:   req.GetSchema(),
+	}
+
+	return &params, nil
+}
+
+// Validates request parameters for UploadTranslationFile.
+func (u *uploadParams) validate() error {
+	if len(u.Data) == 0 {
+		return fmt.Errorf("'data' is required")
+	}
+
+	// Enforce that schema is present. (Temporal solution)
+	if u.Schema == pb.Schema_UNSPECIFIED {
+		return fmt.Errorf("'schema' is required")
+	}
+
+	return nil
+}
+
 func (t *TranslateServiceServer) UploadTranslationFile(
 	ctx context.Context,
 	req *pb.UploadTranslationFileRequest,
 ) (*emptypb.Empty, error) {
-	var (
-		reqLanguage = req.GetLanguage()
-		reqData     = req.GetData()
-		reqSchema   = req.GetSchema()
-	)
-
-	if len(reqLanguage) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "'language' is required")
-	}
-
-	if len(reqData) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "'data' is required")
-	}
-
-	languageTag, err := language.Parse(reqLanguage)
+	params, err := parseUploadParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "parse language: %s", err)
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	_ = languageTag
-	_ = reqSchema
-	_ = reqData
-
-	// convert from `schema` to our messages
+	if err := params.validate(); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
 
 	return &emptypb.Empty{}, nil
+}
+
+// ----------------------DownloadTranslationFile-------------------------------
+
+type downloadParams struct {
+	Language language.Tag
+	Schema   pb.Schema
+}
+
+func parseDownloadParams(req *pb.DownloadTranslationFileRequest) (*downloadParams, error) {
+	reqLanguage := req.GetLanguage()
+
+	tag, err := language.Parse(reqLanguage)
+	if err != nil {
+		return nil, fmt.Errorf("parse language '%s': %w", reqLanguage, err)
+	}
+
+	params := downloadParams{
+		Language: tag,
+		Schema:   req.GetSchema(),
+	}
+
+	return &params, nil
+}
+
+func (t *TranslateServiceServer) DownloadTranslationFile(
+	ctx context.Context,
+	req *pb.DownloadTranslationFileRequest,
+) (*pb.DownloadTranslationFileResponse, error) {
+	params, err := parseDownloadParams(req)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	_ = params
+
+	return &pb.DownloadTranslationFileResponse{}, nil
 }
