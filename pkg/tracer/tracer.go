@@ -1,6 +1,7 @@
 package tracer
 
 import (
+	"context"
 	"fmt"
 
 	"go.opentelemetry.io/otel"
@@ -10,7 +11,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-func TracerProvider(url, service string) (*tracesdk.TracerProvider, error) {
+func TracerProvider(url, service string) (func(context.Context) error, error) {
 	// Create the Jaeger exporter
 	exp, err := jaeger.New(
 		jaeger.WithCollectorEndpoint(
@@ -31,5 +32,5 @@ func TracerProvider(url, service string) (*tracesdk.TracerProvider, error) {
 
 	otel.SetTracerProvider(tp)
 
-	return tp, nil
+	return tp.Shutdown, nil
 }

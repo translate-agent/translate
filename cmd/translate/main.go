@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -17,15 +19,14 @@ import (
 	"go.expect.digital/translate/pkg/tracer"
 	"go.expect.digital/translate/pkg/translate"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-var (
-	cfgFile string
-	tp      *tracesdk.TracerProvider
-)
+var cfgFile string
+
+// package level termination channel for integration tests.
+var terminationChan = make(chan os.Signal, 1)
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
@@ -33,20 +34,28 @@ var rootCmd = &cobra.Command{
 	Short: "Enables translation for Cloud-native systems",
 	Long:  `Enables translation for Cloud-native systems`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var err error
-
-		tp, err = tracer.TracerProvider("http://localhost:14268/api/traces", "translate")
+		tpShutdown, err := tracer.TracerProvider("http://localhost:14268/api/traces", "translate")
 		if err != nil {
 			log.Panic(err)
 		}
 
-		grpcSever := grpc.NewServer(
+		defer func() {
+			fmt.Printf("\n\n\nShutting down tp\n\n\n")
+			if tpErr := tpShutdown(context.Background()); err != nil {
+				log.Printf("shutdown TracerProvider: %v", tpErr)
+			}
+		}()
+
+		signal.Notify(terminationChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+		grpcServer := grpc.NewServer(
 			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
 			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
 		)
+		defer grpcServer.GracefulStop()
 
 		mux := runtime.NewServeMux()
-		pb.RegisterTranslateServiceServer(grpcSever, &translate.TranslateServiceServer{})
+		pb.RegisterTranslateServiceServer(grpcServer, &translate.TranslateServiceServer{})
 
 		err = pb.RegisterTranslateServiceHandlerFromEndpoint(
 			context.Background(),
@@ -61,6 +70,7 @@ var rootCmd = &cobra.Command{
 			Handler:           mux,
 			ReadHeaderTimeout: time.Minute,
 		}
+		defer server.Shutdown(context.Background())
 
 		l, err := net.Listen("tcp", "localhost:8080")
 		if err != nil {
@@ -73,21 +83,27 @@ var rootCmd = &cobra.Command{
 		// a different listener for HTTP2 since gRPC uses HTTP2
 		grpcL := m.Match(cmux.HTTP2())
 
+		var terminated bool
 		go func() {
-			if err = server.Serve(httpL); err != nil {
-				log.Fatal(err)
+			if httpErr := server.Serve(httpL); httpErr != nil && !terminated {
+				log.Panic(httpErr)
 			}
 		}()
 
 		go func() {
-			if err = grpcSever.Serve(grpcL); err != nil {
-				log.Fatal(err)
+			if grpcErr := grpcServer.Serve(grpcL); grpcErr != nil && !terminated {
+				log.Panic(grpcErr)
 			}
 		}()
 
-		if err = m.Serve(); err != nil {
-			log.Panic(err)
-		}
+		go func() {
+			if cmuxErr := m.Serve(); cmuxErr != nil && !terminated {
+				log.Panic(cmuxErr)
+			}
+		}()
+
+		<-terminationChan
+		terminated = true
 	},
 }
 

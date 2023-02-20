@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"syscall"
 	"testing"
 	"time"
 
@@ -18,9 +19,14 @@ import (
 const baseAddr = "http://localhost:8080"
 
 func TestMain(m *testing.M) {
-	go main()
+	var terminated bool
+	go func() {
+		main()
 
-	// Ensure that a connection can be established.
+		terminated = true
+	}()
+
+	// Wait for the program to start and establish a connection.
 	conn, err := net.DialTimeout("tcp", "localhost:8080", time.Second)
 	if err != nil {
 		log.Panic(err)
@@ -28,15 +34,17 @@ func TestMain(m *testing.M) {
 
 	conn.Close()
 
+	// Run the tests.
 	code := m.Run()
+	// Send soft kill signal to terminationChan.
+	terminationChan <- syscall.SIGTERM
 
-	// To avoid tp.ForceFlush() from indefinitely blocking, allocate 5 seconds for exporting spans.
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-
-	tp.ForceFlush(ctx)
-	cancel()
-
-	os.Exit(code)
+	// Wait for main() to finish cleanup.
+	for {
+		if terminated {
+			os.Exit(code)
+		}
+	}
 }
 
 func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string, error) {

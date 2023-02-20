@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	pb "go.expect.digital/translate/pkg/server/translate/v1"
-	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -59,9 +58,6 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	ctx context.Context,
 	req *pb.UploadTranslationFileRequest,
 ) (*emptypb.Empty, error) {
-	span := trace.SpanFromContext(ctx)
-	defer span.End()
-
 	params, err := parseUploadParams(req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
@@ -101,9 +97,6 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 	ctx context.Context,
 	req *pb.DownloadTranslationFileRequest,
 ) (*pb.DownloadTranslationFileResponse, error) {
-	span := trace.SpanFromContext(ctx)
-	defer span.End()
-
 	params, err := parseDownloadParams(req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
