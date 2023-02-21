@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -23,10 +24,11 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-var cfgFile string
-
-// package level termination channel for integration tests.
-var terminationChan = make(chan os.Signal, 1)
+var (
+	cfgFile string
+	// Package level termination channel for integration tests.
+	terminationChan = make(chan os.Signal, 1)
+)
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
@@ -34,24 +36,25 @@ var rootCmd = &cobra.Command{
 	Short: "Enables translation for Cloud-native systems",
 	Long:  `Enables translation for Cloud-native systems`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Gracefully shutdown only on Ctrl+C and Termination signal
+		signal.Notify(terminationChan, syscall.SIGTERM, syscall.SIGINT)
+
 		tpShutdown, err := tracer.TracerProvider("http://localhost:14268/api/traces", "translate")
 		if err != nil {
 			log.Panic(err)
 		}
 
 		defer func() {
-			fmt.Printf("\n\n\nShutting down tp\n\n\n")
-			if tpErr := tpShutdown(context.Background()); err != nil {
-				log.Printf("shutdown TracerProvider: %v", tpErr)
+			if tpShutdownErr := tpShutdown(context.Background()); tpShutdownErr != nil {
+				log.Panic(tpShutdownErr)
 			}
 		}()
-
-		signal.Notify(terminationChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
 		grpcServer := grpc.NewServer(
 			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
 			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
 		)
+		// Gracefully stops GRPC server and closes listener (multiplexer).
 		defer grpcServer.GracefulStop()
 
 		mux := runtime.NewServeMux()
@@ -66,44 +69,47 @@ var rootCmd = &cobra.Command{
 			log.Panic(err)
 		}
 
-		server := http.Server{
+		httpServer := http.Server{
 			Handler:           mux,
-			ReadHeaderTimeout: time.Minute,
+			ReadHeaderTimeout: time.Second * 5, //nolint:gomnd
 		}
-		defer server.Shutdown(context.Background())
 
 		l, err := net.Listen("tcp", "localhost:8080")
 		if err != nil {
 			log.Panic(err)
 		}
 
-		m := cmux.New(l)
+		multiplexer := cmux.New(l)
 		// a different listener for HTTP1
-		httpL := m.Match(cmux.HTTP1Fast())
+		httpL := multiplexer.Match(cmux.HTTP1Fast())
 		// a different listener for HTTP2 since gRPC uses HTTP2
-		grpcL := m.Match(cmux.HTTP2())
+		grpcL := multiplexer.Match(cmux.HTTP2())
 
-		var terminated bool
 		go func() {
-			if httpErr := server.Serve(httpL); httpErr != nil && !terminated {
-				log.Panic(httpErr)
+			grpcErr := grpcServer.Serve(grpcL)
+			// After grpcServer.GracefulStop(), Serve() returns nil.
+			if grpcErr != nil {
+				log.Panicf("gRPC serve: %v", grpcErr)
 			}
 		}()
 
 		go func() {
-			if grpcErr := grpcServer.Serve(grpcL); grpcErr != nil && !terminated {
-				log.Panic(grpcErr)
+			httpErr := httpServer.Serve(httpL)
+			// After grpcServer.GracefulStop(), Serve() returns cmux.ErrServerClosed as the multiplexer is already closed.
+			if httpErr != nil && !errors.Is(httpErr, cmux.ErrServerClosed) {
+				log.Panicf("http serve: %v", httpErr)
 			}
 		}()
 
 		go func() {
-			if cmuxErr := m.Serve(); cmuxErr != nil && !terminated {
-				log.Panic(cmuxErr)
+			muxErr := multiplexer.Serve()
+			// After grpcServer.GracefulStop(), Serve() returns net.ErrClosed as the multiplexer is already closed.
+			if muxErr != nil && !errors.Is(muxErr, net.ErrClosed) {
+				log.Panicf("multiplexer serve :%v", muxErr)
 			}
 		}()
 
 		<-terminationChan
-		terminated = true
 	},
 }
 

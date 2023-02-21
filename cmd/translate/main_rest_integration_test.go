@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 	"syscall"
 	"testing"
 	"time"
@@ -19,11 +20,13 @@ import (
 const baseAddr = "http://localhost:8080"
 
 func TestMain(m *testing.M) {
-	var terminated bool
-	go func() {
-		main()
+	var wg sync.WaitGroup
 
-		terminated = true
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		main()
 	}()
 
 	// Wait for the program to start and establish a connection.
@@ -36,15 +39,12 @@ func TestMain(m *testing.M) {
 
 	// Run the tests.
 	code := m.Run()
-	// Send soft kill signal to terminationChan.
+	// Send soft kill (termination) signal to terminationChan.
 	terminationChan <- syscall.SIGTERM
 
 	// Wait for main() to finish cleanup.
-	for {
-		if terminated {
-			os.Exit(code)
-		}
-	}
+	wg.Wait()
+	os.Exit(code)
 }
 
 func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string, error) {
