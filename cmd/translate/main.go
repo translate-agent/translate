@@ -36,10 +36,10 @@ var rootCmd = &cobra.Command{
 	Short: "Enables translation for Cloud-native systems",
 	Long:  `Enables translation for Cloud-native systems`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Gracefully shutdown only on Ctrl+C and Termination signal
+		// Gracefully shutdown on Ctrl+C and Termination signal
 		signal.Notify(terminationChan, syscall.SIGTERM, syscall.SIGINT)
 
-		tpShutdown, err := tracer.TracerProvider("http://localhost:14268/api/traces", "translate")
+		tpShutdown, err := tracer.TracerProvider()
 		if err != nil {
 			log.Panic(err)
 		}
@@ -109,6 +109,7 @@ var rootCmd = &cobra.Command{
 			}
 		}()
 
+		// Block until termination signal is received.
 		<-terminationChan
 	},
 }

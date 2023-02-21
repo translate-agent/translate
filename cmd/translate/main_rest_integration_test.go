@@ -20,6 +20,9 @@ import (
 const baseAddr = "http://localhost:8080"
 
 func TestMain(m *testing.M) {
+	os.Setenv("OTEL_SERVICE_NAME", "translate-test")
+	os.Setenv("OTEL_EXPORTER_OTLP_INSECURE", "true")
+
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -29,7 +32,7 @@ func TestMain(m *testing.M) {
 		main()
 	}()
 
-	// Wait for the program to start and establish a connection.
+	// Wait for the server to start and establish a connection.
 	conn, err := net.DialTimeout("tcp", "localhost:8080", time.Second)
 	if err != nil {
 		log.Panic(err)

@@ -5,31 +5,28 @@ import (
 	"fmt"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-func TracerProvider(url, service string) (func(context.Context) error, error) {
-	// Create the Jaeger exporter
-	exp, err := jaeger.New(
-		jaeger.WithCollectorEndpoint(
-			jaeger.WithEndpoint(url),
-		))
+func TracerProvider() (func(context.Context) error, error) {
+	//nolint:lll
+	// OpenTelemetry SDK environment variables docs: https://opentelemetry.io/docs/reference/specification/sdk-environment-variables/
+	// OpenTelemetry Protocol Exporter (OTLP) docs: https://opentelemetry.io/docs/reference/specification/protocol/exporter/
+	exp, err := otlptracehttp.New(context.Background())
 	if err != nil {
-		return nil, fmt.Errorf("create Jeager exporter: %w", err)
+		return nil, fmt.Errorf("create OTLP exporter: %w", err)
 	}
 
-	tp := tracesdk.NewTracerProvider(
+	tp := trace.NewTracerProvider(
 		tracesdk.WithBatcher(exp),
-		tracesdk.WithSampler(tracesdk.AlwaysSample()),
 		tracesdk.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(service),
 		)),
 	)
-
 	otel.SetTracerProvider(tp)
 
 	return tp.Shutdown, nil
