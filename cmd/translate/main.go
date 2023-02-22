@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/joho/godotenv"
 	"github.com/soheilhy/cmux"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -26,8 +27,7 @@ import (
 
 var (
 	cfgFile string
-	// Package level termination channel for integration tests.
-	terminationChan = make(chan os.Signal, 1)
+	envFile string
 )
 
 // rootCmd represents the base command when called without any subcommands.
@@ -37,15 +37,16 @@ var rootCmd = &cobra.Command{
 	Long:  `Enables translation for Cloud-native systems`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Gracefully shutdown on Ctrl+C and Termination signal
+		terminationChan := make(chan os.Signal, 1)
 		signal.Notify(terminationChan, syscall.SIGTERM, syscall.SIGINT)
 
-		tpShutdown, err := tracer.TracerProvider()
+		tp, err := tracer.TracerProvider()
 		if err != nil {
 			log.Panic(err)
 		}
 
 		defer func() {
-			if tpShutdownErr := tpShutdown(context.Background()); tpShutdownErr != nil {
+			if tpShutdownErr := tp.Shutdown(context.Background()); tpShutdownErr != nil {
 				log.Panic(tpShutdownErr)
 			}
 		}()
@@ -124,6 +125,7 @@ func main() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./translate.yaml)")
+	rootCmd.PersistentFlags().StringVar(&envFile, "env", "", "environment file")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -139,6 +141,15 @@ func initConfig() {
 		// Search config in current directory with name "translate.yaml".
 		viper.AddConfigPath(dir)
 		viper.SetConfigFile("translate.yaml")
+	}
+
+	if envFile != "" {
+		fmt.Printf("Using environment: '%s'\n", envFile)
+
+		err := godotenv.Load(envFile)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

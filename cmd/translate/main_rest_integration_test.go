@@ -20,8 +20,7 @@ import (
 const baseAddr = "http://localhost:8080"
 
 func TestMain(m *testing.M) {
-	os.Setenv("OTEL_SERVICE_NAME", "translate-test")
-	os.Setenv("OTEL_EXPORTER_OTLP_INSECURE", "true")
+	envFile = "../../.env.test"
 
 	var wg sync.WaitGroup
 
@@ -42,9 +41,11 @@ func TestMain(m *testing.M) {
 
 	// Run the tests.
 	code := m.Run()
-	// Send soft kill (termination) signal to terminationChan.
-	terminationChan <- syscall.SIGTERM
-
+	// Send soft kill (termination) signal to process.
+	err = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+	if err != nil {
+		log.Panic(err)
+	}
 	// Wait for main() to finish cleanup.
 	wg.Wait()
 	os.Exit(code)
