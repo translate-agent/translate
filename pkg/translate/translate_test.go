@@ -96,7 +96,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 				Data:     []byte(`{"key":"value"}`),
 				Schema:   pb.Schema_UNSPECIFIED,
 			},
-			wantErr: errors.New("'schema' must be specified"),
+			wantErr: errors.New("'schema' is required"),
 		},
 	}
 	for _, tt := range tests {
