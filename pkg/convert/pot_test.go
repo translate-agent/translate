@@ -224,8 +224,7 @@ func Test_ToPot(t *testing.T) {
 			if !assert.NoError(t, err) {
 				return
 			}
-			fmt.Printf("expected %v\n", string(tt.expected))
-			fmt.Printf("result %v\n", string(result))
+
 			assert.Equal(t, tt.expected, result)
 		})
 	}
