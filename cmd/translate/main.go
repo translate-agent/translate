@@ -13,22 +13,19 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/joho/godotenv"
 	"github.com/soheilhy/cmux"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	pb "go.expect.digital/translate/pkg/server/translate/v1"
-	"go.expect.digital/translate/pkg/tracer"
-	"go.expect.digital/translate/pkg/translate"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	pb "go.expect.digital/translate/pkg/server/translate/v1"
+	"go.expect.digital/translate/pkg/tracer"
+	"go.expect.digital/translate/pkg/translate"
 )
 
-var (
-	cfgFile string
-	envFile string
-)
+var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
@@ -125,7 +122,6 @@ func main() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./translate.yaml)")
-	rootCmd.PersistentFlags().StringVar(&envFile, "env", "", "environment file")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -141,15 +137,6 @@ func initConfig() {
 		// Search config in current directory with name "translate.yaml".
 		viper.AddConfigPath(dir)
 		viper.SetConfigFile("translate.yaml")
-	}
-
-	if envFile != "" {
-		fmt.Printf("Using environment: '%s'\n", envFile)
-
-		err := godotenv.Load(envFile)
-		if err != nil {
-			log.Println(err)
-		}
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

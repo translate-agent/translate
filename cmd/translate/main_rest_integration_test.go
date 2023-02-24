@@ -20,8 +20,6 @@ import (
 const baseAddr = "http://localhost:8080"
 
 func TestMain(m *testing.M) {
-	envFile = "../../.env.test"
-
 	var wg sync.WaitGroup
 
 	wg.Add(1)

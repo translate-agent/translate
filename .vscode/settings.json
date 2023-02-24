@@ -7,5 +7,6 @@
         "cmd": "earthly +proto"
       },
     ]
-  }
+  },
+  "go.testEnvFile": "${workspaceFolder}/.env.test",
 }
