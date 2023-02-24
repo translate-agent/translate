@@ -1,9 +1,11 @@
-VERSION 0.6
-ARG go_version=1.20
-ARG golangci_lint_version=1.51.1
+VERSION 0.7
+ARG --global go_version=1.20.1
+ARG --global golangci_lint_version=1.51.2
+ARG --global bufbuild_version=1.14.0
+FROM golang:$go_version-alpine
+
 
 deps:
-  FROM golang:$go_version-alpine
   ENV CGO_ENABLED=0
   RUN wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v$golangci_lint_version
   WORKDIR /translate
@@ -13,7 +15,7 @@ deps:
   SAVE ARTIFACT go.sum AS LOCAL go.sum
 
 proto:
-  FROM bufbuild/buf
+  FROM bufbuild/buf:$bufbuild_version
   ENV BUF_CACHE_DIR=/.cache/buf_cache
   COPY --dir api/translate .
   WORKDIR translate
