@@ -1,6 +1,7 @@
 package convert
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,16 +14,26 @@ func Test_ToPot(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		model    model.Messages
+		input    model.Messages
 		expected []byte
 	}{
 		{
 			name: "When all values are provided",
-			model: model.Messages{
+			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
-					{ID: "Hello, world!", Message: "Bonjour le monde!", Description: "A simple greeting", Fuzzy: true},
-					{ID: "Goodbye!", Message: "Au revoir!", Description: "A farewell", Fuzzy: true},
+					{
+						ID:          "Hello, world!",
+						Message:     "Bonjour le monde!",
+						Description: "A simple greeting",
+						Fuzzy:       true,
+					},
+					{
+						ID:          "Goodbye!",
+						Message:     "Au revoir!",
+						Description: "A farewell",
+						Fuzzy:       true,
+					},
 				},
 			},
 			expected: []byte(
@@ -31,8 +42,111 @@ func Test_ToPot(t *testing.T) {
 					"#. A farewell\n#, fuzzy\nmsgid \"Goodbye!\"\nmsgstr \"Au revoir!\"\n"),
 		},
 		{
+			name: "When msgid is multiline",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello, world!\\n\"\n\"very long string\\n",
+						Message:     "Bonjour le monde!",
+						Description: "A simple greeting",
+						Fuzzy:       true,
+					},
+					{
+						ID:          "Goodbye!",
+						Message:     "Au revoir!",
+						Description: "A farewell",
+						Fuzzy:       true,
+					},
+				},
+			},
+			expected: []byte(
+				"\"Language: en\n" +
+					"#. A simple greeting\n#, " +
+					"fuzzy\n" +
+					"msgid \"\" \n\"Hello, world!\\n\"\n\"very long string\\n\"\n" +
+					"msgstr \"Bonjour le monde!\"\n" +
+					"#. A farewell\n" +
+					"#, fuzzy\nmsgid \"Goodbye!\"\n" +
+					"msgstr \"Au revoir!\"\n"),
+		},
+		{
+			name: "When msgstr is multiline",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello, world!",
+						Message:     "Bonjour le monde!\\n\"\n\"very long string\\n",
+						Description: "A simple greeting", Fuzzy: true,
+					},
+					{
+						ID:          "Goodbye!",
+						Message:     "Au revoir!",
+						Description: "A farewell", Fuzzy: true,
+					},
+				},
+			},
+			expected: []byte(
+				"\"Language: en\n" +
+					"#. A simple greeting\n" +
+					"#, fuzzy\n" +
+					"msgid \"Hello, world!\"\n" +
+					"msgstr \"\" \n\"Bonjour le monde!\\n\"\n\"very long string\\n\"\n" +
+					"#. A farewell\n" +
+					"#, fuzzy\nmsgid \"Goodbye!\"\n" +
+					"msgstr \"Au revoir!\"\n"),
+		},
+		{
+			name: "When msgstr value is qouted",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello, world!",
+						Message:     "This is a \"quoted\" string",
+						Description: "A simple greeting",
+						Fuzzy:       true,
+					},
+					{
+						ID:          "Goodbye!",
+						Message:     "Au revoir!",
+						Description: "A farewell",
+						Fuzzy:       true,
+					},
+				},
+			},
+			expected: []byte(
+				"\"Language: en\n" +
+					"#. A simple greeting\n" +
+					"#, fuzzy\nmsgid \"Hello, world!\"\n" +
+					"msgstr \"This is a \\\"quoted\\\" string\"\n" +
+					"#. A farewell\n" +
+					"#, fuzzy\nmsgid \"Goodbye!\"\n" +
+					"msgstr \"Au revoir!\"\n"),
+		},
+		{
+			name: "When msgid value is qouted",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{ID: "Hello, \"world!\"", Message: "Bonjour le monde!", Description: "A simple greeting", Fuzzy: true},
+					{ID: "Goodbye!", Message: "Au revoir!", Description: "A farewell", Fuzzy: true},
+				},
+			},
+			expected: []byte(
+				"\"Language: en\n" +
+					"#. A simple greeting\n" +
+					"#, fuzzy\n" +
+					"msgid \"Hello, \\\"world!\\\"\"\n" +
+					"msgstr \"Bonjour le monde!\"\n" +
+					"#. A farewell\n" +
+					"#, fuzzy\nmsgid \"Goodbye!\"\n" +
+					"msgstr \"Au revoir!\"\n"),
+		},
+		{
 			name: "When fuzzy values are mixed",
-			model: model.Messages{
+			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
 					{ID: "Hello, world!", Message: "Bonjour le monde!", Description: "A simple greeting", Fuzzy: true},
@@ -41,12 +155,16 @@ func Test_ToPot(t *testing.T) {
 			},
 			expected: []byte(
 				"\"Language: en\n" +
-					"#. A simple greeting\n#, fuzzy\nmsgid \"Hello, world!\"\nmsgstr \"Bonjour le monde!\"\n" +
-					"#. A farewell\nmsgid \"Goodbye!\"\nmsgstr \"Au revoir!\"\n"),
+					"#. A simple greeting\n" +
+					"#, fuzzy\nmsgid \"Hello, world!\"\n" +
+					"msgstr \"Bonjour le monde!\"\n" +
+					"#. A farewell\n" +
+					"msgid \"Goodbye!\"\n" +
+					"msgstr \"Au revoir!\"\n"),
 		},
 		{
 			name: "When fuzzy values are missing",
-			model: model.Messages{
+			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
 					{ID: "Hello, world!", Message: "Bonjour le monde!", Description: "A simple greeting"},
@@ -55,12 +173,16 @@ func Test_ToPot(t *testing.T) {
 			},
 			expected: []byte(
 				"\"Language: en\n" +
-					"#. A simple greeting\nmsgid \"Hello, world!\"\nmsgstr \"Bonjour le monde!\"\n" +
-					"#. A farewell\nmsgid \"Goodbye!\"\nmsgstr \"Au revoir!\"\n"),
+					"#. A simple greeting\n" +
+					"msgid \"Hello, world!\"\n" +
+					"msgstr \"Bonjour le monde!\"\n" +
+					"#. A farewell\n" +
+					"msgid \"Goodbye!\"\n" +
+					"msgstr \"Au revoir!\"\n"),
 		},
 		{
 			name: "When description value is missing",
-			model: model.Messages{
+			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
 					{ID: "Hello, world!", Message: "Bonjour le monde!", Fuzzy: true},
@@ -69,12 +191,16 @@ func Test_ToPot(t *testing.T) {
 			},
 			expected: []byte(
 				"\"Language: en\n" +
-					"#, fuzzy\nmsgid \"Hello, world!\"\nmsgstr \"Bonjour le monde!\"\n" +
-					"#. A farewell\n#, fuzzy\nmsgid \"Goodbye!\"\nmsgstr \"Au revoir!\"\n"),
+					"#, fuzzy\n" +
+					"msgid \"Hello, world!\"\n" +
+					"msgstr \"Bonjour le monde!\"\n" +
+					"#. A farewell\n" +
+					"#, fuzzy\nmsgid \"Goodbye!\"\n" +
+					"msgstr \"Au revoir!\"\n"),
 		},
 		{
 			name: "When description and fuzzy values are missing",
-			model: model.Messages{
+			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
 					{ID: "Hello, world!", Message: "Bonjour le monde!"},
@@ -93,12 +219,13 @@ func Test_ToPot(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result, err := ToPot(tt.model)
+			result, err := ToPot(tt.input)
 
 			if !assert.NoError(t, err) {
 				return
 			}
-
+			fmt.Printf("expected %v\n", string(tt.expected))
+			fmt.Printf("result %v\n", string(result))
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -115,32 +242,17 @@ func TestFromPot(t *testing.T) {
 	}{
 		{
 			name: "Valid input",
-			input: []byte(`{
-				"header": {
-					"language": "en-US",
-					"translator": "John Doe",
-					"pluralForms": {"plural": "n != 1", "nplurals": 2}
-				},
-				"messages": [
-					{
-						"msgId": "Hello",
-						"extractedComment": "a greeting",
-						"flag": "",
-						"msgStr": ["Hello, world!"]
-					},
-					{
-						"msgId": "Goodbye",
-						"extractedComment": "a farewell",
-						"flag": "fuzzy",
-						"msgStr": ["Goodbye, world!"]
-					},
-					{
-						"msgIdPlural": "Apples",
-						"extractedComment": "a plural message",
-						"msgStr": ["Apple", "Apples"]
-					}
-				]
-			}`),
+			input: []byte(`# Language: en-US
+							#. "a greeting"
+							#, ""
+							msgid "Hello"
+							msgstr "Hello, world!"
+							
+							#. "a farewell"
+							#, "fuzzy"
+							msgid "Goodbye"
+							msgstr "Goodbye, world!"
+			`),
 			expected: model.Messages{
 				Language: language.Make("en-US"),
 				Messages: []model.Message{
@@ -158,42 +270,15 @@ func TestFromPot(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: nil,
 		},
 		{
 			name: "Invalid input",
-			input: []byte(`{
-				"header": {
-					"language": "en-US",
-					"translator": "John Doe",
-					"pluralForms": {"plural": "n != 1", "nplurals": 2}
-				},
-				"messages": [
-					{
-						"msgId": "Hello",
-						"extractedComment": "a greeting",
-						"flag": "",
-						"msgStr": ["Hello, world!"]
-					},
-					{
-						"msgIdPlural": "Apples",
-						"extractedComment": "a plural message",
-						"msgStr": ["Apple", "Apples"]
-					}
-				]
-			}`),
-			expected: model.Messages{
-				Language: language.Make("en-US"),
-				Messages: []model.Message{
-					{
-						ID:          "Hello",
-						Message:     "Hello, world!",
-						Description: "a greeting",
-						Fuzzy:       false,
-					},
-				},
-			},
-			expectedErr: nil,
+			input: []byte(`# Language: en-US
+							#. "a greeting"
+							#, ""
+							msgid 323344
+			`),
+			expectedErr: fmt.Errorf("convert tokens to pot.Po: invalid po file: no messages found"),
 		},
 	}
 
@@ -201,9 +286,13 @@ func TestFromPot(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			actual, actualErr := FromPot(tt.input)
-			assert.Equal(t, tt.expectedErr, actualErr)
-			assert.Equal(t, tt.expected, actual)
+			result, err := FromPot(tt.input)
+			if err != nil {
+				assert.Equal(t, tt.expectedErr, fmt.Errorf(err.Error()))
+				return
+			}
+
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

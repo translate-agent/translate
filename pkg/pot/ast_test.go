@@ -178,6 +178,15 @@ func Test_TokensToPo(t *testing.T) {
 			},
 			expectedErr: fmt.Errorf("invalid token type %d", 0),
 		},
+		{
+			name: "Invalid po file: no messages found",
+			input: []Token{
+				{Value: "Language en-US", Type: HeaderLanguage},
+				{Value: "Translator: John Doe", Type: HeaderTranslator},
+				{Value: "Plural-Forms: nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
+			},
+			expectedErr: fmt.Errorf("invalid po file: no messages found"),
+		},
 	}
 
 	for _, tt := range tests {

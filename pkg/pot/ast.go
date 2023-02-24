@@ -95,7 +95,7 @@ func TokensToPo(tokens []Token) (*Po, error) {
 			case len(currentMessage.MsgStr) == token.Index:
 				currentMessage.MsgStr = append(currentMessage.MsgStr, token.Value)
 			case len(currentMessage.MsgStr) < token.Index:
-				return nil, fmt.Errorf("invalid plural string order %d", token.Index)
+				return nil, fmt.Errorf("invalid plural string order: %d", token.Index)
 			}
 
 			if header.PluralForms.NPlurals == len(currentMessage.MsgStr) {
@@ -103,6 +103,10 @@ func TokensToPo(tokens []Token) (*Po, error) {
 				currentMessage = &MessageNode{}
 			}
 		}
+	}
+
+	if len(messages) == 0 {
+		return nil, fmt.Errorf("invalid po file: no messages found")
 	}
 
 	return &Po{
