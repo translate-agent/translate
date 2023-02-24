@@ -2,22 +2,27 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	pb "go.expect.digital/translate/pkg/server/translate/v1"
-	"go.expect.digital/translate/pkg/translate"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/soheilhy/cmux"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	pb "go.expect.digital/translate/pkg/server/translate/v1"
+	"go.expect.digital/translate/pkg/tracer"
+	"go.expect.digital/translate/pkg/translate"
 )
 
 var cfgFile string
@@ -28,10 +33,32 @@ var rootCmd = &cobra.Command{
 	Short: "Enables translation for Cloud-native systems",
 	Long:  `Enables translation for Cloud-native systems`,
 	Run: func(cmd *cobra.Command, args []string) {
-		grpcSever := grpc.NewServer()
+		// Gracefully shutdown on Ctrl+C and Termination signal
+		terminationChan := make(chan os.Signal, 1)
+		signal.Notify(terminationChan, syscall.SIGTERM, syscall.SIGINT)
+
+		tp, err := tracer.TracerProvider()
+		if err != nil {
+			log.Panic(err)
+		}
+
+		defer func() {
+			if tpShutdownErr := tp.Shutdown(context.Background()); tpShutdownErr != nil {
+				log.Panic(tpShutdownErr)
+			}
+		}()
+
+		grpcServer := grpc.NewServer(
+			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
+		)
+		// Gracefully stops GRPC server and closes listener (multiplexer).
+		defer grpcServer.GracefulStop()
+
 		mux := runtime.NewServeMux()
-		pb.RegisterTranslateServiceServer(grpcSever, &translate.TranslateServiceServer{})
-		err := pb.RegisterTranslateServiceHandlerFromEndpoint(
+		pb.RegisterTranslateServiceServer(grpcServer, &translate.TranslateServiceServer{})
+
+		err = pb.RegisterTranslateServiceHandlerFromEndpoint(
 			context.Background(),
 			mux,
 			"localhost:8080",
@@ -40,9 +67,9 @@ var rootCmd = &cobra.Command{
 			log.Panic(err)
 		}
 
-		server := http.Server{
+		httpServer := http.Server{
 			Handler:           mux,
-			ReadHeaderTimeout: time.Minute,
+			ReadHeaderTimeout: time.Second * 5, //nolint:gomnd
 		}
 
 		l, err := net.Listen("tcp", "localhost:8080")
@@ -50,27 +77,38 @@ var rootCmd = &cobra.Command{
 			log.Panic(err)
 		}
 
-		m := cmux.New(l)
+		multiplexer := cmux.New(l)
 		// a different listener for HTTP1
-		httpL := m.Match(cmux.HTTP1Fast())
+		httpL := multiplexer.Match(cmux.HTTP1Fast())
 		// a different listener for HTTP2 since gRPC uses HTTP2
-		grpcL := m.Match(cmux.HTTP2())
+		grpcL := multiplexer.Match(cmux.HTTP2())
 
 		go func() {
-			if err := server.Serve(httpL); err != nil {
-				log.Fatal(err)
+			grpcErr := grpcServer.Serve(grpcL)
+			// After grpcServer.GracefulStop(), Serve() returns nil.
+			if grpcErr != nil {
+				log.Panicf("gRPC serve: %v", grpcErr)
 			}
 		}()
 
 		go func() {
-			if err := grpcSever.Serve(grpcL); err != nil {
-				log.Fatal(err)
+			httpErr := httpServer.Serve(httpL)
+			// After grpcServer.GracefulStop(), Serve() returns cmux.ErrServerClosed as the multiplexer is already closed.
+			if httpErr != nil && !errors.Is(httpErr, cmux.ErrServerClosed) {
+				log.Panicf("http serve: %v", httpErr)
 			}
 		}()
 
-		if err := m.Serve(); err != nil {
-			log.Panic(err)
-		}
+		go func() {
+			muxErr := multiplexer.Serve()
+			// After grpcServer.GracefulStop(), Serve() returns net.ErrClosed as the multiplexer is already closed.
+			if muxErr != nil && !errors.Is(muxErr, net.ErrClosed) {
+				log.Panicf("multiplexer serve :%v", muxErr)
+			}
+		}()
+
+		// Block until termination signal is received.
+		<-terminationChan
 	},
 }
 
