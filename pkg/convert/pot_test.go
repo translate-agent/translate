@@ -36,10 +36,16 @@ func Test_ToPot(t *testing.T) {
 					},
 				},
 			},
-			expected: []byte(
-				"\"Language: en\n" +
-					"#. A simple greeting\n#, fuzzy\nmsgid \"Hello, world!\"\nmsgstr \"Bonjour le monde!\"\n" +
-					"#. A farewell\n#, fuzzy\nmsgid \"Goodbye!\"\nmsgstr \"Au revoir!\"\n"),
+			expected: []byte(`"Language: en
+#. A simple greeting
+#, fuzzy
+msgid "Hello, world!"
+msgstr "Bonjour le monde!"
+#. A farewell
+#, fuzzy
+msgid "Goodbye!"
+msgstr "Au revoir!"
+`),
 		},
 		{
 			name: "When msgid is multiline",
@@ -60,15 +66,18 @@ func Test_ToPot(t *testing.T) {
 					},
 				},
 			},
-			expected: []byte(
-				"\"Language: en\n" +
-					"#. A simple greeting\n#, " +
-					"fuzzy\n" +
-					"msgid \"\" \n\"Hello, world!\\n\"\n\"very long string\\n\"\n" +
-					"msgstr \"Bonjour le monde!\"\n" +
-					"#. A farewell\n" +
-					"#, fuzzy\nmsgid \"Goodbye!\"\n" +
-					"msgstr \"Au revoir!\"\n"),
+			expected: []byte(`"Language: en
+#. A simple greeting
+#, fuzzy
+msgid "" 
+"Hello, world!\n"
+"very long string\n"
+msgstr "Bonjour le monde!"
+#. A farewell
+#, fuzzy
+msgid "Goodbye!"
+msgstr "Au revoir!"
+`),
 		},
 		{
 			name: "When msgstr is multiline",
@@ -87,15 +96,18 @@ func Test_ToPot(t *testing.T) {
 					},
 				},
 			},
-			expected: []byte(
-				"\"Language: en\n" +
-					"#. A simple greeting\n" +
-					"#, fuzzy\n" +
-					"msgid \"Hello, world!\"\n" +
-					"msgstr \"\" \n\"Bonjour le monde!\\n\"\n\"very long string\\n\"\n" +
-					"#. A farewell\n" +
-					"#, fuzzy\nmsgid \"Goodbye!\"\n" +
-					"msgstr \"Au revoir!\"\n"),
+			expected: []byte(`"Language: en
+#. A simple greeting
+#, fuzzy
+msgid "Hello, world!"
+msgstr "" 
+"Bonjour le monde!\n"
+"very long string\n"
+#. A farewell
+#, fuzzy
+msgid "Goodbye!"
+msgstr "Au revoir!"
+`),
 		},
 		{
 			name: "When msgstr value is qouted",
@@ -116,14 +128,16 @@ func Test_ToPot(t *testing.T) {
 					},
 				},
 			},
-			expected: []byte(
-				"\"Language: en\n" +
-					"#. A simple greeting\n" +
-					"#, fuzzy\nmsgid \"Hello, world!\"\n" +
-					"msgstr \"This is a \\\"quoted\\\" string\"\n" +
-					"#. A farewell\n" +
-					"#, fuzzy\nmsgid \"Goodbye!\"\n" +
-					"msgstr \"Au revoir!\"\n"),
+			expected: []byte(`"Language: en
+#. A simple greeting
+#, fuzzy
+msgid "Hello, world!"
+msgstr "This is a \"quoted\" string"
+#. A farewell
+#, fuzzy
+msgid "Goodbye!"
+msgstr "Au revoir!"
+`),
 		},
 		{
 			name: "When msgid value is qouted",
@@ -134,15 +148,16 @@ func Test_ToPot(t *testing.T) {
 					{ID: "Goodbye!", Message: "Au revoir!", Description: "A farewell", Fuzzy: true},
 				},
 			},
-			expected: []byte(
-				"\"Language: en\n" +
-					"#. A simple greeting\n" +
-					"#, fuzzy\n" +
-					"msgid \"Hello, \\\"world!\\\"\"\n" +
-					"msgstr \"Bonjour le monde!\"\n" +
-					"#. A farewell\n" +
-					"#, fuzzy\nmsgid \"Goodbye!\"\n" +
-					"msgstr \"Au revoir!\"\n"),
+			expected: []byte(`"Language: en
+#. A simple greeting
+#, fuzzy
+msgid "Hello, \"world!\""
+msgstr "Bonjour le monde!"
+#. A farewell
+#, fuzzy
+msgid "Goodbye!"
+msgstr "Au revoir!"
+`),
 		},
 		{
 			name: "When fuzzy values are mixed",
@@ -153,14 +168,15 @@ func Test_ToPot(t *testing.T) {
 					{ID: "Goodbye!", Message: "Au revoir!", Description: "A farewell", Fuzzy: false},
 				},
 			},
-			expected: []byte(
-				"\"Language: en\n" +
-					"#. A simple greeting\n" +
-					"#, fuzzy\nmsgid \"Hello, world!\"\n" +
-					"msgstr \"Bonjour le monde!\"\n" +
-					"#. A farewell\n" +
-					"msgid \"Goodbye!\"\n" +
-					"msgstr \"Au revoir!\"\n"),
+			expected: []byte(`"Language: en
+#. A simple greeting
+#, fuzzy
+msgid "Hello, world!"
+msgstr "Bonjour le monde!"
+#. A farewell
+msgid "Goodbye!"
+msgstr "Au revoir!"
+`),
 		},
 		{
 			name: "When fuzzy values are missing",
@@ -171,14 +187,14 @@ func Test_ToPot(t *testing.T) {
 					{ID: "Goodbye!", Message: "Au revoir!", Description: "A farewell"},
 				},
 			},
-			expected: []byte(
-				"\"Language: en\n" +
-					"#. A simple greeting\n" +
-					"msgid \"Hello, world!\"\n" +
-					"msgstr \"Bonjour le monde!\"\n" +
-					"#. A farewell\n" +
-					"msgid \"Goodbye!\"\n" +
-					"msgstr \"Au revoir!\"\n"),
+			expected: []byte(`"Language: en
+#. A simple greeting
+msgid "Hello, world!"
+msgstr "Bonjour le monde!"
+#. A farewell
+msgid "Goodbye!"
+msgstr "Au revoir!"
+`),
 		},
 		{
 			name: "When description value is missing",
@@ -189,14 +205,15 @@ func Test_ToPot(t *testing.T) {
 					{ID: "Goodbye!", Message: "Au revoir!", Description: "A farewell", Fuzzy: true},
 				},
 			},
-			expected: []byte(
-				"\"Language: en\n" +
-					"#, fuzzy\n" +
-					"msgid \"Hello, world!\"\n" +
-					"msgstr \"Bonjour le monde!\"\n" +
-					"#. A farewell\n" +
-					"#, fuzzy\nmsgid \"Goodbye!\"\n" +
-					"msgstr \"Au revoir!\"\n"),
+			expected: []byte(`"Language: en
+#, fuzzy
+msgid "Hello, world!"
+msgstr "Bonjour le monde!"
+#. A farewell
+#, fuzzy
+msgid "Goodbye!"
+msgstr "Au revoir!"
+`),
 		},
 		{
 			name: "When description and fuzzy values are missing",
@@ -207,10 +224,12 @@ func Test_ToPot(t *testing.T) {
 					{ID: "Goodbye!", Message: "Au revoir!"},
 				},
 			},
-			expected: []byte(
-				"\"Language: en\n" +
-					"msgid \"Hello, world!\"\nmsgstr \"Bonjour le monde!\"\n" +
-					"msgid \"Goodbye!\"\nmsgstr \"Au revoir!\"\n"),
+			expected: []byte(`"Language: en
+msgid "Hello, world!"
+msgstr "Bonjour le monde!"
+msgid "Goodbye!"
+msgstr "Au revoir!"
+`),
 		},
 	}
 
@@ -224,7 +243,8 @@ func Test_ToPot(t *testing.T) {
 			if !assert.NoError(t, err) {
 				return
 			}
-
+			fmt.Printf("exp: %v\n", string(tt.expected))
+			fmt.Printf("res: %v\n", string(result))
 			assert.Equal(t, tt.expected, result)
 		})
 	}

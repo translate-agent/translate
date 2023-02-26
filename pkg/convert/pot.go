@@ -13,7 +13,10 @@ import (
 func ToPot(m model.Messages) ([]byte, error) {
 	var b bytes.Buffer
 
-	b.WriteString(fmt.Sprintf("\"Language: %s\n", m.Language))
+	_, err := fmt.Fprintf(&b, "\"Language: %s\n", m.Language)
+	if err != nil {
+		return nil, fmt.Errorf("write language: %w", err)
+	}
 
 	for _, message := range m.Messages {
 		if message.Description != "" {
@@ -39,20 +42,20 @@ func ToPot(m model.Messages) ([]byte, error) {
 			messageIdWithQuotes := strings.ReplaceAll(message.ID, "\"", "\\\"")
 			_, err := fmt.Fprintf(&b, "msgid \"%s\"\n", messageIdWithQuotes)
 			if err != nil {
-				return nil, fmt.Errorf("write msgid: %w", err)
+				return nil, fmt.Errorf("write msgid with quotes: %w", err)
 			}
 		}
 
 		if strings.HasSuffix(message.Message, "\\n") {
 			_, err := fmt.Fprintf(&b, "msgstr \"\" \n\"%s\"\n", message.Message)
 			if err != nil {
-				return nil, fmt.Errorf("write msgid: %w", err)
+				return nil, fmt.Errorf("write msgstr: %w", err)
 			}
 		} else {
 			messageWithQuotes := strings.ReplaceAll(message.Message, "\"", "\\\"")
 			_, err := fmt.Fprintf(&b, "msgstr \"%s\"\n", messageWithQuotes)
 			if err != nil {
-				return nil, fmt.Errorf("write msgid: %w", err)
+				return nil, fmt.Errorf("write msgstr with quotes: %w", err)
 			}
 		}
 	}
@@ -69,7 +72,8 @@ func FromPot(b []byte) (model.Messages, error) {
 	}
 
 	messages := make([]model.Message, 0, len(po.Messages))
-
+	// model.Messages does not support plurals atm. But we plan to impl it under:
+	// https://github.com/orgs/translate-agent/projects/1?pane=issue&itemId=21251425
 	for _, node := range po.Messages {
 		if node.MsgIdPlural != "" {
 			continue
