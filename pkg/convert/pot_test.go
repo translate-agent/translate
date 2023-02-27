@@ -41,10 +41,12 @@ func Test_ToPot(t *testing.T) {
 #, fuzzy
 msgid "Hello, world!"
 msgstr "Bonjour le monde!"
+
 #. A farewell
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
+
 `),
 		},
 		{
@@ -69,14 +71,16 @@ msgstr "Au revoir!"
 			expected: []byte(`"Language: en
 #. A simple greeting
 #, fuzzy
-msgid "" 
+msgid ""
 "Hello, world!\n"
 "very long string\n"
 msgstr "Bonjour le monde!"
+
 #. A farewell
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
+
 `),
 		},
 		{
@@ -100,13 +104,15 @@ msgstr "Au revoir!"
 #. A simple greeting
 #, fuzzy
 msgid "Hello, world!"
-msgstr "" 
+msgstr ""
 "Bonjour le monde!\n"
 "very long string\n"
+
 #. A farewell
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
+
 `),
 		},
 		{
@@ -133,10 +139,12 @@ msgstr "Au revoir!"
 #, fuzzy
 msgid "Hello, world!"
 msgstr "This is a \"quoted\" string"
+
 #. A farewell
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
+
 `),
 		},
 		{
@@ -153,10 +161,12 @@ msgstr "Au revoir!"
 #, fuzzy
 msgid "Hello, \"world!\""
 msgstr "Bonjour le monde!"
+
 #. A farewell
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
+
 `),
 		},
 		{
@@ -173,9 +183,11 @@ msgstr "Au revoir!"
 #, fuzzy
 msgid "Hello, world!"
 msgstr "Bonjour le monde!"
+
 #. A farewell
 msgid "Goodbye!"
 msgstr "Au revoir!"
+
 `),
 		},
 		{
@@ -191,9 +203,11 @@ msgstr "Au revoir!"
 #. A simple greeting
 msgid "Hello, world!"
 msgstr "Bonjour le monde!"
+
 #. A farewell
 msgid "Goodbye!"
 msgstr "Au revoir!"
+
 `),
 		},
 		{
@@ -209,10 +223,12 @@ msgstr "Au revoir!"
 #, fuzzy
 msgid "Hello, world!"
 msgstr "Bonjour le monde!"
+
 #. A farewell
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
+
 `),
 		},
 		{
@@ -227,8 +243,10 @@ msgstr "Au revoir!"
 			expected: []byte(`"Language: en
 msgid "Hello, world!"
 msgstr "Bonjour le monde!"
+
 msgid "Goodbye!"
 msgstr "Au revoir!"
+
 `),
 		},
 	}
@@ -306,9 +324,9 @@ func TestFromPot(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			result, err := FromPot(tt.input)
-			if err != nil {
-				assert.Equal(t, tt.expectedErr, fmt.Errorf(err.Error()))
-				return
+
+			if tt.expectedErr != nil {
+				assert.Errorf(t, err, tt.expectedErr.Error())
 			}
 
 			assert.Equal(t, tt.expected, result)

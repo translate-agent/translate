@@ -34,23 +34,23 @@ type MessageNode struct {
 }
 
 type Po struct {
-	Header   *HeaderNode
-	Messages []*MessageNode
+	Header   HeaderNode
+	Messages []MessageNode
 }
 
-func TokensToPo(tokens []Token) (*Po, error) {
-	var messages []*MessageNode
+func TokensToPo(tokens []Token) (Po, error) {
+	var messages []MessageNode
 
 	partsN := 2
-	currentMessage := &MessageNode{}
-	header := &HeaderNode{}
+	currentMessage := MessageNode{}
+	header := HeaderNode{}
 
 	for _, token := range tokens {
 		switch token.Type {
 		case HeaderLanguage:
 			parts := strings.Split(token.Value, ": ")
 			if len(parts) < partsN {
-				return nil, fmt.Errorf("invalid language header format")
+				return Po{}, fmt.Errorf("invalid language header format")
 			}
 
 			languageCode := parts[1]
@@ -60,7 +60,7 @@ func TokensToPo(tokens []Token) (*Po, error) {
 		case HeaderPluralForms:
 			pf, err := parsePluralForms(token.Value)
 			if err != nil {
-				return nil, err
+				return Po{}, err
 			}
 
 			header.PluralForms = pf
@@ -87,7 +87,7 @@ func TokensToPo(tokens []Token) (*Po, error) {
 		case MsgStr:
 			currentMessage.MsgStr = []string{token.Value}
 			messages = append(messages, currentMessage)
-			currentMessage = &MessageNode{}
+			currentMessage = MessageNode{}
 		case PluralMsgStr:
 			switch {
 			case token.Index == 0:
@@ -95,21 +95,21 @@ func TokensToPo(tokens []Token) (*Po, error) {
 			case len(currentMessage.MsgStr) == token.Index:
 				currentMessage.MsgStr = append(currentMessage.MsgStr, token.Value)
 			case len(currentMessage.MsgStr) < token.Index:
-				return nil, fmt.Errorf("invalid plural string order: %d", token.Index)
+				return Po{}, fmt.Errorf("invalid plural string order: %d", token.Index)
 			}
 
 			if header.PluralForms.NPlurals == len(currentMessage.MsgStr) {
 				messages = append(messages, currentMessage)
-				currentMessage = &MessageNode{}
+				currentMessage = MessageNode{}
 			}
 		}
 	}
 
 	if len(messages) == 0 {
-		return nil, fmt.Errorf("invalid po file: no messages found")
+		return Po{}, fmt.Errorf("invalid po file: no messages found")
 	}
 
-	return &Po{
+	return Po{
 		Header:   header,
 		Messages: messages,
 	}, nil
