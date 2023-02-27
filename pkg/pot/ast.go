@@ -48,12 +48,12 @@ func TokensToPo(tokens []Token) (Po, error) {
 	for _, token := range tokens {
 		switch token.Type {
 		case HeaderLanguage:
-			parts := strings.Split(token.Value, ": ")
+			parts := strings.Split(token.Value, ":")
 			if len(parts) < partsN {
 				return Po{}, fmt.Errorf("invalid language header format")
 			}
 
-			languageCode := parts[1]
+			languageCode := strings.TrimSpace(parts[1])
 			header.Language = language.Make(languageCode)
 		case HeaderTranslator:
 			header.Translator = token.Value

@@ -326,6 +326,10 @@ func TestFromPot(t *testing.T) {
 
 			if tt.expectedErr != nil {
 				assert.Errorf(t, err, tt.expectedErr.Error())
+				return
+			}
+			if !assert.NoError(t, err) {
+				return
 			}
 
 			assert.Equal(t, tt.expected, result)
