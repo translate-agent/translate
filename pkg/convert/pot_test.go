@@ -261,8 +261,7 @@ msgstr "Au revoir!"
 			if !assert.NoError(t, err) {
 				return
 			}
-			fmt.Printf("exp: %v\n", string(tt.expected))
-			fmt.Printf("res: %v\n", string(result))
+
 			assert.Equal(t, tt.expected, result)
 		})
 	}

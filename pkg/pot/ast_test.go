@@ -193,7 +193,12 @@ func Test_TokensToPo(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			result, _ := TokensToPo(tt.input)
+			result, err := TokensToPo(tt.input)
+
+			if tt.expectedErr != nil {
+				assert.Errorf(t, err, tt.expectedErr.Error())
+			}
+
 			assert.Equal(t, tt.expected, result)
 		})
 	}
