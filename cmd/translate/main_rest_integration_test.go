@@ -4,50 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"mime/multipart"
-	"net"
 	"net/http"
-	"os"
-	"sync"
-	"syscall"
+	"net/url"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
-
-const baseAddr = "http://localhost:8080"
-
-func TestMain(m *testing.M) {
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		main()
-	}()
-
-	// Wait for the server to start and establish a connection.
-	conn, err := net.DialTimeout("tcp", "localhost:8080", time.Second)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	conn.Close()
-
-	// Run the tests.
-	code := m.Run()
-	// Send soft kill (termination) signal to process.
-	err = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
-	if err != nil {
-		log.Panic(err)
-	}
-	// Wait for main() to finish cleanup.
-	wg.Wait()
-	os.Exit(code)
-}
 
 func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string, error) {
 	t.Helper()
@@ -74,12 +37,11 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	addr := baseAddr + "/v1/files/"
 
 	type params struct {
-		Schema string
-		URL    string
-		Data   []byte
+		fileSchema string
+		path       string
+		data       []byte
 	}
 
 	tests := []struct {
@@ -90,9 +52,9 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 		{
 			name: "Happy Path",
 			params: params{
-				Schema: "GO",
-				URL:    addr + "lv-LV",
-				Data: []byte(`{
+				fileSchema: "GO",
+				path:       "v1/files/lv-LV",
+				data: []byte(`{
 					"messages": [
 						{
 							"id": "1",
@@ -110,9 +72,9 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 		{
 			name: "Invalid argument",
 			params: params{
-				Schema: "GO",
-				URL:    addr + "lv-LV-asd",
-				Data: []byte(`{
+				fileSchema: "GO",
+				path:       "v1/files/lv-LV-asd",
+				data: []byte(`{
 					"messages": [
 						{
 							"id": "1",
@@ -133,20 +95,26 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			body, contentType, err := attachFile(tt.params.Data, t)
+			query := url.Values{}
+			query.Add("schema", tt.params.fileSchema)
+
+			u := url.URL{
+				Scheme:   transferProtocol,
+				Host:     addr + ":" + port,
+				Path:     tt.params.path,
+				RawQuery: query.Encode(),
+			}
+
+			body, contentType, err := attachFile(tt.params.data, t)
 			if !assert.NoError(t, err) {
 				return
 			}
 
-			req, err := http.NewRequestWithContext(ctx, "PUT", tt.params.URL, body)
+			req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), body)
 			if !assert.NoError(t, err) {
 				return
 			}
 			req.Header.Add("Content-Type", contentType)
-
-			q := req.URL.Query()
-			q.Add("schema", tt.params.Schema)
-			req.URL.RawQuery = q.Encode()
 
 			resp, err := http.DefaultClient.Do(req)
 			if !assert.NoError(t, err) {
@@ -163,11 +131,10 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	addr := baseAddr + "/v1/files/"
 
 	type params struct {
-		Schema string
-		URL    string
+		fileSchema string
+		path       string
 	}
 
 	tests := []struct {
@@ -178,16 +145,16 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 		{
 			name: "Happy path",
 			params: params{
-				Schema: "GO",
-				URL:    addr + "lv-LV",
+				fileSchema: "GO",
+				path:       "v1/files/lv-LV",
 			},
 			want: http.StatusOK,
 		},
 		{
 			name: "Invalid argument",
 			params: params{
-				Schema: "GO",
-				URL:    addr + "lv-LV-asd",
+				fileSchema: "GO",
+				path:       "v1/files/lv-LV-asd",
 			},
 			want: http.StatusBadRequest,
 		},
@@ -197,15 +164,20 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			req, err := http.NewRequestWithContext(ctx, "GET", tt.params.URL, nil)
+			query := url.Values{}
+			query.Add("schema", tt.params.fileSchema)
+
+			u := url.URL{
+				Scheme:   transferProtocol,
+				Host:     addr + ":" + port,
+				Path:     tt.params.path,
+				RawQuery: query.Encode(),
+			}
+
+			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 			if !assert.NoError(t, err) {
 				return
 			}
-
-			// Add Schema as query parameter
-			q := req.URL.Query()
-			q.Add("schema", tt.params.Schema)
-			req.URL.RawQuery = q.Encode()
 
 			resp, err := http.DefaultClient.Do(req)
 			if !assert.NoError(t, err) {

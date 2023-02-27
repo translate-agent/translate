@@ -1,6 +1,5 @@
 {
   "recommendations": [
-    "aleksandra.go-group-imports",
     "emeraldwalk.runonsave",
     "mikestead.dotenv",
     "bufbuild.vscode-buf",

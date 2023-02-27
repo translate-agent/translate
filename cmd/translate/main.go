@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -33,6 +34,7 @@ var rootCmd = &cobra.Command{
 	Short: "Enables translation for Cloud-native systems",
 	Long:  `Enables translation for Cloud-native systems`,
 	Run: func(cmd *cobra.Command, args []string) {
+		addr := ":" + viper.GetString("service.port")
 		// Gracefully shutdown on Ctrl+C and Termination signal
 		terminationChan := make(chan os.Signal, 1)
 		signal.Notify(terminationChan, syscall.SIGTERM, syscall.SIGINT)
@@ -61,7 +63,7 @@ var rootCmd = &cobra.Command{
 		err = pb.RegisterTranslateServiceHandlerFromEndpoint(
 			context.Background(),
 			mux,
-			"localhost:8080",
+			addr,
 			[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())})
 		if err != nil {
 			log.Panic(err)
@@ -72,7 +74,7 @@ var rootCmd = &cobra.Command{
 			ReadHeaderTimeout: time.Second * 5, //nolint:gomnd
 		}
 
-		l, err := net.Listen("tcp", "localhost:8080")
+		l, err := net.Listen("tcp", addr)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -122,27 +124,33 @@ func main() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./translate.yaml)")
+	rootCmd.PersistentFlags().Uint("port", 8080, "port to run on") //nolint:gomnd
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find current dir.
-		dir, err := os.Getwd()
-		cobra.CheckErr(err)
-
-		// Search config in current directory with name "translate.yaml".
-		viper.AddConfigPath(dir)
-		viper.SetConfigFile("translate.yaml")
+	// Use default config file if not set.
+	if cfgFile == "" {
+		cfgFile = "translate.yaml"
 	}
 
-	viper.AutomaticEnv() // read in environment variables that match
+	viper.SetConfigFile(cfgFile)
 
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	viper.SetEnvPrefix("translate")
+	// Replace underscores with dots in environment variable names.
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
+
+	// Try to read config.
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+	} else {
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	}
+
+	// For now manually bind CLI argument to viper.
+	err := viper.BindPFlag("service.port", rootCmd.Flags().Lookup("port"))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 	}
 }
