@@ -75,8 +75,6 @@ func TestMain(m *testing.M) {
 func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
 	tests := []struct {
 		req  *pb.UploadTranslationFileRequest
 		name string
@@ -151,7 +149,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.UploadTranslationFile(ctx, tt.req)
+			_, err := client.UploadTranslationFile(context.Background(), tt.req)
 
 			assert.Equal(t, tt.want, status.Code(err))
 		})
@@ -160,8 +158,6 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
-
-	ctx := context.Background()
 
 	tests := []struct {
 		req  *pb.DownloadTranslationFileRequest
@@ -185,7 +181,7 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.DownloadTranslationFile(ctx, tt.req)
+			_, err := client.DownloadTranslationFile(context.Background(), tt.req)
 
 			assert.Equal(t, tt.want, status.Code(err))
 		})

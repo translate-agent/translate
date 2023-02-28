@@ -36,8 +36,6 @@ func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string, error) {
 func Test_UploadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
 	type params struct {
 		fileSchema string
 		path       string
@@ -110,7 +108,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 				return
 			}
 
-			req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), body)
+			req, err := http.NewRequestWithContext(context.Background(), "PUT", u.String(), body)
 			if !assert.NoError(t, err) {
 				return
 			}
@@ -129,8 +127,6 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 
 func Test_DownloadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
-
-	ctx := context.Background()
 
 	type params struct {
 		fileSchema string
@@ -174,7 +170,7 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 				RawQuery: query.Encode(),
 			}
 
-			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+			req, err := http.NewRequestWithContext(context.Background(), "GET", u.String(), nil)
 			if !assert.NoError(t, err) {
 				return
 			}
