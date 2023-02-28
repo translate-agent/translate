@@ -64,7 +64,7 @@ func TestMain(m *testing.M) {
 		grpc.WithBlock(),
 	}
 	// Wait for the server to start and establish a connection.
-	conn, err := grpc.DialContext(context.Background(), ":"+port, grpcOpts...)
+	conn, err := grpc.DialContext(context.Background(), host+":"+port, grpcOpts...)
 	if err != nil {
 		log.Panic(err)
 	}
