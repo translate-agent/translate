@@ -29,7 +29,7 @@ var (
 
 func mustGetFreePort() string {
 	// Listen on port 0 to have the operating system allocate an available port.
-	l, err := net.Listen("tcp", ":0") //nolint:gosec
+	l, err := net.Listen("tcp", host+":0")
 	if err != nil {
 		log.Panicf("get free port: %v", err.Error())
 	}
@@ -42,8 +42,8 @@ func mustGetFreePort() string {
 }
 
 func TestMain(m *testing.M) {
-	port = mustGetFreePort()
 	host = "localhost"
+	port = mustGetFreePort()
 
 	viper.Set("service.port", port)
 	viper.Set("service.host", host)
