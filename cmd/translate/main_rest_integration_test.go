@@ -97,8 +97,8 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			query.Add("schema", tt.params.fileSchema)
 
 			u := url.URL{
-				Scheme:   transferProtocol,
-				Host:     addr + ":" + port,
+				Scheme:   "http",
+				Host:     host + ":" + port,
 				Path:     tt.params.path,
 				RawQuery: query.Encode(),
 			}
@@ -164,8 +164,8 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			query.Add("schema", tt.params.fileSchema)
 
 			u := url.URL{
-				Scheme:   transferProtocol,
-				Host:     addr + ":" + port,
+				Scheme:   "http",
+				Host:     host + ":" + port,
 				Path:     tt.params.path,
 				RawQuery: query.Encode(),
 			}

@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net"
 	"os"
 	"sync"
 	"syscall"
@@ -19,14 +21,33 @@ import (
 )
 
 var (
-	transferProtocol string // http or https
-	addr             string
-	port             string
+	host string
+	port string
 
 	client pb.TranslateServiceClient
 )
 
+func mustGetFreePort() string {
+	// Listen on port 0 to have the operating system allocate an available port.
+	l, err := net.Listen("tcp", ":0") //nolint:gosec
+	if err != nil {
+		log.Panicf("get free port: %v", err.Error())
+	}
+	defer l.Close()
+
+	// Get the port number from the address that the Listener is listening on.
+	addr := l.Addr().(*net.TCPAddr)
+
+	return fmt.Sprint(addr.Port)
+}
+
 func TestMain(m *testing.M) {
+	port = mustGetFreePort()
+	host = "localhost"
+
+	viper.Set("service.port", port)
+	viper.Set("service.host", host)
+
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -35,14 +56,6 @@ func TestMain(m *testing.M) {
 		defer wg.Done()
 		main()
 	}()
-
-	// Wait until viper finishes initialization.
-	for viper.GetUint("service.port") == 0 {
-	}
-
-	addr = viper.GetString("service.address")
-	port = viper.GetString("service.port")
-	transferProtocol = viper.GetString("service.protocol")
 
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -57,7 +70,6 @@ func TestMain(m *testing.M) {
 	}
 
 	client = pb.NewTranslateServiceClient(conn)
-
 	// Run the tests.
 	code := m.Run()
 	// Send soft kill (termination) signal to process.

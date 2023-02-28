@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -34,7 +33,7 @@ var rootCmd = &cobra.Command{
 	Short: "Enables translation for Cloud-native systems",
 	Long:  `Enables translation for Cloud-native systems`,
 	Run: func(cmd *cobra.Command, args []string) {
-		addr := ":" + viper.GetString("service.port")
+		addr := viper.GetString("service.host") + ":" + viper.GetString("service.port")
 		// Gracefully shutdown on Ctrl+C and Termination signal
 		terminationChan := make(chan os.Signal, 1)
 		signal.Notify(terminationChan, syscall.SIGTERM, syscall.SIGINT)
@@ -123,17 +122,13 @@ func main() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./translate.yaml)")
-	rootCmd.PersistentFlags().Uint("port", 8080, "port to run on") //nolint:gomnd
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "translate.yaml", "config file")
+	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
+	rootCmd.PersistentFlags().String("host", "localhost", "host to run service on")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	// Use default config file if not set.
-	if cfgFile == "" {
-		cfgFile = "translate.yaml"
-	}
-
 	viper.SetConfigFile(cfgFile)
 
 	viper.SetEnvPrefix("translate")
@@ -142,15 +137,18 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	// Try to read config.
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-	} else {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	if err := viper.ReadInConfig(); err != nil && cfgFile != "translate.yaml" {
+		log.Panic(err)
 	}
 
-	// For now manually bind CLI argument to viper.
+	// For now manually bind CLI arguments to viper.
 	err := viper.BindPFlag("service.port", rootCmd.Flags().Lookup("port"))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		log.Panic(err)
+	}
+
+	err = viper.BindPFlag("service.host", rootCmd.Flags().Lookup("host"))
+	if err != nil {
+		log.Panic(err)
 	}
 }
