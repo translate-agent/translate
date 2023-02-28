@@ -34,7 +34,10 @@ func ToPot(m model.Messages) ([]byte, error) {
 		}
 
 		if strings.HasSuffix(message.ID, "\\n") {
-			_, err := fmt.Fprintf(&b, "msgid \"\"\n\"%s\"\n", message.ID)
+			message.ID = strings.ReplaceAll(message.ID, "\\n", "\\n\"\n\"")
+			message.ID = strings.TrimSuffix(message.ID, "\"")
+
+			_, err := fmt.Fprintf(&b, "msgid \"\"\n\"%s", message.ID)
 			if err != nil {
 				return nil, fmt.Errorf("write msgid: %w", err)
 			}
@@ -47,7 +50,10 @@ func ToPot(m model.Messages) ([]byte, error) {
 		}
 
 		if strings.HasSuffix(message.Message, "\\n") {
-			_, err := fmt.Fprintf(&b, "msgstr \"\"\n\"%s\"\n\n", message.Message)
+			message.Message = strings.ReplaceAll(message.Message, "\\n", "\\n\"\n\"")
+			message.Message = strings.TrimSuffix(message.Message, "\"")
+
+			_, err := fmt.Fprintf(&b, "msgstr \"\"\n\"%s\n", message.Message)
 			if err != nil {
 				return nil, fmt.Errorf("write msgstr: %w", err)
 			}

@@ -55,7 +55,7 @@ msgstr "Au revoir!"
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:          "Hello, world!\\n\"\n\"very long string\\n",
+						ID:          `Hello, world!\nvery long string\n`,
 						Message:     "Bonjour le monde!",
 						Description: "A simple greeting",
 						Fuzzy:       true,
@@ -90,7 +90,7 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "Bonjour le monde!\\n\"\n\"very long string\\n",
+						Message:     `Bonjour le monde!\nvery long string\n`,
 						Description: "A simple greeting", Fuzzy: true,
 					},
 					{
@@ -255,9 +255,7 @@ msgstr "Au revoir!"
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
 			result, err := ToPot(tt.input)
-
 			if !assert.NoError(t, err) {
 				return
 			}
@@ -282,7 +280,9 @@ func TestFromPot(t *testing.T) {
 							#. "a greeting"
 							#, ""
 							msgid "Hello"
-							msgstr "Hello, world!"
+							msgstr ""
+							"Hello, world!\n"
+							"very long string\n"
 							
 							#. "a farewell"
 							#, "fuzzy"
@@ -294,7 +294,7 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "Hello, world!",
+						Message:     "Hello, world!\\n very long string\\n",
 						Description: "a greeting",
 						Fuzzy:       false,
 					},
@@ -323,7 +323,6 @@ func TestFromPot(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			result, err := FromPot(tt.input)
-
 			if tt.expectedErr != nil {
 				assert.Errorf(t, err, tt.expectedErr.Error())
 				return
