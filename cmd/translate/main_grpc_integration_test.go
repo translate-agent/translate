@@ -31,7 +31,7 @@ func mustGetFreePort() string {
 	// Listen on port 0 to have the operating system allocate an available port.
 	l, err := net.Listen("tcp", host+":0")
 	if err != nil {
-		log.Panicf("get free port: %v", err.Error())
+		log.Panicf("get free port: %v", err)
 	}
 	defer l.Close()
 
@@ -66,7 +66,7 @@ func TestMain(m *testing.M) {
 	// Wait for the server to start and establish a connection.
 	conn, err := grpc.DialContext(context.Background(), host+":"+port, grpcOpts...)
 	if err != nil {
-		log.Panic(err)
+		log.Panicf("create connection: %v", err)
 	}
 
 	client = pb.NewTranslateServiceClient(conn)
@@ -75,7 +75,7 @@ func TestMain(m *testing.M) {
 	// Send soft kill (termination) signal to process.
 	err = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 	if err != nil {
-		log.Panic(err)
+		log.Panicf("send termination signal: %v", err)
 	}
 	// Wait for main() to finish cleanup.
 	wg.Wait()
