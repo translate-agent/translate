@@ -40,12 +40,12 @@ var rootCmd = &cobra.Command{
 
 		tp, err := tracer.TracerProvider()
 		if err != nil {
-			log.Panic(err)
+			log.Panicf("set tracer provider: %v", err)
 		}
 
 		defer func() {
 			if tpShutdownErr := tp.Shutdown(context.Background()); tpShutdownErr != nil {
-				log.Panic(tpShutdownErr)
+				log.Panicf("gracefully shutdown tracer: %v", tpShutdownErr)
 			}
 		}()
 
@@ -65,7 +65,7 @@ var rootCmd = &cobra.Command{
 			addr,
 			[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())})
 		if err != nil {
-			log.Panic(err)
+			log.Panicf("register translate service: %v", err)
 		}
 
 		httpServer := http.Server{
@@ -75,7 +75,7 @@ var rootCmd = &cobra.Command{
 
 		l, err := net.Listen("tcp", addr)
 		if err != nil {
-			log.Panic(err)
+			log.Panicf("create listener: %v", err)
 		}
 
 		multiplexer := cmux.New(l)
@@ -138,17 +138,17 @@ func initConfig() {
 
 	// Try to read config.
 	if err := viper.ReadInConfig(); err != nil && cfgFile != "translate.yaml" {
-		log.Panic(err)
+		log.Panicf("read config: %v", err)
 	}
 
 	// For now manually bind CLI arguments to viper.
 	err := viper.BindPFlag("service.port", rootCmd.Flags().Lookup("port"))
 	if err != nil {
-		log.Panic(err)
+		log.Panicf("bind port flag: %v", err)
 	}
 
 	err = viper.BindPFlag("service.host", rootCmd.Flags().Lookup("host"))
 	if err != nil {
-		log.Panic(err)
+		log.Panicf("bind host flag: %v", err)
 	}
 }
