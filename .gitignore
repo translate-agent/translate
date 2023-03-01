@@ -11,6 +11,8 @@
 !.env.test
 .env
 
+translate.yaml
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
