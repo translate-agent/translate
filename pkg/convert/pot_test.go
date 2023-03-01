@@ -55,7 +55,7 @@ msgstr "Au revoir!"
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:          `Hello, world!\nvery long string\n`,
+						ID:          "Hello, world!\nvery long string\n",
 						Message:     "Bonjour le monde!",
 						Description: "A simple greeting",
 						Fuzzy:       true,
@@ -90,7 +90,7 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     `Bonjour le monde!\nvery long string\n`,
+						Message:     "Bonjour le monde!\nvery long string\n",
 						Description: "A simple greeting", Fuzzy: true,
 					},
 					{
@@ -152,8 +152,16 @@ msgstr "Au revoir!"
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
-					{ID: "Hello, \"world!\"", Message: "Bonjour le monde!", Description: "A simple greeting", Fuzzy: true},
-					{ID: "Goodbye!", Message: "Au revoir!", Description: "A farewell", Fuzzy: true},
+					{
+						ID:          "Hello, \"world!\"",
+						Message:     "Bonjour le monde!",
+						Description: "A simple greeting",
+						Fuzzy:       true},
+					{
+						ID:          "Goodbye!",
+						Message:     "Au revoir!",
+						Description: "A farewell",
+						Fuzzy:       true},
 				},
 			},
 			expected: []byte(`"Language: en
@@ -174,8 +182,16 @@ msgstr "Au revoir!"
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
-					{ID: "Hello, world!", Message: "Bonjour le monde!", Description: "A simple greeting", Fuzzy: true},
-					{ID: "Goodbye!", Message: "Au revoir!", Description: "A farewell", Fuzzy: false},
+					{
+						ID:          "Hello, world!",
+						Message:     "Bonjour le monde!",
+						Description: "A simple greeting",
+						Fuzzy:       true},
+					{
+						ID:          "Goodbye!",
+						Message:     "Au revoir!",
+						Description: "A farewell",
+						Fuzzy:       false},
 				},
 			},
 			expected: []byte(`"Language: en

@@ -3,6 +3,7 @@ package convert
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -13,56 +14,39 @@ import (
 func ToPot(m model.Messages) ([]byte, error) {
 	var b bytes.Buffer
 
-	_, err := fmt.Fprintf(&b, "\"Language: %s\n", m.Language)
-	if err != nil {
+	if _, err := fmt.Fprintf(&b, "\"Language: %s\n", m.Language); err != nil {
 		return nil, fmt.Errorf("write language: %w", err)
 	}
 
 	for _, message := range m.Messages {
 		if message.Description != "" {
-			_, err := fmt.Fprintf(&b, "#. %s\n", message.Description)
-			if err != nil {
+			if _, err := fmt.Fprintf(&b, "#. %s\n", message.Description); err != nil {
 				return nil, fmt.Errorf("write description: %w", err)
 			}
 		}
 
 		if message.Fuzzy {
-			_, err := fmt.Fprint(&b, "#, fuzzy\n")
-			if err != nil {
+			if _, err := fmt.Fprint(&b, "#, fuzzy\n"); err != nil {
 				return nil, fmt.Errorf("write fuzzy: %w", err)
 			}
 		}
 
-		if strings.HasSuffix(message.ID, "\\n") {
-			message.ID = strings.ReplaceAll(message.ID, "\\n", "\\n\"\n\"")
-			message.ID = strings.TrimSuffix(message.ID, "\"")
-
-			_, err := fmt.Fprintf(&b, "msgid \"\"\n\"%s", message.ID)
-			if err != nil {
-				return nil, fmt.Errorf("write msgid: %w", err)
-			}
-		} else {
-			messageIdWithQuotes := strings.ReplaceAll(message.ID, "\"", "\\\"")
-			_, err := fmt.Fprintf(&b, "msgid \"%s\"\n", messageIdWithQuotes)
-			if err != nil {
-				return nil, fmt.Errorf("write msgid with quotes: %w", err)
-			}
+		msgId, err := formatMsgId(message.ID)
+		if err != nil {
+			return nil, fmt.Errorf("format msgid: %w", err)
 		}
 
-		if strings.HasSuffix(message.Message, "\\n") {
-			message.Message = strings.ReplaceAll(message.Message, "\\n", "\\n\"\n\"")
-			message.Message = strings.TrimSuffix(message.Message, "\"")
+		if _, err = fmt.Fprint(&b, msgId); err != nil {
+			return nil, fmt.Errorf("write msgid: %w", err)
+		}
 
-			_, err := fmt.Fprintf(&b, "msgstr \"\"\n\"%s\n", message.Message)
-			if err != nil {
-				return nil, fmt.Errorf("write msgstr: %w", err)
-			}
-		} else {
-			messageWithQuotes := strings.ReplaceAll(message.Message, "\"", "\\\"")
-			_, err := fmt.Fprintf(&b, "msgstr \"%s\"\n\n", messageWithQuotes)
-			if err != nil {
-				return nil, fmt.Errorf("write msgstr with quotes: %w", err)
-			}
+		msgStr, err := formatMsgStr(message.Message)
+		if err != nil {
+			return nil, fmt.Errorf("format msgstr: %w", err)
+		}
+
+		if _, err = fmt.Fprint(&b, msgStr); err != nil {
+			return nil, fmt.Errorf("write msgstr: %w", err)
 		}
 	}
 
@@ -104,4 +88,56 @@ func FromPot(b []byte) (model.Messages, error) {
 		Language: po.Header.Language,
 		Messages: messages,
 	}, nil
+}
+
+func formatMsgId(msgID string) (string, error) {
+	msgIDBytes, err := json.Marshal(msgID)
+	if err != nil {
+		return "", fmt.Errorf("marshal msgid: %w", err)
+	}
+
+	msgIdTextLines := strings.Split(string(msgIDBytes), "\\n")
+
+	if len(msgIdTextLines) == 1 {
+		return fmt.Sprintf("msgid %s\n", msgIdTextLines[0]), nil
+	}
+
+	lines := make([]string, 0, len(msgIdTextLines))
+
+	for i, line := range msgIdTextLines {
+		if len(msgIdTextLines)-1 == i && line == "\"" {
+			continue
+		}
+
+		line = strings.ReplaceAll(line, "\"", "")
+		lines = append(lines, "\""+line+"\\n\""+"\n")
+	}
+
+	return fmt.Sprintf("msgid \"\"\n%s", strings.Join(lines, "")), nil
+}
+
+func formatMsgStr(msgStr string) (string, error) {
+	msgStrBytes, err := json.Marshal(msgStr)
+	if err != nil {
+		return "", fmt.Errorf("marshal msgstr: %w", err)
+	}
+
+	msgStrTextLines := strings.Split(string(msgStrBytes), "\\n")
+
+	if len(msgStrTextLines) == 1 {
+		return fmt.Sprintf("msgstr %s\n\n", msgStrTextLines[0]), nil
+	}
+
+	lines := make([]string, 0, len(msgStrTextLines))
+
+	for i, line := range msgStrTextLines {
+		if len(msgStrTextLines)-1 == i && line == "\"" {
+			continue
+		}
+
+		line = strings.ReplaceAll(line, "\"", "")
+		lines = append(lines, "\""+line+"\\n\""+"\n")
+	}
+
+	return fmt.Sprintf("msgstr \"\"\n%s\n", strings.Join(lines, "")), nil
 }
