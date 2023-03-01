@@ -3,8 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"net"
+	"os"
+	"sync"
+	"syscall"
 	"testing"
 
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	pb "go.expect.digital/translate/pkg/server/translate/v1"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -14,21 +20,68 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func createConnection(ctx context.Context, t *testing.T) (*grpc.ClientConn, error) {
-	t.Helper()
+var (
+	host string
+	port string
 
-	conn, err := grpc.DialContext(
-		ctx,
-		"localhost:8080",
+	client pb.TranslateServiceClient
+)
+
+func mustGetFreePort() string {
+	// Listen on port 0 to have the operating system allocate an available port.
+	l, err := net.Listen("tcp", host+":0")
+	if err != nil {
+		log.Panicf("get free port: %v", err)
+	}
+	defer l.Close()
+
+	// Get the port number from the address that the Listener is listening on.
+	addr := l.Addr().(*net.TCPAddr)
+
+	return fmt.Sprint(addr.Port)
+}
+
+func TestMain(m *testing.M) {
+	host = "localhost"
+	port = mustGetFreePort()
+
+	viper.Set("service.port", port)
+	viper.Set("service.host", host)
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		main()
+	}()
+
+	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
 		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-	)
+		grpc.WithBlock(),
+	}
+	// Wait for the server to start and establish a connection.
+	conn, err := grpc.DialContext(context.Background(), host+":"+port, grpcOpts...)
 	if err != nil {
-		return nil, fmt.Errorf("creating connection: %w", err)
+		log.Panicf("create connection: %v", err)
 	}
 
-	return conn, nil
+	client = pb.NewTranslateServiceClient(conn)
+	// Run the tests.
+	code := m.Run()
+	// Send soft kill (termination) signal to process.
+	err = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+	if err != nil {
+		log.Panicf("send termination signal: %v", err)
+	}
+	// Wait for main() to finish cleanup.
+	wg.Wait()
+	conn.Close()
+
+	os.Exit(code)
 }
 
 func Test_UploadTranslationFile_gRPC(t *testing.T) {
@@ -108,17 +161,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := context.Background()
-
-			conn, err := createConnection(ctx, t)
-			if !assert.NoError(t, err) {
-				return
-			}
-
-			defer conn.Close()
-
-			client := pb.NewTranslateServiceClient(conn)
-			_, err = client.UploadTranslationFile(ctx, tt.req)
+			_, err := client.UploadTranslationFile(context.Background(), tt.req)
 
 			assert.Equal(t, tt.want, status.Code(err))
 		})
@@ -127,8 +170,6 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
-
-	ctx := context.Background()
 
 	tests := []struct {
 		req  *pb.DownloadTranslationFileRequest
@@ -152,15 +193,7 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			conn, err := createConnection(ctx, t)
-			if !assert.NoError(t, err) {
-				return
-			}
-
-			defer conn.Close()
-
-			client := pb.NewTranslateServiceClient(conn)
-			_, err = client.DownloadTranslationFile(ctx, tt.req)
+			_, err := client.DownloadTranslationFile(context.Background(), tt.req)
 
 			assert.Equal(t, tt.want, status.Code(err))
 		})

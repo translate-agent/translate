@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -33,18 +33,19 @@ var rootCmd = &cobra.Command{
 	Short: "Enables translation for Cloud-native systems",
 	Long:  `Enables translation for Cloud-native systems`,
 	Run: func(cmd *cobra.Command, args []string) {
+		addr := viper.GetString("service.host") + ":" + viper.GetString("service.port")
 		// Gracefully shutdown on Ctrl+C and Termination signal
 		terminationChan := make(chan os.Signal, 1)
 		signal.Notify(terminationChan, syscall.SIGTERM, syscall.SIGINT)
 
 		tp, err := tracer.TracerProvider()
 		if err != nil {
-			log.Panic(err)
+			log.Panicf("set tracer provider: %v", err)
 		}
 
 		defer func() {
 			if tpShutdownErr := tp.Shutdown(context.Background()); tpShutdownErr != nil {
-				log.Panic(tpShutdownErr)
+				log.Panicf("gracefully shutdown tracer: %v", tpShutdownErr)
 			}
 		}()
 
@@ -61,10 +62,10 @@ var rootCmd = &cobra.Command{
 		err = pb.RegisterTranslateServiceHandlerFromEndpoint(
 			context.Background(),
 			mux,
-			"localhost:8080",
+			addr,
 			[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())})
 		if err != nil {
-			log.Panic(err)
+			log.Panicf("register translate service: %v", err)
 		}
 
 		httpServer := http.Server{
@@ -72,9 +73,9 @@ var rootCmd = &cobra.Command{
 			ReadHeaderTimeout: time.Second * 5, //nolint:gomnd
 		}
 
-		l, err := net.Listen("tcp", "localhost:8080")
+		l, err := net.Listen("tcp", addr)
 		if err != nil {
-			log.Panic(err)
+			log.Panicf("create listener: %v", err)
 		}
 
 		multiplexer := cmux.New(l)
@@ -121,28 +122,33 @@ func main() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./translate.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "translate.yaml", "config file")
+	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
+	rootCmd.PersistentFlags().String("host", "localhost", "host to run service on")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find current dir.
-		dir, err := os.Getwd()
-		cobra.CheckErr(err)
+	viper.SetConfigFile(cfgFile)
 
-		// Search config in current directory with name "translate.yaml".
-		viper.AddConfigPath(dir)
-		viper.SetConfigFile("translate.yaml")
+	viper.SetEnvPrefix("translate")
+	// Replace underscores with dots in environment variable names.
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
+
+	// Try to read config.
+	if err := viper.ReadInConfig(); err != nil && cfgFile != "translate.yaml" {
+		log.Panicf("read config: %v", err)
 	}
 
-	viper.AutomaticEnv() // read in environment variables that match
+	// For now manually bind CLI arguments to viper.
+	err := viper.BindPFlag("service.port", rootCmd.Flags().Lookup("port"))
+	if err != nil {
+		log.Panicf("bind port flag: %v", err)
+	}
 
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	err = viper.BindPFlag("service.host", rootCmd.Flags().Lookup("host"))
+	if err != nil {
+		log.Panicf("bind host flag: %v", err)
 	}
 }
