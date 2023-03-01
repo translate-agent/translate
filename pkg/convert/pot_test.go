@@ -156,12 +156,14 @@ msgstr "Au revoir!"
 						ID:          "Hello, \"world!\"",
 						Message:     "Bonjour le monde!",
 						Description: "A simple greeting",
-						Fuzzy:       true},
+						Fuzzy:       true,
+					},
 					{
 						ID:          "Goodbye!",
 						Message:     "Au revoir!",
 						Description: "A farewell",
-						Fuzzy:       true},
+						Fuzzy:       true,
+					},
 				},
 			},
 			expected: []byte(`"Language: en
@@ -186,12 +188,14 @@ msgstr "Au revoir!"
 						ID:          "Hello, world!",
 						Message:     "Bonjour le monde!",
 						Description: "A simple greeting",
-						Fuzzy:       true},
+						Fuzzy:       true,
+					},
 					{
 						ID:          "Goodbye!",
 						Message:     "Au revoir!",
 						Description: "A farewell",
-						Fuzzy:       false},
+						Fuzzy:       false,
+					},
 				},
 			},
 			expected: []byte(`"Language: en
