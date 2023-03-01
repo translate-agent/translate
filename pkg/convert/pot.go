@@ -11,6 +11,13 @@ import (
 	"go.expect.digital/translate/pkg/pot"
 )
 
+type PoTag string
+
+const (
+	MsgId  PoTag = "msgid"
+	MsgStr PoTag = "msgstr"
+)
+
 func ToPot(m model.Messages) ([]byte, error) {
 	var b bytes.Buffer
 
@@ -31,7 +38,7 @@ func ToPot(m model.Messages) ([]byte, error) {
 			}
 		}
 
-		msgId, err := formatMsgId(message.ID)
+		msgId, err := formatPoTags(message.ID, MsgId)
 		if err != nil {
 			return nil, fmt.Errorf("format msgid: %w", err)
 		}
@@ -40,13 +47,17 @@ func ToPot(m model.Messages) ([]byte, error) {
 			return nil, fmt.Errorf("write msgid: %w", err)
 		}
 
-		msgStr, err := formatMsgStr(message.Message)
+		msgStr, err := formatPoTags(message.Message, MsgStr)
 		if err != nil {
 			return nil, fmt.Errorf("format msgstr: %w", err)
 		}
 
 		if _, err = fmt.Fprint(&b, msgStr); err != nil {
 			return nil, fmt.Errorf("write msgstr: %w", err)
+		}
+
+		if _, err = fmt.Fprint(&b, "\n"); err != nil {
+			return nil, fmt.Errorf("write new line: %w", err)
 		}
 	}
 
@@ -90,54 +101,29 @@ func FromPot(b []byte) (model.Messages, error) {
 	}, nil
 }
 
-func formatMsgId(msgID string) (string, error) {
-	msgIDBytes, err := json.Marshal(msgID)
+func formatPoTags(str string, poTag PoTag) (string, error) {
+	b, err := json.Marshal(str)
 	if err != nil {
-		return "", fmt.Errorf("marshal msgid: %w", err)
+		return "", fmt.Errorf("marshal %s: %w", poTag, err)
 	}
 
-	msgIdTextLines := strings.Split(string(msgIDBytes), "\\n")
+	b = b[1 : len(b)-1]
+	lines := strings.Split(string(b), "\\n")
 
-	if len(msgIdTextLines) == 1 {
-		return fmt.Sprintf("msgid %s\n", msgIdTextLines[0]), nil
+	if len(lines) == 1 {
+		return fmt.Sprintf("%s \"%s\"\n", poTag, lines[0]), nil
 	}
 
-	lines := make([]string, 0, len(msgIdTextLines))
+	multiline := make([]string, 0, len(lines))
 
-	for i, line := range msgIdTextLines {
-		if len(msgIdTextLines)-1 == i && line == "\"" {
+	for i, line := range lines {
+		if len(lines)-1 == i && line == "" {
 			continue
 		}
 
 		line = strings.ReplaceAll(line, "\"", "")
-		lines = append(lines, "\""+line+"\\n\""+"\n")
+		multiline = append(multiline, "\""+line+"\\n\""+"\n")
 	}
 
-	return fmt.Sprintf("msgid \"\"\n%s", strings.Join(lines, "")), nil
-}
-
-func formatMsgStr(msgStr string) (string, error) {
-	msgStrBytes, err := json.Marshal(msgStr)
-	if err != nil {
-		return "", fmt.Errorf("marshal msgstr: %w", err)
-	}
-
-	msgStrTextLines := strings.Split(string(msgStrBytes), "\\n")
-
-	if len(msgStrTextLines) == 1 {
-		return fmt.Sprintf("msgstr %s\n\n", msgStrTextLines[0]), nil
-	}
-
-	lines := make([]string, 0, len(msgStrTextLines))
-
-	for i, line := range msgStrTextLines {
-		if len(msgStrTextLines)-1 == i && line == "\"" {
-			continue
-		}
-
-		line = strings.ReplaceAll(line, "\"", "")
-		lines = append(lines, "\""+line+"\\n\""+"\n")
-	}
-
-	return fmt.Sprintf("msgstr \"\"\n%s\n", strings.Join(lines, "")), nil
+	return fmt.Sprintf("%s \"\"\n%s", poTag, strings.Join(multiline, "")), nil
 }
