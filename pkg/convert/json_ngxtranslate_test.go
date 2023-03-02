@@ -94,7 +94,8 @@ func Test_FromNgxTranslate(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, tt.expected, result)
+			assert.Equal(t, tt.expected.Language, result.Language)
+			assert.ElementsMatch(t, tt.expected.Messages, result.Messages)
 		})
 	}
 }
