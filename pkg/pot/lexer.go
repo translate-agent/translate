@@ -2,6 +2,7 @@ package pot
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -33,7 +34,7 @@ type Token struct {
 	Index int // plural index for msgstr with plural forms
 }
 
-func Lex(r *bufio.Reader) []Token {
+func Lex(r *bufio.Reader) ([]Token, error) {
 	var tokens []Token
 
 	for {
@@ -41,7 +42,7 @@ func Lex(r *bufio.Reader) []Token {
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			panic(err)
+			return nil, fmt.Errorf("reading line: %w", err)
 		}
 
 		line = strings.TrimSpace(line)
@@ -100,7 +101,7 @@ func Lex(r *bufio.Reader) []Token {
 		}
 	}
 
-	return tokens
+	return tokens, nil
 }
 
 func parseMsgString(line string) string {

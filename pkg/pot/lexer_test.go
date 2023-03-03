@@ -100,7 +100,12 @@ func TestLex(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			r := bufio.NewReader(strings.NewReader(tt.input))
-			result := Lex(r)
+			result, err := Lex(r)
+
+			if !assert.NoError(t, err) {
+				return
+			}
+
 			assert.Equal(t, tt.expected, result)
 		})
 	}

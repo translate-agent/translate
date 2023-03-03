@@ -65,7 +65,10 @@ func ToPot(m model.Messages) ([]byte, error) {
 }
 
 func FromPot(b []byte) (model.Messages, error) {
-	tokens := pot.Lex(bufio.NewReader(bytes.NewReader(b)))
+	tokens, err := pot.Lex(bufio.NewReader(bytes.NewReader(b)))
+	if err != nil {
+		return model.Messages{}, fmt.Errorf("dividing po file to tokens: %w", err)
+	}
 
 	po, err := pot.TokensToPo(tokens)
 	if err != nil {
