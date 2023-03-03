@@ -233,9 +233,9 @@ func TestToNG(t *testing.T) {
 			// Matches zero or more whitespace characters.
 			re := regexp.MustCompile(`\s*`)
 			resultTrimmed := re.ReplaceAllString(string(result), "")
-			actualTrimmed := re.ReplaceAllString(string(tt.want), "")
+			wantTrimmed := re.ReplaceAllString(string(tt.want), "")
 
-			assert.Equal(t, resultTrimmed, actualTrimmed)
+			assert.Equal(t, resultTrimmed, wantTrimmed)
 		})
 	}
 }
