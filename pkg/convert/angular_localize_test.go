@@ -2,6 +2,7 @@ package convert
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -53,7 +54,7 @@ func Test_FromNG_JSON(t *testing.T) {
   }
 }
 `),
-			wantErr: fmt.Errorf("subtag \"xyz\" is well-formed but unknown"),
+			wantErr: fmt.Errorf("language: subtag \"xyz\" is well-formed but unknown"),
 		},
 	}
 	for _, tt := range tests {
@@ -137,7 +138,7 @@ func Test_FromNG_XLF12(t *testing.T) {
   </file>
 </xliff>
 `),
-			wantErr: fmt.Errorf("subtag \"xyz\" is well-formed but unknown"),
+			wantErr: fmt.Errorf("language: subtag \"xyz\" is well-formed but unknown"),
 		},
 	}
 	for _, tt := range tests {
@@ -158,6 +159,83 @@ func Test_FromNG_XLF12(t *testing.T) {
 
 			assert.Equal(t, tt.want.Language, messages.Language)
 			assert.ElementsMatch(t, tt.want.Messages, messages.Messages)
+		})
+	}
+}
+
+func TestToNG(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		want     []byte
+		wantErr  error
+		messages model.Messages
+	}{
+		{
+			name: "All OK",
+			want: []byte(`<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file source-language="en">
+    <body>
+      <trans-unit id="Welcome">
+        <source>Welcome to our website!</source>
+        <note>To welcome a new visitor</note>
+      </trans-unit>
+      <trans-unit id="Error">
+        <source>Something went wrong. Please try again later.</source>
+        <note>To inform the user of an error</note>
+      </trans-unit>
+      <trans-unit id="Feedback">
+        <source>We appreciate your feedback. Thank you for using our service.</source>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
+`),
+			wantErr: nil,
+			messages: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Welcome",
+						Message:     "Welcome to our website!",
+						Description: "To welcome a new visitor",
+					},
+					{
+						ID:          "Error",
+						Message:     "Something went wrong. Please try again later.",
+						Description: "To inform the user of an error",
+					},
+					{
+						ID:      "Feedback",
+						Message: "We appreciate your feedback. Thank you for using our service.",
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := ToNG(tt.messages)
+
+			if tt.wantErr != nil {
+				assert.ErrorContains(t, err, tt.wantErr.Error())
+				return
+			}
+
+			if !assert.NoError(t, err) {
+				return
+			}
+
+			// Matches zero or more whitespace characters.
+			re := regexp.MustCompile(`\s*`)
+			resultTrimmed := re.ReplaceAllString(string(result), "")
+			actualTrimmed := re.ReplaceAllString(string(tt.want), "")
+
+			assert.Equal(t, resultTrimmed, actualTrimmed)
 		})
 	}
 }

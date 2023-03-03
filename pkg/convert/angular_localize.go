@@ -55,7 +55,7 @@ type bodyElement struct {
 type transUnit struct {
 	ID     string `xml:"id,attr"`
 	Source string `xml:"source"`
-	Note   string `xml:"note"`
+	Note   string `xml:"note,omitempty"`
 }
 
 func (n ngXLF12) fromNgXLF12() model.Messages {
@@ -102,4 +102,29 @@ func FromNG(data []byte) (model.Messages, error) {
 	}
 
 	return from(), nil
+}
+
+// ToNG converts a model.Messages struct into a byte slice that contains the XML data
+// in the XLIFF 1.2 format used by ng extract-i18n.
+func ToNG(messages model.Messages) ([]byte, error) {
+	xlf := ngXLF12{
+		File: file{
+			SourceLanguage: messages.Language,
+			Body: bodyElement{
+				TransUnits: make([]transUnit, 0, len(messages.Messages)),
+			},
+		},
+	}
+
+	for _, msg := range messages.Messages {
+		unit := transUnit{ID: msg.ID, Source: msg.Message, Note: msg.Description}
+		xlf.File.Body.TransUnits = append(xlf.File.Body.TransUnits, unit)
+	}
+
+	data, err := xml.Marshal(&xlf)
+	if err != nil {
+		return nil, fmt.Errorf("marshal xlf: %w", err)
+	}
+
+	return data, nil
 }
