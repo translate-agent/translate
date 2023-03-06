@@ -2,7 +2,6 @@ package pot
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -34,15 +33,16 @@ type Token struct {
 	Index int // plural index for msgstr with plural forms
 }
 
-func Lex(r *bufio.Reader) ([]Token, error) {
+func Lex(r io.Reader) ([]Token, error) {
 	var tokens []Token
 
-	for {
-		line, err := r.ReadString('\n')
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return nil, fmt.Errorf("reading line: %w", err)
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
 		}
 
 		line = strings.TrimSpace(line)
@@ -108,7 +108,12 @@ func parseMsgString(line string) string {
 	subStrN := 2
 	tokenValue := strings.TrimSpace(strings.SplitN(line, " ", subStrN)[1])
 
-	return strings.ReplaceAll(tokenValue, `"`, "")
+	if strings.HasPrefix(tokenValue, `"`) && strings.HasSuffix(tokenValue, `"`) {
+		// Remove the quotes and any escaped quotes
+		tokenValue = strings.ReplaceAll(tokenValue[1:len(tokenValue)-1], `\"`, `"`)
+	}
+
+	return tokenValue
 }
 
 func parseMultilineString(line string) string {

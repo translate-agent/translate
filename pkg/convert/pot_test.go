@@ -46,7 +46,6 @@ msgstr "Bonjour le monde!"
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
-
 `),
 		},
 		{
@@ -80,7 +79,6 @@ msgstr "Bonjour le monde!"
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
-
 `),
 		},
 		{
@@ -112,7 +110,6 @@ msgstr ""
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
-
 `),
 		},
 		{
@@ -144,7 +141,6 @@ msgstr "This is a \"quoted\" string"
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
-
 `),
 		},
 		{
@@ -176,7 +172,6 @@ msgstr "Bonjour le monde!"
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
-
 `),
 		},
 		{
@@ -207,7 +202,6 @@ msgstr "Bonjour le monde!"
 #. A farewell
 msgid "Goodbye!"
 msgstr "Au revoir!"
-
 `),
 		},
 		{
@@ -227,7 +221,6 @@ msgstr "Bonjour le monde!"
 #. A farewell
 msgid "Goodbye!"
 msgstr "Au revoir!"
-
 `),
 		},
 		{
@@ -248,7 +241,6 @@ msgstr "Bonjour le monde!"
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
-
 `),
 		},
 		{
@@ -266,7 +258,6 @@ msgstr "Bonjour le monde!"
 
 msgid "Goodbye!"
 msgstr "Au revoir!"
-
 `),
 		},
 	}

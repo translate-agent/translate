@@ -1,7 +1,6 @@
 package convert
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -25,7 +24,13 @@ func ToPot(m model.Messages) ([]byte, error) {
 		return nil, fmt.Errorf("write language: %w", err)
 	}
 
-	for _, message := range m.Messages {
+	for i, message := range m.Messages {
+		if i > 0 {
+			if _, err := fmt.Fprint(&b, "\n"); err != nil {
+				return nil, fmt.Errorf("write new line: %w", err)
+			}
+		}
+
 		if message.Description != "" {
 			if _, err := fmt.Fprintf(&b, "#. %s\n", message.Description); err != nil {
 				return nil, fmt.Errorf("write description: %w", err)
@@ -38,26 +43,14 @@ func ToPot(m model.Messages) ([]byte, error) {
 			}
 		}
 
-		msgId, err := formatPoTags(message.ID, MsgId)
+		err := writeToPoTag(&b, MsgId, message.ID)
 		if err != nil {
 			return nil, fmt.Errorf("format msgid: %w", err)
 		}
 
-		if _, err = fmt.Fprint(&b, msgId); err != nil {
-			return nil, fmt.Errorf("write msgid: %w", err)
-		}
-
-		msgStr, err := formatPoTags(message.Message, MsgStr)
+		err = writeToPoTag(&b, MsgStr, message.Message)
 		if err != nil {
 			return nil, fmt.Errorf("format msgstr: %w", err)
-		}
-
-		if _, err = fmt.Fprint(&b, msgStr); err != nil {
-			return nil, fmt.Errorf("write msgstr: %w", err)
-		}
-
-		if _, err = fmt.Fprint(&b, "\n"); err != nil {
-			return nil, fmt.Errorf("write new line: %w", err)
 		}
 	}
 
@@ -65,7 +58,7 @@ func ToPot(m model.Messages) ([]byte, error) {
 }
 
 func FromPot(b []byte) (model.Messages, error) {
-	tokens, err := pot.Lex(bufio.NewReader(bytes.NewReader(b)))
+	tokens, err := pot.Lex(bytes.NewReader(b))
 	if err != nil {
 		return model.Messages{}, fmt.Errorf("dividing po file to tokens: %w", err)
 	}
@@ -104,17 +97,22 @@ func FromPot(b []byte) (model.Messages, error) {
 	}, nil
 }
 
-func formatPoTags(str string, poTag PoTag) (string, error) {
-	b, err := json.Marshal(str)
+func writeToPoTag(b *bytes.Buffer, tag PoTag, str string) error {
+	encodedStr, err := json.Marshal(str) // use JSON encoding to escape special characters
 	if err != nil {
-		return "", fmt.Errorf("marshal %s: %w", poTag, err)
+		return fmt.Errorf("marshal %s: %w", tag, err)
 	}
 
-	b = b[1 : len(b)-1]
-	lines := strings.Split(string(b), "\\n")
+	encodedStr = encodedStr[1 : len(encodedStr)-1] // trim quotes
+	lines := strings.Split(string(encodedStr), "\\n")
 
 	if len(lines) == 1 {
-		return fmt.Sprintf("%s \"%s\"\n", poTag, lines[0]), nil
+		_, err = fmt.Fprintf(b, "%s \"%s\"\n", tag, lines[0])
+		if err != nil {
+			return fmt.Errorf("write %s: %w", tag, err)
+		}
+
+		return nil
 	}
 
 	multiline := make([]string, 0, len(lines))
@@ -124,9 +122,13 @@ func formatPoTags(str string, poTag PoTag) (string, error) {
 			continue
 		}
 
-		line = strings.ReplaceAll(line, "\"", "")
 		multiline = append(multiline, "\""+line+"\\n\""+"\n")
 	}
 
-	return fmt.Sprintf("%s \"\"\n%s", poTag, strings.Join(multiline, "")), nil
+	_, err = fmt.Fprintf(b, "%s \"\"\n%s", tag, strings.Join(multiline, ""))
+	if err != nil {
+		return fmt.Errorf("write %s: %w", tag, err)
+	}
+
+	return nil
 }

@@ -1,7 +1,6 @@
 package pot
 
 import (
-	"bufio"
 	"strings"
 	"testing"
 
@@ -82,6 +81,19 @@ func TestLex(t *testing.T) {
 			},
 		},
 		{
+			name: "When msgid and msgstr values are qouted",
+			input: "# Language: en-US\n" +
+				"# Plural-Forms: nplurals=2; plural=(n != 1);\n" +
+				"msgid \"\"quoted\" id\"\n" +
+				"msgstr \"\"quoted\" str\"\n",
+			expected: []Token{
+				{Value: "Language: en-US", Type: HeaderLanguage},
+				{Value: "Plural-Forms: nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
+				{Value: "\"quoted\" id", Type: MsgId},
+				{Value: "\"quoted\" str", Type: MsgStr},
+			},
+		},
+		{
 			name:     "Empty input",
 			input:    "",
 			expected: []Token(nil),
@@ -99,7 +111,7 @@ func TestLex(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			r := bufio.NewReader(strings.NewReader(tt.input))
+			r := strings.NewReader(tt.input)
 			result, err := Lex(r)
 
 			if !assert.NoError(t, err) {
