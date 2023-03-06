@@ -2,7 +2,6 @@ package convert
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -174,25 +173,15 @@ func TestToNG(t *testing.T) {
 	}{
 		{
 			name: "All OK",
-			want: []byte(`<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2">
-  <file source-language="en">
-    <body>
-      <trans-unit id="Welcome">
-        <source>Welcome to our website!</source>
-        <note>To welcome a new visitor</note>
-      </trans-unit>
-      <trans-unit id="Error">
-        <source>Something went wrong. Please try again later.</source>
-        <note>To inform the user of an error</note>
-      </trans-unit>
-      <trans-unit id="Feedback">
-        <source>We appreciate your feedback. Thank you for using our service.</source>
-      </trans-unit>
-    </body>
-  </file>
-</xliff>
+			want: []byte(`{
+  "locale": "en",
+  "translations": {
+    "Welcome": "Welcome to our website!",
+    "Error": "Something went wrong. Please try again later.",
+    "Feedback": "We appreciate your feedback. Thank you for using our service."
+  }
+}
 `),
-			wantErr: nil,
 			messages: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -212,6 +201,7 @@ func TestToNG(t *testing.T) {
 					},
 				},
 			},
+			wantErr: nil,
 		},
 	}
 	for _, tt := range tests {
@@ -230,12 +220,7 @@ func TestToNG(t *testing.T) {
 				return
 			}
 
-			// Matches zero or more whitespace characters.
-			re := regexp.MustCompile(`\s*`)
-			resultTrimmed := re.ReplaceAllString(string(result), "")
-			wantTrimmed := re.ReplaceAllString(string(tt.want), "")
-
-			assert.Equal(t, resultTrimmed, wantTrimmed)
+			assert.JSONEq(t, string(tt.want), string(result))
 		})
 	}
 }

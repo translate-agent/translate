@@ -104,26 +104,20 @@ func FromNG(data []byte) (model.Messages, error) {
 	return from(), nil
 }
 
-// ToNG converts a model.Messages struct into a byte slice that contains the XML data
-// in the XLIFF 1.2 format used by ng extract-i18n.
+// ToNG converts a model.Messages struct into a byte slice in @angular/localize JSON format.
 func ToNG(messages model.Messages) ([]byte, error) {
-	xlf := ngXLF12{
-		File: file{
-			SourceLanguage: messages.Language,
-			Body: bodyElement{
-				TransUnits: make([]transUnit, 0, len(messages.Messages)),
-			},
-		},
+	ng := ngJSON{
+		Language:     messages.Language,
+		Translations: make(map[string]string, len(messages.Messages)),
 	}
 
 	for _, msg := range messages.Messages {
-		unit := transUnit{ID: msg.ID, Source: msg.Message, Note: msg.Description}
-		xlf.File.Body.TransUnits = append(xlf.File.Body.TransUnits, unit)
+		ng.Translations[msg.ID] = msg.Message
 	}
 
-	data, err := xml.Marshal(&xlf)
+	data, err := json.Marshal(ng)
 	if err != nil {
-		return nil, fmt.Errorf("marshal xlf: %w", err)
+		return nil, fmt.Errorf("marshal json: %w", err)
 	}
 
 	return data, nil
