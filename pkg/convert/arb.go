@@ -69,14 +69,15 @@ func FromArb(data []byte) (model.Messages, error) {
 	// https://medium.com/@Albert221/how-to-internationalize-your-flutter-app-with-arb-files-today-full-blown-tutorial-476ee65ecaed
 	findLocale := func() (language.Tag, error) {
 		// if '@@locale' is missing then language it is not provided (Undetermined).
-		if _, ok := dst["@@locale"]; !ok {
+		locale, ok := dst["@@locale"]
+		if !ok {
 			return language.Tag{}, nil
 		}
 
 		// Check if @@locale key's value type is string.
-		langString, ok := dst["@@locale"].(string)
+		langString, ok := locale.(string)
 		if !ok {
-			return language.Tag{}, fmt.Errorf("unsupported value type '%T' for key '@@locale'", dst["@@locale"])
+			return language.Tag{}, fmt.Errorf("unsupported value type '%T' for key '@@locale'", locale)
 		}
 
 		langTag, err := language.Parse(langString)

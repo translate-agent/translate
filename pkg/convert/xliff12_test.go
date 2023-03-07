@@ -35,8 +35,7 @@ func Test_FromXliff12(t *testing.T) {
       </trans-unit>
     </body>
   </file>
-</xliff>
-			`),
+</xliff>`),
 			want: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -69,8 +68,7 @@ func Test_FromXliff12(t *testing.T) {
       </trans-unit>
     </body>
   </file>
-</xliff>
-`),
+</xliff>`),
 			wantErr: fmt.Errorf("language: subtag \"xyz\" is well-formed but unknown"),
 		},
 	}
@@ -124,8 +122,7 @@ func Test_ToXliff12(t *testing.T) {
       </trans-unit>
     </body>
   </file>
-</xliff>
-`),
+</xliff>`),
 			wantErr: nil,
 			messages: model.Messages{
 				Language: language.English,
@@ -164,10 +161,10 @@ func Test_ToXliff12(t *testing.T) {
 				return
 			}
 
-			// Matches zero or more whitespace characters.
-			re := regexp.MustCompile(`\s*`)
-			resultTrimmed := re.ReplaceAllString(string(result), "")
-			wantTrimmed := re.ReplaceAllString(string(tt.want), "")
+			// Matches a substring that starts with > and ends with < with zero or more whitespace in between.
+			re := regexp.MustCompile(`>(\s*)<`)
+			resultTrimmed := re.ReplaceAllString(string(result), "><")
+			wantTrimmed := re.ReplaceAllString(string(tt.want), "><")
 
 			assert.Equal(t, resultTrimmed, wantTrimmed)
 		})

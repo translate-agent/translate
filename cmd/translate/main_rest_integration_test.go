@@ -62,8 +62,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 							"fuzzy": false
 						}
 					]
-				}
-				`),
+				}`),
 			},
 			want: http.StatusOK,
 		},
@@ -82,8 +81,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 							"fuzzy": false
 						}
 					]
-				}
-				`),
+				}`),
 			},
 			want: http.StatusBadRequest,
 		},

@@ -27,8 +27,7 @@ func Test_FromNgLocalize(t *testing.T) {
           "Hello": "Bonjour",
           "Welcome": "Bienvenue"
         }
-      }
-`),
+      }`),
 			want: model.Messages{
 				Language: language.French,
 				Messages: []model.Message{
@@ -53,8 +52,7 @@ func Test_FromNgLocalize(t *testing.T) {
           "Hello": "Bonjour",
           "Welcome": "Bienvenue"
         }
-      }
-`),
+      }`),
 			wantErr: fmt.Errorf("language: subtag \"xyz\" is well-formed but unknown"),
 		},
 	}
@@ -99,8 +97,7 @@ func Test_ToNgLocalize(t *testing.T) {
           "Error": "Something went wrong. Please try again later.",
           "Feedback": "We appreciate your feedback. Thank you for using our service."
         }
-      }
-`),
+      }`),
 			messages: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
