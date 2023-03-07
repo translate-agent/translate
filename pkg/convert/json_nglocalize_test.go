@@ -9,7 +9,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-func Test_FromNG_JSON(t *testing.T) {
+func Test_FromNgLocalize(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -80,7 +80,7 @@ func Test_FromNG_JSON(t *testing.T) {
 	}
 }
 
-func TestToNG(t *testing.T) {
+func Test_ToNgLocalize(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
