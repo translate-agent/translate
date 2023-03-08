@@ -35,7 +35,7 @@ type note struct {
 func FromXliff2(data []byte) (model.Messages, error) {
 	var xlf xliff2
 	if err := xml.Unmarshal(data, &xlf); err != nil {
-		return model.Messages{}, fmt.Errorf("unmarshal XLIFF 2 formatted XML to model.Messages: %w", err)
+		return model.Messages{}, fmt.Errorf("unmarshal XLIFF 2 formatted XML into xliff2 struct: %w", err)
 	}
 
 	messages := model.Messages{Language: xlf.SrcLang, Messages: make([]model.Message, 0, len(xlf.File.Units))}
@@ -85,7 +85,7 @@ func ToXliff2(messages model.Messages) ([]byte, error) {
 
 	data, err := xml.Marshal(&xlf)
 	if err != nil {
-		return nil, fmt.Errorf("marshal model.Messages to XLIFF 2 formatted XML: %w", err)
+		return nil, fmt.Errorf("marshal xliff2 struct to XLIFF 2 formatted XML: %w", err)
 	}
 
 	dataWithHeader := append([]byte(xml.Header), data...) // prepend generic XML header
