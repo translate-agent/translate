@@ -82,6 +82,37 @@ msgstr "Au revoir!"
 `),
 		},
 		{
+			name: "When msgid is multiline but with single line",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello, world!\n",
+						Message:     "Bonjour le monde!",
+						Description: "A simple greeting",
+						Fuzzy:       true,
+					},
+					{
+						ID:          "Goodbye!",
+						Message:     "Au revoir!",
+						Description: "A farewell",
+						Fuzzy:       true,
+					},
+				},
+			},
+			expected: []byte(`"Language: en
+#. A simple greeting
+#, fuzzy
+msgid "Hello, world!\n"
+msgstr "Bonjour le monde!"
+
+#. A farewell
+#, fuzzy
+msgid "Goodbye!"
+msgstr "Au revoir!"
+`),
+		},
+		{
 			name: "When msgstr is multiline",
 			input: model.Messages{
 				Language: language.English,

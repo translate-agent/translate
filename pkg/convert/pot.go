@@ -106,6 +106,12 @@ func writeToPoTag(b *bytes.Buffer, tag PoTag, str string) error {
 	encodedStr = encodedStr[1 : len(encodedStr)-1] // trim quotes
 	lines := strings.Split(string(encodedStr), "\\n")
 
+	// Remove the empty string element. The line is empty when splitting by "\\n" and "\n" is the last character in str.
+	if lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+		lines[len(lines)-1] = lines[len(lines)-1] + "\\n" // add the "\n" back to the last line
+	}
+
 	if len(lines) == 1 {
 		_, err = fmt.Fprintf(b, "%s \"%s\"\n", tag, lines[0])
 		if err != nil {
@@ -115,19 +121,23 @@ func writeToPoTag(b *bytes.Buffer, tag PoTag, str string) error {
 		return nil
 	}
 
-	multiline := make([]string, 0, len(lines))
-
-	for i, line := range lines {
-		if len(lines)-1 == i && line == "" {
-			continue
-		}
-
-		multiline = append(multiline, "\""+line+"\\n\""+"\n")
-	}
-
-	_, err = fmt.Fprintf(b, "%s \"\"\n%s", tag, strings.Join(multiline, ""))
+	_, err = fmt.Fprintf(b, "%s \"\"\n", tag)
 	if err != nil {
 		return fmt.Errorf("write %s: %w", tag, err)
+	}
+
+	for _, line := range lines {
+		if strings.HasSuffix(line, "\\n") {
+			_, err = fmt.Fprint(b, "\""+line+"\""+"\n")
+			if err != nil {
+				return fmt.Errorf("write %s: %w", tag, err)
+			}
+		} else {
+			_, err = fmt.Fprint(b, "\""+line+"\\n\""+"\n")
+			if err != nil {
+				return fmt.Errorf("write %s: %w", tag, err)
+			}
+		}
 	}
 
 	return nil

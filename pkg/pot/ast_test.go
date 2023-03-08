@@ -30,7 +30,7 @@ func Test_TokensToPo(t *testing.T) {
 				{Value: "fuzzy", Type: Flag},
 				{Value: "context", Type: MsgCtxt},
 				{Value: "previous context", Type: MsgctxtPreviousContext},
-				{Value: "msgid prev untranslated string", Type: MsgidPrevUntdStr},
+				{Value: "msgid prev untranslated string", Type: MsgidPrevUntStr},
 				{Value: "There is 1 apple", Type: MsgId},
 				{Value: "msgid plural prev untranslated string", Type: MsgidPluralPrevUntStrPlural},
 				{Value: "There is %d apples", Type: PluralMsgId},

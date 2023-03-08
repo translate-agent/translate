@@ -1,6 +1,7 @@
 package pot
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -11,9 +12,10 @@ func TestLex(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		input    string
-		expected []Token
+		name        string
+		input       string
+		expectedErr error
+		expected    []Token
 	}{
 		{
 			name: "When all values are provided",
@@ -48,7 +50,44 @@ func TestLex(t *testing.T) {
 				{Value: "reference", Type: Reference},
 				{Value: "flag", Type: Flag},
 				{Value: "msgctxt previous context", Type: MsgctxtPreviousContext},
-				{Value: "msgid previous id", Type: MsgidPrevUntdStr},
+				{Value: "msgid previous id", Type: MsgidPrevUntStr},
+				{Value: "msgid_plural previous id plural", Type: MsgidPluralPrevUntStrPlural},
+			},
+		},
+		{
+			name: "When all values are provided",
+			input: "# Translator: John Doe <johndoe@example.com>\n" +
+				"# Language: en-US\n" +
+				"# Plural-Forms: nplurals=2; plural=(n != 1);\n" +
+				"msgctxt \"ctxt\"\n" +
+				"msgid \"id\"\n" +
+				"msgstr \"str\"\n" +
+				"msgid_plural \"There are %d oranges\"\n" +
+				"msgstr[0] \"There is %d orange\"\n" +
+				"msgstr[1] \"There are %d oranges\"\n" +
+				"# translator-comment\n" +
+				"#. extracted comment\n" +
+				"#: reference\n" +
+				"#, flag\n" +
+				"#| msgctxt previous context\n" +
+				"#| msgid previous id\n" +
+				"#| msgid_plural previous id plural\n",
+			expected: []Token{
+				{Value: "Translator: John Doe <johndoe@example.com>", Type: HeaderTranslator},
+				{Value: "Language: en-US", Type: HeaderLanguage},
+				{Value: "Plural-Forms: nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
+				{Value: "ctxt", Type: MsgCtxt},
+				{Value: "id", Type: MsgId},
+				{Value: "str", Type: MsgStr},
+				{Value: "There are %d oranges", Type: PluralMsgId},
+				{Value: "There is %d orange", Type: PluralMsgStr, Index: 0},
+				{Value: "There are %d oranges", Type: PluralMsgStr, Index: 1},
+				{Value: "translator-comment", Type: TranslatorComment},
+				{Value: "extracted comment", Type: ExtractedComment},
+				{Value: "reference", Type: Reference},
+				{Value: "flag", Type: Flag},
+				{Value: "msgctxt previous context", Type: MsgctxtPreviousContext},
+				{Value: "msgid previous id", Type: MsgidPrevUntStr},
 				{Value: "msgid_plural previous id plural", Type: MsgidPluralPrevUntStrPlural},
 			},
 		},
@@ -81,7 +120,7 @@ func TestLex(t *testing.T) {
 			},
 		},
 		{
-			name: "When msgid and msgstr values are qouted",
+			name: "When msgid and msgstr values are quoted",
 			input: "# Language: en-US\n" +
 				"# Plural-Forms: nplurals=2; plural=(n != 1);\n" +
 				"msgid \"\"quoted\" id\"\n" +
@@ -94,16 +133,20 @@ func TestLex(t *testing.T) {
 			},
 		},
 		{
-			name:     "Empty input",
-			input:    "",
-			expected: []Token(nil),
+			name: "When msgid value is incorrect",
+			input: "# Language: en-US\n" +
+				"# Plural-Forms: nplurals=2; plural=(n != 1);\n" +
+				"msgid\"id\"\n" +
+				"msgstr \"\"quoted\" str\"\n",
+			expectedErr: fmt.Errorf("incorrect format of msgid: incorrect format of po tags"),
 		},
 		{
-			name: "When spaces are trimmed",
-			input: `
-
-`,
-			expected: []Token(nil),
+			name: "When msgstr value is incorrect",
+			input: "# Language: en-US\n" +
+				"# Plural-Forms: nplurals=2; plural=(n != 1);\n" +
+				"msgid \"id\"\n" +
+				"msgstr\"str\"\n",
+			expectedErr: fmt.Errorf("incorrect format of msgstr: incorrect format of po tags"),
 		},
 	}
 
@@ -113,6 +156,11 @@ func TestLex(t *testing.T) {
 			t.Parallel()
 			r := strings.NewReader(tt.input)
 			result, err := Lex(r)
+
+			if tt.expectedErr != nil {
+				assert.Errorf(t, err, tt.expectedErr.Error())
+				return
+			}
 
 			if !assert.NoError(t, err) {
 				return

@@ -78,7 +78,7 @@ func TokensToPo(tokens []Token) (Po, error) {
 			currentMessage.MsgCtxtPrevCtxt = token.Value
 		case MsgidPluralPrevUntStrPlural:
 			currentMessage.MsgIdPrevUntPluralStr = token.Value
-		case MsgidPrevUntdStr:
+		case MsgidPrevUntStr:
 			currentMessage.MsgIdPrevUnt = token.Value
 		case MsgId:
 			currentMessage.MsgId = token.Value
