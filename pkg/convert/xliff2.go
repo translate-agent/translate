@@ -32,6 +32,7 @@ type note struct {
 	Content  string `xml:",chardata"`
 }
 
+// FromXliff2 converts serialized data from the XML data in the XLIFF 2 format into a model.Messages struct.
 func FromXliff2(data []byte) (model.Messages, error) {
 	var xlf xliff2
 	if err := xml.Unmarshal(data, &xlf); err != nil {
@@ -61,6 +62,7 @@ func FromXliff2(data []byte) (model.Messages, error) {
 	return messages, nil
 }
 
+// ToXliff2 converts a model.Messages struct into a byte slice in the XLIFF 2 format.
 func ToXliff2(messages model.Messages) ([]byte, error) {
 	xlf := xliff2{
 		Version: "2.0",
