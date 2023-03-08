@@ -8,18 +8,18 @@ import (
 	"golang.org/x/text/language"
 )
 
-type HeaderNode struct {
+type headerNode struct {
 	Language    language.Tag
 	Translator  string
-	PluralForms PluralForm
+	PluralForms pluralForm
 }
 
-type PluralForm struct {
+type pluralForm struct {
 	Plural   string
 	NPlurals int
 }
 
-type MessageNode struct {
+type messageNode struct {
 	MsgCtxt               string
 	MsgId                 string
 	MsgIdPlural           string
@@ -34,16 +34,16 @@ type MessageNode struct {
 }
 
 type Po struct {
-	Header   HeaderNode
-	Messages []MessageNode
+	Header   headerNode
+	Messages []messageNode
 }
 
 func TokensToPo(tokens []Token) (Po, error) {
-	var messages []MessageNode
+	var messages []messageNode
 
 	partsN := 2
-	currentMessage := MessageNode{}
-	header := HeaderNode{}
+	currentMessage := messageNode{}
+	header := headerNode{}
 
 	for _, token := range tokens {
 		switch token.Type {
@@ -87,7 +87,7 @@ func TokensToPo(tokens []Token) (Po, error) {
 		case MsgStr:
 			currentMessage.MsgStr = []string{token.Value}
 			messages = append(messages, currentMessage)
-			currentMessage = MessageNode{}
+			currentMessage = messageNode{}
 		case PluralMsgStr:
 			switch {
 			case token.Index == 0:
@@ -100,7 +100,7 @@ func TokensToPo(tokens []Token) (Po, error) {
 
 			if header.PluralForms.NPlurals == len(currentMessage.MsgStr) {
 				messages = append(messages, currentMessage)
-				currentMessage = MessageNode{}
+				currentMessage = messageNode{}
 			}
 		}
 	}
@@ -115,8 +115,8 @@ func TokensToPo(tokens []Token) (Po, error) {
 	}, nil
 }
 
-func parsePluralForms(s string) (PluralForm, error) {
-	var pf PluralForm
+func parsePluralForms(s string) (pluralForm, error) {
+	var pf pluralForm
 
 	var err error
 

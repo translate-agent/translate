@@ -40,12 +40,12 @@ func Test_TokensToPo(t *testing.T) {
 				{Value: "message", Type: MsgStr},
 			},
 			expected: Po{
-				Header: HeaderNode{
+				Header: headerNode{
 					Language:    language.Make("en-US"),
 					Translator:  "Translator: John Doe",
-					PluralForms: PluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
+					PluralForms: pluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
 				},
-				Messages: []MessageNode{
+				Messages: []messageNode{
 					{
 						TranslatorComment:     "translator comment",
 						ExtractedComment:      "extracted comment",
@@ -76,12 +76,12 @@ func Test_TokensToPo(t *testing.T) {
 				{Value: "message", Type: MsgStr},
 			},
 			expected: Po{
-				Header: HeaderNode{
+				Header: headerNode{
 					Language:    language.Make("en-US"),
 					Translator:  "Translator: John Doe",
-					PluralForms: PluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
+					PluralForms: pluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
 				},
-				Messages: []MessageNode{
+				Messages: []messageNode{
 					{
 						MsgId:  "message id",
 						MsgStr: []string{"message"},
@@ -101,12 +101,12 @@ func Test_TokensToPo(t *testing.T) {
 				{Value: "Il y a %d pommes", Type: PluralMsgStr, Index: 1},
 			},
 			expected: Po{
-				Header: HeaderNode{
+				Header: headerNode{
 					Language:    language.Make("en-US"),
 					Translator:  "Translator: John Doe",
-					PluralForms: PluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
+					PluralForms: pluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
 				},
-				Messages: []MessageNode{
+				Messages: []messageNode{
 					{
 						MsgId:       "There is 1 apple",
 						MsgIdPlural: "There is %d apples",

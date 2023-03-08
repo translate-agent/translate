@@ -8,10 +8,10 @@ import (
 	"strings"
 )
 
-type TokenType int
+type tokenType int
 
 const (
-	HeaderLanguage TokenType = iota
+	HeaderLanguage tokenType = iota
 	HeaderTranslator
 	HeaderPluralForms
 	MsgCtxt
@@ -30,7 +30,7 @@ const (
 
 type Token struct {
 	Value string
-	Type  TokenType
+	Type  tokenType
 	Index int // plural index for msgstr with plural forms
 }
 
@@ -112,7 +112,7 @@ func parseLine(line string, tokens *[]Token) error {
 	}
 }
 
-func parseHeaderToken(line string, tokenType TokenType, tokens *[]Token) error {
+func parseHeaderToken(line string, tokenType tokenType, tokens *[]Token) error {
 	val, err := parseMsgString(line)
 	if err != nil {
 		return fmt.Errorf("incorrect format of header token: %w", err)
@@ -123,7 +123,7 @@ func parseHeaderToken(line string, tokenType TokenType, tokens *[]Token) error {
 	return nil
 }
 
-func parseMsgToken(line string, tokenType TokenType, tokens *[]Token) error {
+func parseMsgToken(line string, tokenType tokenType, tokens *[]Token) error {
 	val, err := parseMsgString(line)
 	if err != nil {
 		return fmt.Errorf("incorrect format of msg token: %w", err)
@@ -154,7 +154,7 @@ func parsePluralMsgToken(line string, tokens *[]Token) error {
 	return nil
 }
 
-func parseCommentToken(line string, tokenType TokenType, tokens *[]Token) error {
+func parseCommentToken(line string, tokenType tokenType, tokens *[]Token) error {
 	val, err := parseMsgString(line)
 	if err != nil {
 		return fmt.Errorf("incorrect format of comment token: %w", err)
