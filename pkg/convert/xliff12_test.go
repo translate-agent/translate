@@ -103,7 +103,8 @@ func Test_ToXliff12(t *testing.T) {
 	}{
 		{
 			name: "All OK",
-			want: []byte(`<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2">
+			want: []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
   <file source-language="en">
     <body>
       <trans-unit id="Welcome">

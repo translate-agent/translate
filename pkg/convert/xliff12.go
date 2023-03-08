@@ -13,6 +13,7 @@ import (
 
 type xliff12 struct {
 	XMLName xml.Name `xml:"urn:oasis:names:tc:xliff:document:1.2 xliff"`
+	Version string   `xml:"version,attr"`
 	File    file     `xml:"file"`
 }
 
@@ -57,6 +58,7 @@ func FromXliff12(data []byte) (model.Messages, error) {
 // ToXliff12 converts a model.Messages struct into a byte slice in the XLIFF 1.2 format.
 func ToXliff12(messages model.Messages) ([]byte, error) {
 	xlf := xliff12{
+		Version: "1.2",
 		File: file{
 			SourceLanguage: messages.Language,
 			Body: bodyElement{
@@ -78,5 +80,7 @@ func ToXliff12(messages model.Messages) ([]byte, error) {
 		return nil, fmt.Errorf("marshal xliff12 struct to XLIFF 1.2 formatted XML: %w", err)
 	}
 
-	return data, nil
+	dataWithHeader := append([]byte(xml.Header), data...) // prepend generic XML header
+
+	return dataWithHeader, nil
 }
