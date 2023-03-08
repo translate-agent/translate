@@ -10,11 +10,11 @@ import (
 	"go.expect.digital/translate/pkg/pot"
 )
 
-type PoTag string
+type poTag string
 
 const (
-	MsgId  PoTag = "msgid"
-	MsgStr PoTag = "msgstr"
+	MsgId  poTag = "msgid"
+	MsgStr poTag = "msgstr"
 )
 
 func ToPot(m model.Messages) ([]byte, error) {
@@ -97,7 +97,7 @@ func FromPot(b []byte) (model.Messages, error) {
 	}, nil
 }
 
-func writeToPoTag(b *bytes.Buffer, tag PoTag, str string) error {
+func writeToPoTag(b *bytes.Buffer, tag poTag, str string) error {
 	encodedStr, err := json.Marshal(str) // use JSON encoding to escape special characters
 	if err != nil {
 		return fmt.Errorf("marshal %s: %w", tag, err)
