@@ -22,7 +22,7 @@ type ngJSON struct {
 func FromNgLocalize(data []byte) (model.Messages, error) {
 	var ng ngJSON
 	if err := json.Unmarshal(data, &ng); err != nil {
-		return model.Messages{}, fmt.Errorf("unmarshal @angular/localize JSON to model.Messages: %w", err)
+		return model.Messages{}, fmt.Errorf("unmarshal @angular/localize JSON into ngJSON struct: %w", err)
 	}
 
 	messages := model.Messages{
@@ -50,7 +50,7 @@ func ToNgLocalize(messages model.Messages) ([]byte, error) {
 
 	data, err := json.Marshal(ng)
 	if err != nil {
-		return nil, fmt.Errorf("marshal model.Messages to @angular/localize JSON : %w", err)
+		return nil, fmt.Errorf("marshal ngJSON struct to @angular/localize JSON : %w", err)
 	}
 
 	return data, nil

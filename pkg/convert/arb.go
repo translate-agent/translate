@@ -136,7 +136,7 @@ func ToArb(messages model.Messages) ([]byte, error) {
 
 	result, err := json.Marshal(dst)
 	if err != nil {
-		return nil, fmt.Errorf("marshaling model.messages to Arb: %w", err)
+		return nil, fmt.Errorf("marshal dst map to ARB format: %w", err)
 	}
 
 	return result, nil
