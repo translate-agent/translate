@@ -21,8 +21,7 @@ func Test_FromXliff12(t *testing.T) {
 	}{
 		{
 			name: "All OK",
-			data: []byte(`
-<?xml version="1.0" encoding="UTF-8"?>
+			data: []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
   <file source-language="en" target-language="fr" datatype="plaintext" original="ng2.template">
     <body>
@@ -54,8 +53,7 @@ func Test_FromXliff12(t *testing.T) {
 		},
 		{
 			name: "Malformed language tag",
-			data: []byte(`
-<?xml version="1.0" encoding="UTF-8"?>
+			data: []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
   <file source-language="xyz-ZY-Latn" target-language="fr" datatype="plaintext" original="ng2.template">
     <body>
@@ -105,8 +103,7 @@ func Test_ToXliff12(t *testing.T) {
 	}{
 		{
 			name: "All OK",
-			want: []byte(`
-<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2">
+			want: []byte(`<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2">
   <file source-language="en">
     <body>
       <trans-unit id="Welcome">
