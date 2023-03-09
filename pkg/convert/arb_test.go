@@ -14,14 +14,14 @@ func Test_FromArb(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		want    model.Messages
-		wantErr error
-		name    string
-		data    []byte
+		expected    model.Messages
+		expectedErr error
+		name        string
+		input       []byte
 	}{
 		{
 			name: "Combination of messages",
-			data: []byte(`
+			input: []byte(`
 			{
 				"title": "Hello World!",
 				"@title": {
@@ -38,7 +38,7 @@ func Test_FromArb(t *testing.T) {
 				},
 				"farewell": "Goodbye friend"
 			}`),
-			want: model.Messages{
+			expected: model.Messages{
 				Messages: []model.Message{
 					{
 						ID:          "title",
@@ -55,31 +55,31 @@ func Test_FromArb(t *testing.T) {
 					},
 				},
 			},
-			wantErr: nil,
+			expectedErr: nil,
 		},
 		{
 			name: "Wrong value type for @title",
-			data: []byte(`
+			input: []byte(`
 			{
 				"title": "Hello World!",
 				"@title": "Message to greet the World"
 			}`),
-			wantErr: errors.New("expected a map, got 'string'"),
+			expectedErr: errors.New("expected a map, got 'string'"),
 		},
 		{
 			name: "Wrong value type for greeting key",
-			data: []byte(`
+			input: []byte(`
 			{
 				"title": "Hello World!",
 				"greeting": {
 					"description": "Needed for greeting"
 				}
 			}`),
-			wantErr: errors.New("unsupported value type 'map[string]interface {}' for key 'greeting'"),
+			expectedErr: errors.New("unsupported value type 'map[string]interface {}' for key 'greeting'"),
 		},
 		{
 			name: "Wrong value type for description key",
-			data: []byte(`
+			input: []byte(`
 			{
 				"title": "Hello World!",
 				"@title": {
@@ -88,11 +88,11 @@ func Test_FromArb(t *testing.T) {
 					}
 				}
 			}`),
-			wantErr: errors.New("'Description' expected type 'string', got unconvertible type 'map[string]interface {}'"),
+			expectedErr: errors.New("'Description' expected type 'string', got unconvertible type 'map[string]interface {}'"),
 		},
 		{
 			name: "With locale",
-			data: []byte(`
+			input: []byte(`
       {
         "@@locale": "en",
         "title": "Hello World!",
@@ -100,7 +100,7 @@ func Test_FromArb(t *testing.T) {
           "description": "Message to greet the World"
         }
       }`),
-			want: model.Messages{
+			expected: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -110,11 +110,11 @@ func Test_FromArb(t *testing.T) {
 					},
 				},
 			},
-			wantErr: nil,
+			expectedErr: nil,
 		},
 		{
 			name: "With malformed locale",
-			data: []byte(`
+			input: []byte(`
       {
         "@@locale": "asd-gh-jk",
         "title": "Hello World!",
@@ -122,11 +122,11 @@ func Test_FromArb(t *testing.T) {
           "description": "Message to greet the World"
         }
       }`),
-			wantErr: fmt.Errorf("language: tag is not well-formed"),
+			expectedErr: fmt.Errorf("language: tag is not well-formed"),
 		},
 		{
 			name: "With wrong value type for locale",
-			data: []byte(`
+			input: []byte(`
       {
         "@@locale": {
           "tag": "fr-FR"
@@ -136,7 +136,7 @@ func Test_FromArb(t *testing.T) {
           "description": "Message to greet the World"
         }
       }`),
-			wantErr: fmt.Errorf("unsupported value type 'map[string]interface {}' for key '@@locale'"),
+			expectedErr: fmt.Errorf("unsupported value type 'map[string]interface {}' for key '@@locale'"),
 		},
 	}
 	for _, tt := range tests {
@@ -144,9 +144,9 @@ func Test_FromArb(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			res, err := FromArb(tt.data)
-			if tt.wantErr != nil {
-				assert.ErrorContains(t, err, tt.wantErr.Error())
+			actual, err := FromArb(tt.input)
+			if tt.expectedErr != nil {
+				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -154,8 +154,8 @@ func Test_FromArb(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, tt.want.Language, res.Language)
-			assert.ElementsMatch(t, tt.want.Messages, res.Messages)
+			assert.Equal(t, tt.expected.Language, actual.Language)
+			assert.ElementsMatch(t, tt.expected.Messages, actual.Messages)
 		})
 	}
 }
@@ -178,7 +178,7 @@ func Test_ToArb(t *testing.T) {
 		},
 	}
 
-	want := []byte(`
+	expected := []byte(`
 	{
 		"@@locale":"fr",
 		"title":"Hello World!",
@@ -188,10 +188,10 @@ func Test_ToArb(t *testing.T) {
 		"greeting":"Welcome {user}"
 	}`)
 
-	res, err := ToArb(messages)
+	actual, err := ToArb(messages)
 	if !assert.NoError(t, err) {
 		return
 	}
 
-	assert.JSONEq(t, string(want), string(res))
+	assert.JSONEq(t, string(expected), string(actual))
 }
