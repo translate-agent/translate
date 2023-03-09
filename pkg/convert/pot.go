@@ -96,6 +96,7 @@ func FromPot(b []byte) (model.Messages, error) {
 			if strings.HasSuffix(node.MsgStr[0], "\\n") {
 				node.MsgStr[0] = strings.ReplaceAll(node.MsgStr[0], "\\n", "\n")
 			}
+
 			message.Message = node.MsgStr[0]
 		}
 
