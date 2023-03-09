@@ -6,6 +6,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"go.expect.digital/translate/pkg/model"
+	"golang.org/x/text/language"
 )
 
 /* .arb files employ the key-value (key-translation) format, with separate files representing different languages.
@@ -46,7 +47,7 @@ func FromArb(data []byte) (model.Messages, error) {
 	}
 
 	findDescription := func(key string) (string, error) {
-		// if '@' prefix missing then no additional information is provided
+		// if '@' prefix missing then no additional information is provided.
 		subKeyMap, ok := dst["@"+key]
 		if !ok {
 			return "", nil
@@ -63,7 +64,36 @@ func FromArb(data []byte) (model.Messages, error) {
 		return meta.Description, nil
 	}
 
-	var messages model.Messages
+	//nolint:lll
+	// ARB file can have optional '@@locale' top level key for source key language.
+	// https://medium.com/@Albert221/how-to-internationalize-your-flutter-app-with-arb-files-today-full-blown-tutorial-476ee65ecaed
+	findLocale := func() (language.Tag, error) {
+		// if '@@locale' is missing then language it is not provided (Undetermined).
+		locale, ok := dst["@@locale"]
+		if !ok {
+			return language.Tag{}, nil
+		}
+
+		// Check if @@locale key's value type is string.
+		langString, ok := locale.(string)
+		if !ok {
+			return language.Tag{}, fmt.Errorf("unsupported value type '%T' for key '@@locale'", locale)
+		}
+
+		langTag, err := language.Parse(langString)
+		if err != nil {
+			return language.Tag{}, fmt.Errorf("parse language: %w", err)
+		}
+
+		return langTag, nil
+	}
+
+	lang, err := findLocale()
+	if err != nil {
+		return model.Messages{}, fmt.Errorf("find locale: %w", err)
+	}
+
+	messages := model.Messages{Language: lang}
 
 	for key, value := range dst {
 		// Ignore a key if it begins with '@' as it only supplies metadata for message not the message itself.
@@ -92,7 +122,10 @@ func FromArb(data []byte) (model.Messages, error) {
 
 // Converts model.Messages into a serialized data in ARB file format.
 func ToArb(messages model.Messages) ([]byte, error) {
-	dst := make(map[string]interface{}, len(messages.Messages)*2) //nolint:gomnd
+	// dst length = number of messages + number of potential descriptions (same as number of messages) + locale.
+	dst := make(map[string]interface{}, len(messages.Messages)*2+1)
+	// "und" (Undetermined) language.Tag is also valid BCP47 tag.
+	dst["@@locale"] = messages.Language
 
 	for _, msg := range messages.Messages {
 		dst[msg.ID] = msg.Message
@@ -103,7 +136,7 @@ func ToArb(messages model.Messages) ([]byte, error) {
 
 	result, err := json.Marshal(dst)
 	if err != nil {
-		return nil, fmt.Errorf("marshaling model.messages to Arb: %w", err)
+		return nil, fmt.Errorf("marshal dst map to ARB: %w", err)
 	}
 
 	return result, nil
