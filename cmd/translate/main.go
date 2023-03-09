@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"go.expect.digital/translate/pkg/repo"
 	pb "go.expect.digital/translate/pkg/server/translate/v1"
 	"go.expect.digital/translate/pkg/tracer"
 	"go.expect.digital/translate/pkg/translate"
@@ -49,6 +50,8 @@ var rootCmd = &cobra.Command{
 			}
 		}()
 
+		repo := repo.NewRepo()
+
 		grpcServer := grpc.NewServer(
 			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
 			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
@@ -57,7 +60,7 @@ var rootCmd = &cobra.Command{
 		defer grpcServer.GracefulStop()
 
 		mux := runtime.NewServeMux()
-		pb.RegisterTranslateServiceServer(grpcServer, &translate.TranslateServiceServer{})
+		pb.RegisterTranslateServiceServer(grpcServer, translate.NewTranslateServiceServer(*repo))
 
 		err = pb.RegisterTranslateServiceHandlerFromEndpoint(
 			context.Background(),

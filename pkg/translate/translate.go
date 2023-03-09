@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"go.expect.digital/translate/pkg/repo"
 	pb "go.expect.digital/translate/pkg/server/translate/v1"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
@@ -13,6 +14,11 @@ import (
 
 type TranslateServiceServer struct {
 	pb.UnimplementedTranslateServiceServer
+	repo repo.Repo
+}
+
+func NewTranslateServiceServer(r repo.Repo) *TranslateServiceServer {
+	return &TranslateServiceServer{repo: r}
 }
 
 // ----------------------UploadTranslationFile-------------------------------
