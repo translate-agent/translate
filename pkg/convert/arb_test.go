@@ -2,10 +2,12 @@ package convert
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/model"
+	"golang.org/x/text/language"
 )
 
 func Test_FromArb(t *testing.T) {
@@ -35,8 +37,7 @@ func Test_FromArb(t *testing.T) {
 					}
 				},
 				"farewell": "Goodbye friend"
-			}			
-				`),
+			}`),
 			want: model.Messages{
 				Messages: []model.Message{
 					{
@@ -62,8 +63,7 @@ func Test_FromArb(t *testing.T) {
 			{
 				"title": "Hello World!",
 				"@title": "Message to greet the World"
-			}			
-					`),
+			}`),
 			wantErr: errors.New("expected a map, got 'string'"),
 		},
 		{
@@ -74,8 +74,7 @@ func Test_FromArb(t *testing.T) {
 				"greeting": {
 					"description": "Needed for greeting"
 				}
-			}			
-					`),
+			}`),
 			wantErr: errors.New("unsupported value type 'map[string]interface {}' for key 'greeting'"),
 		},
 		{
@@ -88,9 +87,56 @@ func Test_FromArb(t *testing.T) {
 						"meaning": "When you greet someone"
 					}
 				}
-			}			
-					`),
+			}`),
 			wantErr: errors.New("'Description' expected type 'string', got unconvertible type 'map[string]interface {}'"),
+		},
+		{
+			name: "With locale",
+			data: []byte(`
+      {
+        "@@locale": "en",
+        "title": "Hello World!",
+        "@title": {
+          "description": "Message to greet the World"
+        }
+      }`),
+			want: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "title",
+						Message:     "Hello World!",
+						Description: "Message to greet the World",
+					},
+				},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "With malformed locale",
+			data: []byte(`
+      {
+        "@@locale": "asd-gh-jk",
+        "title": "Hello World!",
+        "@title": {
+          "description": "Message to greet the World"
+        }
+      }`),
+			wantErr: fmt.Errorf("language: tag is not well-formed"),
+		},
+		{
+			name: "With wrong value type for locale",
+			data: []byte(`
+      {
+        "@@locale": {
+          "tag": "fr-FR"
+        },
+        "title": "Hello World!",
+        "@title": {
+          "description": "Message to greet the World"
+        }
+      }`),
+			wantErr: fmt.Errorf("unsupported value type 'map[string]interface {}' for key '@@locale'"),
 		},
 	}
 	for _, tt := range tests {
@@ -108,6 +154,7 @@ func Test_FromArb(t *testing.T) {
 				return
 			}
 
+			assert.Equal(t, tt.want.Language, res.Language)
 			assert.ElementsMatch(t, tt.want.Messages, res.Messages)
 		})
 	}
@@ -117,6 +164,7 @@ func Test_ToArb(t *testing.T) {
 	t.Parallel()
 
 	messages := model.Messages{
+		Language: language.French,
 		Messages: []model.Message{
 			{
 				ID:          "title",
@@ -132,13 +180,13 @@ func Test_ToArb(t *testing.T) {
 
 	want := []byte(`
 	{
+		"@@locale":"fr",
 		"title":"Hello World!",
 		"@title":{
 			"description":"Message to greet the World"
 		},
 		"greeting":"Welcome {user}"
-	}
-	`)
+	}`)
 
 	res, err := ToArb(messages)
 	if !assert.NoError(t, err) {

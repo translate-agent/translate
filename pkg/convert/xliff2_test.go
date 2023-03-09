@@ -10,9 +10,8 @@ import (
 	"golang.org/x/text/language"
 )
 
-func assertEqualXml(t *testing.T, expected, actual []byte) bool {
+func assertEqualXml(t *testing.T, expected, actual []byte) bool { //nolint:unparam
 	t.Helper()
-
 	// Matches a substring that starts with > and ends with < with zero or more whitespace in between.
 	re := regexp.MustCompile(`>(\s*)<`)
 	expectedTrimmed := re.ReplaceAllString(string(expected), "><")
