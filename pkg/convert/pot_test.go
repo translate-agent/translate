@@ -49,6 +49,38 @@ msgstr "Au revoir!"
 `),
 		},
 		{
+			name: "When description is multiline",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello, world!",
+						Message:     "Bonjour le monde!",
+						Description: "A simple greeting\nmultiline description",
+						Fuzzy:       true,
+					},
+					{
+						ID:          "Goodbye!",
+						Message:     "Au revoir!",
+						Description: "A farewell",
+						Fuzzy:       true,
+					},
+				},
+			},
+			expected: []byte(`"Language: en
+#. A simple greeting
+#. multiline description
+#, fuzzy
+msgid "Hello, world!"
+msgstr "Bonjour le monde!"
+
+#. A farewell
+#, fuzzy
+msgid "Goodbye!"
+msgstr "Au revoir!"
+`),
+		},
+		{
 			name: "When msgid is multiline",
 			input: model.Messages{
 				Language: language.English,
@@ -302,6 +334,7 @@ msgstr "Au revoir!"
 				return
 			}
 
+			fmt.Printf("res: %s", result)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -336,8 +369,42 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "Hello, world!\\n very long string\\n",
+						Message:     "Hello, world!\n very long string\n",
 						Description: "a greeting",
+						Fuzzy:       false,
+					},
+					{
+						ID:          "Goodbye",
+						Message:     "Goodbye, world!",
+						Description: "a farewell",
+						Fuzzy:       true,
+					},
+				},
+			},
+		},
+		{
+			name: "Multiline description",
+			input: []byte(`# Language: en-US
+							#. "a greeting"
+							#. "a greeting2"
+							#, ""
+							msgid "Hello"
+							msgstr ""
+							"Hello, world!\n"
+							"very long string\n"
+							
+							#. "a farewell"
+							#, "fuzzy"
+							msgid "Goodbye"
+							msgstr "Goodbye, world!"
+			`),
+			expected: model.Messages{
+				Language: language.Make("en-US"),
+				Messages: []model.Message{
+					{
+						ID:          "Hello",
+						Message:     "Hello, world!\n very long string\n",
+						Description: "a greeting\na greeting2",
 						Fuzzy:       false,
 					},
 					{

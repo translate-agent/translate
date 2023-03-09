@@ -23,8 +23,8 @@ type messageNode struct {
 	MsgCtxt               string
 	MsgId                 string
 	MsgIdPlural           string
-	TranslatorComment     string
-	ExtractedComment      string
+	TranslatorComment     []string
+	ExtractedComment      []string
 	Reference             string
 	Flag                  string
 	MsgCtxtPrevCtxt       string
@@ -67,13 +67,13 @@ func TokensToPo(tokens []Token) (Po, error) {
 		case MsgCtxt:
 			currentMessage.MsgCtxt = token.Value
 		case ExtractedComment:
-			currentMessage.ExtractedComment = token.Value
+			currentMessage.ExtractedComment = append(currentMessage.ExtractedComment, token.Value)
 		case Reference:
 			currentMessage.Reference = token.Value
 		case Flag:
 			currentMessage.Flag = token.Value
 		case TranslatorComment:
-			currentMessage.TranslatorComment = token.Value
+			currentMessage.TranslatorComment = append(currentMessage.TranslatorComment, token.Value)
 		case MsgctxtPreviousContext:
 			currentMessage.MsgCtxtPrevCtxt = token.Value
 		case MsgidPluralPrevUntStrPlural:

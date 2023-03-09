@@ -31,9 +31,13 @@ func ToPot(m model.Messages) ([]byte, error) {
 			}
 		}
 
-		if message.Description != "" {
-			if _, err := fmt.Fprintf(&b, "#. %s\n", message.Description); err != nil {
-				return nil, fmt.Errorf("write description: %w", err)
+		descriptions := strings.Split(message.Description, "\n")
+
+		for _, description := range descriptions {
+			if description != "" {
+				if _, err := fmt.Fprintf(&b, "#. %s\n", description); err != nil {
+					return nil, fmt.Errorf("write description: %w", err)
+				}
 			}
 		}
 
@@ -72,6 +76,10 @@ func FromPot(b []byte) (model.Messages, error) {
 	// model.Messages does not support plurals atm. But we plan to impl it under:
 	// https://github.com/orgs/translate-agent/projects/1?pane=issue&itemId=21251425
 	for _, node := range po.Messages {
+		if strings.HasSuffix(node.MsgId, "\\n") {
+			node.MsgId = strings.ReplaceAll(node.MsgId, "\\n", "\n")
+		}
+
 		if node.MsgIdPlural != "" {
 			continue
 		}
@@ -80,11 +88,14 @@ func FromPot(b []byte) (model.Messages, error) {
 
 		message := model.Message{
 			ID:          node.MsgId,
-			Description: node.ExtractedComment,
+			Description: strings.Join(node.ExtractedComment, "\n"),
 			Fuzzy:       fuzzy,
 		}
 
 		if len(node.MsgStr) > 0 {
+			if strings.HasSuffix(node.MsgStr[0], "\\n") {
+				node.MsgStr[0] = strings.ReplaceAll(node.MsgStr[0], "\\n", "\n")
+			}
 			message.Message = node.MsgStr[0]
 		}
 

@@ -25,7 +25,9 @@ func Test_TokensToPo(t *testing.T) {
 				{Value: "Translator: John Doe", Type: HeaderTranslator},
 				{Value: "Plural-Forms: nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
 				{Value: "translator comment", Type: TranslatorComment},
+				{Value: "translator comment2", Type: TranslatorComment},
 				{Value: "extracted comment", Type: ExtractedComment},
+				{Value: "extracted comment2", Type: ExtractedComment},
 				{Value: "reference", Type: Reference},
 				{Value: "fuzzy", Type: Flag},
 				{Value: "context", Type: MsgCtxt},
@@ -47,8 +49,8 @@ func Test_TokensToPo(t *testing.T) {
 				},
 				Messages: []messageNode{
 					{
-						TranslatorComment:     "translator comment",
-						ExtractedComment:      "extracted comment",
+						TranslatorComment:     []string{"translator comment", "translator comment2"},
+						ExtractedComment:      []string{"extracted comment", "extracted comment2"},
 						Reference:             "reference",
 						Flag:                  "fuzzy",
 						MsgCtxt:               "context",
