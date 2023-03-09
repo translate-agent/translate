@@ -15,9 +15,9 @@ type xliff2 struct {
 	XMLName xml.Name     `xml:"urn:oasis:names:tc:xliff:document:2.0 xliff"`
 	Version string       `xml:"version,attr"`
 	SrcLang language.Tag `xml:"srcLang,attr"`
-	File    file         `xml:"file"`
+	File    xliff2File   `xml:"file"`
 }
-type file struct {
+type xliff2File struct {
 	Units []unit `xml:"unit"`
 }
 
@@ -67,7 +67,7 @@ func ToXliff2(messages model.Messages) ([]byte, error) {
 	xlf := xliff2{
 		Version: "2.0",
 		SrcLang: messages.Language,
-		File: file{
+		File: xliff2File{
 			Units: make([]unit, 0, len(messages.Messages)),
 		},
 	}

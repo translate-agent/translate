@@ -12,12 +12,12 @@ import (
 // XLIFF 1.2 example: https://localizely.com/xliff-file/?tab=xliff-12
 
 type xliff12 struct {
-	XMLName xml.Name `xml:"urn:oasis:names:tc:xliff:document:1.2 xliff"`
-	Version string   `xml:"version,attr"`
-	File    file     `xml:"file"`
+	XMLName xml.Name    `xml:"urn:oasis:names:tc:xliff:document:1.2 xliff"`
+	Version string      `xml:"version,attr"`
+	File    xliff12File `xml:"file"`
 }
 
-type file struct {
+type xliff12File struct {
 	SourceLanguage language.Tag `xml:"source-language,attr"`
 	Body           bodyElement  `xml:"body"`
 }
@@ -59,7 +59,7 @@ func FromXliff12(data []byte) (model.Messages, error) {
 func ToXliff12(messages model.Messages) ([]byte, error) {
 	xlf := xliff12{
 		Version: "1.2",
-		File: file{
+		File: xliff12File{
 			SourceLanguage: messages.Language,
 			Body: bodyElement{
 				TransUnits: make([]transUnit, 0, len(messages.Messages)),

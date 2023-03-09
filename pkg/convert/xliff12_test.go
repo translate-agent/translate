@@ -2,7 +2,6 @@ package convert
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -159,12 +158,7 @@ func Test_ToXliff12(t *testing.T) {
 				return
 			}
 
-			// Matches a substring that starts with > and ends with < with zero or more whitespace in between.
-			re := regexp.MustCompile(`>(\s*)<`)
-			resultTrimmed := re.ReplaceAllString(string(result), "><")
-			wantTrimmed := re.ReplaceAllString(string(tt.want), "><")
-
-			assert.Equal(t, resultTrimmed, wantTrimmed)
+			assertEqualXml(t, tt.want, result)
 		})
 	}
 }
