@@ -10,6 +10,17 @@ import (
 	"golang.org/x/text/language"
 )
 
+func assertEqualXml(t *testing.T, expected, actual []byte) bool {
+	t.Helper()
+
+	// Matches a substring that starts with > and ends with < with zero or more whitespace in between.
+	re := regexp.MustCompile(`>(\s*)<`)
+	expectedTrimmed := re.ReplaceAllString(string(expected), "><")
+	actualTrimmed := re.ReplaceAllString(string(actual), "><")
+
+	return assert.Equal(t, expectedTrimmed, actualTrimmed)
+}
+
 func TestFromXliff2(t *testing.T) {
 	t.Parallel()
 
@@ -186,12 +197,7 @@ func Test_ToXliff2(t *testing.T) {
 				return
 			}
 
-			// Matches a substring that starts with > and ends with < with zero or more whitespace in between.
-			re := regexp.MustCompile(`>(\s*)<`)
-			resultTrimmed := re.ReplaceAllString(string(result), "><")
-			wantTrimmed := re.ReplaceAllString(string(tt.want), "><")
-
-			assert.Equal(t, resultTrimmed, wantTrimmed)
+			assertEqualXml(t, tt.want, result)
 		})
 	}
 }
