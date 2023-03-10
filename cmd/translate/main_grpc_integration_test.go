@@ -88,13 +88,13 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		req  *pb.UploadTranslationFileRequest
-		name string
-		want codes.Code
+		input    *pb.UploadTranslationFileRequest
+		name     string
+		expected codes.Code
 	}{
 		{
 			name: "Happy path",
-			req: &pb.UploadTranslationFileRequest{
+			input: &pb.UploadTranslationFileRequest{
 				Language: "lv-lv",
 				Data: []byte(`{
 						"language":"lv-lv",
@@ -110,11 +110,11 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 				 }`),
 				Schema: pb.Schema_GO,
 			},
-			want: codes.OK,
+			expected: codes.OK,
 		},
 		{
 			name: "Missing language",
-			req: &pb.UploadTranslationFileRequest{
+			input: &pb.UploadTranslationFileRequest{
 				Data: []byte(`{
 						"messages":[
 							 {
@@ -128,16 +128,16 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 				 }`),
 				Schema: pb.Schema_GO,
 			},
-			want: codes.InvalidArgument,
+			expected: codes.InvalidArgument,
 		},
 		{
-			name: "Missing data",
-			req:  &pb.UploadTranslationFileRequest{Language: "lv-lv"},
-			want: codes.InvalidArgument,
+			name:     "Missing data",
+			input:    &pb.UploadTranslationFileRequest{Language: "lv-lv"},
+			expected: codes.InvalidArgument,
 		},
 		{
 			name: "Invalid language",
-			req: &pb.UploadTranslationFileRequest{
+			input: &pb.UploadTranslationFileRequest{
 				Language: "xyz-ZY-Latn",
 				Data: []byte(`{
 						"messages":[
@@ -152,7 +152,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 				 }`),
 				Schema: pb.Schema_GO,
 			},
-			want: codes.InvalidArgument,
+			expected: codes.InvalidArgument,
 		},
 	}
 
@@ -161,9 +161,10 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.UploadTranslationFile(context.Background(), tt.req)
+			_, err := client.UploadTranslationFile(context.Background(), tt.input)
 
-			assert.Equal(t, tt.want, status.Code(err))
+			actual := status.Code(err)
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
@@ -172,19 +173,19 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		req  *pb.DownloadTranslationFileRequest
-		name string
-		want codes.Code
+		input    *pb.DownloadTranslationFileRequest
+		name     string
+		expected codes.Code
 	}{
 		{
-			name: "Happy path",
-			req:  &pb.DownloadTranslationFileRequest{Language: "lv-lv"},
-			want: codes.OK,
+			name:     "Happy path",
+			input:    &pb.DownloadTranslationFileRequest{Language: "lv-lv"},
+			expected: codes.OK,
 		},
 		{
-			name: "Invalid argument",
-			req:  &pb.DownloadTranslationFileRequest{},
-			want: codes.InvalidArgument,
+			name:     "Invalid argument",
+			input:    &pb.DownloadTranslationFileRequest{},
+			expected: codes.InvalidArgument,
 		},
 	}
 
@@ -193,9 +194,10 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.DownloadTranslationFile(context.Background(), tt.req)
+			_, err := client.DownloadTranslationFile(context.Background(), tt.input)
 
-			assert.Equal(t, tt.want, status.Code(err))
+			actual := status.Code(err)
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }

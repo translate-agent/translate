@@ -1,8 +1,6 @@
 package convert
 
 import (
-	"bytes"
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -52,22 +50,18 @@ func TestToGo(t *testing.T) {
 		]
 	}`)
 
-	buffer := new(bytes.Buffer)
-
-	if !assert.NoError(t, json.Compact(buffer, expected)) {
+	actual, err := ToGo(modelMsg)
+	if !assert.NoError(t, err) {
 		return
 	}
 
-	result, err := ToGo(modelMsg)
-
-	assert.NoError(t, err)
-	assert.Equal(t, buffer.Bytes(), result)
+	assert.JSONEq(t, string(expected), string(actual))
 }
 
 func TestFromGo(t *testing.T) {
 	t.Parallel()
 
-	b := []byte(`
+	input := []byte(`
 	{
 		"language":"en",
 		"messages":[
@@ -87,14 +81,10 @@ func TestFromGo(t *testing.T) {
 		]
 	}`)
 
-	buffer := new(bytes.Buffer)
-
-	if !assert.NoError(t, json.Compact(buffer, b)) {
+	actual, err := FromGo(input)
+	if !assert.NoError(t, err) {
 		return
 	}
 
-	result, err := FromGo(buffer.Bytes())
-
-	assert.NoError(t, err)
-	assert.Equal(t, modelMsg, result)
+	assert.Equal(t, modelMsg, actual)
 }

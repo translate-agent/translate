@@ -43,13 +43,13 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		params params
-		want   uint
+		name     string
+		input    params
+		expected uint
 	}{
 		{
 			name: "Happy Path",
-			params: params{
+			input: params{
 				fileSchema: "GO",
 				path:       "v1/files/lv-LV",
 				data: []byte(`{
@@ -64,11 +64,11 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 					]
 				}`),
 			},
-			want: http.StatusOK,
+			expected: http.StatusOK,
 		},
 		{
 			name: "Invalid argument",
-			params: params{
+			input: params{
 				fileSchema: "GO",
 				path:       "v1/files/lv-LV-asd",
 				data: []byte(`{
@@ -83,7 +83,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 					]
 				}`),
 			},
-			want: http.StatusBadRequest,
+			expected: http.StatusBadRequest,
 		},
 	}
 	for _, tt := range tests {
@@ -92,16 +92,16 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			t.Parallel()
 
 			query := url.Values{}
-			query.Add("schema", tt.params.fileSchema)
+			query.Add("schema", tt.input.fileSchema)
 
 			u := url.URL{
 				Scheme:   "http",
 				Host:     host + ":" + port,
-				Path:     tt.params.path,
+				Path:     tt.input.path,
 				RawQuery: query.Encode(),
 			}
 
-			body, contentType, err := attachFile(tt.params.data, t)
+			body, contentType, err := attachFile(tt.input.data, t)
 			if !assert.NoError(t, err) {
 				return
 			}
@@ -118,7 +118,8 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			}
 			defer resp.Body.Close()
 
-			assert.EqualValues(t, tt.want, resp.StatusCode)
+			actual := resp.StatusCode
+			assert.EqualValues(t, tt.expected, actual)
 		})
 	}
 }
@@ -132,25 +133,25 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		params params
-		want   uint
+		name     string
+		input    params
+		expected uint
 	}{
 		{
 			name: "Happy path",
-			params: params{
+			input: params{
 				fileSchema: "GO",
 				path:       "v1/files/lv-LV",
 			},
-			want: http.StatusOK,
+			expected: http.StatusOK,
 		},
 		{
 			name: "Invalid argument",
-			params: params{
+			input: params{
 				fileSchema: "GO",
 				path:       "v1/files/lv-LV-asd",
 			},
-			want: http.StatusBadRequest,
+			expected: http.StatusBadRequest,
 		},
 	}
 	for _, tt := range tests {
@@ -159,12 +160,12 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			t.Parallel()
 
 			query := url.Values{}
-			query.Add("schema", tt.params.fileSchema)
+			query.Add("schema", tt.input.fileSchema)
 
 			u := url.URL{
 				Scheme:   "http",
 				Host:     host + ":" + port,
-				Path:     tt.params.path,
+				Path:     tt.input.path,
 				RawQuery: query.Encode(),
 			}
 
@@ -179,7 +180,8 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			}
 			defer resp.Body.Close()
 
-			assert.EqualValues(t, tt.want, resp.StatusCode)
+			actual := resp.StatusCode
+			assert.EqualValues(t, tt.expected, actual)
 		})
 	}
 }
