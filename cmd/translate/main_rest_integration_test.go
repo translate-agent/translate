@@ -118,7 +118,8 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			}
 			defer resp.Body.Close()
 
-			assert.EqualValues(t, tt.expected, resp.StatusCode)
+			actual := resp.StatusCode
+			assert.EqualValues(t, tt.expected, actual)
 		})
 	}
 }
@@ -179,7 +180,8 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			}
 			defer resp.Body.Close()
 
-			assert.EqualValues(t, tt.expected, resp.StatusCode)
+			actual := resp.StatusCode
+			assert.EqualValues(t, tt.expected, actual)
 		})
 	}
 }

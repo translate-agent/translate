@@ -163,7 +163,8 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 			_, err := client.UploadTranslationFile(context.Background(), tt.input)
 
-			assert.Equal(t, tt.expected, status.Code(err))
+			actual := status.Code(err)
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
@@ -195,7 +196,8 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 
 			_, err := client.DownloadTranslationFile(context.Background(), tt.input)
 
-			assert.Equal(t, tt.expected, status.Code(err))
+			actual := status.Code(err)
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
