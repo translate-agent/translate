@@ -13,14 +13,14 @@ func Test_FromXliff12(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		wantErr error
-		data    []byte
-		want    model.Messages
+		name        string
+		expectedErr error
+		input       []byte
+		expected    model.Messages
 	}{
 		{
 			name: "All OK",
-			data: []byte(`<?xml version="1.0" encoding="UTF-8"?>
+			input: []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
   <file source-language="en" target-language="fr" datatype="plaintext" original="ng2.template">
     <body>
@@ -34,7 +34,7 @@ func Test_FromXliff12(t *testing.T) {
     </body>
   </file>
 </xliff>`),
-			want: model.Messages{
+			expected: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -48,11 +48,11 @@ func Test_FromXliff12(t *testing.T) {
 					},
 				},
 			},
-			wantErr: nil,
+			expectedErr: nil,
 		},
 		{
 			name: "Malformed language tag",
-			data: []byte(`<?xml version="1.0" encoding="UTF-8"?>
+			input: []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
   <file source-language="xyz-ZY-Latn" target-language="fr" datatype="plaintext" original="ng2.template">
     <body>
@@ -66,7 +66,7 @@ func Test_FromXliff12(t *testing.T) {
     </body>
   </file>
 </xliff>`),
-			wantErr: fmt.Errorf("language: subtag \"xyz\" is well-formed but unknown"),
+			expectedErr: fmt.Errorf("language: subtag \"xyz\" is well-formed but unknown"),
 		},
 	}
 	for _, tt := range tests {
@@ -74,10 +74,10 @@ func Test_FromXliff12(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			messages, err := FromXliff12(tt.data)
+			actual, err := FromXliff12(tt.input)
 
-			if tt.wantErr != nil {
-				assert.ErrorContains(t, err, tt.wantErr.Error())
+			if tt.expectedErr != nil {
+				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -85,8 +85,8 @@ func Test_FromXliff12(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, tt.want.Language, messages.Language)
-			assert.ElementsMatch(t, tt.want.Messages, messages.Messages)
+			assert.Equal(t, tt.expected.Language, actual.Language)
+			assert.ElementsMatch(t, tt.expected.Messages, actual.Messages)
 		})
 	}
 }
@@ -95,14 +95,14 @@ func Test_ToXliff12(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		want     []byte
-		wantErr  error
-		messages model.Messages
+		name        string
+		expected    []byte
+		expectedErr error
+		input       model.Messages
 	}{
 		{
 			name: "All OK",
-			want: []byte(`<?xml version="1.0" encoding="UTF-8"?>
+			expected: []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
   <file source-language="en">
     <body>
@@ -120,8 +120,8 @@ func Test_ToXliff12(t *testing.T) {
     </body>
   </file>
 </xliff>`),
-			wantErr: nil,
-			messages: model.Messages{
+			expectedErr: nil,
+			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -147,10 +147,10 @@ func Test_ToXliff12(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result, err := ToXliff12(tt.messages)
+			actual, err := ToXliff12(tt.input)
 
-			if tt.wantErr != nil {
-				assert.ErrorContains(t, err, tt.wantErr.Error())
+			if tt.expectedErr != nil {
+				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -158,7 +158,7 @@ func Test_ToXliff12(t *testing.T) {
 				return
 			}
 
-			assertEqualXml(t, tt.want, result)
+			assertEqualXml(t, tt.expected, actual)
 		})
 	}
 }

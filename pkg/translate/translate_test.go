@@ -13,36 +13,36 @@ func Test_ParseUploadParams(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		req     *pb.UploadTranslationFileRequest
-		wantErr error
-		name    string
+		input       *pb.UploadTranslationFileRequest
+		expectedErr error
+		name        string
 	}{
 		{
 			name: "Happy Path",
-			req: &pb.UploadTranslationFileRequest{
+			input: &pb.UploadTranslationFileRequest{
 				Language: "lv-LV",
 				Data:     []byte(`{"key":"value"}`),
 				Schema:   pb.Schema_GO,
 			},
-			wantErr: nil,
+			expectedErr: nil,
 		},
 		{
 			name: "Malformed language tag",
-			req: &pb.UploadTranslationFileRequest{
+			input: &pb.UploadTranslationFileRequest{
 				Language: "xyz-ZY-Latn",
 				Data:     []byte(`{"key":"value"}`),
 				Schema:   pb.Schema_GO,
 			},
-			wantErr: errors.New("subtag \"xyz\" is well-formed but unknown"),
+			expectedErr: errors.New("subtag \"xyz\" is well-formed but unknown"),
 		},
 		{
 			name: "Missing language tag",
-			req: &pb.UploadTranslationFileRequest{
+			input: &pb.UploadTranslationFileRequest{
 				Language: "",
 				Data:     []byte(`{"key":"value"}`),
 				Schema:   pb.Schema_GO,
 			},
-			wantErr: errors.New("tag is not well-formed"),
+			expectedErr: errors.New("tag is not well-formed"),
 		},
 	}
 
@@ -51,14 +51,17 @@ func Test_ParseUploadParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			parsed, err := parseUploadParams(tt.req)
+			parsed, err := parseUploadParams(tt.input)
 
-			if tt.wantErr != nil {
-				assert.ErrorContains(t, err, tt.wantErr.Error())
+			if tt.expectedErr != nil {
+				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			assert.NoError(t, err)
+			if !assert.NoError(t, err) {
+				return
+			}
+
 			assert.NotEmpty(t, parsed)
 		})
 	}
@@ -68,35 +71,35 @@ func Test_ValidateUploadParams(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		wantErr error
-		params  uploadParams
+		name        string
+		expectedErr error
+		input       uploadParams
 	}{
 		{
 			name: "Happy Path",
-			params: uploadParams{
+			input: uploadParams{
 				Language: language.MustParse("lv-LV"),
 				Data:     []byte(`{"key":"value"}`),
 				Schema:   pb.Schema_GO,
 			},
-			wantErr: nil,
+			expectedErr: nil,
 		},
 		{
 			name: "Empty data",
-			params: uploadParams{
+			input: uploadParams{
 				Language: language.MustParse("lv-LV"),
 				Schema:   pb.Schema_GO,
 			},
-			wantErr: errors.New("'data' is required"),
+			expectedErr: errors.New("'data' is required"),
 		},
 		{
 			name: "Unspecified schema",
-			params: uploadParams{
+			input: uploadParams{
 				Language: language.MustParse("lv-LV"),
 				Data:     []byte(`{"key":"value"}`),
 				Schema:   pb.Schema_UNSPECIFIED,
 			},
-			wantErr: errors.New("'schema' is required"),
+			expectedErr: errors.New("'schema' is required"),
 		},
 	}
 	for _, tt := range tests {
@@ -104,10 +107,10 @@ func Test_ValidateUploadParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.params.validate()
+			err := tt.input.validate()
 
-			if tt.wantErr != nil {
-				assert.ErrorContains(t, err, tt.wantErr.Error())
+			if tt.expectedErr != nil {
+				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -120,33 +123,33 @@ func Test_ParseDownloadParams(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		req     *pb.DownloadTranslationFileRequest
-		wantErr error
-		name    string
+		input       *pb.DownloadTranslationFileRequest
+		expectedErr error
+		name        string
 	}{
 		{
 			name: "Happy Path",
-			req: &pb.DownloadTranslationFileRequest{
+			input: &pb.DownloadTranslationFileRequest{
 				Language: "lv-LV",
 				Schema:   pb.Schema_GO,
 			},
-			wantErr: nil,
+			expectedErr: nil,
 		},
 		{
 			name: "Malformed language tag",
-			req: &pb.DownloadTranslationFileRequest{
+			input: &pb.DownloadTranslationFileRequest{
 				Language: "xyz-ZY-Latn",
 				Schema:   pb.Schema_GO,
 			},
-			wantErr: errors.New("subtag \"xyz\" is well-formed but unknown"),
+			expectedErr: errors.New("subtag \"xyz\" is well-formed but unknown"),
 		},
 		{
 			name: "Missing language",
-			req: &pb.DownloadTranslationFileRequest{
+			input: &pb.DownloadTranslationFileRequest{
 				Language: "",
 				Schema:   pb.Schema_GO,
 			},
-			wantErr: errors.New("tag is not well-formed"),
+			expectedErr: errors.New("tag is not well-formed"),
 		},
 	}
 	for _, tt := range tests {
@@ -154,14 +157,17 @@ func Test_ParseDownloadParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			parsed, err := parseDownloadParams(tt.req)
+			parsed, err := parseDownloadParams(tt.input)
 
-			if tt.wantErr != nil {
-				assert.ErrorContains(t, err, tt.wantErr.Error())
+			if tt.expectedErr != nil {
+				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			assert.NoError(t, err)
+			if !assert.NoError(t, err) {
+				return
+			}
+
 			assert.NotEmpty(t, parsed)
 		})
 	}
