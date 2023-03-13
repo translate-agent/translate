@@ -136,7 +136,7 @@ func (d *deleteServiceRequest) parseParams() (deleteServiceParams, error) {
 	return deleteServiceParams{uuid: uuid}, nil
 }
 
-func (l *deleteServiceParams) validate() error {
+func (d *deleteServiceParams) validate() error {
 	// validate if uuid is in DB
 	return nil
 }
