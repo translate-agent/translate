@@ -9,20 +9,28 @@ import (
 	"golang.org/x/text/language"
 )
 
+// -------------------Upload-----------------------
+
 func Test_ParseUploadParams(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		input       *pb.UploadTranslationFileRequest
-		expectedErr error
 		name        string
+		expectedErr error
+		input       *pb.UploadTranslationFileRequest
+		expected    uploadParams
 	}{
 		{
 			name: "Happy Path",
 			input: &pb.UploadTranslationFileRequest{
-				Language: "lv-LV",
+				Language: "lv",
 				Data:     []byte(`{"key":"value"}`),
 				Schema:   pb.Schema_GO,
+			},
+			expected: uploadParams{
+				language: language.Latvian,
+				data:     []byte(`{"key":"value"}`),
+				schema:   pb.Schema_GO,
 			},
 			expectedErr: nil,
 		},
@@ -51,7 +59,9 @@ func Test_ParseUploadParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			parsed, err := parseUploadParams(tt.input)
+			req := (*uploadTranslationFileRequest)(tt.input)
+
+			actual, err := req.parseParams()
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
@@ -62,7 +72,7 @@ func Test_ParseUploadParams(t *testing.T) {
 				return
 			}
 
-			assert.NotEmpty(t, parsed)
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
@@ -78,26 +88,26 @@ func Test_ValidateUploadParams(t *testing.T) {
 		{
 			name: "Happy Path",
 			input: uploadParams{
-				Language: language.MustParse("lv-LV"),
-				Data:     []byte(`{"key":"value"}`),
-				Schema:   pb.Schema_GO,
+				language: language.MustParse("lv-LV"),
+				data:     []byte(`{"key":"value"}`),
+				schema:   pb.Schema_GO,
 			},
 			expectedErr: nil,
 		},
 		{
 			name: "Empty data",
 			input: uploadParams{
-				Language: language.MustParse("lv-LV"),
-				Schema:   pb.Schema_GO,
+				language: language.MustParse("lv-LV"),
+				schema:   pb.Schema_GO,
 			},
 			expectedErr: errors.New("'data' is required"),
 		},
 		{
 			name: "Unspecified schema",
 			input: uploadParams{
-				Language: language.MustParse("lv-LV"),
-				Data:     []byte(`{"key":"value"}`),
-				Schema:   pb.Schema_UNSPECIFIED,
+				language: language.MustParse("lv-LV"),
+				data:     []byte(`{"key":"value"}`),
+				schema:   pb.Schema_UNSPECIFIED,
 			},
 			expectedErr: errors.New("'schema' is required"),
 		},
@@ -119,19 +129,26 @@ func Test_ValidateUploadParams(t *testing.T) {
 	}
 }
 
+// -------------------Download-----------------------
+
 func Test_ParseDownloadParams(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
+		name        string
 		input       *pb.DownloadTranslationFileRequest
 		expectedErr error
-		name        string
+		expected    downloadParams
 	}{
 		{
 			name: "Happy Path",
 			input: &pb.DownloadTranslationFileRequest{
-				Language: "lv-LV",
+				Language: "lv",
 				Schema:   pb.Schema_GO,
+			},
+			expected: downloadParams{
+				language: language.Latvian,
+				schema:   pb.Schema_GO,
 			},
 			expectedErr: nil,
 		},
@@ -157,7 +174,9 @@ func Test_ParseDownloadParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			parsed, err := parseDownloadParams(tt.input)
+			req := (*downloadTranslationFileRequest)(tt.input)
+
+			actual, err := req.parseParams()
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
@@ -168,7 +187,49 @@ func Test_ParseDownloadParams(t *testing.T) {
 				return
 			}
 
-			assert.NotEmpty(t, parsed)
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
+func Test_ValidateDownloadParams(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		expectedErr error
+		input       downloadParams
+	}{
+		{
+			name: "Happy Path",
+			input: downloadParams{
+				language: language.MustParse("lv-LV"),
+				schema:   pb.Schema_GO,
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "Unspecified schema",
+			input: downloadParams{
+				language: language.MustParse("lv-LV"),
+				schema:   pb.Schema_UNSPECIFIED,
+			},
+			expectedErr: errors.New("'schema' is required"),
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := tt.input.validate()
+
+			if tt.expectedErr != nil {
+				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				return
+			}
+
+			assert.NoError(t, err)
 		})
 	}
 }

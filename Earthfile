@@ -37,6 +37,7 @@ proto:
   ' gen/proto/go/translate/v1/translate.pb.gw.go
 
   RUN rm gen/proto/go/translate/v1/translate.pb.gw.go.bak
+  #TODO Save to more apropriate dir e.g. pkg/pb/translate/v1 or pkg/gen/translate/v1
   SAVE ARTIFACT gen/proto/go/translate/v1 translate/v1 AS LOCAL pkg/server/translate/v1
 
 lint-go:

@@ -3,6 +3,7 @@ module go.expect.digital/translate
 go 1.20
 
 require (
+	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.15.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/soheilhy/cmux v0.1.5
