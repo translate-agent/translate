@@ -1,0 +1,20 @@
+services:
+  mysql:
+    image: mysql:8.0.32
+    container_name: mysql
+    hostname: mysql
+    networks:
+      - translate
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_DATABASE=translate
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+    healthcheck:
+      test: "/etc/init.d/mysql status"
+      interval: 1s
+      timeout: 10s
+      retries: 10
+
+networks:
+  translate:
