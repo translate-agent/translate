@@ -14,43 +14,43 @@ import (
 )
 
 type (
-	loadServiceRequest   pb.LoadServiceRequest
-	saveServiceRequest   pb.SaveServiceRequest
+	getServiceRequest    pb.GetServiceRequest
+	updateServiceRequest pb.UpdateServiceRequest
 	deleteServiceRequest pb.DeleteServiceRequest
 )
 
-// ----------------------LoadService-------------------------------
+// ------------------------GetService-------------------------------
 
-type loadServiceParams struct {
-	uuid uuid.UUID
+type getServiceParams struct {
+	id uuid.UUID
 }
 
-func (l *loadServiceRequest) parseParams() (loadServiceParams, error) {
-	if l == nil {
-		return loadServiceParams{}, errors.New("request is nil")
+func (g *getServiceRequest) parseParams() (getServiceParams, error) {
+	if g == nil {
+		return getServiceParams{}, errors.New("request is nil")
 	}
 
-	uuid, err := uuid.Parse(l.Uuid)
+	uuid, err := uuid.Parse(g.Id)
 	if err != nil {
-		return loadServiceParams{}, fmt.Errorf("parse uuid: %w", err)
+		return getServiceParams{}, fmt.Errorf("parse uuid: %w", err)
 	}
 
-	return loadServiceParams{uuid: uuid}, nil
+	return getServiceParams{id: uuid}, nil
 }
 
-func (l *loadServiceParams) validate() error {
+func (g *getServiceParams) validate() error {
 	// validate if uuid is in DB
 	return nil
 }
 
-func (t *TranslateServiceServer) LoadService(
+func (t *TranslateServiceServer) GetService(
 	ctx context.Context,
-	req *pb.LoadServiceRequest,
+	req *pb.GetServiceRequest,
 ) (*pb.Service, error) {
-	// loadReq will be a pointer to the same underlying value as req, but as loadReq type.
-	loadReq := (*loadServiceRequest)(req)
+	// getReq will be a pointer to the same underlying value as req, but as getReq type.
+	getReq := (*getServiceRequest)(req)
 
-	params, err := loadReq.parseParams()
+	params, err := getReq.parseParams()
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
@@ -62,50 +62,50 @@ func (t *TranslateServiceServer) LoadService(
 	return &pb.Service{}, nil
 }
 
-// ----------------------LoadServices-------------------------------
+// ----------------------ListServices-------------------------------
 
-func (t *TranslateServiceServer) LoadServices(
+func (t *TranslateServiceServer) ListServices(
 	ctx context.Context,
-	req *pb.LoadServicesRequest,
-) (*pb.LoadServicesResponse, error) {
-	return &pb.LoadServicesResponse{}, nil
+	req *pb.ListServicesRequest,
+) (*pb.ListServicesResponse, error) {
+	return &pb.ListServicesResponse{}, nil
 }
 
-// -----------------------SaveService-------------------------------
+// ---------------------UpdateService-------------------------------
 
-type saveServiceParams struct {
+type updateServiceParams struct {
 	name string
-	uuid uuid.UUID
+	id   uuid.UUID
 }
 
-func (s *saveServiceRequest) parseParams() (saveServiceParams, error) {
-	if s == nil {
-		return saveServiceParams{}, errors.New("request is nil")
+func (u *updateServiceRequest) parseParams() (updateServiceParams, error) {
+	if u == nil {
+		return updateServiceParams{}, errors.New("request is nil")
 	}
 
-	uuid, err := uuid.Parse(s.Service.Uuid)
+	uuid, err := uuid.Parse(u.Service.Id)
 	if err != nil {
-		return saveServiceParams{}, fmt.Errorf("parse uuid: %w", err)
+		return updateServiceParams{}, fmt.Errorf("parse uuid: %w", err)
 	}
 
-	return saveServiceParams{uuid: uuid, name: s.Service.Name}, nil
+	return updateServiceParams{id: uuid, name: u.Service.Name}, nil
 }
 
-func (s *saveServiceParams) validate() error {
-	if s.name == "" {
+func (u *updateServiceParams) validate() error {
+	if u.name == "" {
 		return errors.New("'name' is required")
 	}
 
 	return nil
 }
 
-func (t *TranslateServiceServer) SaveService(
+func (t *TranslateServiceServer) UpdateService(
 	ctx context.Context,
-	req *pb.SaveServiceRequest,
+	req *pb.UpdateServiceRequest,
 ) (*pb.Service, error) {
-	saveReq := (*saveServiceRequest)(req)
+	updateReq := (*updateServiceRequest)(req)
 
-	params, err := saveReq.parseParams()
+	params, err := updateReq.parseParams()
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
@@ -120,7 +120,7 @@ func (t *TranslateServiceServer) SaveService(
 // ----------------------DeleteService------------------------------
 
 type deleteServiceParams struct {
-	uuid uuid.UUID
+	id uuid.UUID
 }
 
 func (d *deleteServiceRequest) parseParams() (deleteServiceParams, error) {
@@ -128,12 +128,12 @@ func (d *deleteServiceRequest) parseParams() (deleteServiceParams, error) {
 		return deleteServiceParams{}, errors.New("request is nil")
 	}
 
-	uuid, err := uuid.Parse(d.Uuid)
+	uuid, err := uuid.Parse(d.Id)
 	if err != nil {
 		return deleteServiceParams{}, fmt.Errorf("parse uuid: %w", err)
 	}
 
-	return deleteServiceParams{uuid: uuid}, nil
+	return deleteServiceParams{id: uuid}, nil
 }
 
 func (d *deleteServiceParams) validate() error {

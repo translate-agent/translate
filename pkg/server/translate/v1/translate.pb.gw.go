@@ -31,8 +31,8 @@ var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
-func request_TranslateService_LoadService_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq LoadServiceRequest
+func request_TranslateService_GetService_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetServiceRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -43,13 +43,13 @@ func request_TranslateService_LoadService_0(ctx context.Context, marshaler runti
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.LoadService(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetService(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_TranslateService_LoadService_0(ctx context.Context, marshaler runtime.Marshaler, server TranslateServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq LoadServiceRequest
+func local_request_TranslateService_GetService_0(ctx context.Context, marshaler runtime.Marshaler, server TranslateServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetServiceRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -60,13 +60,13 @@ func local_request_TranslateService_LoadService_0(ctx context.Context, marshaler
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.LoadService(ctx, &protoReq)
+	msg, err := server.GetService(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_TranslateService_LoadServices_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq LoadServicesRequest
+func request_TranslateService_ListServices_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListServicesRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -77,13 +77,13 @@ func request_TranslateService_LoadServices_0(ctx context.Context, marshaler runt
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.LoadServices(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ListServices(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_TranslateService_LoadServices_0(ctx context.Context, marshaler runtime.Marshaler, server TranslateServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq LoadServicesRequest
+func local_request_TranslateService_ListServices_0(ctx context.Context, marshaler runtime.Marshaler, server TranslateServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListServicesRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -94,13 +94,13 @@ func local_request_TranslateService_LoadServices_0(ctx context.Context, marshale
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.LoadServices(ctx, &protoReq)
+	msg, err := server.ListServices(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_TranslateService_SaveService_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SaveServiceRequest
+func request_TranslateService_UpdateService_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateServiceRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -111,13 +111,13 @@ func request_TranslateService_SaveService_0(ctx context.Context, marshaler runti
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.SaveService(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.UpdateService(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_TranslateService_SaveService_0(ctx context.Context, marshaler runtime.Marshaler, server TranslateServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq SaveServiceRequest
+func local_request_TranslateService_UpdateService_0(ctx context.Context, marshaler runtime.Marshaler, server TranslateServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq UpdateServiceRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -128,7 +128,7 @@ func local_request_TranslateService_SaveService_0(ctx context.Context, marshaler
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.SaveService(ctx, &protoReq)
+	msg, err := server.UpdateService(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -324,7 +324,7 @@ func local_request_TranslateService_DownloadTranslationFile_0(ctx context.Contex
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterTranslateServiceHandlerFromEndpoint instead.
 func RegisterTranslateServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server TranslateServiceServer) error {
 
-	mux.Handle("POST", pattern_TranslateService_LoadService_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TranslateService_GetService_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -332,12 +332,12 @@ func RegisterTranslateServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/LoadService", runtime.WithHTTPPathPattern("/translate.v1.TranslateService/LoadService"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/GetService", runtime.WithHTTPPathPattern("/translate.v1.TranslateService/GetService"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TranslateService_LoadService_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TranslateService_GetService_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -345,11 +345,11 @@ func RegisterTranslateServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			return
 		}
 
-		forward_TranslateService_LoadService_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TranslateService_GetService_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TranslateService_LoadServices_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TranslateService_ListServices_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -357,12 +357,12 @@ func RegisterTranslateServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/LoadServices", runtime.WithHTTPPathPattern("/translate.v1.TranslateService/LoadServices"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/ListServices", runtime.WithHTTPPathPattern("/translate.v1.TranslateService/ListServices"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TranslateService_LoadServices_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TranslateService_ListServices_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -370,11 +370,11 @@ func RegisterTranslateServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			return
 		}
 
-		forward_TranslateService_LoadServices_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TranslateService_ListServices_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TranslateService_SaveService_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TranslateService_UpdateService_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -382,12 +382,12 @@ func RegisterTranslateServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/SaveService", runtime.WithHTTPPathPattern("/translate.v1.TranslateService/SaveService"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/UpdateService", runtime.WithHTTPPathPattern("/translate.v1.TranslateService/UpdateService"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TranslateService_SaveService_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TranslateService_UpdateService_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -395,7 +395,7 @@ func RegisterTranslateServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 			return
 		}
 
-		forward_TranslateService_SaveService_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TranslateService_UpdateService_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -515,69 +515,69 @@ func RegisterTranslateServiceHandler(ctx context.Context, mux *runtime.ServeMux,
 // "TranslateServiceClient" to call the correct interceptors.
 func RegisterTranslateServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client TranslateServiceClient) error {
 
-	mux.Handle("POST", pattern_TranslateService_LoadService_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TranslateService_GetService_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/LoadService", runtime.WithHTTPPathPattern("/translate.v1.TranslateService/LoadService"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/GetService", runtime.WithHTTPPathPattern("/translate.v1.TranslateService/GetService"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TranslateService_LoadService_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TranslateService_GetService_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TranslateService_LoadService_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TranslateService_GetService_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TranslateService_LoadServices_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TranslateService_ListServices_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/LoadServices", runtime.WithHTTPPathPattern("/translate.v1.TranslateService/LoadServices"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/ListServices", runtime.WithHTTPPathPattern("/translate.v1.TranslateService/ListServices"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TranslateService_LoadServices_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TranslateService_ListServices_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TranslateService_LoadServices_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TranslateService_ListServices_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_TranslateService_SaveService_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_TranslateService_UpdateService_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/SaveService", runtime.WithHTTPPathPattern("/translate.v1.TranslateService/SaveService"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/UpdateService", runtime.WithHTTPPathPattern("/translate.v1.TranslateService/UpdateService"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TranslateService_SaveService_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TranslateService_UpdateService_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TranslateService_SaveService_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TranslateService_UpdateService_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -651,11 +651,11 @@ func RegisterTranslateServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 }
 
 var (
-	pattern_TranslateService_LoadService_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"translate.v1.TranslateService", "LoadService"}, ""))
+	pattern_TranslateService_GetService_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"translate.v1.TranslateService", "GetService"}, ""))
 
-	pattern_TranslateService_LoadServices_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"translate.v1.TranslateService", "LoadServices"}, ""))
+	pattern_TranslateService_ListServices_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"translate.v1.TranslateService", "ListServices"}, ""))
 
-	pattern_TranslateService_SaveService_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"translate.v1.TranslateService", "SaveService"}, ""))
+	pattern_TranslateService_UpdateService_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"translate.v1.TranslateService", "UpdateService"}, ""))
 
 	pattern_TranslateService_DeleteService_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"translate.v1.TranslateService", "DeleteService"}, ""))
 
@@ -665,11 +665,11 @@ var (
 )
 
 var (
-	forward_TranslateService_LoadService_0 = runtime.ForwardResponseMessage
+	forward_TranslateService_GetService_0 = runtime.ForwardResponseMessage
 
-	forward_TranslateService_LoadServices_0 = runtime.ForwardResponseMessage
+	forward_TranslateService_ListServices_0 = runtime.ForwardResponseMessage
 
-	forward_TranslateService_SaveService_0 = runtime.ForwardResponseMessage
+	forward_TranslateService_UpdateService_0 = runtime.ForwardResponseMessage
 
 	forward_TranslateService_DeleteService_0 = runtime.ForwardResponseMessage
 

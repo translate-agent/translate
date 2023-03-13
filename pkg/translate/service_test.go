@@ -9,31 +9,31 @@ import (
 	pb "go.expect.digital/translate/pkg/server/translate/v1"
 )
 
-// ----------------------LoadService Parse Params-------------------------------
+// ----------------------GetService Parse Params-------------------------------
 
-func Test_ParseLoadServiceParams(t *testing.T) {
+func Test_ParseGetServiceParams(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		input       *pb.LoadServiceRequest
+		input       *pb.GetServiceRequest
 		expectedErr error
 		name        string
-		expected    loadServiceParams
+		expected    getServiceParams
 	}{
 		{
 			name: "Happy Path",
-			input: &pb.LoadServiceRequest{
-				Uuid: "599e59b8-3f2b-430f-baf7-8f837f7343a1",
+			input: &pb.GetServiceRequest{
+				Id: "599e59b8-3f2b-430f-baf7-8f837f7343a1",
 			},
-			expected: loadServiceParams{
-				uuid: uuid.MustParse("599e59b8-3f2b-430f-baf7-8f837f7343a1"),
+			expected: getServiceParams{
+				id: uuid.MustParse("599e59b8-3f2b-430f-baf7-8f837f7343a1"),
 			},
 			expectedErr: nil,
 		},
 		{
 			name: "Malformed UUID",
-			input: &pb.LoadServiceRequest{
-				Uuid: "599e59b8-3f2b-430f-baf7-failTest",
+			input: &pb.GetServiceRequest{
+				Id: "599e59b8-3f2b-430f-baf7-failTest",
 			},
 			expectedErr: errors.New("invalid UUID format"),
 		},
@@ -49,7 +49,7 @@ func Test_ParseLoadServiceParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			req := (*loadServiceRequest)(tt.input)
+			req := (*getServiceRequest)(tt.input)
 
 			actual, err := req.parseParams()
 
@@ -67,36 +67,36 @@ func Test_ParseLoadServiceParams(t *testing.T) {
 	}
 }
 
-// -----------------------SaveService Parse Params-------------------------------
+// -----------------------UpdateService Parse Params-------------------------------
 
-func Test_ParseSaveServiceParams(t *testing.T) {
+func Test_ParseUpdateServiceParams(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		input       *pb.SaveServiceRequest
+		input       *pb.UpdateServiceRequest
 		expectedErr error
 		name        string
-		expected    saveServiceParams
+		expected    updateServiceParams
 	}{
 		{
 			name: "Happy Path",
-			input: &pb.SaveServiceRequest{
+			input: &pb.UpdateServiceRequest{
 				Service: &pb.Service{
-					Uuid: "599e59b8-3f2b-430f-baf7-8f837f7343a1",
+					Id:   "599e59b8-3f2b-430f-baf7-8f837f7343a1",
 					Name: "first service",
 				},
 			},
-			expected: saveServiceParams{
-				uuid: uuid.MustParse("599e59b8-3f2b-430f-baf7-8f837f7343a1"),
+			expected: updateServiceParams{
+				id:   uuid.MustParse("599e59b8-3f2b-430f-baf7-8f837f7343a1"),
 				name: "first service",
 			},
 			expectedErr: nil,
 		},
 		{
 			name: "Malformed UUID",
-			input: &pb.SaveServiceRequest{
+			input: &pb.UpdateServiceRequest{
 				Service: &pb.Service{
-					Uuid: "599e59b8-3f2b-430f-baf7-failTest",
+					Id:   "599e59b8-3f2b-430f-baf7-failTest",
 					Name: "failed service",
 				},
 			},
@@ -114,7 +114,7 @@ func Test_ParseSaveServiceParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			req := (*saveServiceRequest)(tt.input)
+			req := (*updateServiceRequest)(tt.input)
 
 			actual, err := req.parseParams()
 
@@ -146,17 +146,17 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 		{
 			name: "Happy Path",
 			input: &pb.DeleteServiceRequest{
-				Uuid: "599e59b8-3f2b-430f-baf7-8f837f7343a1",
+				Id: "599e59b8-3f2b-430f-baf7-8f837f7343a1",
 			},
 			expected: deleteServiceParams{
-				uuid: uuid.MustParse("599e59b8-3f2b-430f-baf7-8f837f7343a1"),
+				id: uuid.MustParse("599e59b8-3f2b-430f-baf7-8f837f7343a1"),
 			},
 			expectedErr: nil,
 		},
 		{
 			name: "Malformed UUID",
 			input: &pb.DeleteServiceRequest{
-				Uuid: "599e59b8-3f2b-430f-baf7-failTest",
+				Id: "599e59b8-3f2b-430f-baf7-failTest",
 			},
 			expectedErr: errors.New("invalid UUID format"),
 		},

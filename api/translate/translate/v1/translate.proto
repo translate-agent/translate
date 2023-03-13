@@ -26,7 +26,7 @@ message Messages {
 }
 
 message Service {
-  string uuid = 1;
+  string id = 1;
   string name = 2;
 }
 
@@ -49,28 +49,28 @@ message DownloadTranslationFileResponse {
 
 // -----------------Service requests/responses-----------------------
 
-message LoadServiceRequest {
-  string uuid = 1;
+message GetServiceRequest {
+  string id = 1;
 }
 
-message LoadServicesRequest {}
+message ListServicesRequest {}
 
-message LoadServicesResponse {
+message ListServicesResponse {
   repeated Service services = 1;
 }
 
-message SaveServiceRequest {
+message UpdateServiceRequest {
   Service service = 1;
 }
 
 message DeleteServiceRequest {
-  string uuid = 1;
+  string id = 1;
 }
 
 service TranslateService {
-  rpc LoadService(LoadServiceRequest) returns (Service);
-  rpc LoadServices(LoadServicesRequest) returns (LoadServicesResponse);
-  rpc SaveService(SaveServiceRequest) returns (Service);
+  rpc GetService(GetServiceRequest) returns (Service);
+  rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
+  rpc UpdateService(UpdateServiceRequest) returns (Service);
   rpc DeleteService(DeleteServiceRequest) returns (google.protobuf.Empty);
 
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
