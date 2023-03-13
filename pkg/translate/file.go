@@ -77,17 +77,17 @@ type downloadParams struct {
 	schema   pb.Schema
 }
 
-func (u *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
-	if u == nil {
+func (d *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
+	if d == nil {
 		return downloadParams{}, errors.New("request is nil")
 	}
 
-	tag, err := language.Parse(u.Language)
+	tag, err := language.Parse(d.Language)
 	if err != nil {
 		return downloadParams{}, fmt.Errorf("parse language: %w", err)
 	}
 
-	return downloadParams{language: tag, schema: u.Schema}, nil
+	return downloadParams{language: tag, schema: d.Schema}, nil
 }
 
 func (d *downloadParams) validate() error {
