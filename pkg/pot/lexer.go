@@ -60,109 +60,109 @@ func Lex(r io.Reader) ([]Token, error) {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
-		if err := parseLine(line, &tokens); err != nil {
-			return nil, err
+
+		token, err := parseLine(line, &tokens)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse line: %w", err)
 		}
+
+		if token == nil {
+			continue
+		}
+
+		tokens = append(tokens, *token)
 	}
 
 	return tokens, nil
 }
 
-func parseLine(line string, tokens *[]Token) error {
+func parseLine(line string, tokens *[]Token) (*Token, error) {
 	line = strings.TrimSpace(line)
 	if len(line) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	switch {
 	case strings.HasPrefix(line, "# Language:"):
-		return parseHeaderToken(line, HeaderLanguage, tokens)
+		return parseToken(line, HeaderLanguage)
 	case strings.HasPrefix(line, "# Plural-Forms:"):
-		return parseHeaderToken(line, HeaderPluralForms, tokens)
+		return parseToken(line, HeaderPluralForms)
 	case strings.HasPrefix(line, "# Translator:"):
-		return parseHeaderToken(line, HeaderTranslator, tokens)
+		return parseToken(line, HeaderTranslator)
 	case strings.HasPrefix(line, "msgctxt"):
-		return parseMsgToken(line, MsgCtxt, tokens)
+		return parseToken(line, MsgCtxt)
 	case strings.HasPrefix(line, "msgid_plural"):
-		return parseMsgToken(line, PluralMsgId, tokens)
+		return parseToken(line, PluralMsgId)
 	case strings.HasPrefix(line, "msgid"):
-		return parseMsgToken(line, MsgId, tokens)
+		return parseToken(line, MsgId)
 	case strings.HasPrefix(line, "msgstr["):
-		return parsePluralMsgToken(line, tokens)
+		return parsePluralMsgToken(line)
 	case strings.HasPrefix(line, "msgstr"):
-		return parseMsgToken(line, MsgStr, tokens)
+		return parseToken(line, MsgStr)
 	case strings.HasPrefix(line, "#."):
-		return parseCommentToken(line, ExtractedComment, tokens)
+		return parseCommentToken(line, ExtractedComment)
 	case strings.HasPrefix(line, "#:"):
-		return parseCommentToken(line, Reference, tokens)
+		return parseCommentToken(line, Reference)
 	case strings.HasPrefix(line, "#| msgid_plural"):
-		return parseCommentToken(line, MsgidPluralPrevUntStrPlural, tokens)
+		return parseCommentToken(line, MsgidPluralPrevUntStrPlural)
 	case strings.HasPrefix(line, "#| msgid"):
-		return parseCommentToken(line, MsgidPrevUntStr, tokens)
+		return parseCommentToken(line, MsgidPrevUntStr)
 	case strings.HasPrefix(line, "#| msgctxt"):
-		return parseCommentToken(line, MsgctxtPreviousContext, tokens)
+		return parseCommentToken(line, MsgctxtPreviousContext)
 	case strings.HasPrefix(line, "#,"):
-		return parseCommentToken(line, Flag, tokens)
+		return parseCommentToken(line, Flag)
 	case strings.HasPrefix(line, "# "):
-		return parseCommentToken(line, TranslatorComment, tokens)
+		return parseCommentToken(line, TranslatorComment)
 	case strings.HasPrefix(line, `"`):
 		return parseMultilineToken(line, tokens)
 	default:
-		return fmt.Errorf("incorrect format of po tags")
+		return nil, fmt.Errorf("incorrect format of po tags")
 	}
 }
 
-func parseHeaderToken(line string, tokenType tokenType, tokens *[]Token) error {
+func parseToken(line string, tokenType tokenType) (*Token, error) {
 	val, err := parseMsgString(line)
 	if err != nil {
-		return fmt.Errorf("incorrect format of header token: %w", err)
+		return nil, fmt.Errorf("incorrect format of header token: %w", err)
 	}
 
-	*tokens = append(*tokens, Token{Value: val, Type: tokenType})
-
-	return nil
+	return &Token{
+		Value: val,
+		Type:  tokenType,
+	}, nil
 }
 
-func parseMsgToken(line string, tokenType tokenType, tokens *[]Token) error {
-	val, err := parseMsgString(line)
-	if err != nil {
-		return fmt.Errorf("incorrect format of msg token: %w", err)
-	}
-
-	*tokens = append(*tokens, Token{Value: val, Type: tokenType})
-
-	return nil
-}
-
-func parsePluralMsgToken(line string, tokens *[]Token) error {
+func parsePluralMsgToken(line string) (*Token, error) {
 	// Parse the plural index from the line
 	indexStart := strings.Index(line, "[") + 1
 	indexEnd := strings.Index(line, "]")
 
 	index, err := strconv.Atoi(line[indexStart:indexEnd])
 	if err != nil {
-		return fmt.Errorf("convert string number to int: %w", err)
+		return nil, fmt.Errorf("convert string number to int: %w", err)
 	}
 
 	val, err := parseMsgString(line)
 	if err != nil {
-		return fmt.Errorf("incorrect format of plural msg token: %w", err)
+		return nil, fmt.Errorf("incorrect format of plural msg token: %w", err)
 	}
 
-	*tokens = append(*tokens, Token{Value: val, Type: PluralMsgStr, Index: index})
-
-	return nil
+	return &Token{
+		Value: val,
+		Type:  PluralMsgStr, Index: index,
+	}, nil
 }
 
-func parseCommentToken(line string, tokenType tokenType, tokens *[]Token) error {
+func parseCommentToken(line string, tokenType tokenType) (*Token, error) {
 	val, err := parseMsgString(line)
 	if err != nil {
-		return fmt.Errorf("incorrect format of comment token: %w", err)
+		return nil, fmt.Errorf("incorrect format of comment token: %w", err)
 	}
 
-	*tokens = append(*tokens, Token{Value: val, Type: tokenType})
-
-	return nil
+	return &Token{
+		Value: val,
+		Type:  tokenType,
+	}, nil
 }
 
 func parseMsgString(line string) (string, error) {
@@ -181,16 +181,16 @@ func parseMsgString(line string) (string, error) {
 	return tokenValue, nil
 }
 
-func parseMultilineToken(line string, tokens *[]Token) error {
-	tokenToAppend := (*tokens)[len(*tokens)-1]
-	switch tokenToAppend.Type { //nolint:exhaustive
+func parseMultilineToken(line string, tokens *[]Token) (*Token, error) {
+	lastToken := (*tokens)[len(*tokens)-1]
+	switch lastToken.Type { //nolint:exhaustive
 	case MsgId, PluralMsgId, MsgStr, PluralMsgStr:
-		tokenToAppend.Value += " " + parseMultilineString(line)
-		tokenToAppend.Value = strings.TrimSpace(tokenToAppend.Value)
-		(*tokens)[len(*tokens)-1] = tokenToAppend
+		lastToken.Value += " " + parseMultilineString(line)
+		lastToken.Value = strings.TrimSpace(lastToken.Value)
+		(*tokens)[len(*tokens)-1] = lastToken
 	}
 
-	return nil
+	return nil, nil
 }
 
 func parseMultilineString(line string) string {
