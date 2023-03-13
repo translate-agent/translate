@@ -1,7 +1,7 @@
 package translate
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -35,12 +35,12 @@ func Test_ParseLoadServiceParams(t *testing.T) {
 			input: &pb.LoadServiceRequest{
 				Uuid: "599e59b8-3f2b-430f-baf7-failTest",
 			},
-			expectedErr: fmt.Errorf("invalid UUID format"),
+			expectedErr: errors.New("invalid UUID format"),
 		},
 		{
 			name:        "NIL request",
 			input:       nil,
-			expectedErr: fmt.Errorf("request is nil"),
+			expectedErr: errors.New("request is nil"),
 		},
 	}
 
@@ -100,12 +100,12 @@ func Test_ParseSaveServiceParams(t *testing.T) {
 					Name: "failed service",
 				},
 			},
-			expectedErr: fmt.Errorf("invalid UUID format"),
+			expectedErr: errors.New("invalid UUID format"),
 		},
 		{
 			name:        "NIL request",
 			input:       nil,
-			expectedErr: fmt.Errorf("request is nil"),
+			expectedErr: errors.New("request is nil"),
 		},
 	}
 
@@ -158,12 +158,12 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 			input: &pb.DeleteServiceRequest{
 				Uuid: "599e59b8-3f2b-430f-baf7-failTest",
 			},
-			expectedErr: fmt.Errorf("invalid UUID format"),
+			expectedErr: errors.New("invalid UUID format"),
 		},
 		{
 			name:        "NIL request",
 			input:       nil,
-			expectedErr: fmt.Errorf("request is nil"),
+			expectedErr: errors.New("request is nil"),
 		},
 	}
 

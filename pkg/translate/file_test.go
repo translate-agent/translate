@@ -52,6 +52,11 @@ func Test_ParseUploadParams(t *testing.T) {
 			},
 			expectedErr: errors.New("tag is not well-formed"),
 		},
+		{
+			name:        "NIL request",
+			input:       nil,
+			expectedErr: errors.New("request is nil"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -167,6 +172,11 @@ func Test_ParseDownloadParams(t *testing.T) {
 				Schema:   pb.Schema_GO,
 			},
 			expectedErr: errors.New("tag is not well-formed"),
+		},
+		{
+			name:        "NIL request",
+			input:       nil,
+			expectedErr: errors.New("request is nil"),
 		},
 	}
 	for _, tt := range tests {
