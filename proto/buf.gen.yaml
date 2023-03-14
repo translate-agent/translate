@@ -2,7 +2,7 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: "go.expect.digital/translate/pkg/server/translate/v1"
+    default: "go.expect.digital/translate/pkg/pb/translate/v1"
     except:
       - buf.build/googleapis/googleapis
 plugins:
