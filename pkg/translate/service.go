@@ -30,12 +30,12 @@ func (g *getServiceRequest) parseParams() (getServiceParams, error) {
 		return getServiceParams{}, errors.New("request is nil")
 	}
 
-	uuid, err := uuid.Parse(g.Id)
+	id, err := uuid.Parse(g.Id)
 	if err != nil {
 		return getServiceParams{}, fmt.Errorf("parse uuid: %w", err)
 	}
 
-	return getServiceParams{id: uuid}, nil
+	return getServiceParams{id: id}, nil
 }
 
 func (g *getServiceParams) validate() error {
@@ -83,12 +83,12 @@ func (u *updateServiceRequest) parseParams() (updateServiceParams, error) {
 		return updateServiceParams{}, errors.New("request is nil")
 	}
 
-	uuid, err := uuid.Parse(u.Service.Id)
+	id, err := uuid.Parse(u.Service.Id)
 	if err != nil {
 		return updateServiceParams{}, fmt.Errorf("parse uuid: %w", err)
 	}
 
-	return updateServiceParams{id: uuid, name: u.Service.Name}, nil
+	return updateServiceParams{id: id, name: u.Service.Name}, nil
 }
 
 func (u *updateServiceParams) validate() error {
@@ -128,12 +128,12 @@ func (d *deleteServiceRequest) parseParams() (deleteServiceParams, error) {
 		return deleteServiceParams{}, errors.New("request is nil")
 	}
 
-	uuid, err := uuid.Parse(d.Id)
+	id, err := uuid.Parse(d.Id)
 	if err != nil {
 		return deleteServiceParams{}, fmt.Errorf("parse uuid: %w", err)
 	}
 
-	return deleteServiceParams{id: uuid}, nil
+	return deleteServiceParams{id: id}, nil
 }
 
 func (d *deleteServiceParams) validate() error {
