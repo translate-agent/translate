@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	pb "go.expect.digital/translate/pkg/pb/translate/v1"
+	tpb "go.expect.digital/translate/pkg/pb/translate/v1"
 	"golang.org/x/text/language"
 )
 
@@ -17,38 +17,38 @@ func Test_ParseUploadParams(t *testing.T) {
 	tests := []struct {
 		name        string
 		expectedErr error
-		input       *pb.UploadTranslationFileRequest
+		input       *tpb.UploadTranslationFileRequest
 		expected    uploadParams
 	}{
 		{
 			name: "Happy Path",
-			input: &pb.UploadTranslationFileRequest{
+			input: &tpb.UploadTranslationFileRequest{
 				Language: "lv",
 				Data:     []byte(`{"key":"value"}`),
-				Schema:   pb.Schema_GO,
+				Schema:   tpb.Schema_GO,
 			},
 			expected: uploadParams{
 				language: language.Latvian,
 				data:     []byte(`{"key":"value"}`),
-				schema:   pb.Schema_GO,
+				schema:   tpb.Schema_GO,
 			},
 			expectedErr: nil,
 		},
 		{
 			name: "Malformed language tag",
-			input: &pb.UploadTranslationFileRequest{
+			input: &tpb.UploadTranslationFileRequest{
 				Language: "xyz-ZY-Latn",
 				Data:     []byte(`{"key":"value"}`),
-				Schema:   pb.Schema_GO,
+				Schema:   tpb.Schema_GO,
 			},
 			expectedErr: errors.New("subtag \"xyz\" is well-formed but unknown"),
 		},
 		{
 			name: "Missing language tag",
-			input: &pb.UploadTranslationFileRequest{
+			input: &tpb.UploadTranslationFileRequest{
 				Language: "",
 				Data:     []byte(`{"key":"value"}`),
-				Schema:   pb.Schema_GO,
+				Schema:   tpb.Schema_GO,
 			},
 			expectedErr: errors.New("tag is not well-formed"),
 		},
@@ -95,7 +95,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 			input: uploadParams{
 				language: language.MustParse("lv-LV"),
 				data:     []byte(`{"key":"value"}`),
-				schema:   pb.Schema_GO,
+				schema:   tpb.Schema_GO,
 			},
 			expectedErr: nil,
 		},
@@ -103,7 +103,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 			name: "Empty data",
 			input: uploadParams{
 				language: language.MustParse("lv-LV"),
-				schema:   pb.Schema_GO,
+				schema:   tpb.Schema_GO,
 			},
 			expectedErr: errors.New("'data' is required"),
 		},
@@ -112,7 +112,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 			input: uploadParams{
 				language: language.MustParse("lv-LV"),
 				data:     []byte(`{"key":"value"}`),
-				schema:   pb.Schema_UNSPECIFIED,
+				schema:   tpb.Schema_UNSPECIFIED,
 			},
 			expectedErr: errors.New("'schema' is required"),
 		},
@@ -141,35 +141,35 @@ func Test_ParseDownloadParams(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		input       *pb.DownloadTranslationFileRequest
+		input       *tpb.DownloadTranslationFileRequest
 		expectedErr error
 		expected    downloadParams
 	}{
 		{
 			name: "Happy Path",
-			input: &pb.DownloadTranslationFileRequest{
+			input: &tpb.DownloadTranslationFileRequest{
 				Language: "lv",
-				Schema:   pb.Schema_GO,
+				Schema:   tpb.Schema_GO,
 			},
 			expected: downloadParams{
 				language: language.Latvian,
-				schema:   pb.Schema_GO,
+				schema:   tpb.Schema_GO,
 			},
 			expectedErr: nil,
 		},
 		{
 			name: "Malformed language tag",
-			input: &pb.DownloadTranslationFileRequest{
+			input: &tpb.DownloadTranslationFileRequest{
 				Language: "xyz-ZY-Latn",
-				Schema:   pb.Schema_GO,
+				Schema:   tpb.Schema_GO,
 			},
 			expectedErr: errors.New("subtag \"xyz\" is well-formed but unknown"),
 		},
 		{
 			name: "Missing language",
-			input: &pb.DownloadTranslationFileRequest{
+			input: &tpb.DownloadTranslationFileRequest{
 				Language: "",
-				Schema:   pb.Schema_GO,
+				Schema:   tpb.Schema_GO,
 			},
 			expectedErr: errors.New("tag is not well-formed"),
 		},
@@ -214,7 +214,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 			name: "Happy Path",
 			input: downloadParams{
 				language: language.MustParse("lv-LV"),
-				schema:   pb.Schema_GO,
+				schema:   tpb.Schema_GO,
 			},
 			expectedErr: nil,
 		},
@@ -222,7 +222,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 			name: "Unspecified schema",
 			input: downloadParams{
 				language: language.MustParse("lv-LV"),
-				schema:   pb.Schema_UNSPECIFIED,
+				schema:   tpb.Schema_UNSPECIFIED,
 			},
 			expectedErr: errors.New("'schema' is required"),
 		},

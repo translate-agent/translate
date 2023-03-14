@@ -20,7 +20,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "go.expect.digital/translate/pkg/pb/translate/v1"
+	tpb "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/tracer"
 	"go.expect.digital/translate/pkg/translate"
 )
@@ -57,9 +57,9 @@ var rootCmd = &cobra.Command{
 		defer grpcServer.GracefulStop()
 
 		mux := runtime.NewServeMux()
-		pb.RegisterTranslateServiceServer(grpcServer, &translate.TranslateServiceServer{})
+		tpb.RegisterTranslateServiceServer(grpcServer, &translate.TranslateServiceServer{})
 
-		err = pb.RegisterTranslateServiceHandlerFromEndpoint(
+		err = tpb.RegisterTranslateServiceHandlerFromEndpoint(
 			context.Background(),
 			mux,
 			addr,

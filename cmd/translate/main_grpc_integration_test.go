@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
-	pb "go.expect.digital/translate/pkg/pb/translate/v1"
+	tpb "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -24,7 +24,7 @@ var (
 	host string
 	port string
 
-	client pb.TranslateServiceClient
+	client tpb.TranslateServiceClient
 )
 
 func mustGetFreePort() string {
@@ -69,7 +69,7 @@ func TestMain(m *testing.M) {
 		log.Panicf("create connection: %v", err)
 	}
 
-	client = pb.NewTranslateServiceClient(conn)
+	client = tpb.NewTranslateServiceClient(conn)
 	// Run the tests.
 	code := m.Run()
 	// Send soft kill (termination) signal to process.
@@ -88,13 +88,13 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		input    *pb.UploadTranslationFileRequest
+		input    *tpb.UploadTranslationFileRequest
 		name     string
 		expected codes.Code
 	}{
 		{
 			name: "Happy path",
-			input: &pb.UploadTranslationFileRequest{
+			input: &tpb.UploadTranslationFileRequest{
 				Language: "lv-lv",
 				Data: []byte(`{
 						"language":"lv-lv",
@@ -108,13 +108,13 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 							 }
 						]
 				 }`),
-				Schema: pb.Schema_GO,
+				Schema: tpb.Schema_GO,
 			},
 			expected: codes.OK,
 		},
 		{
 			name: "Missing language",
-			input: &pb.UploadTranslationFileRequest{
+			input: &tpb.UploadTranslationFileRequest{
 				Data: []byte(`{
 						"messages":[
 							 {
@@ -126,18 +126,18 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 							 }
 						]
 				 }`),
-				Schema: pb.Schema_GO,
+				Schema: tpb.Schema_GO,
 			},
 			expected: codes.InvalidArgument,
 		},
 		{
 			name:     "Missing data",
-			input:    &pb.UploadTranslationFileRequest{Language: "lv-lv"},
+			input:    &tpb.UploadTranslationFileRequest{Language: "lv-lv"},
 			expected: codes.InvalidArgument,
 		},
 		{
 			name: "Invalid language",
-			input: &pb.UploadTranslationFileRequest{
+			input: &tpb.UploadTranslationFileRequest{
 				Language: "xyz-ZY-Latn",
 				Data: []byte(`{
 						"messages":[
@@ -150,7 +150,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 							 }
 						]
 				 }`),
-				Schema: pb.Schema_GO,
+				Schema: tpb.Schema_GO,
 			},
 			expected: codes.InvalidArgument,
 		},
@@ -173,18 +173,18 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		input    *pb.DownloadTranslationFileRequest
+		input    *tpb.DownloadTranslationFileRequest
 		name     string
 		expected codes.Code
 	}{
 		{
 			name:     "Happy path",
-			input:    &pb.DownloadTranslationFileRequest{Language: "lv-lv", Schema: pb.Schema_GO},
+			input:    &tpb.DownloadTranslationFileRequest{Language: "lv-lv", Schema: tpb.Schema_GO},
 			expected: codes.OK,
 		},
 		{
 			name:     "Invalid argument",
-			input:    &pb.DownloadTranslationFileRequest{Schema: pb.Schema_GO},
+			input:    &tpb.DownloadTranslationFileRequest{Schema: tpb.Schema_GO},
 			expected: codes.InvalidArgument,
 		},
 	}
