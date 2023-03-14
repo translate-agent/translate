@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	pb "go.expect.digital/translate/pkg/server/translate/v1"
+	pb "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
 // ----------------------GetService Parse Params-------------------------------

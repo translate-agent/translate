@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
-	pb "go.expect.digital/translate/pkg/server/translate/v1"
+	pb "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

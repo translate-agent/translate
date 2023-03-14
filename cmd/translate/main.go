@@ -20,7 +20,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "go.expect.digital/translate/pkg/server/translate/v1"
+	pb "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/tracer"
 	"go.expect.digital/translate/pkg/translate"
 )
