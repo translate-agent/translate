@@ -179,12 +179,12 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	}{
 		{
 			name:     "Happy path",
-			input:    &pb.DownloadTranslationFileRequest{Language: "lv-lv"},
+			input:    &pb.DownloadTranslationFileRequest{Language: "lv-lv", Schema: pb.Schema_GO},
 			expected: codes.OK,
 		},
 		{
 			name:     "Invalid argument",
-			input:    &pb.DownloadTranslationFileRequest{},
+			input:    &pb.DownloadTranslationFileRequest{Schema: pb.Schema_GO},
 			expected: codes.InvalidArgument,
 		},
 	}

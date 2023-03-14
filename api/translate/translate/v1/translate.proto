@@ -25,6 +25,13 @@ message Messages {
   repeated Message messages = 2;
 }
 
+message Service {
+  string id = 1;
+  string name = 2;
+}
+
+// --------------Translate File requests/responses-------------------
+
 message UploadTranslationFileRequest {
   string language = 1;
   bytes data = 2;
@@ -40,7 +47,32 @@ message DownloadTranslationFileResponse {
   bytes data = 1;
 }
 
+// -----------------Service requests/responses-----------------------
+
+message GetServiceRequest {
+  string id = 1;
+}
+
+message ListServicesRequest {}
+
+message ListServicesResponse {
+  repeated Service services = 1;
+}
+
+message UpdateServiceRequest {
+  Service service = 1;
+}
+
+message DeleteServiceRequest {
+  string id = 1;
+}
+
 service TranslateService {
+  rpc GetService(GetServiceRequest) returns (Service);
+  rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
+  rpc UpdateService(UpdateServiceRequest) returns (Service);
+  rpc DeleteService(DeleteServiceRequest) returns (google.protobuf.Empty);
+
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {put: "/v1/files/{language}"};
   }
