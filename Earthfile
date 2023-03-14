@@ -17,8 +17,8 @@ deps:
 proto:
   FROM bufbuild/buf:$bufbuild_version
   ENV BUF_CACHE_DIR=/.cache/buf_cache
-  COPY --dir api/translate .
-  WORKDIR translate
+  COPY --dir proto .
+  WORKDIR proto
   RUN --mount=type=cache,target=$BUF_CACHE_DIR buf mod update
   RUN --mount=type=cache,target=$BUF_CACHE_DIR buf build
   RUN --mount=type=cache,target=$BUF_CACHE_DIR buf generate
@@ -50,8 +50,8 @@ lint-go:
 lint-proto:
   FROM bufbuild/buf
   ENV BUF_CACHE_DIR=/.cache/buf_cache
-  COPY --dir api/translate .
-  WORKDIR translate
+  COPY --dir proto .
+  WORKDIR proto
   RUN --mount=type=cache,target=$BUF_CACHE_DIR buf mod update
   RUN --mount=type=cache,target=$BUF_CACHE_DIR buf lint
 
