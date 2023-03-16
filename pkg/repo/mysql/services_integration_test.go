@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"context"
-	"errors"
 	"log"
 	"testing"
 
@@ -17,13 +16,12 @@ import (
 var mysqlRepo *Repo
 
 func init() {
-	viper.SetEnvPrefix("translate_db")
+	viper.SetEnvPrefix("translate_mysql")
 	viper.AutomaticEnv()
 
 	mysqlConf := Conf{
 		Addr:     viper.GetString("address"),
 		User:     viper.GetString("user"),
-		Password: viper.GetString("password"),
 		Database: viper.GetString("database"),
 	}
 
@@ -63,25 +61,22 @@ func Test_MysqlSaveService(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		expectedErr error
-		input       *model.Service
-		name        string
+		input *model.Service
+		name  string
 	}{
 		{
-			name: "All OK",
+			name: "Save Service",
 			input: &model.Service{
-				Name: gofakeit.FirstName(),
 				ID:   uuid.MustParse(gofakeit.UUID()),
+				Name: gofakeit.FirstName(),
 			},
-			expectedErr: nil,
 		},
 		{
-			name: "Duplicate entry",
+			name: "Update Service",
 			input: &model.Service{
-				Name: gofakeit.FirstName(),
 				ID:   uuid.MustParse("00000000-0000-0000-0000-000000000000"),
+				Name: gofakeit.FirstName(),
 			},
-			expectedErr: errors.New("Duplicate entry"),
 		},
 	}
 	for _, tt := range tests {
@@ -90,12 +85,6 @@ func Test_MysqlSaveService(t *testing.T) {
 			t.Parallel()
 
 			err := mysqlRepo.SaveService(ctx, tt.input)
-
-			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
-				return
-			}
-
 			assert.NoError(t, err)
 		})
 	}
@@ -203,7 +192,7 @@ func Test_MysqlDeleteService(t *testing.T) {
 		},
 		{
 			name:        "Not exists",
-			input:       uuid.MustParse("88888888-8888-8888-8888-888888888888"),
+			input:       uuid.MustParse("99999999-9999-9999-9999-999999999999"),
 			expectedErr: repo.ErrNotFound,
 		},
 	}
@@ -218,9 +207,7 @@ func Test_MysqlDeleteService(t *testing.T) {
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			assert.NoError(t, err)
 		})
 	}
 }
