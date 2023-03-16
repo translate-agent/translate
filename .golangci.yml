@@ -48,6 +48,11 @@ linters:
     - unused
     - wrapcheck
     - wsl
+    - importas
 linters-settings:
   govet:
     enable-all: true
+  importas:
+    alias:
+      - pkg: go.expect.digital/translate/pkg/pb/translate/v1
+        alias: translatev1

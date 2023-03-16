@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	tpb "go.expect.digital/translate/pkg/pb/translate/v1"
+	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,8 +13,8 @@ import (
 )
 
 type (
-	uploadTranslationFileRequest   tpb.UploadTranslationFileRequest
-	downloadTranslationFileRequest tpb.DownloadTranslationFileRequest
+	uploadTranslationFileRequest   translatev1.UploadTranslationFileRequest
+	downloadTranslationFileRequest translatev1.DownloadTranslationFileRequest
 )
 
 // ----------------------UploadTranslationFile-------------------------------
@@ -22,7 +22,7 @@ type (
 type uploadParams struct {
 	language language.Tag
 	data     []byte
-	schema   tpb.Schema
+	schema   translatev1.Schema
 }
 
 func (u *uploadTranslationFileRequest) parseParams() (uploadParams, error) {
@@ -45,7 +45,7 @@ func (u *uploadParams) validate() error {
 	}
 
 	// Enforce that schema is present. (Temporal solution)
-	if u.schema == tpb.Schema_UNSPECIFIED {
+	if u.schema == translatev1.Schema_UNSPECIFIED {
 		return fmt.Errorf("'schema' is required")
 	}
 
@@ -54,7 +54,7 @@ func (u *uploadParams) validate() error {
 
 func (t *TranslateServiceServer) UploadTranslationFile(
 	ctx context.Context,
-	req *tpb.UploadTranslationFileRequest,
+	req *translatev1.UploadTranslationFileRequest,
 ) (*emptypb.Empty, error) {
 	uploadReq := (*uploadTranslationFileRequest)(req)
 
@@ -74,7 +74,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 
 type downloadParams struct {
 	language language.Tag
-	schema   tpb.Schema
+	schema   translatev1.Schema
 }
 
 func (d *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
@@ -92,7 +92,7 @@ func (d *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
 
 func (d *downloadParams) validate() error {
 	// Enforce that schema is present. (Temporal solution)
-	if d.schema == tpb.Schema_UNSPECIFIED {
+	if d.schema == translatev1.Schema_UNSPECIFIED {
 		return fmt.Errorf("'schema' is required")
 	}
 
@@ -101,8 +101,8 @@ func (d *downloadParams) validate() error {
 
 func (t *TranslateServiceServer) DownloadTranslationFile(
 	ctx context.Context,
-	req *tpb.DownloadTranslationFileRequest,
-) (*tpb.DownloadTranslationFileResponse, error) {
+	req *translatev1.DownloadTranslationFileRequest,
+) (*translatev1.DownloadTranslationFileResponse, error) {
 	downloadReq := (*downloadTranslationFileRequest)(req)
 
 	params, err := downloadReq.parseParams()
@@ -114,5 +114,5 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	return &tpb.DownloadTranslationFileResponse{}, nil
+	return &translatev1.DownloadTranslationFileResponse{}, nil
 }

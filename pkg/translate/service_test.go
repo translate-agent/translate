@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	tpb "go.expect.digital/translate/pkg/pb/translate/v1"
+	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
 // ----------------------GetService Parse Params-------------------------------
@@ -15,14 +15,14 @@ func Test_ParseGetServiceParams(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		input       *tpb.GetServiceRequest
+		input       *translatev1.GetServiceRequest
 		expectedErr error
 		name        string
 		expected    getServiceParams
 	}{
 		{
 			name: "Happy Path",
-			input: &tpb.GetServiceRequest{
+			input: &translatev1.GetServiceRequest{
 				Id: "599e59b8-3f2b-430f-baf7-8f837f7343a1",
 			},
 			expected: getServiceParams{
@@ -32,7 +32,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 		},
 		{
 			name: "Malformed UUID",
-			input: &tpb.GetServiceRequest{
+			input: &translatev1.GetServiceRequest{
 				Id: "599e59b8-3f2b-430f-baf7-failTest",
 			},
 			expectedErr: errors.New("invalid UUID format"),
@@ -73,15 +73,15 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		input       *tpb.UpdateServiceRequest
+		input       *translatev1.UpdateServiceRequest
 		expectedErr error
 		name        string
 		expected    updateServiceParams
 	}{
 		{
 			name: "Happy Path",
-			input: &tpb.UpdateServiceRequest{
-				Service: &tpb.Service{
+			input: &translatev1.UpdateServiceRequest{
+				Service: &translatev1.Service{
 					Id:   "599e59b8-3f2b-430f-baf7-8f837f7343a1",
 					Name: "first service",
 				},
@@ -94,8 +94,8 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 		},
 		{
 			name: "Malformed UUID",
-			input: &tpb.UpdateServiceRequest{
-				Service: &tpb.Service{
+			input: &translatev1.UpdateServiceRequest{
+				Service: &translatev1.Service{
 					Id:   "599e59b8-3f2b-430f-baf7-failTest",
 					Name: "failed service",
 				},
@@ -138,14 +138,14 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		input       *tpb.DeleteServiceRequest
+		input       *translatev1.DeleteServiceRequest
 		expectedErr error
 		name        string
 		expected    deleteServiceParams
 	}{
 		{
 			name: "Happy Path",
-			input: &tpb.DeleteServiceRequest{
+			input: &translatev1.DeleteServiceRequest{
 				Id: "599e59b8-3f2b-430f-baf7-8f837f7343a1",
 			},
 			expected: deleteServiceParams{
@@ -155,7 +155,7 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 		},
 		{
 			name: "Malformed UUID",
-			input: &tpb.DeleteServiceRequest{
+			input: &translatev1.DeleteServiceRequest{
 				Id: "599e59b8-3f2b-430f-baf7-failTest",
 			},
 			expectedErr: errors.New("invalid UUID format"),
