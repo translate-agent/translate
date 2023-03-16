@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"log"
+	"os"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -11,13 +12,21 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/tracer"
 )
 
 var mysqlRepo *Repo
 
-func init() {
+func TestMain(m *testing.M) {
+	ctx := context.Background()
+
 	viper.SetEnvPrefix("translate_mysql")
 	viper.AutomaticEnv()
+
+	tp, err := tracer.TracerProvider()
+	if err != nil {
+		log.Panicf("set tracer provider: %v", err)
+	}
 
 	mysqlConf := Conf{
 		Host:     viper.GetString("host"),
@@ -26,7 +35,7 @@ func init() {
 		Database: viper.GetString("database"),
 	}
 
-	db, err := NewDB(context.Background(), &mysqlConf)
+	db, err := NewDB(ctx, &mysqlConf)
 	if err != nil {
 		log.Panicf("create new db: %v", err)
 	}
@@ -45,7 +54,7 @@ VALUES (
     'Service 3'
   );`
 
-	_, err = db.ExecContext(context.Background(), insertQuery)
+	_, err = db.ExecContext(ctx, insertQuery)
 	if err != nil {
 		log.Panicf("insert mock services: %v", err)
 	}
@@ -54,6 +63,16 @@ VALUES (
 	if err != nil {
 		log.Panicf("create new repo: %v", err)
 	}
+
+	code := m.Run()
+
+	db.Close()
+
+	if err := tp.Shutdown(ctx); err != nil {
+		log.Panicf("tp shutdown: %v", err)
+	}
+
+	os.Exit(code)
 }
 
 func Test_MysqlSaveService(t *testing.T) {
