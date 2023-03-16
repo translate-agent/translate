@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/XSAM/otelsql"
 	_ "github.com/go-sql-driver/mysql"
-	"go.nhat.io/otelsql"
-	semconv "go.opentelemetry.io/otel/semconv/v1.14.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
 type Conf struct {
@@ -27,18 +27,24 @@ func DefaultConf() (*Conf, error) {
 }
 
 func NewDB(ctx context.Context, conf *Conf) (*sql.DB, error) {
-	// https://github.com/nhatthm/otelsql
-	driverName, err := otelsql.Register("mysql",
-		otelsql.AllowRoot(), // For integration tests.
-		otelsql.TraceQueryWithArgs(),
-		otelsql.WithDatabaseName(conf.Database),
-		otelsql.WithSystem(semconv.DBSystemMySQL),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("register driver: %w", err)
-	}
-
-	db, err := sql.Open(driverName, conf.ConnectionString())
+	// https://github.com/XSAM/otelsql
+	db, err := otelsql.Open(
+		"mysql",
+		conf.ConnectionString(),
+		otelsql.WithAttributes(
+			semconv.DBSystemMySQL,
+		),
+		otelsql.WithSpanOptions(otelsql.SpanOptions{
+			Ping:                 false,
+			RowsNext:             false,
+			DisableErrSkip:       true,
+			DisableQuery:         false,
+			OmitConnResetSession: true,
+			OmitConnPrepare:      true,
+			OmitConnQuery:        true,
+			OmitRows:             true,
+			OmitConnectorConnect: true,
+		}))
 	if err != nil {
 		return nil, fmt.Errorf("connect to MySQL: %w", err)
 	}
