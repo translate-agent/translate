@@ -20,7 +20,8 @@ func init() {
 	viper.AutomaticEnv()
 
 	mysqlConf := Conf{
-		Addr:     viper.GetString("address"),
+		Host:     viper.GetString("host"),
+		Port:     viper.GetString("port"),
 		User:     viper.GetString("user"),
 		Database: viper.GetString("database"),
 	}
