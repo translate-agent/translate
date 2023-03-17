@@ -1,9 +1,7 @@
 package translate
 
-import (
-	pb "go.expect.digital/translate/pkg/server/translate/v1"
-)
+import translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 
 type TranslateServiceServer struct {
-	pb.UnimplementedTranslateServiceServer
+	translatev1.UnimplementedTranslateServiceServer
 }

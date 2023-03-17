@@ -10,13 +10,13 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	pb "go.expect.digital/translate/pkg/server/translate/v1"
+	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
 type (
-	getServiceRequest    pb.GetServiceRequest
-	updateServiceRequest pb.UpdateServiceRequest
-	deleteServiceRequest pb.DeleteServiceRequest
+	getServiceRequest    translatev1.GetServiceRequest
+	updateServiceRequest translatev1.UpdateServiceRequest
+	deleteServiceRequest translatev1.DeleteServiceRequest
 )
 
 // ------------------------GetService-------------------------------
@@ -45,8 +45,8 @@ func (g *getServiceParams) validate() error {
 
 func (t *TranslateServiceServer) GetService(
 	ctx context.Context,
-	req *pb.GetServiceRequest,
-) (*pb.Service, error) {
+	req *translatev1.GetServiceRequest,
+) (*translatev1.Service, error) {
 	// getReq will be a pointer to the same underlying value as req, but as getReq type.
 	getReq := (*getServiceRequest)(req)
 
@@ -59,16 +59,16 @@ func (t *TranslateServiceServer) GetService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	return &pb.Service{}, nil
+	return &translatev1.Service{}, nil
 }
 
 // ----------------------ListServices-------------------------------
 
 func (t *TranslateServiceServer) ListServices(
 	ctx context.Context,
-	req *pb.ListServicesRequest,
-) (*pb.ListServicesResponse, error) {
-	return &pb.ListServicesResponse{}, nil
+	req *translatev1.ListServicesRequest,
+) (*translatev1.ListServicesResponse, error) {
+	return &translatev1.ListServicesResponse{}, nil
 }
 
 // ---------------------UpdateService-------------------------------
@@ -101,8 +101,8 @@ func (u *updateServiceParams) validate() error {
 
 func (t *TranslateServiceServer) UpdateService(
 	ctx context.Context,
-	req *pb.UpdateServiceRequest,
-) (*pb.Service, error) {
+	req *translatev1.UpdateServiceRequest,
+) (*translatev1.Service, error) {
 	updateReq := (*updateServiceRequest)(req)
 
 	params, err := updateReq.parseParams()
@@ -114,7 +114,7 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	return &pb.Service{}, nil
+	return &translatev1.Service{}, nil
 }
 
 // ----------------------DeleteService------------------------------
@@ -143,7 +143,7 @@ func (d *deleteServiceParams) validate() error {
 
 func (t *TranslateServiceServer) DeleteService(
 	ctx context.Context,
-	req *pb.DeleteServiceRequest,
+	req *translatev1.DeleteServiceRequest,
 ) (*emptypb.Empty, error) {
 	deleteReq := (*deleteServiceRequest)(req)
 
