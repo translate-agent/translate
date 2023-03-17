@@ -33,6 +33,7 @@ func NewDB(ctx context.Context, conf *Conf) (*sql.DB, error) {
 		conf.ConnectionString(),
 		otelsql.WithAttributes(
 			semconv.DBSystemMySQL,
+			semconv.DBNameKey.String(conf.Database),
 		),
 		otelsql.WithSpanOptions(otelsql.SpanOptions{
 			Ping:                 false,

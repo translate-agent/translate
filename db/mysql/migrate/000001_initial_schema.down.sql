@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS Service;
+DROP TABLE service;

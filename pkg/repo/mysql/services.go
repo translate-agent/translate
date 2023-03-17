@@ -12,8 +12,7 @@ import (
 )
 
 func (r *Repo) SaveService(ctx context.Context, service *model.Service) error {
-	query := `INSERT INTO Service (ID, Name) VALUES (?, ?)
-	ON DUPLICATE KEY UPDATE Name = VALUES(Name)`
+	query := `INSERT INTO service (id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)`
 
 	_, err := r.db.ExecContext(ctx, query, service.ID, service.Name)
 	if err != nil {
@@ -24,7 +23,7 @@ func (r *Repo) SaveService(ctx context.Context, service *model.Service) error {
 }
 
 func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Service, error) {
-	query := `SELECT ID, Name FROM Service WHERE ID = ?`
+	query := `SELECT id, name FROM service WHERE id = ?`
 	row := r.db.QueryRowContext(ctx, query, serviceID)
 
 	var service model.Service
@@ -42,7 +41,7 @@ func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Ser
 }
 
 func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
-	query := `SELECT ID, Name FROM Service`
+	query := `SELECT id, name FROM service`
 
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
@@ -72,7 +71,7 @@ func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
 }
 
 func (r *Repo) DeleteService(ctx context.Context, serviceID uuid.UUID) error {
-	query := `DELETE FROM Service WHERE ID = ?`
+	query := `DELETE FROM service WHERE id = ?`
 
 	result, err := r.db.ExecContext(ctx, query, serviceID)
 	if err != nil {
