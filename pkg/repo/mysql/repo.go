@@ -45,6 +45,15 @@ func WithDefaultDB(ctx context.Context) Option {
 	})
 }
 
+func WithDBConfig(ctx context.Context, conf *Conf) Option {
+	return optionFunc(func(r *Repo) (err error) {
+		if r.db, err = NewDB(ctx, conf); err != nil {
+			return fmt.Errorf("apply db conf to repo")
+		}
+		return nil
+	})
+}
+
 func NewRepo(opts ...Option) (*Repo, error) {
 	r := new(Repo)
 
