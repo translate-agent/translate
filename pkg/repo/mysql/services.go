@@ -12,7 +12,7 @@ import (
 )
 
 func (r *Repo) SaveService(ctx context.Context, service *model.Service) error {
-	query := `INSERT INTO service (id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)`
+	query := `INSERT INTO service (id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES (name)`
 
 	_, err := r.db.ExecContext(ctx, query, service.ID, service.Name)
 	if err != nil {
@@ -28,16 +28,14 @@ func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Ser
 
 	var service model.Service
 
-	err := row.Scan(&service.ID, &service.Name)
-
-	switch {
+	switch err := row.Scan(&service.ID, &service.Name); {
+	default:
+		return &service, nil
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, repo.ErrNotFound
 	case err != nil:
 		return nil, fmt.Errorf("db: select service: %w", err)
 	}
-
-	return &service, nil
 }
 
 func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
@@ -56,15 +54,14 @@ func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
 
 		err = rows.Scan(&service.ID, &service.Name)
 		if err != nil {
-			return nil, fmt.Errorf("scan row: %w", err)
+			return nil, fmt.Errorf("db: scan service: %w", err)
 		}
 
 		services = append(services, service)
 	}
 
-	err = rows.Err()
-	if err != nil {
-		return nil, fmt.Errorf("iterate rows: %w", err)
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("db: scan services: %w", err)
 	}
 
 	return services, nil
@@ -80,7 +77,7 @@ func (r *Repo) DeleteService(ctx context.Context, serviceID uuid.UUID) error {
 
 	count, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("retrieve affected rows: %w", err)
+		return fmt.Errorf("db: is service deleted: %w", err)
 	}
 
 	if count == 0 {
