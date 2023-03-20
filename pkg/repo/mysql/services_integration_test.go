@@ -59,7 +59,7 @@ func createTestService() *model.Service {
 	}
 }
 
-// Inserts service to db.
+// insertTestService inserts service to DB.
 func insertTestService(t *testing.T, service *model.Service) error {
 	t.Helper()
 

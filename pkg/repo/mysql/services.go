@@ -77,7 +77,7 @@ func (r *Repo) DeleteService(ctx context.Context, serviceID uuid.UUID) error {
 
 	count, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("db: is service deleted: %w", err)
+		return fmt.Errorf("db: delete service result: %w", err)
 	}
 
 	if count == 0 {

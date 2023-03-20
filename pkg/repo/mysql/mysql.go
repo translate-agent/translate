@@ -8,7 +8,7 @@ import (
 	"github.com/XSAM/otelsql"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )
 
 type Conf struct {
