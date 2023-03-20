@@ -60,10 +60,10 @@ func createTestService() *model.Service {
 }
 
 // insertTestService inserts service to DB.
-func insertTestService(t *testing.T, service *model.Service) error {
+func insertTestService(t *testing.T, ctx context.Context, service *model.Service) error {
 	t.Helper()
 
-	_, err := mysqlRepo.db.Exec(`INSERT INTO service (id, name) VALUES (?, ?)`, service.ID, service.Name)
+	_, err := mysqlRepo.db.ExecContext(ctx, `INSERT INTO service (id, name) VALUES (?, ?)`, service.ID, service.Name)
 	if err != nil {
 		return fmt.Errorf("insert test service: %w", err)
 	}
@@ -83,16 +83,18 @@ func Test_MysqlSaveService(t *testing.T) {
 func Test_MysqlUpdateService(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	service := createTestService()
 
-	err := insertTestService(t, service)
+	err := insertTestService(t, ctx, service)
 	if !assert.NoError(t, err) {
 		return
 	}
 
 	service.Name = gofakeit.FirstName()
 
-	err = mysqlRepo.SaveService(context.Background(), service)
+	err = mysqlRepo.SaveService(ctx, service)
 	assert.NoError(t, err)
 }
 
@@ -103,7 +105,7 @@ func Test_MysqlLoadService(t *testing.T) {
 
 	service := createTestService()
 
-	err := insertTestService(t, service)
+	err := insertTestService(t, ctx, service)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -157,7 +159,7 @@ func Test_MysqlLoadServices(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		service := createTestService()
 
-		err := insertTestService(t, service)
+		err := insertTestService(t, ctx, service)
 		if !assert.NoError(t, err) {
 			return
 		}
@@ -184,7 +186,7 @@ func Test_MysqlDeleteService(t *testing.T) {
 
 	service := createTestService()
 
-	err := insertTestService(t, service)
+	err := insertTestService(t, ctx, service)
 	if !assert.NoError(t, err) {
 		return
 	}
