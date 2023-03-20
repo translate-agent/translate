@@ -7,6 +7,7 @@ import (
 
 	"github.com/XSAM/otelsql"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/spf13/viper"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
@@ -23,7 +24,13 @@ func (c *Conf) ConnectionString() string {
 }
 
 func DefaultConf() (*Conf, error) {
-	return new(Conf), nil
+	conf := &Conf{}
+
+	if err := viper.Unmarshal(conf); err != nil {
+		return nil, fmt.Errorf("viper: unmarshal to mysql conf: %w", err)
+	}
+
+	return conf, nil
 }
 
 func NewDB(ctx context.Context, conf *Conf) (*sql.DB, error) {
