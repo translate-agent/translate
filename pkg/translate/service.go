@@ -10,7 +10,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/repo"
 )
 
 type (
@@ -18,6 +20,11 @@ type (
 	updateServiceRequest translatev1.UpdateServiceRequest
 	deleteServiceRequest translatev1.DeleteServiceRequest
 )
+
+// protoServiceFromService converts model.Service -> translatev1.Service.
+func protoServiceFromService(service *model.Service) *translatev1.Service {
+	return &translatev1.Service{Id: service.ID.String(), Name: service.Name}
+}
 
 // ------------------------GetService-------------------------------
 
@@ -38,11 +45,6 @@ func (g *getServiceRequest) parseParams() (getServiceParams, error) {
 	return getServiceParams{id: id}, nil
 }
 
-func (g *getServiceParams) validate() error {
-	// validate if uuid is in DB
-	return nil
-}
-
 func (t *TranslateServiceServer) GetService(
 	ctx context.Context,
 	req *translatev1.GetServiceRequest,
@@ -55,11 +57,14 @@ func (t *TranslateServiceServer) GetService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if err := params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	switch service, err := t.repo.LoadService(ctx, params.id); {
+	default:
+		return protoServiceFromService(service), nil
+	case errors.Is(err, repo.ErrNotFound):
+		return nil, status.Errorf(codes.NotFound, err.Error())
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
-
-	return &translatev1.Service{}, nil
 }
 
 // ----------------------ListServices-------------------------------
@@ -68,7 +73,21 @@ func (t *TranslateServiceServer) ListServices(
 	ctx context.Context,
 	req *translatev1.ListServicesRequest,
 ) (*translatev1.ListServicesResponse, error) {
-	return &translatev1.ListServicesResponse{}, nil
+	services, err := t.repo.LoadServices(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	resp := &translatev1.ListServicesResponse{
+		Services: make([]*translatev1.Service, 0, len(services)),
+	}
+
+	for _, v := range services {
+		service := v
+		resp.Services = append(resp.Services, protoServiceFromService(&service))
+	}
+
+	return resp, nil
 }
 
 // ---------------------UpdateService-------------------------------
@@ -114,7 +133,12 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	return &translatev1.Service{}, nil
+	service := model.Service{ID: params.id, Name: params.name}
+	if err := t.repo.SaveService(ctx, &service); err != nil {
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	return protoServiceFromService(&service), nil
 }
 
 // ----------------------DeleteService------------------------------
@@ -136,11 +160,6 @@ func (d *deleteServiceRequest) parseParams() (deleteServiceParams, error) {
 	return deleteServiceParams{id: id}, nil
 }
 
-func (d *deleteServiceParams) validate() error {
-	// validate if uuid is in DB
-	return nil
-}
-
 func (t *TranslateServiceServer) DeleteService(
 	ctx context.Context,
 	req *translatev1.DeleteServiceRequest,
@@ -152,9 +171,12 @@ func (t *TranslateServiceServer) DeleteService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if err := params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	switch err := t.repo.DeleteService(ctx, params.id); {
+	default:
+		return &emptypb.Empty{}, nil
+	case errors.Is(err, repo.ErrNotFound):
+		return nil, status.Errorf(codes.NotFound, err.Error())
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
-
-	return &emptypb.Empty{}, nil
 }
