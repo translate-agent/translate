@@ -268,6 +268,90 @@ msgstr "Au revoir!"
 `),
 		},
 		{
+			name: "When msgstr value is plural",
+			input: model.Messages{
+				Language: language.Make("en-US"),
+				Messages: []model.Message{
+					{
+						ID:          "There is %d apple.",
+						PluralID:    "There are %d apples.",
+						Message:     "match {$count :number}\nwhen 1 {Il y a {$count} pomme.}\nwhen * {Il y a {$count} pommes.}",
+						Description: "apple counts",
+						Fuzzy:       true,
+					},
+				},
+			},
+			expected: []byte(`"Language: en-US
+# Plural-Forms: nplurals=2; plural=(n != 1);
+#. apple counts
+#, fuzzy
+msgid "There is %d apple."
+msgid_plural "There are %d apples."
+msgstr[0] "Il y a %d pomme."
+msgstr[1] "Il y a %d pommes."
+`),
+		},
+		{
+			name: "When msgstr value is plural and multiline",
+			input: model.Messages{
+				Language: language.Make("en-US"),
+				Messages: []model.Message{
+					{
+						ID:          "There is %d apple.",
+						PluralID:    "There are %d apples.",
+						Message:     "match {$count :number}\nwhen 1 {Il y a {$count}\npomme.}\nwhen * {Il y a {$count} pommes.}",
+						Description: "apple counts",
+						Fuzzy:       true,
+					},
+				},
+			},
+			expected: []byte(`"Language: en-US
+# Plural-Forms: nplurals=2; plural=(n != 1);
+#. apple counts
+#, fuzzy
+msgid "There is %d apple."
+msgid_plural "There are %d apples."
+msgstr[0] ""
+"Il y a %d\n"
+"pomme.\n"
+msgstr[1] "Il y a %d pommes."
+`),
+		},
+		{
+			name: "When msgstr value is plural and double multiline",
+			input: model.Messages{
+				Language: language.Make("en-US"),
+				Messages: []model.Message{
+					{
+						ID:       "There is %d apple.",
+						PluralID: "There are %d apples.",
+						Message: "match {$count :number}\n" +
+							"when 1 {Il y a {$count}\n" +
+							"pomme.\n" +
+							"one more line.}\n" +
+							"when * {Il y a {$count}\n" +
+							"pommes.}",
+						Description: "apple counts",
+						Fuzzy:       true,
+					},
+				},
+			},
+			expected: []byte(`"Language: en-US
+# Plural-Forms: nplurals=2; plural=(n != 1);
+#. apple counts
+#, fuzzy
+msgid "There is %d apple."
+msgid_plural "There are %d apples."
+msgstr[0] ""
+"Il y a %d\n"
+"pomme.\n"
+"one more line.\n"
+msgstr[1] ""
+"Il y a %d\n"
+"pommes.\n"
+`),
+		},
+		{
 			name: "When fuzzy values are missing",
 			input: model.Messages{
 				Language: language.English,
@@ -334,6 +418,8 @@ msgstr "Au revoir!"
 				return
 			}
 
+			fmt.Printf("res: %v\n", string(result))
+			fmt.Printf("exp: %v\n", string(tt.expected))
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -357,7 +443,7 @@ func TestFromPot(t *testing.T) {
 							msgstr ""
 							"Hello, world!\n"
 							"very long string\n"
-							
+
 							#. "a farewell"
 							#, "fuzzy"
 							msgid "Goodbye"
@@ -368,7 +454,7 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "Hello, world!\n very long string\n",
+						Message:     "Hello, world!\nvery long string\n",
 						Description: "a greeting",
 						Fuzzy:       false,
 					},
@@ -391,7 +477,7 @@ func TestFromPot(t *testing.T) {
 							msgstr ""
 							"Hello, world!\n"
 							"very long string\n"
-							
+
 							#. "a farewell"
 							#, "fuzzy"
 							msgid "Goodbye"
@@ -402,8 +488,8 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "Hello, world!\n very long string\n",
-						Description: "a greeting\na greeting2",
+						Message:     "Hello, world!\nvery long string\n",
+						Description: "a greeting\n a greeting2",
 						Fuzzy:       false,
 					},
 					{
@@ -411,6 +497,110 @@ func TestFromPot(t *testing.T) {
 						Message:     "Goodbye, world!",
 						Description: "a farewell",
 						Fuzzy:       true,
+					},
+				},
+			},
+		},
+		{
+			name: "When msgid value is multiline",
+			input: []byte(`# Language: en-US
+							#. "a greeting"
+							#, "fuzzy"
+							msgid ""
+							"Hello\n"
+							"Hello2\n"
+							msgstr "Hello, world!"
+			`),
+			expected: model.Messages{
+				Language: language.Make("en-US"),
+				Messages: []model.Message{
+					{
+						ID:          "Hello\nHello2\n",
+						Message:     "Hello, world!",
+						Description: "a greeting",
+						Fuzzy:       true,
+					},
+				},
+			},
+		},
+		{
+			name: "when msgstr is plural",
+			input: []byte(`# Language: en-US
+							# Plural-Forms: nplurals=2; plural=(n != 1);
+							#. "apple counts"
+							#, ""
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] "Il y a %d pomme."
+							msgstr[1] "Il y a %d pommes."
+			`),
+			expected: model.Messages{
+				Language: language.Make("en-US"),
+				Messages: []model.Message{
+					{
+						ID:       "There is %d apple.",
+						PluralID: "There are %d apples.",
+						Message: `match {$count :number}
+when 1 {Il y a {$count} pomme.}
+when * {Il y a {$count} pommes.}
+`,
+						Description: "apple counts",
+						Fuzzy:       false,
+					},
+				},
+			},
+		},
+		{
+			name: "when msgstr is plural and multiline",
+			input: []byte(`# Language: en-US
+							# Plural-Forms: nplurals=2; plural=(n != 1);
+							#. "apple counts"
+							#, ""
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] ""
+							"Il y a %d\n"
+							"pomme.\n"
+							msgstr[1] ""
+							"Il y a %d\n"
+							"pommes.\n"
+			`),
+			expected: model.Messages{
+				Language: language.Make("en-US"),
+				Messages: []model.Message{
+					{
+						ID:          "There is %d apple.",
+						PluralID:    "There are %d apples.",
+						Message:     "match {$count :number}\nwhen 1 {Il y a {$count}\npomme.}\nwhen * {Il y a {$count}\npommes.}\n",
+						Description: "apple counts",
+						Fuzzy:       false,
+					},
+				},
+			},
+		},
+		{
+			name: "when msgid_plural and msgid values are multiline",
+			input: []byte(`# Language: en-US
+							# Plural-Forms: nplurals=2; plural=(n != 1);
+							#. "apple counts"
+							#, ""
+							msgid "There is %d apple."
+							msgid_plural ""
+							"There are %d apples.\n"
+							msgstr[0] ""
+							"Il y a %d\n"
+							"pomme.\n"
+							msgstr[1] "Il y a %d pommes."
+			`),
+			expected: model.Messages{
+				Language: language.Make("en-US"),
+				Messages: []model.Message{
+					{
+						ID:          "There is %d apple.",
+						PluralID:    "There are %d apples.\n",
+						Message:     "match {$count :number}\nwhen 1 {Il y a {$count}\npomme.}\nwhen * {Il y a {$count} pommes.}\n",
+						Description: "apple counts",
+						Fuzzy:       false,
 					},
 				},
 			},
@@ -438,7 +628,8 @@ func TestFromPot(t *testing.T) {
 			if !assert.NoError(t, err) {
 				return
 			}
-
+			fmt.Printf("res: %v\n", result)
+			fmt.Printf("exp: %v\n", tt.expected)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
