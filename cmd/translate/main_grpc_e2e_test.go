@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
@@ -42,6 +43,8 @@ func mustGetFreePort() string {
 }
 
 func TestMain(m *testing.M) {
+	cfgFile = "../../translate.yaml"
+
 	host = "localhost"
 	port = mustGetFreePort()
 
@@ -84,6 +87,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+// -------------Translation File-------------.
 func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
@@ -200,4 +204,123 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 			assert.Equal(t, tt.expected, actual)
 		})
 	}
+}
+
+// ------------------Service------------------
+
+func randService() *translatev1.Service {
+	return &translatev1.Service{
+		Id:   gofakeit.UUID(),
+		Name: gofakeit.FirstName(),
+	}
+}
+
+func Test_UpdateService_gRPC(t *testing.T) {
+	t.Parallel()
+
+	service := randService()
+
+	_, err := client.UpdateService(context.Background(), &translatev1.UpdateServiceRequest{Service: service})
+
+	expected := codes.OK
+	actual := status.Code(err)
+
+	assert.Equal(t, expected, actual, "want codes.%s got codes.%s", expected, actual)
+}
+
+func Test_GetService_gRPC(t *testing.T) {
+	t.Parallel()
+
+	service := randService()
+
+	_, err := client.UpdateService(context.Background(), &translatev1.UpdateServiceRequest{
+		Service: service,
+	})
+
+	if !assert.NoError(t, err, "client.UpdateService method returned an error") {
+		return
+	}
+
+	tests := []struct {
+		input    *translatev1.GetServiceRequest
+		name     string
+		expected codes.Code
+	}{
+		{
+			input:    &translatev1.GetServiceRequest{Id: service.Id},
+			name:     "Happy Path",
+			expected: codes.OK,
+		},
+		{
+			input:    &translatev1.GetServiceRequest{Id: gofakeit.UUID()},
+			name:     "Not found",
+			expected: codes.NotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := client.GetService(context.Background(), tt.input)
+
+			actual := status.Code(err)
+			assert.Equal(t, tt.expected, actual, "want codes.%s got codes.%s", tt.expected, actual)
+		})
+	}
+}
+
+func Test_DeleteService_gRPC(t *testing.T) {
+	t.Parallel()
+
+	service := randService()
+
+	_, err := client.UpdateService(context.Background(), &translatev1.UpdateServiceRequest{
+		Service: service,
+	})
+
+	if !assert.NoError(t, err, "client.UpdateService method returned an error") {
+		return
+	}
+
+	tests := []struct {
+		input    *translatev1.DeleteServiceRequest
+		name     string
+		expected codes.Code
+	}{
+		{
+			input:    &translatev1.DeleteServiceRequest{Id: service.Id},
+			name:     "Happy Path",
+			expected: codes.OK,
+		},
+		{
+			input:    &translatev1.DeleteServiceRequest{Id: gofakeit.UUID()},
+			name:     "Not found",
+			expected: codes.NotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := client.DeleteService(context.Background(), tt.input)
+
+			actual := status.Code(err)
+			assert.Equal(t, tt.expected, actual, "want codes.%s got codes.%s", tt.expected, actual)
+		})
+	}
+}
+
+func Test_ListServices_gRPC(t *testing.T) {
+	t.Parallel()
+
+	_, err := client.ListServices(context.Background(), &translatev1.ListServicesRequest{})
+
+	expected := codes.OK
+	actual := status.Code(err)
+
+	assert.Equal(t, expected, actual, "want codes.%s got codes.%s", expected, actual)
 }

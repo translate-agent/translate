@@ -21,6 +21,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/repo/mysql"
 	"go.expect.digital/translate/pkg/tracer"
 	"go.expect.digital/translate/pkg/translate"
 )
@@ -33,6 +35,7 @@ var rootCmd = &cobra.Command{
 	Short: "Enables translation for Cloud-native systems",
 	Long:  `Enables translation for Cloud-native systems`,
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.Background()
 		addr := viper.GetString("service.host") + ":" + viper.GetString("service.port")
 		// Gracefully shutdown on Ctrl+C and Termination signal
 		terminationChan := make(chan os.Signal, 1)
@@ -44,7 +47,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		defer func() {
-			if tpShutdownErr := tp.Shutdown(context.Background()); tpShutdownErr != nil {
+			if tpShutdownErr := tp.Shutdown(ctx); tpShutdownErr != nil {
 				log.Panicf("gracefully shutdown tracer: %v", tpShutdownErr)
 			}
 		}()
@@ -57,10 +60,27 @@ var rootCmd = &cobra.Command{
 		defer grpcServer.GracefulStop()
 
 		mux := runtime.NewServeMux()
-		translatev1.RegisterTranslateServiceServer(grpcServer, &translate.TranslateServiceServer{})
+
+		var (
+			repository repo.Repo
+			errRepo    error
+		)
+
+		switch v := strings.TrimSpace(strings.ToLower(viper.GetString("service.dbms"))); v {
+		case "mysql":
+			repository, errRepo = mysql.NewRepo(mysql.WithDefaultDB(ctx))
+		default:
+			log.Panicf("unsupported dbms: '%s'", v)
+		}
+
+		if errRepo != nil {
+			log.Panicf("create new repo: %v", errRepo)
+		}
+
+		translatev1.RegisterTranslateServiceServer(grpcServer, translate.NewTranslateServiceServer(repository))
 
 		err = translatev1.RegisterTranslateServiceHandlerFromEndpoint(
-			context.Background(),
+			ctx,
 			mux,
 			addr,
 			[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())})
@@ -125,23 +145,23 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "translate.yaml", "config file")
 	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
 	rootCmd.PersistentFlags().String("host", "localhost", "host to run service on")
+	rootCmd.PersistentFlags().String("dbms", "mysql", "dbms to use with service")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	viper.SetConfigFile(cfgFile)
+	viper.SetConfigType("yaml")
 
 	viper.SetEnvPrefix("translate")
 	// Replace underscores with dots in environment variable names.
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
-	// Try to read config.
-	if err := viper.ReadInConfig(); err != nil && cfgFile != "translate.yaml" {
+	if err := viper.ReadInConfig(); err != nil {
 		log.Panicf("read config: %v", err)
 	}
 
-	// For now manually bind CLI arguments to viper.
 	err := viper.BindPFlag("service.port", rootCmd.Flags().Lookup("port"))
 	if err != nil {
 		log.Panicf("bind port flag: %v", err)
@@ -150,5 +170,10 @@ func initConfig() {
 	err = viper.BindPFlag("service.host", rootCmd.Flags().Lookup("host"))
 	if err != nil {
 		log.Panicf("bind host flag: %v", err)
+	}
+
+	err = viper.BindPFlag("service.dbms", rootCmd.Flags().Lookup("dbms"))
+	if err != nil {
+		log.Panicf("bind dbms flag: %v", err)
 	}
 }

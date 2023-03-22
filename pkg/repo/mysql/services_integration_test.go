@@ -20,7 +20,7 @@ var repository *Repo
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
-	viper.SetEnvPrefix("translate_mysql")
+	viper.SetEnvPrefix("translate_dbms_mysql")
 	viper.AutomaticEnv()
 
 	tp, err := tracer.TracerProvider()
@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 
 	conf := &Conf{
 		Host:     viper.GetString("host"),
-		Port:     viper.GetString("port"),
+		Port:     viper.GetInt("port"),
 		User:     viper.GetString("user"),
 		Database: viper.GetString("database"),
 	}
@@ -62,6 +62,17 @@ func Test_SaveService(t *testing.T) {
 	t.Parallel()
 
 	service := randService()
+	err := repository.SaveService(context.Background(), service)
+
+	assert.NoError(t, err)
+}
+
+func Test_SaveServiceNoUUID(t *testing.T) {
+	t.Parallel()
+
+	service := &model.Service{
+		Name: gofakeit.FirstName(),
+	}
 	err := repository.SaveService(context.Background(), service)
 
 	assert.NoError(t, err)

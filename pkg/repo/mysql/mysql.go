@@ -13,24 +13,24 @@ import (
 
 type Conf struct {
 	Host     string
-	Port     string
 	User     string
 	Password string
 	Database string
+	Port     int
 }
 
 func (c *Conf) ConnectionString() string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", c.User, c.Password, c.Host, c.Port, c.Database)
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", c.User, c.Password, c.Host, c.Port, c.Database)
 }
 
-func DefaultConf() (*Conf, error) {
-	conf := &Conf{}
-
-	if err := viper.Unmarshal(conf); err != nil {
-		return nil, fmt.Errorf("viper: unmarshal to mysql conf: %w", err)
+func DefaultConf() *Conf {
+	return &Conf{
+		Host:     viper.GetString("dbms.mysql.host"),
+		Port:     viper.GetInt("dbms.mysql.port"),
+		User:     viper.GetString("dbms.mysql.user"),
+		Password: viper.GetString("dbms.mysql.password"),
+		Database: viper.GetString("dbms.mysql.database"),
 	}
-
-	return conf, nil
 }
 
 func NewDB(ctx context.Context, conf *Conf) (*sql.DB, error) {

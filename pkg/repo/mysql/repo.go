@@ -30,12 +30,7 @@ func WithDB(db *sql.DB) Option {
 // WithDefaultDB reads configuration data from Viper and uses it to create a new DB.
 func WithDefaultDB(ctx context.Context) Option {
 	return optionFunc(func(r *Repo) (err error) {
-		var conf *Conf
-
-		conf, err = DefaultConf()
-		if err != nil {
-			return fmt.Errorf("create default conf: %w", err)
-		}
+		conf := DefaultConf()
 
 		r.db, err = NewDB(ctx, conf)
 		if err != nil {

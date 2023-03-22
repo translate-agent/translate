@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// -------------Translation File-------------.
+
 func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string, error) {
 	t.Helper()
 

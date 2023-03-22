@@ -1,3 +1,14 @@
 service:
   port: 8080
-  address: localhost
+  host: "localhost"
+  dbms: "mysql"
+
+dbms:
+  mysql:
+    host: "localhost"
+    port: 3306
+    user: "root"
+    password: ""
+    database: "translate"
+  postgres:
+    host: "randomHost"
