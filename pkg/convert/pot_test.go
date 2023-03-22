@@ -418,8 +418,6 @@ msgstr "Au revoir!"
 				return
 			}
 
-			fmt.Printf("res: %v\n", string(result))
-			fmt.Printf("exp: %v\n", string(tt.expected))
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -628,8 +626,7 @@ when * {Il y a {$count} pommes.}
 			if !assert.NoError(t, err) {
 				return
 			}
-			fmt.Printf("res: %v\n", result)
-			fmt.Printf("exp: %v\n", tt.expected)
+
 			assert.Equal(t, tt.expected, result)
 		})
 	}
