@@ -12,7 +12,11 @@ import (
 )
 
 func (r *Repo) SaveService(ctx context.Context, service *model.Service) error {
-	query := `INSERT INTO service (id, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES (name)`
+	query := `INSERT INTO service (id, name) VALUES (UUID_TO_BIN(?), ?) ON DUPLICATE KEY UPDATE name = VALUES (name)`
+
+	if service.ID == uuid.Nil {
+		service.ID = uuid.New()
+	}
 
 	_, err := r.db.ExecContext(ctx, query, service.ID, service.Name)
 	if err != nil {
@@ -23,7 +27,7 @@ func (r *Repo) SaveService(ctx context.Context, service *model.Service) error {
 }
 
 func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Service, error) {
-	query := `SELECT id, name FROM service WHERE id = ?`
+	query := `SELECT BIN_TO_UUID(id), name FROM service WHERE id = UUID_TO_BIN(?)`
 	row := r.db.QueryRowContext(ctx, query, serviceID)
 
 	var service model.Service
@@ -39,7 +43,7 @@ func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Ser
 }
 
 func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
-	query := `SELECT id, name FROM service`
+	query := `SELECT BIN_TO_UUID(id), name FROM service`
 
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
@@ -68,21 +72,19 @@ func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
 }
 
 func (r *Repo) DeleteService(ctx context.Context, serviceID uuid.UUID) error {
-	query := `DELETE FROM service WHERE id = ?`
+	query := `DELETE FROM service WHERE BIN_TO_UUID(id) = ?`
 
 	result, err := r.db.ExecContext(ctx, query, serviceID)
 	if err != nil {
 		return fmt.Errorf("db: delete service: %w", err)
 	}
 
-	count, err := result.RowsAffected()
-	if err != nil {
+	switch count, err := result.RowsAffected(); {
+	default:
+		return nil
+	case err != nil:
 		return fmt.Errorf("db: delete service result: %w", err)
-	}
-
-	if count == 0 {
+	case count == 0:
 		return repo.ErrNotFound
 	}
-
-	return nil
 }

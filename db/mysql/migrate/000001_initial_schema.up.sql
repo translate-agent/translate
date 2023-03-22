@@ -1,4 +1,4 @@
 CREATE TABLE service (
-  id VARCHAR(36) PRIMARY KEY,
+  id BINARY(16) PRIMARY KEY,
   name VARCHAR(255)
 );

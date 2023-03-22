@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -16,7 +15,7 @@ import (
 	"go.expect.digital/translate/pkg/tracer"
 )
 
-var mysqlRepo *Repo
+var repository *Repo
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
@@ -36,14 +35,14 @@ func TestMain(m *testing.M) {
 		Database: viper.GetString("database"),
 	}
 
-	mysqlRepo, err = NewRepo(WithDBConfig(ctx, conf))
+	repository, err = NewRepo(WithConf(ctx, conf))
 	if err != nil {
 		log.Panicf("create new repo: %v", err)
 	}
 
 	code := m.Run()
 
-	mysqlRepo.db.Close()
+	repository.db.Close()
 
 	if err := tp.Shutdown(ctx); err != nil {
 		log.Panicf("tp shutdown: %v", err)
@@ -52,61 +51,49 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func createTestService() *model.Service {
+func randService() *model.Service {
 	return &model.Service{
 		Name: gofakeit.FirstName(),
 		ID:   uuid.New(),
 	}
 }
 
-// insertTestService inserts service to DB.
-func insertTestService(t *testing.T, ctx context.Context, service *model.Service) error {
-	t.Helper()
-
-	_, err := mysqlRepo.db.ExecContext(ctx, `INSERT INTO service (id, name) VALUES (?, ?)`, service.ID, service.Name)
-	if err != nil {
-		return fmt.Errorf("insert test service: %w", err)
-	}
-
-	return nil
-}
-
-func Test_MysqlSaveService(t *testing.T) {
+func Test_SaveService(t *testing.T) {
 	t.Parallel()
 
-	service := createTestService()
-	err := mysqlRepo.SaveService(context.Background(), service)
+	service := randService()
+	err := repository.SaveService(context.Background(), service)
 
 	assert.NoError(t, err)
 }
 
-func Test_MysqlUpdateService(t *testing.T) {
+func Test_UpdateService(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
-	service := createTestService()
+	service := randService()
 
-	err := insertTestService(t, ctx, service)
-	if !assert.NoError(t, err) {
+	err := repository.SaveService(ctx, service)
+	if !assert.NoError(t, err, "repository.SaveService method returned an error") {
 		return
 	}
 
 	service.Name = gofakeit.FirstName()
 
-	err = mysqlRepo.SaveService(ctx, service)
+	err = repository.SaveService(ctx, service)
 	assert.NoError(t, err)
 }
 
-func Test_MysqlLoadService(t *testing.T) {
+func Test_LoadService(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
-	service := createTestService()
+	service := randService()
 
-	err := insertTestService(t, ctx, service)
-	if !assert.NoError(t, err) {
+	err := repository.SaveService(ctx, service)
+	if !assert.NoError(t, err, "repository.SaveService method returned an error") {
 		return
 	}
 
@@ -133,7 +120,7 @@ func Test_MysqlLoadService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := mysqlRepo.LoadService(ctx, tt.input)
+			actual, err := repository.LoadService(ctx, tt.input)
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
@@ -149,7 +136,7 @@ func Test_MysqlLoadService(t *testing.T) {
 	}
 }
 
-func Test_MysqlLoadServices(t *testing.T) {
+func Test_LoadServices(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -157,17 +144,17 @@ func Test_MysqlLoadServices(t *testing.T) {
 	expectedServices := make([]model.Service, 3)
 
 	for i := 0; i < 3; i++ {
-		service := createTestService()
+		service := randService()
 
-		err := insertTestService(t, ctx, service)
-		if !assert.NoError(t, err) {
+		err := repository.SaveService(ctx, service)
+		if !assert.NoError(t, err, "repository.SaveService method returned an error") {
 			return
 		}
 
 		expectedServices[i] = *service
 	}
 
-	actual, err := mysqlRepo.LoadServices(ctx)
+	actual, err := repository.LoadServices(ctx)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -179,15 +166,15 @@ func Test_MysqlLoadServices(t *testing.T) {
 	}
 }
 
-func Test_MysqlDeleteService(t *testing.T) {
+func Test_DeleteService(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
-	service := createTestService()
+	service := randService()
 
-	err := insertTestService(t, ctx, service)
-	if !assert.NoError(t, err) {
+	err := repository.SaveService(ctx, service)
+	if !assert.NoError(t, err, "repository.SaveService method returned an error") {
 		return
 	}
 
@@ -212,7 +199,7 @@ func Test_MysqlDeleteService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := mysqlRepo.DeleteService(ctx, tt.input)
+			err := repository.DeleteService(ctx, tt.input)
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
