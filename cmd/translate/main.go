@@ -66,11 +66,11 @@ var rootCmd = &cobra.Command{
 			errRepo    error
 		)
 
-		switch v := strings.TrimSpace(strings.ToLower(viper.GetString("service.dbms"))); v {
+		switch v := strings.TrimSpace(strings.ToLower(viper.GetString("service.db"))); v {
 		case "mysql":
 			repository, errRepo = mysql.NewRepo(mysql.WithDefaultDB(ctx))
 		default:
-			log.Panicf("unsupported dbms: '%s'", v)
+			log.Panicf("unsupported db: '%s'", v)
 		}
 
 		if errRepo != nil {
@@ -145,7 +145,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "translate.yaml", "config file")
 	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
 	rootCmd.PersistentFlags().String("host", "localhost", "host to run service on")
-	rootCmd.PersistentFlags().String("dbms", "mysql", "dbms to use with service")
+	rootCmd.PersistentFlags().String("db", "mysql", "db to use with service")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -158,7 +158,8 @@ func initConfig() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err != nil {
+	// Try to read config.
+	if err := viper.ReadInConfig(); err != nil && cfgFile != "translate.yaml" {
 		log.Panicf("read config: %v", err)
 	}
 
@@ -172,8 +173,8 @@ func initConfig() {
 		log.Panicf("bind host flag: %v", err)
 	}
 
-	err = viper.BindPFlag("service.dbms", rootCmd.Flags().Lookup("dbms"))
+	err = viper.BindPFlag("service.db", rootCmd.Flags().Lookup("db"))
 	if err != nil {
-		log.Panicf("bind dbms flag: %v", err)
+		log.Panicf("bind db flag: %v", err)
 	}
 }
