@@ -46,8 +46,8 @@ func TokensToPo(tokens []Token) (Po, error) {
 	header := headerNode{}
 
 	for _, token := range tokens {
-		token.Value = strings.ReplaceAll(token.Value, "\\n ", "\n")
-		token.Value = strings.ReplaceAll(token.Value, "\\n", "\n")
+		replacer := strings.NewReplacer("\\n ", "\n", "\\n", "\n")
+		token.Value = replacer.Replace(token.Value)
 
 		switch token.Type {
 		case HeaderLanguage:

@@ -30,7 +30,7 @@ func ToPot(m model.Messages) ([]byte, error) {
 
 	for i, message := range m.Messages {
 		if err := writeMessage(&b, i, message); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("write message: %w", err)
 		}
 	}
 
@@ -38,6 +38,8 @@ func ToPot(m model.Messages) ([]byte, error) {
 }
 
 func FromPot(b []byte) (model.Messages, error) {
+	pluralCountLimit := 2
+
 	tokens, err := pot.Lex(bytes.NewReader(b))
 	if err != nil {
 		return model.Messages{}, fmt.Errorf("dividing po file to tokens: %w", err)
@@ -51,13 +53,15 @@ func FromPot(b []byte) (model.Messages, error) {
 	messages := make([]model.Message, 0, len(po.Messages))
 
 	for _, node := range po.Messages {
-		var message model.Message
-		if po.Header.PluralForms.NPlurals > 1 { // Handle messages with plural forms
-			message.ID = node.MsgId
+		message := model.Message{ID: node.MsgId}
+
+		switch {
+		case po.Header.PluralForms.NPlurals > pluralCountLimit:
+			return model.Messages{}, fmt.Errorf("plural forms with more than 2 forms are not implemented yet")
+		case po.Header.PluralForms.NPlurals > 1:
 			message.PluralID = node.MsgIdPlural
 			message.Message = convertToFormatMessage(node.MsgStr)
-		} else {
-			message.ID = node.MsgId
+		default:
 			message.Message = node.MsgStr[0]
 		}
 
@@ -74,22 +78,24 @@ func FromPot(b []byte) (model.Messages, error) {
 }
 
 func writeToPoTag(b *bytes.Buffer, tag poTag, str string) error {
+	var write func(*bytes.Buffer, poTag, string) error
+
 	switch tag { //nolint:exhaustive
 	case MsgStrPlural:
-		if err := writePluralForms(b, tag, str); err != nil {
-			return fmt.Errorf("write plural forms: %w", err)
-		}
+		write = writePluralForms
 	default:
-		if err := writeDefault(b, tag, str); err != nil {
-			return fmt.Errorf("write default: %w", err)
-		}
+		write = writeDefault
+	}
+
+	if err := write(b, tag, str); err != nil {
+		return fmt.Errorf("write: %w", err)
 	}
 
 	return nil
 }
 
 func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
-	err, lines := getPoTagLines(str, tag)
+	lines, err := getPoTagLines(str, tag)
 	if err != nil {
 		return fmt.Errorf("get po tag lines: %w", err)
 	}
@@ -120,7 +126,7 @@ func writePluralForms(b *bytes.Buffer, tag poTag, str string) error {
 	}
 
 	for i := range pluralForms {
-		err, pluralLines := getPoTagLines(pluralForms[i], tag)
+		pluralLines, err := getPoTagLines(pluralForms[i], tag)
 		if err != nil {
 			return fmt.Errorf("get po tag lines: %w", err)
 		}
@@ -129,13 +135,16 @@ func writePluralForms(b *bytes.Buffer, tag poTag, str string) error {
 			if _, err = fmt.Fprintf(b, "msgstr[%d] \"%s\"\n", i, pluralLines[0]); err != nil {
 				return fmt.Errorf("write %s: %w", tag, err)
 			}
-		} else {
-			if _, err = fmt.Fprintf(b, "msgstr[%d] \"\"\n", i); err != nil {
-				return fmt.Errorf("write %s: %w", tag, err)
-			}
-			if err = writeMultiline(b, tag, pluralLines); err != nil {
-				return fmt.Errorf("write plural multiline: %w", err)
-			}
+
+			continue
+		}
+
+		if _, err = fmt.Fprintf(b, "msgstr[%d] \"\"\n", i); err != nil {
+			return fmt.Errorf("write %s: %w", tag, err)
+		}
+
+		if err = writeMultiline(b, tag, pluralLines); err != nil {
+			return fmt.Errorf("write plural multiline: %w", err)
 		}
 	}
 
@@ -144,24 +153,22 @@ func writePluralForms(b *bytes.Buffer, tag poTag, str string) error {
 
 func writeMultiline(b *bytes.Buffer, tag poTag, lines []string) error {
 	for _, line := range lines {
-		if strings.HasSuffix(line, "\\n") {
-			if _, err := fmt.Fprint(b, "\""+line+"\""+"\n"); err != nil {
-				return fmt.Errorf("write %s: %w", tag, err)
-			}
-		} else {
-			if _, err := fmt.Fprint(b, "\""+line+"\\n\""+"\n"); err != nil {
-				return fmt.Errorf("write %s: %w", tag, err)
-			}
+		if !strings.HasSuffix(line, "\\n") {
+			line += "\\n"
+		}
+
+		if _, err := fmt.Fprint(b, "\""+line+"\""+"\n"); err != nil {
+			return fmt.Errorf("write %s: %w", tag, err)
 		}
 	}
 
 	return nil
 }
 
-func getPoTagLines(str string, tag poTag) (error, []string) {
+func getPoTagLines(str string, tag poTag) ([]string, error) {
 	encodedStr, err := json.Marshal(str) // use JSON encoding to escape special characters
 	if err != nil {
-		return fmt.Errorf("marshal %s: %w", tag, err), nil
+		return nil, fmt.Errorf("marshal %s: %w", tag, err)
 	}
 
 	encodedStr = encodedStr[1 : len(encodedStr)-1] // trim quotes
@@ -170,10 +177,10 @@ func getPoTagLines(str string, tag poTag) (error, []string) {
 	// Remove the empty string element. The line is empty when splitting by "\\n" and "\n" is the last character in str.
 	if lines[len(lines)-1] == "" {
 		lines = lines[:len(lines)-1]
-		lines[len(lines)-1] = lines[len(lines)-1] + "\\n" // add the "\n" back to the last line
+		lines[len(lines)-1] += "\\n" // add the "\n" back to the last line
 	}
 
-	return nil, lines
+	return lines, nil
 }
 
 func extractPluralForms(plural string) ([]string, error) {
@@ -209,14 +216,16 @@ func convertToFormatMessage(plurals []string) string {
 	for i, plural := range plurals {
 		line := strings.ReplaceAll(strings.TrimSpace(plural), "%d", "{$count}")
 
-		switch {
-		case i == 0:
-			sb.WriteString(fmt.Sprintf("when 1 {%s}\n", line))
-		case i == len(plurals)-1:
-			sb.WriteString(fmt.Sprintf("when * {%s}\n", line))
+		var count string
+
+		switch i {
 		default:
-			sb.WriteString(fmt.Sprintf("when %d {%s}\n", i+1, line))
+			count = fmt.Sprintf("%d", i+1)
+		case len(plurals) - 1:
+			count = "*"
 		}
+
+		sb.WriteString(fmt.Sprintf("when %s {%s}\n", count, line))
 	}
 
 	return sb.String()
@@ -264,7 +273,8 @@ func writeTags(b *bytes.Buffer, message model.Message) error {
 		return fmt.Errorf("format msgid: %w", err)
 	}
 
-	if message.PluralID != "" {
+	switch {
+	case message.PluralID != "":
 		if err := writeToPoTag(b, PluralId, message.PluralID); err != nil {
 			return fmt.Errorf("format msgid_plural: %w", err)
 		}
@@ -272,7 +282,7 @@ func writeTags(b *bytes.Buffer, message model.Message) error {
 		if err := writeToPoTag(b, MsgStrPlural, message.Message); err != nil {
 			return fmt.Errorf("format msgstr[]: %w", err)
 		}
-	} else {
+	default:
 		if err := writeToPoTag(b, MsgStr, message.Message); err != nil {
 			return fmt.Errorf("format msgstr: %w", err)
 		}
