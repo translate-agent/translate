@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -20,7 +21,9 @@ var repository *Repo
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
-	viper.SetEnvPrefix("translate_dbms_mysql")
+	viper.SetEnvPrefix("translate")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
 	viper.AutomaticEnv()
 
 	tp, err := tracer.TracerProvider()
@@ -28,14 +31,7 @@ func TestMain(m *testing.M) {
 		log.Panicf("set tracer provider: %v", err)
 	}
 
-	conf := &Conf{
-		Host:     viper.GetString("host"),
-		Port:     viper.GetInt("port"),
-		User:     viper.GetString("user"),
-		Database: viper.GetString("database"),
-	}
-
-	repository, err = NewRepo(WithConf(ctx, conf))
+	repository, err = NewRepo(WithDefaultDB(ctx))
 	if err != nil {
 		log.Panicf("create new repo: %v", err)
 	}

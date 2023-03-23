@@ -25,11 +25,11 @@ func (c *Conf) ConnectionString() string {
 
 func DefaultConf() *Conf {
 	return &Conf{
-		Host:     viper.GetString("dbms.mysql.host"),
-		Port:     viper.GetInt("dbms.mysql.port"),
-		User:     viper.GetString("dbms.mysql.user"),
-		Password: viper.GetString("dbms.mysql.password"),
-		Database: viper.GetString("dbms.mysql.database"),
+		Host:     viper.GetString("db.mysql.host"),
+		Port:     viper.GetInt("db.mysql.port"),
+		User:     viper.GetString("db.mysql.user"),
+		Password: viper.GetString("db.mysql.password"),
+		Database: viper.GetString("db.mysql.database"),
 	}
 }
 
