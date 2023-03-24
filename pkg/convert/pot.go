@@ -273,8 +273,8 @@ func writeTags(b *bytes.Buffer, message model.Message) error {
 		return fmt.Errorf("format msgid: %w", err)
 	}
 
-	switch {
-	case message.PluralID != "":
+	switch message.PluralID != "" {
+	case true:
 		if err := writeToPoTag(b, PluralId, message.PluralID); err != nil {
 			return fmt.Errorf("format msgid_plural: %w", err)
 		}
