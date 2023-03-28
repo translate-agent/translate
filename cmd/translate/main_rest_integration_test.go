@@ -3,13 +3,16 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
+	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
 // -------------Translation File-------------.
@@ -186,4 +189,132 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			assert.EqualValues(t, tt.expected, actual)
 		})
 	}
+}
+
+// ------------------Service------------------
+
+// POST.
+func Test_CreateService_REST(t *testing.T) {
+	t.Parallel()
+
+	service := randService()
+
+	body, err := json.Marshal(service)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	u := url.URL{
+		Scheme: "http",
+		Host:   host + ":" + port,
+		Path:   "v1/services",
+	}
+
+	req, err := http.NewRequestWithContext(context.Background(), "POST", u.String(), bytes.NewBuffer(body))
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if !assert.NoError(t, err) {
+		return
+	}
+	defer resp.Body.Close()
+
+	actual := resp.StatusCode
+	expected := http.StatusOK
+
+	assert.EqualValues(t, expected, actual)
+}
+
+type restUpdateBody struct {
+	Name string `json:"name,omitempty"`
+}
+
+// PUT.
+func Test_UpdateServiceAllFields_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	service := randService()
+
+	// Using gRPC client to create service
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+		return
+	}
+
+	putBody := restUpdateBody{Name: gofakeit.FirstName()}
+
+	putBodyBytes, err := json.Marshal(putBody)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	u := url.URL{
+		Scheme: "http",
+		Host:   host + ":" + port,
+		Path:   "v1/services/" + service.Id,
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(putBodyBytes))
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if !assert.NoError(t, err) {
+		return
+	}
+	defer resp.Body.Close()
+
+	actual := resp.StatusCode
+	expected := http.StatusOK
+
+	assert.EqualValues(t, expected, actual)
+}
+
+// PATCH.
+func Test_UpdateServiceSpecificField_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	service := randService()
+
+	// Using gRPC client to create service
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+		return
+	}
+
+	putBody := restUpdateBody{Name: gofakeit.FirstName()}
+
+	patchBodyBytes, err := json.Marshal(putBody)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	u := url.URL{
+		Scheme: "http",
+		Host:   host + ":" + port,
+		Path:   "v1/services/" + service.Id,
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "PATCH", u.String(), bytes.NewReader(patchBodyBytes))
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if !assert.NoError(t, err) {
+		return
+	}
+	defer resp.Body.Close()
+
+	actual := resp.StatusCode
+	expected := http.StatusOK
+
+	assert.EqualValues(t, expected, actual)
 }

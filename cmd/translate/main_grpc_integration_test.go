@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 var (
@@ -215,15 +216,74 @@ func randService() *translatev1.Service {
 	}
 }
 
-func Test_UpdateService_gRPC(t *testing.T) {
+func Test_CreateService_gRPC(t *testing.T) {
 	t.Parallel()
 
 	service := randService()
 
-	_, err := client.UpdateService(context.Background(), &translatev1.UpdateServiceRequest{Service: service})
+	_, err := client.CreateService(context.Background(), &translatev1.CreateServiceRequest{Service: service})
+	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+		return
+	}
 
-	expected := codes.OK
 	actual := status.Code(err)
+	expected := codes.OK
+
+	assert.Equal(t, expected, actual, "want codes.%s got codes.%s", expected, actual)
+}
+
+func Test_UpdateServiceAllFields_gRPC(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	service := randService()
+
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+		return
+	}
+
+	service.Name = gofakeit.FirstName()
+
+	_, err = client.UpdateService(ctx, &translatev1.UpdateServiceRequest{
+		Service:    service,
+		UpdateMask: nil,
+	})
+	if !assert.NoError(t, err, "client.UpdateService method returned an error") {
+		return
+	}
+
+	actual := status.Code(err)
+	expected := codes.OK
+
+	assert.Equal(t, expected, actual, "want codes.%s got codes.%s", expected, actual)
+}
+
+func Test_UpdateServiceSpecificField_gRPC(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	service := randService()
+
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+		return
+	}
+
+	service.Name = gofakeit.FirstName()
+
+	_, err = client.UpdateService(ctx, &translatev1.UpdateServiceRequest{
+		Service:    service,
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"name"}},
+	})
+	if !assert.NoError(t, err, "client.UpdateService method returned an error") {
+		return
+	}
+
+	actual := status.Code(err)
+	expected := codes.OK
 
 	assert.Equal(t, expected, actual, "want codes.%s got codes.%s", expected, actual)
 }
@@ -233,11 +293,8 @@ func Test_GetService_gRPC(t *testing.T) {
 
 	service := randService()
 
-	_, err := client.UpdateService(context.Background(), &translatev1.UpdateServiceRequest{
-		Service: service,
-	})
-
-	if !assert.NoError(t, err, "client.UpdateService method returned an error") {
+	_, err := client.CreateService(context.Background(), &translatev1.CreateServiceRequest{Service: service})
+	if !assert.NoError(t, err, "client.CreateService method returned an error") {
 		return
 	}
 
@@ -276,11 +333,8 @@ func Test_DeleteService_gRPC(t *testing.T) {
 
 	service := randService()
 
-	_, err := client.UpdateService(context.Background(), &translatev1.UpdateServiceRequest{
-		Service: service,
-	})
-
-	if !assert.NoError(t, err, "client.UpdateService method returned an error") {
+	_, err := client.CreateService(context.Background(), &translatev1.CreateServiceRequest{Service: service})
+	if !assert.NoError(t, err, "client.CreateService method returned an error") {
 		return
 	}
 

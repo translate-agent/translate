@@ -4,6 +4,7 @@ package translate.v1;
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
 
 enum Schema {
   UNSPECIFIED = 0;
@@ -59,8 +60,13 @@ message ListServicesResponse {
   repeated Service services = 1;
 }
 
+message CreateServiceRequest {
+  Service service = 1;
+}
+
 message UpdateServiceRequest {
   Service service = 1;
+  google.protobuf.FieldMask update_mask = 2;
 }
 
 message DeleteServiceRequest {
@@ -68,10 +74,34 @@ message DeleteServiceRequest {
 }
 
 service TranslateService {
-  rpc GetService(GetServiceRequest) returns (Service);
-  rpc ListServices(ListServicesRequest) returns (ListServicesResponse);
-  rpc UpdateService(UpdateServiceRequest) returns (Service);
-  rpc DeleteService(DeleteServiceRequest) returns (google.protobuf.Empty);
+  rpc GetService(GetServiceRequest) returns (Service) {
+    option (google.api.http) = {get: "/v1/services/{id}"};
+  }
+  rpc ListServices(ListServicesRequest) returns (ListServicesResponse) {
+    option (google.api.http) = {get: "/v1/services"};
+  }
+  rpc CreateService(CreateServiceRequest) returns (Service) {
+    option (google.api.http) = {
+      post: "/v1/services"
+      body: "service"
+    };
+  }
+  rpc UpdateService(UpdateServiceRequest) returns (Service) {
+    option (google.api.http) = {
+      put: "/v1/services/{service.id}"
+      body: "service"
+      additional_bindings [
+        {
+          patch: "/v1/services/{service.id}"
+          body: "service"
+        }
+      ]
+    };
+  }
+
+  rpc DeleteService(DeleteServiceRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v1/services/{id}"};
+  }
 
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {put: "/v1/files/{language}"};
