@@ -57,21 +57,40 @@ func randService() *model.Service {
 func Test_SaveService(t *testing.T) {
 	t.Parallel()
 
-	service := randService()
-	err := repository.SaveService(context.Background(), service)
+	ctx := context.Background()
 
-	assert.NoError(t, err)
-}
-
-func Test_SaveServiceNoUUID(t *testing.T) {
-	t.Parallel()
-
-	service := &model.Service{
-		Name: gofakeit.FirstName(),
+	tests := []struct {
+		service *model.Service
+		name    string
+	}{
+		{
+			name:    "With UUID",
+			service: randService(),
+		},
+		{
+			name:    "Without UUID",
+			service: &model.Service{Name: gofakeit.Name()},
+		},
 	}
-	err := repository.SaveService(context.Background(), service)
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	assert.NoError(t, err)
+			err := repository.SaveService(ctx, tt.service)
+			if !assert.NoError(t, err) {
+				return
+			}
+
+			// check if really saved
+			actualService, err := repository.LoadService(ctx, tt.service.ID)
+			if !assert.NoError(t, err) {
+				return
+			}
+
+			assert.Equal(t, tt.service, actualService)
+		})
+	}
 }
 
 func Test_UpdateService(t *testing.T) {
@@ -79,17 +98,28 @@ func Test_UpdateService(t *testing.T) {
 
 	ctx := context.Background()
 
-	service := randService()
+	expectedService := randService()
 
-	err := repository.SaveService(ctx, service)
-	if !assert.NoError(t, err, "repository.SaveService method returned an error") {
+	err := repository.SaveService(ctx, expectedService)
+	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
 
-	service.Name = gofakeit.FirstName()
+	// update service fields and save
+	expectedService.Name = gofakeit.FirstName()
 
-	err = repository.SaveService(ctx, service)
-	assert.NoError(t, err)
+	err = repository.SaveService(ctx, expectedService)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	// check if really updated
+	actualService, err := repository.LoadService(ctx, expectedService.ID)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	assert.Equal(t, expectedService, actualService)
 }
 
 func Test_LoadService(t *testing.T) {
@@ -100,7 +130,7 @@ func Test_LoadService(t *testing.T) {
 	service := randService()
 
 	err := repository.SaveService(ctx, service)
-	if !assert.NoError(t, err, "repository.SaveService method returned an error") {
+	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
 
@@ -108,17 +138,17 @@ func Test_LoadService(t *testing.T) {
 		expected    *model.Service
 		expectedErr error
 		name        string
-		input       uuid.UUID
+		serviceID   uuid.UUID
 	}{
 		{
 			name:        "All OK",
-			input:       service.ID,
+			serviceID:   service.ID,
 			expected:    service,
 			expectedErr: nil,
 		},
 		{
 			name:        "Nonexistent",
-			input:       uuid.New(),
+			serviceID:   uuid.New(),
 			expectedErr: repo.ErrNotFound,
 		},
 	}
@@ -127,7 +157,7 @@ func Test_LoadService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := repository.LoadService(ctx, tt.input)
+			actual, err := repository.LoadService(ctx, tt.serviceID)
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
@@ -154,7 +184,7 @@ func Test_LoadServices(t *testing.T) {
 		service := randService()
 
 		err := repository.SaveService(ctx, service)
-		if !assert.NoError(t, err, "repository.SaveService method returned an error") {
+		if !assert.NoError(t, err, "Prepare test data") {
 			return
 		}
 
@@ -181,23 +211,23 @@ func Test_DeleteService(t *testing.T) {
 	service := randService()
 
 	err := repository.SaveService(ctx, service)
-	if !assert.NoError(t, err, "repository.SaveService method returned an error") {
+	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
 
 	tests := []struct {
 		expectedErr error
 		name        string
-		input       uuid.UUID
+		serviceID   uuid.UUID
 	}{
 		{
 			name:        "All OK",
-			input:       service.ID,
+			serviceID:   service.ID,
 			expectedErr: nil,
 		},
 		{
 			name:        "Nonexistent",
-			input:       uuid.New(),
+			serviceID:   uuid.New(),
 			expectedErr: repo.ErrNotFound,
 		},
 	}
@@ -206,13 +236,19 @@ func Test_DeleteService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := repository.DeleteService(ctx, tt.input)
+			err := repository.DeleteService(ctx, tt.serviceID)
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			assert.NoError(t, err)
+			if !assert.NoError(t, err) {
+				return
+			}
+
+			// check if really is deleted
+			_, err = repository.LoadService(ctx, tt.serviceID)
+			assert.ErrorIs(t, err, repo.ErrNotFound)
 		})
 	}
 }
