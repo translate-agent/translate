@@ -104,7 +104,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 						"messages":[
 							 {
 									"id":"1",
-									"meaning":"When you great someone",
+									"meaning":"When you greet someone",
 									"message":"hello",
 									"translation":"čau",
 									"fuzzy":false
@@ -122,7 +122,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 						"messages":[
 							 {
 									"id":"1",
-									"meaning":"When you great someone",
+									"meaning":"When you greet someone",
 									"message":"hello",
 									"translation":"čau",
 									"fuzzy":false
@@ -146,7 +146,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 						"messages":[
 							 {
 									"id":"1",
-									"meaning":"When you great someone",
+									"meaning":"When you greet someone",
 									"message":"hello",
 									"translation":"čau",
 									"fuzzy":false
@@ -220,7 +220,7 @@ func Test_CreateService_gRPC(t *testing.T) {
 	service := randService()
 
 	_, err := client.CreateService(context.Background(), &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
 
@@ -238,7 +238,7 @@ func Test_UpdateServiceAllFields_gRPC(t *testing.T) {
 	service := randService()
 
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
 
@@ -248,7 +248,7 @@ func Test_UpdateServiceAllFields_gRPC(t *testing.T) {
 		Service:    service,
 		UpdateMask: nil,
 	})
-	if !assert.NoError(t, err, "client.UpdateService method returned an error") {
+	if !assert.NoError(t, err) {
 		return
 	}
 
@@ -266,7 +266,7 @@ func Test_UpdateServiceSpecificField_gRPC(t *testing.T) {
 	service := randService()
 
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
 
@@ -276,7 +276,7 @@ func Test_UpdateServiceSpecificField_gRPC(t *testing.T) {
 		Service:    service,
 		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"name"}},
 	})
-	if !assert.NoError(t, err, "client.UpdateService method returned an error") {
+	if !assert.NoError(t, err) {
 		return
 	}
 
@@ -292,7 +292,7 @@ func Test_GetService_gRPC(t *testing.T) {
 	service := randService()
 
 	_, err := client.CreateService(context.Background(), &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
 
@@ -332,7 +332,7 @@ func Test_DeleteService_gRPC(t *testing.T) {
 	service := randService()
 
 	_, err := client.CreateService(context.Background(), &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
 

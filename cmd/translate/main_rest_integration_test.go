@@ -61,7 +61,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 					"messages": [
 						{
 							"id": "1",
-							"meaning": "When you great someone",
+							"meaning": "When you greet someone",
 							"message": "hello",
 							"translation": "čau",
 							"fuzzy": false
@@ -80,7 +80,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 					"messages": [
 						{
 							"id": "1",
-							"meaning": "When you great someone",
+							"meaning": "When you greet someone",
 							"message": "hello",
 							"translation": "čau",
 							"fuzzy": false
@@ -241,7 +241,7 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 
 	// Using gRPC client to create service
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
 
@@ -276,6 +276,7 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 }
 
 // PATCH
+//
 // NOTE: This test is being skipped because the PATCH request returns a "read: connection reset by peer" error.
 func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 	t.Parallel()
@@ -288,7 +289,7 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 
 	// Using gRPC client to create service
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
 
@@ -332,7 +333,7 @@ func Test_GetService_REST(t *testing.T) {
 
 	// Using gRPC client to create service
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
 
@@ -391,7 +392,7 @@ func Test_DeleteService_REST(t *testing.T) {
 
 	// Using gRPC client to create service
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "client.CreateService method returned an error") {
+	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
 
