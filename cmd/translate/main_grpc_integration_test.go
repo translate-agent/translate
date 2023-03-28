@@ -44,8 +44,6 @@ func mustGetFreePort() string {
 }
 
 func TestMain(m *testing.M) {
-	cfgFile = "../../translate.yaml"
-
 	host = "localhost"
 	port = mustGetFreePort()
 
