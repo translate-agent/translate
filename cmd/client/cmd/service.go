@@ -27,6 +27,10 @@ func init() {
 		log.Panicf("bind address flag: %v", err)
 	}
 
+	if err := viper.BindPFlag("insecure", flags.Lookup("insecure")); err != nil {
+		log.Panicf("bind insecure flag: %v", err)
+	}
+
 	if err := viper.BindPFlag("timeout", flags.Lookup("timeout")); err != nil {
 		log.Panicf("bind timeout flag: %v", err)
 	}
