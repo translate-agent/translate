@@ -1,13 +1,13 @@
 package main
 
 import (
-	"os"
+	"log"
 
 	"go.expect.digital/translate/cmd/client/cmd"
 )
 
 func main() {
 	if err := cmd.Execute(); err != nil {
-		os.Exit(1)
+		log.Panic(err)
 	}
 }

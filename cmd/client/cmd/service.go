@@ -17,8 +17,7 @@ import (
 func init() {
 	flags := lsCmd.Flags()
 
-	flags.StringP("address", "a", "localhost:8080",
-		"address for the translate agent GRPC client")
+	flags.StringP("address", "a", "localhost:8080", `"translate" service address as "host:port"`)
 
 	if err := viper.BindPFlag("address", flags.Lookup("address")); err != nil {
 		log.Panicf("bind address flag: %v", err)
@@ -57,7 +56,7 @@ var lsCmd = &cobra.Command{
 
 		resp, err := translatev1.NewTranslateServiceClient(client).ListServices(ctx, &translatev1.ListServicesRequest{})
 		if err != nil {
-			log.Panicf("list services: make GRPC request: %v", err)
+			log.Panicf("list services: send GRPC request: %v", err)
 		}
 
 		t := table.NewWriter()
