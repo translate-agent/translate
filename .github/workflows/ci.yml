@@ -4,19 +4,31 @@ on:
   push:
 
 jobs:
-  check:
+  lint:
+    name: lint
     runs-on: ubuntu-latest
-    env:
-      FORCE_COLOR: 1
     steps:
+      - uses: earthly/actions-setup@v1
+        with:
+          version: 0.7.2
+          use-cache: true
       - uses: actions/checkout@v3
-      - name: Download earthly
-        run: "sudo /bin/sh -c 'wget https://github.com/earthly/earthly/releases/download/v0.7.0/earthly-linux-amd64 -O /usr/local/bin/earthly && chmod +x /usr/local/bin/earthly'"
-      - name: Download go dependencies
-        run: earthly --ci +deps
-      - name: Build proto
-        run: earthly --ci +proto
-      - name: Lint proto
-        run: earthly --ci +lint-proto
-      - name: Lint go
-        run: earthly --ci +lint-go
+      - name: Proto
+        run: earthly +lint-proto
+      - name: Migrate
+        run: earthly +lint-migrate
+      - name: GO
+        run: earthly +lint-go
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: earthly/actions-setup@v1
+        with:
+          version: 0.7.2
+          use-cache: true
+      - uses: actions/checkout@v3
+      - name: Unit
+        run: earthly +test-unit
+      - name: Integration
+        run: earthly +test-integration
