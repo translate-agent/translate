@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
@@ -23,7 +24,8 @@ var lsCmd = &cobra.Command{
 			log.Panicf("list services: retrieve service address env variable: %v", err)
 		}
 
-		ctx := context.Background()
+		ctx, cancelFunc := context.WithTimeout(context.Background(), time.Second*10) //nolint:gomnd
+		defer cancelFunc()
 
 		opts := []grpc.DialOption{
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
