@@ -31,4 +31,4 @@ jobs:
       - name: Unit
         run: earthly +test-unit
       - name: Integration
-        run: earthly +test-integration
+        run: earthly --allow-privileged +test-integration
