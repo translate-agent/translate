@@ -20,14 +20,14 @@ func (r *Repo) SaveService(ctx context.Context, service *model.Service) error {
 
 	_, err := r.db.ExecContext(ctx, query, service.ID, service.Name)
 	if err != nil {
-		return fmt.Errorf("db: insert service: %w", err)
+		return fmt.Errorf("repo: insert service: %w", err)
 	}
 
 	return nil
 }
 
 func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Service, error) {
-	query := `SELECT BIN_TO_UUID(id), name FROM service WHERE id = UUID_TO_BIN(?)`
+	query := `SELECT id, name FROM service WHERE id = UUID_TO_BIN(?)`
 	row := r.db.QueryRowContext(ctx, query, serviceID)
 
 	var service model.Service
@@ -38,16 +38,16 @@ func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Ser
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, repo.ErrNotFound
 	case err != nil:
-		return nil, fmt.Errorf("db: select service: %w", err)
+		return nil, fmt.Errorf("repo: select service: %w", err)
 	}
 }
 
 func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
-	query := `SELECT BIN_TO_UUID(id), name FROM service`
+	query := `SELECT id, name FROM service`
 
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("db: select services: %w", err)
+		return nil, fmt.Errorf("repo: select services: %w", err)
 	}
 	defer rows.Close()
 
@@ -58,32 +58,32 @@ func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
 
 		err = rows.Scan(&service.ID, &service.Name)
 		if err != nil {
-			return nil, fmt.Errorf("db: scan service: %w", err)
+			return nil, fmt.Errorf("repo: scan service: %w", err)
 		}
 
 		services = append(services, service)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("db: scan services: %w", err)
+		return nil, fmt.Errorf("repo: scan services: %w", err)
 	}
 
 	return services, nil
 }
 
 func (r *Repo) DeleteService(ctx context.Context, serviceID uuid.UUID) error {
-	query := `DELETE FROM service WHERE BIN_TO_UUID(id) = ?`
+	query := `DELETE FROM service WHERE id = UUID_TO_BIN(?)`
 
 	result, err := r.db.ExecContext(ctx, query, serviceID)
 	if err != nil {
-		return fmt.Errorf("db: delete service: %w", err)
+		return fmt.Errorf("repo: delete service: %w", err)
 	}
 
 	switch count, err := result.RowsAffected(); {
 	default:
 		return nil
 	case err != nil:
-		return fmt.Errorf("db: delete service result: %w", err)
+		return fmt.Errorf("repo: delete service result: %w", err)
 	case count == 0:
 		return repo.ErrNotFound
 	}
