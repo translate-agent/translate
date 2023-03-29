@@ -17,10 +17,10 @@ import (
 func init() {
 	flags := lsCmd.Flags()
 
-	flags.StringP("service.address", "a", "localhost:8080",
+	flags.StringP("address", "a", "localhost:8080",
 		"address for the translate agent GRPC client")
 
-	if err := viper.BindPFlag("service.address", flags.Lookup("service.address")); err != nil {
+	if err := viper.BindPFlag("address", flags.Lookup("address")); err != nil {
 		log.Panicf("bind address flag: %v", err)
 	}
 
@@ -43,7 +43,7 @@ var lsCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "Lists services.",
 	Run: func(cmd *cobra.Command, args []string) {
-		addr, err := cmd.Flags().GetString("service.address")
+		addr, err := cmd.Flags().GetString("address")
 		if err != nil {
 			log.Panicf("list services: retrieve service address env variable: %v", err)
 		}
