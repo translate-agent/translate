@@ -45,7 +45,7 @@ var lsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		addr, err := cmd.Flags().GetString("address")
 		if err != nil {
-			log.Panicf("list services: retrieve service address env variable: %v", err)
+			log.Panicf("list services: retrieve service address cli parameter: %v", err)
 		}
 
 		ctx := context.Background()
