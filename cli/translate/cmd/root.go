@@ -11,7 +11,7 @@ import (
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:   "translate",
-	Short: "Translate allows interaction with translate agent service.",
+	Short: "Translate provides tools for interacting with translate agent service.",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.Help(); err != nil {
 			log.Panicf("display help: %v", err)

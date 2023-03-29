@@ -20,7 +20,7 @@ var lsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		addr, err := cmd.Flags().GetString("service.address")
 		if err != nil {
-			log.Panicf("list services: retrieve service address env variable: %s", err)
+			log.Panicf("list services: retrieve service address env variable: %v", err)
 		}
 
 		ctx := context.Background()
@@ -33,14 +33,14 @@ var lsCmd = &cobra.Command{
 		// Wait for the server to start and establish a connection.
 		conn, err := grpc.DialContext(ctx, addr, opts...)
 		if err != nil {
-			log.Panicf("list services: connect to service: %s", err)
+			log.Panicf("list services: connect to service: %v", err)
 		}
 
 		client := translatev1.NewTranslateServiceClient(conn)
 
 		resp, err := client.ListServices(ctx, &translatev1.ListServicesRequest{})
 		if err != nil {
-			log.Panicf("list services: grpc request: %s", err)
+			log.Panicf("list services: make GRPC request: %v", err)
 		}
 
 		t := table.NewWriter()
@@ -67,7 +67,7 @@ func init() {
 		"address for the translate agent GRPC client")
 
 	if err := viper.BindPFlag("service.address", flags.Lookup("service.address")); err != nil {
-		log.Panicf("bind address flag: %s", err)
+		log.Panicf("bind address flag: %v", err)
 	}
 
 	ServiceCmd.AddCommand(lsCmd)
