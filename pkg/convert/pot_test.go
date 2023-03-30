@@ -334,7 +334,6 @@ msgstr "Au revoir!"
 				return
 			}
 
-			fmt.Printf("res: %s", result)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

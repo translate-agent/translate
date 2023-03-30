@@ -9,4 +9,12 @@
     ]
   },
   "go.testEnvFile": "${workspaceFolder}/.env.test",
+  // SQLFluff
+  "sqlfluff.config": "${workspaceFolder}/.sqlfluff",
+  "sqlfluff.linter.diagnosticSeverity": "warning",
+  "sqlfluff.linter.lintEntireProject": true,
+  "sqlfluff.format.enabled": true,
+  "sqlfluff.format.arguments": [
+    "--FIX-EVEN-UNPARSABLE"
+  ],
 }
