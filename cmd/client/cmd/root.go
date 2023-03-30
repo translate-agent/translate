@@ -15,7 +15,7 @@ func init() {
 var rootCmd = &cobra.Command{
 	Use:   "translate",
 	Short: "Translate provides tools for interacting with translate agent service.",
-	RunE: func(cmd *cobra.Command, _ []string) error {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := cmd.Help(); err != nil {
 			return fmt.Errorf("display help: %w", err)
 		}

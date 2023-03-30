@@ -27,7 +27,7 @@ func Test_ServiceLs(t *testing.T) {
 		assert.Contains(t, string(res), "TOTAL")
 	})
 
-	t.Run("no transport security set", func(t *testing.T) {
+	t.Run("error, no transport security set", func(t *testing.T) {
 		t.Parallel()
 
 		res, err := cmd.ExecuteWithParams([]string{
