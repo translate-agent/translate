@@ -23,7 +23,7 @@ type (
 	deleteServiceRequest translatev1.DeleteServiceRequest
 )
 
-// protoServiceFromService converts model.Service -> translatev1.Service.
+// protoServiceFromService converts model.Service to translatev1.Service.
 func protoServiceFromService(service *model.Service) *translatev1.Service {
 	return &translatev1.Service{Id: service.ID.String(), Name: service.Name}
 }
