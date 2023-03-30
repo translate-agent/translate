@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -14,25 +15,17 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const establishConnTimeout = 5 * time.Second
+const cmdTimeout = 10 * time.Second
 
 func init() {
-	flags := lsCmd.Flags()
+	serviceFlags := serviceCmd.PersistentFlags()
 
-	flags.StringP("address", "a", "localhost:8080", `"translate" service address as "host:port"`)
-	flags.BoolP("insecure", "i", false, `disable transport security (default false)`)
-	flags.DurationP("timeout", "t", establishConnTimeout, `timeout for establishing connection with "translate" service`)
+	serviceFlags.StringP("address", "a", "localhost:8080", `"translate" service address as "host:port"`)
+	serviceFlags.BoolP("insecure", "i", false, `disable transport security (default false)`)
+	serviceFlags.DurationP("timeout", "t", cmdTimeout, `command execution timeout`)
 
-	if err := viper.BindPFlag("address", flags.Lookup("address")); err != nil {
-		log.Panicf("bind address flag: %v", err)
-	}
-
-	if err := viper.BindPFlag("insecure", flags.Lookup("insecure")); err != nil {
-		log.Panicf("bind insecure flag: %v", err)
-	}
-
-	if err := viper.BindPFlag("timeout", flags.Lookup("timeout")); err != nil {
-		log.Panicf("bind timeout flag: %v", err)
+	if err := viper.BindPFlags(serviceFlags); err != nil {
+		log.Panicf("bind flags: %v", err)
 	}
 
 	serviceCmd.AddCommand(lsCmd)
@@ -41,7 +34,7 @@ func init() {
 // serviceCmd represents the service command.
 var serviceCmd = &cobra.Command{
 	Use:   "service",
-	Short: "Service holds list of commands for interacting with services.",
+	Short: "Manage services",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cmd.Help(); err != nil {
 			log.Panicf("display help: %v", err)
@@ -52,9 +45,15 @@ var serviceCmd = &cobra.Command{
 // lsCmd represents the lsCmd command.
 var lsCmd = &cobra.Command{
 	Use:   "ls",
-	Short: "Lists services.",
+	Short: "List services",
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.Background()
+		timeout, err := cmd.InheritedFlags().GetDuration("timeout")
+		if err != nil {
+			log.Panicf("list services: retrieve cli parameter 'timeout': %v", err)
+		}
+
+		ctx, cancelFunc := context.WithTimeout(context.Background(), timeout)
+		defer cancelFunc()
 
 		client, err := newClientConn(ctx, cmd)
 		if err != nil {
@@ -86,26 +85,18 @@ var lsCmd = &cobra.Command{
 // helpers
 
 func newClientConn(ctx context.Context, cmd *cobra.Command) (*grpc.ClientConn, error) {
-	addr, err := cmd.Flags().GetString("address")
-	if err != nil {
-		log.Panicf("list services: retrieve cli parameter 'address': %v", err)
-	}
-
-	timeout, err := cmd.Flags().GetDuration("timeout")
-	if err != nil {
-		log.Panicf("list services: retrieve cli parameter 'timeout': %v", err)
-	}
-
-	isInsecure, err := cmd.Flags().GetBool("insecure")
-	if err != nil {
-		log.Panicf("list services: retrieve cli parameter 'insecure': %v", err)
-	}
-
-	ctx, cancelFunc := context.WithTimeout(ctx, timeout)
-	defer cancelFunc()
-
 	opts := []grpc.DialOption{
 		grpc.WithBlock(),
+	}
+
+	address, err := cmd.InheritedFlags().GetString("address")
+	if err != nil {
+		return nil, fmt.Errorf("retrieve cli parameter 'insecure': %w", err)
+	}
+
+	isInsecure, err := cmd.InheritedFlags().GetBool("insecure")
+	if err != nil {
+		return nil, fmt.Errorf("retrieve cli parameter 'insecure': %w", err)
 	}
 
 	if isInsecure {
@@ -113,5 +104,5 @@ func newClientConn(ctx context.Context, cmd *cobra.Command) (*grpc.ClientConn, e
 	}
 
 	// Wait for the server to start and establish a connection.
-	return grpc.DialContext(ctx, addr, opts...) //nolint:wrapcheck
+	return grpc.DialContext(ctx, address, opts...) //nolint:wrapcheck
 }
