@@ -42,7 +42,7 @@ var serviceCmd = &cobra.Command{
 	},
 }
 
-// lsCmd represents the lsCmd command.
+// lsCmd represents the ls command.
 var lsCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "List services",
