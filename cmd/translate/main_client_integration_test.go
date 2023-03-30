@@ -35,7 +35,7 @@ func Test_ServiceLs(t *testing.T) {
 			"-a", fmt.Sprintf("%s:%s", host, port),
 		})
 
-		assert.Error(t, err)
+		assert.ErrorContains(t, err, "no transport security set")
 		assert.Nil(t, res)
 	})
 }
