@@ -25,7 +25,7 @@ func init() {
 	serviceFlags.DurationP("timeout", "t", cmdTimeout, `command execution timeout`)
 
 	if err := viper.BindPFlags(serviceFlags); err != nil {
-		log.Panicf("bind flags: %v", err)
+		log.Panicf("service cmd: bind flags: %v", err)
 	}
 
 	serviceCmd.AddCommand(lsCmd)
@@ -35,10 +35,11 @@ func init() {
 var serviceCmd = &cobra.Command{
 	Use:   "service",
 	Short: "Manage services",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := cmd.Help(); err != nil {
-			log.Panicf("display help: %v", err)
+			return fmt.Errorf("display help: %w", err)
 		}
+		return nil
 	},
 }
 
@@ -46,10 +47,10 @@ var serviceCmd = &cobra.Command{
 var lsCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "List services",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		timeout, err := cmd.InheritedFlags().GetDuration("timeout")
 		if err != nil {
-			log.Panicf("list services: retrieve cli parameter 'timeout': %v", err)
+			return fmt.Errorf("list services: retrieve cli parameter 'timeout': %w", err)
 		}
 
 		ctx, cancelFunc := context.WithTimeout(context.Background(), timeout)
@@ -57,12 +58,12 @@ var lsCmd = &cobra.Command{
 
 		client, err := newClientConn(ctx, cmd)
 		if err != nil {
-			log.Panicf("list services: new GRPC client connection: %v", err)
+			return fmt.Errorf("list services: new GRPC client connection: %w", err)
 		}
 
 		resp, err := translatev1.NewTranslateServiceClient(client).ListServices(ctx, &translatev1.ListServicesRequest{})
 		if err != nil {
-			log.Panicf("list services: send GRPC request: %v", err)
+			return fmt.Errorf("list services: send GRPC request: %w", err)
 		}
 
 		t := table.NewWriter()
@@ -78,7 +79,10 @@ var lsCmd = &cobra.Command{
 		t.AppendRows(tableRows)
 		t.AppendFooter(table.Row{"", "Total", len(resp.Services)})
 		t.SetStyle(table.StyleLight)
+		t.SetOutputMirror(cmd.OutOrStdout())
 		t.Render()
+
+		return nil
 	},
 }
 
