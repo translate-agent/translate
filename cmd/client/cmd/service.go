@@ -91,7 +91,7 @@ func newClientConn(ctx context.Context, cmd *cobra.Command) (*grpc.ClientConn, e
 
 	address, err := cmd.InheritedFlags().GetString("address")
 	if err != nil {
-		return nil, fmt.Errorf("retrieve cli parameter 'insecure': %w", err)
+		return nil, fmt.Errorf("retrieve cli parameter 'address': %w", err)
 	}
 
 	isInsecure, err := cmd.InheritedFlags().GetBool("insecure")
