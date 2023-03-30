@@ -37,11 +37,13 @@ message UploadTranslationFileRequest {
   string language = 1;
   bytes data = 2;
   Schema schema = 3;
+  string service_id = 4;
 }
 
 message DownloadTranslationFileRequest {
   string language = 1;
   Schema schema = 2;
+  string service_id = 3;
 }
 
 message DownloadTranslationFileResponse {
@@ -104,9 +106,9 @@ service TranslateService {
   }
 
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {put: "/v1/files/{language}"};
+    option (google.api.http) = {put: "/v1/services/{service_id}/files/{language}"};
   }
   rpc DownloadTranslationFile(DownloadTranslationFileRequest) returns (DownloadTranslationFileResponse) {
-    option (google.api.http) = {get: "/v1/files/{language}"};
+    option (google.api.http) = {get: "/v1/services/{service_id}/files/{language}"};
   }
 }
