@@ -17,25 +17,37 @@ import (
 const establishConnTimeout = 5 * time.Second
 
 func init() {
-	flags := lsCmd.Flags()
+	// upload command uploadFlags
+	uploadFlags := uploadCmd.Flags()
+	uploadFlags.String("path", "", "path to file")
+	uploadFlags.StringP("address", "a", "localhost:8080", `"translate" service address as "host:port"`)
+	uploadFlags.BoolP("insecure", "i", false, `disable transport security (default false)`)
+	uploadFlags.DurationP("timeout", "t", establishConnTimeout, `timeout for establishing connection with "translate" service`)
 
-	flags.StringP("address", "a", "localhost:8080", `"translate" service address as "host:port"`)
-	flags.BoolP("insecure", "i", false, `disable transport security (default false)`)
-	flags.DurationP("timeout", "t", establishConnTimeout, `timeout for establishing connection with "translate" service`)
+	// ls command lsFlags
+	lsFlags := lsCmd.Flags()
+	lsFlags.StringP("address", "a", "localhost:8080", `"translate" service address as "host:port"`)
+	lsFlags.BoolP("insecure", "i", false, `disable transport security (default false)`)
+	lsFlags.DurationP("timeout", "t", establishConnTimeout, `timeout for establishing connection with "translate" service`)
 
-	if err := viper.BindPFlag("address", flags.Lookup("address")); err != nil {
+	if err := viper.BindPFlag("address", lsFlags.Lookup("address")); err != nil {
 		log.Panicf("bind address flag: %v", err)
 	}
 
-	if err := viper.BindPFlag("insecure", flags.Lookup("insecure")); err != nil {
+	if err := viper.BindPFlag("insecure", lsFlags.Lookup("insecure")); err != nil {
 		log.Panicf("bind insecure flag: %v", err)
 	}
 
-	if err := viper.BindPFlag("timeout", flags.Lookup("timeout")); err != nil {
+	if err := viper.BindPFlag("timeout", lsFlags.Lookup("timeout")); err != nil {
 		log.Panicf("bind timeout flag: %v", err)
 	}
 
+	// add commands to serviceCmd
+	serviceCmd.AddCommand(fileCmd)
 	serviceCmd.AddCommand(lsCmd)
+
+	// add commands to fileCmd
+	fileCmd.AddCommand(uploadCmd)
 }
 
 // serviceCmd represents the service command.
@@ -80,6 +92,42 @@ var lsCmd = &cobra.Command{
 		t.AppendFooter(table.Row{"", "Total", len(resp.Services)})
 		t.SetStyle(table.StyleLight)
 		t.Render()
+	},
+}
+
+// uploadCmd represents the uploadCmd command.
+var uploadCmd = &cobra.Command{
+	Use:   "upload",
+	Short: "Uploads file to translate service.",
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := context.Background()
+
+		client, err := newClientConn(ctx, cmd)
+		if err != nil {
+			log.Panicf("list services: new GRPC client connection: %v", err)
+		}
+
+		filePath, err := cmd.Flags().GetDuration("path")
+		if err != nil {
+			log.Panicf("upload file: retrieve cli parameter 'path': %v", err)
+		}
+
+		resp, err := translatev1.NewTranslateServiceClient(client).UploadTranslationFile(context.Background())
+		if err != nil {
+			log.Panicf("upload file: send GRPC request: %v", err)
+		}
+
+	},
+}
+
+// fileCmd represents the service command.
+var fileCmd = &cobra.Command{
+	Use:   "service",
+	Short: "File holds commands for file transfer in translate service",
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := cmd.Help(); err != nil {
+			log.Panicf("display help: %v", err)
+		}
 	},
 }
 
