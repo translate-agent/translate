@@ -36,7 +36,7 @@ func randTranslateFile(messages []model.Message) *model.TranslateFile {
 	return &model.TranslateFile{
 		ID:       uuid.New(),
 		Messages: model.Messages{Messages: messages},
-		Language: model.Language{Tag: language.MustParse(gofakeit.LanguageBCP())},
+		Language: language.MustParse(gofakeit.LanguageBCP()),
 	}
 }
 
