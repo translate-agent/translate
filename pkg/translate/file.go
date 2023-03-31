@@ -5,7 +5,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
+	"go.expect.digital/translate/pkg/convert"
+	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/repo"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,9 +24,11 @@ type (
 // ----------------------UploadTranslationFile-------------------------------
 
 type uploadParams struct {
-	language language.Tag
-	data     []byte
-	schema   translatev1.Schema
+	languageTag     language.Tag
+	data            []byte
+	schema          translatev1.Schema
+	serviceID       uuid.UUID
+	translateFileID uuid.UUID
 }
 
 func (u *uploadTranslationFileRequest) parseParams() (uploadParams, error) {
@@ -30,12 +36,31 @@ func (u *uploadTranslationFileRequest) parseParams() (uploadParams, error) {
 		return uploadParams{}, errors.New("request is nil")
 	}
 
-	lang, err := language.Parse(u.Language)
+	var (
+		params = uploadParams{data: u.Data, schema: u.Schema}
+		err    error
+	)
+
+	params.languageTag, err = language.Parse(u.Language)
 	if err != nil {
 		return uploadParams{}, fmt.Errorf("parse language: %w", err)
 	}
 
-	return uploadParams{language: lang, data: u.Data, schema: u.Schema}, nil
+	params.serviceID, err = uuid.Parse(u.ServiceId)
+	if err != nil {
+		return uploadParams{}, fmt.Errorf("parse service uuid: %w", err)
+	}
+
+	if u.TranslateFileId == "" {
+		return params, nil
+	}
+
+	params.translateFileID, err = uuid.Parse(u.TranslateFileId)
+	if err != nil {
+		return uploadParams{}, fmt.Errorf("parse translate file uuid: %w", err)
+	}
+
+	return params, nil
 }
 
 // Validates request parameters for UploadTranslationFile.
@@ -63,18 +88,39 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if err := params.validate(); err != nil {
+	if err = params.validate(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	return &emptypb.Empty{}, nil
+	messages, err := convert.From(params.schema, params.data)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	// Some converts do not provide language, so we override it with one from request.
+	messages.Language = params.languageTag
+
+	translateFile := &model.TranslateFile{
+		ID:       params.translateFileID,
+		Messages: messages,
+	}
+
+	switch err := t.repo.SaveTranslateFile(ctx, params.serviceID, translateFile); {
+	default:
+		return &emptypb.Empty{}, nil
+	case errors.Is(err, repo.ErrNotFound):
+		return nil, status.Errorf(codes.NotFound, err.Error())
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
 }
 
 // ----------------------DownloadTranslationFile-------------------------------
 
 type downloadParams struct {
-	language language.Tag
-	schema   translatev1.Schema
+	languageTag language.Tag
+	schema      translatev1.Schema
+	serviceID   uuid.UUID
 }
 
 func (d *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
@@ -82,12 +128,22 @@ func (d *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
 		return downloadParams{}, errors.New("request is nil")
 	}
 
-	tag, err := language.Parse(d.Language)
+	var (
+		params = downloadParams{schema: d.Schema}
+		err    error
+	)
+
+	params.serviceID, err = uuid.Parse(d.ServiceId)
+	if err != nil {
+		return downloadParams{}, fmt.Errorf("parse service uuid: %w", err)
+	}
+
+	params.languageTag, err = language.Parse(d.Language)
 	if err != nil {
 		return downloadParams{}, fmt.Errorf("parse language: %w", err)
 	}
 
-	return downloadParams{language: tag, schema: d.Schema}, nil
+	return params, nil
 }
 
 func (d *downloadParams) validate() error {
@@ -110,9 +166,23 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if err := params.validate(); err != nil {
+	if err = params.validate(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	return &translatev1.DownloadTranslationFileResponse{}, nil
+	translateFile, err := t.repo.LoadTranslateFile(ctx, params.serviceID, params.languageTag)
+
+	switch {
+	case errors.Is(err, repo.ErrNotFound):
+		return nil, status.Errorf(codes.NotFound, err.Error())
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, err.Error())
+	}
+
+	data, err := convert.To(params.schema, translateFile.Messages)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	return &translatev1.DownloadTranslationFileResponse{Data: data}, nil
 }
