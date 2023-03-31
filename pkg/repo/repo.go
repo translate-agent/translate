@@ -17,6 +17,12 @@ type ServicesRepo interface {
 	DeleteService(ctx context.Context, serviceID uuid.UUID) error
 }
 
+type TranslateFileRepo interface {
+	SaveTranslateFile(ctx context.Context, serviceID uuid.UUID, translateFile *model.TranslateFile) error
+	LoadTranslateFile(ctx context.Context, serviceID uuid.UUID, language model.Language) (*model.TranslateFile, error)
+}
+
 type Repo interface {
 	ServicesRepo
+	TranslateFileRepo
 }
