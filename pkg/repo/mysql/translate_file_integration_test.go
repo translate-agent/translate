@@ -35,8 +35,7 @@ func randMessages() []model.Message {
 func randTranslateFile(messages []model.Message) *model.TranslateFile {
 	return &model.TranslateFile{
 		ID:       uuid.New(),
-		Messages: model.Messages{Messages: messages},
-		Language: language.MustParse(gofakeit.LanguageBCP()),
+		Messages: model.Messages{Messages: messages, Language: language.MustParse(gofakeit.LanguageBCP())},
 	}
 }
 
@@ -47,7 +46,7 @@ func assertEqualTranslateFile(t *testing.T, expected, actual *model.TranslateFil
 		return eq
 	}
 
-	if eq := assert.Equal(t, expected.Language, actual.Language); !eq {
+	if eq := assert.Equal(t, expected.Messages.Language, actual.Messages.Language); !eq {
 		return eq
 	}
 
@@ -86,7 +85,7 @@ func Test_SaveTranslateFileWithUUID(t *testing.T) {
 	actualTranslateFile, err := repository.LoadTranslateFile(
 		ctx,
 		service.ID,
-		expectedTranslateFile.Language,
+		expectedTranslateFile.Messages.Language,
 	)
 	if !assert.NoError(t, err) {
 		return
@@ -125,7 +124,7 @@ func Test_SaveTranslateFileWithoutUUID(t *testing.T) {
 	actualTranslateFile, err := repository.LoadTranslateFile(
 		ctx,
 		service.ID,
-		expectedTranslateFile.Language,
+		expectedTranslateFile.Messages.Language,
 	)
 	if !assert.NoError(t, err) {
 		return
@@ -169,7 +168,7 @@ func Test_UpdateTranslateFile(t *testing.T) {
 	actualTranslateFile, err := repository.LoadTranslateFile(
 		ctx,
 		service.ID,
-		expectedTranslateFile.Language,
+		expectedTranslateFile.Messages.Language,
 	)
 	if !assert.NoError(t, err) {
 		return
@@ -235,7 +234,7 @@ func Test_LoadTranslateFile(t *testing.T) {
 			actual, err := repository.LoadTranslateFile(
 				ctx,
 				tt.serviceID,
-				expectedTranslateFile.Language,
+				expectedTranslateFile.Messages.Language,
 			)
 
 			if tt.expectedErr != nil {

@@ -14,30 +14,59 @@ import (
 	"golang.org/x/text/language"
 )
 
-// ---------------Messages Scanner/Valuer--------------.
-type messages struct {
-	model.Messages
+type dbMessageSlice []model.Message
+
+type dbLanguageTag struct {
+	language.Tag
 }
 
-func (m *messages) Scan(src any) error {
+type dbTranslateFile struct {
+	lang     dbLanguageTag
+	messages dbMessageSlice
+	id       uuid.UUID
+}
+
+// fromTranslateFile converts model.TranslateFile to dbTranslateFile.
+func fromTranslateFile(translateFile *model.TranslateFile) *dbTranslateFile {
+	return &dbTranslateFile{
+		lang:     dbLanguageTag{Tag: translateFile.Messages.Language},
+		messages: translateFile.Messages.Messages,
+		id:       translateFile.ID,
+	}
+}
+
+// toTranslateFile converts dbTranslateFile to model.TranslateFile.
+func toTranslateFile(translateFile *dbTranslateFile) *model.TranslateFile {
+	return &model.TranslateFile{
+		Messages: model.Messages{
+			Language: translateFile.lang.Tag,
+			Messages: translateFile.messages,
+		},
+		ID: translateFile.id,
+	}
+}
+
+// ---------------Messages Scanner/Valuer--------------.
+
+func (d *dbMessageSlice) Scan(src any) error {
 	data, ok := src.([]byte)
 	if !ok {
 		return fmt.Errorf("unsupported type '%T'", src)
 	}
 
-	var messages []model.Message
+	var messages dbMessageSlice
 
 	if err := json.Unmarshal(data, &messages); err != nil {
 		return fmt.Errorf("unmarshal messages: %w", err)
 	}
 
-	m.Messages.Messages = messages
+	*d = messages
 
 	return nil
 }
 
-func (m messages) Value() (driver.Value, error) {
-	data, err := json.Marshal(m.Messages.Messages)
+func (d dbMessageSlice) Value() (driver.Value, error) {
+	data, err := json.Marshal(d)
 	if err != nil {
 		return nil, fmt.Errorf("marshal messages: %w", err)
 	}
@@ -47,11 +76,7 @@ func (m messages) Value() (driver.Value, error) {
 
 // ---------------Language Scanner/Valuer--------------
 
-type languageTag struct {
-	language.Tag
-}
-
-func (l *languageTag) Scan(src any) error {
+func (d *dbLanguageTag) Scan(src any) error {
 	data, ok := src.([]uint8)
 	if !ok {
 		return fmt.Errorf("unsupported type '%T'", src)
@@ -61,7 +86,7 @@ func (l *languageTag) Scan(src any) error {
 
 	var err error
 
-	l.Tag, err = language.Parse(str)
+	d.Tag, err = language.Parse(str)
 	if err != nil {
 		return fmt.Errorf("parse language: %w", err)
 	}
@@ -69,8 +94,8 @@ func (l *languageTag) Scan(src any) error {
 	return nil
 }
 
-func (l languageTag) Value() (driver.Value, error) {
-	return l.String(), nil
+func (d dbLanguageTag) Value() (driver.Value, error) {
+	return d.Tag.String(), nil
 }
 
 //--------------------Repo Implementation--------------------
@@ -89,10 +114,7 @@ func (r *Repo) SaveTranslateFile(
 		translateFile.ID = uuid.New()
 	}
 
-	var (
-		lang = languageTag{Tag: translateFile.Language}
-		msgs = messages{Messages: translateFile.Messages}
-	)
+	dbFile := fromTranslateFile(translateFile)
 
 	query := `INSERT INTO translate_file (
 		id, service_id, 
@@ -106,8 +128,8 @@ func (r *Repo) SaveTranslateFile(
     messages = VALUES(messages);`
 
 	_, err = r.db.ExecContext(ctx, query,
-		translateFile.ID, serviceID,
-		lang, msgs,
+		dbFile.id, serviceID,
+		dbFile.lang, dbFile.messages,
 	)
 
 	if err != nil {
@@ -125,21 +147,17 @@ func (r *Repo) LoadTranslateFile(
 ) {
 	query := `SELECT id, language, messages FROM translate_file WHERE service_id = UUID_TO_BIN(?) AND language = ?`
 
-	row := r.db.QueryRowContext(ctx, query, serviceID, languageTag{Tag: language})
+	row := r.db.QueryRowContext(ctx, query, serviceID, dbLanguageTag{Tag: language})
 
-	var (
-		id   uuid.UUID
-		lang languageTag
-		msgs messages
-	)
+	var dbFile dbTranslateFile
 
 	switch err := row.Scan(
-		&id,
-		&lang,
-		&msgs,
+		&dbFile.id,
+		&dbFile.lang,
+		&dbFile.messages,
 	); {
 	default:
-		return &model.TranslateFile{ID: id, Language: lang.Tag, Messages: msgs.Messages}, nil
+		return toTranslateFile(&dbFile), nil
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, repo.ErrNotFound
 	case err != nil:
