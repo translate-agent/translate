@@ -42,7 +42,7 @@ func ExecuteWithParams(params []string) ([]byte, error) {
 	cmd.SetOut(buf)
 	cmd.SetErr(buf)
 
-	if err := cmd.Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		buf.WriteString(err.Error())
 		return nil, fmt.Errorf("execute root command with params: %w", err)
 	}
