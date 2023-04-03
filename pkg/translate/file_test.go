@@ -23,11 +23,11 @@ func Test_ParseUploadParams(t *testing.T) {
 		{
 			name: "Happy Path With File ID",
 			input: &translatev1.UploadTranslationFileRequest{
-				Language:        gofakeit.LanguageBCP(),
-				Data:            []byte(`{"key":"value"}`),
-				Schema:          translatev1.Schema(gofakeit.IntRange(1, 7)),
-				ServiceId:       gofakeit.UUID(),
-				TranslateFileId: gofakeit.UUID(),
+				Language:          gofakeit.LanguageBCP(),
+				Data:              []byte(`{"key":"value"}`),
+				Schema:            translatev1.Schema(gofakeit.IntRange(1, 7)),
+				ServiceId:         gofakeit.UUID(),
+				TranslationFileId: gofakeit.UUID(),
 			},
 			expectedErr: nil,
 		},
@@ -74,9 +74,9 @@ func Test_ParseUploadParams(t *testing.T) {
 		{
 			name: "Malformed File ID",
 			input: &translatev1.UploadTranslationFileRequest{
-				Language:        gofakeit.LanguageBCP(),
-				ServiceId:       gofakeit.UUID(),
-				TranslateFileId: gofakeit.UUID() + "_FAIL",
+				Language:          gofakeit.LanguageBCP(),
+				ServiceId:         gofakeit.UUID(),
+				TranslationFileId: gofakeit.UUID() + "_FAIL",
 			},
 			expectedErr: errors.New("invalid UUID length"),
 		},

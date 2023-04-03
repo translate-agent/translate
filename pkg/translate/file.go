@@ -23,11 +23,11 @@ type (
 // ----------------------UploadTranslationFile-------------------------------
 
 type uploadParams struct {
-	languageTag     language.Tag
-	data            []byte
-	schema          translatev1.Schema
-	serviceID       uuid.UUID
-	translateFileID uuid.UUID
+	languageTag       language.Tag
+	data              []byte
+	schema            translatev1.Schema
+	serviceID         uuid.UUID
+	translationFileID uuid.UUID
 }
 
 func (u *uploadTranslationFileRequest) parseParams() (uploadParams, error) {
@@ -50,11 +50,11 @@ func (u *uploadTranslationFileRequest) parseParams() (uploadParams, error) {
 		return uploadParams{}, fmt.Errorf("parse service uuid: %w", err)
 	}
 
-	if u.TranslateFileId == "" {
+	if u.TranslationFileId == "" {
 		return params, nil
 	}
 
-	params.translateFileID, err = uuid.Parse(u.TranslateFileId)
+	params.translationFileID, err = uuid.Parse(u.TranslationFileId)
 	if err != nil {
 		return uploadParams{}, fmt.Errorf("parse translate file uuid: %w", err)
 	}
@@ -99,12 +99,12 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	// Some converts do not provide language, so we override it with one from request for consistency.
 	messages.Language = params.languageTag
 
-	translateFile := &model.TranslateFile{
-		ID:       params.translateFileID,
+	translationFile := &model.TranslationFile{
+		ID:       params.translationFileID,
 		Messages: messages,
 	}
 
-	switch err := t.repo.SaveTranslateFile(ctx, params.serviceID, translateFile); {
+	switch err := t.repo.SaveTranslationFile(ctx, params.serviceID, translationFile); {
 	default:
 		return &emptypb.Empty{}, nil
 	case errors.Is(err, repo.ErrNotFound):
@@ -169,7 +169,7 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	translateFile, err := t.repo.LoadTranslateFile(ctx, params.serviceID, params.languageTag)
+	translationFile, err := t.repo.LoadTranslationFile(ctx, params.serviceID, params.languageTag)
 
 	switch {
 	case errors.Is(err, repo.ErrNotFound):
@@ -178,7 +178,7 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	data, err := MessagesToData(params.schema, translateFile.Messages)
+	data, err := MessagesToData(params.schema, translationFile.Messages)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"golang.org/x/text/language"
@@ -32,32 +33,22 @@ func randMessages() []model.Message {
 	return messages
 }
 
-func randTranslateFile(messages []model.Message) *model.TranslateFile {
-	return &model.TranslateFile{
+func randTranslationFile(messages []model.Message) *model.TranslationFile {
+	return &model.TranslationFile{
 		ID:       uuid.New(),
 		Messages: model.Messages{Messages: messages, Language: language.MustParse(gofakeit.LanguageBCP())},
 	}
 }
 
-func assertEqualTranslateFile(t *testing.T, expected, actual *model.TranslateFile) bool {
+func requireEqualTranslationFile(t *testing.T, expected, actual *model.TranslationFile) {
 	t.Helper()
 
-	if eq := assert.Equal(t, expected.ID, actual.ID); !eq {
-		return eq
-	}
-
-	if eq := assert.Equal(t, expected.Messages.Language, actual.Messages.Language); !eq {
-		return eq
-	}
-
-	if eq := assert.ElementsMatch(t, expected.Messages.Messages, actual.Messages.Messages); !eq {
-		return eq
-	}
-
-	return true
+	require.Equal(t, expected.ID, actual.ID)
+	require.Equal(t, expected.Messages.Language, actual.Messages.Language)
+	require.ElementsMatch(t, expected.Messages.Messages, actual.Messages.Messages)
 }
 
-func Test_SaveTranslateFileWithUUID(t *testing.T) {
+func Test_SaveTranslationFileWithUUID(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -73,28 +64,28 @@ func Test_SaveTranslateFileWithUUID(t *testing.T) {
 
 	// Actual test
 
-	expectedTranslateFile := randTranslateFile(randMessages())
+	expectedTranslationFile := randTranslationFile(randMessages())
 
-	err = repository.SaveTranslateFile(ctx, service.ID, expectedTranslateFile)
+	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
 	if !assert.NoError(t, err) {
 		return
 	}
 
 	// Check if is inserted
 
-	actualTranslateFile, err := repository.LoadTranslateFile(
+	actualTranslationFile, err := repository.LoadTranslationFile(
 		ctx,
 		service.ID,
-		expectedTranslateFile.Messages.Language,
+		expectedTranslationFile.Messages.Language,
 	)
 	if !assert.NoError(t, err) {
 		return
 	}
 
-	assertEqualTranslateFile(t, expectedTranslateFile, actualTranslateFile)
+	requireEqualTranslationFile(t, expectedTranslationFile, actualTranslationFile)
 }
 
-func Test_SaveTranslateFileWithoutUUID(t *testing.T) {
+func Test_SaveTranslationFileWithoutUUID(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -110,30 +101,30 @@ func Test_SaveTranslateFileWithoutUUID(t *testing.T) {
 
 	// Actual Test
 
-	expectedTranslateFile := randTranslateFile(randMessages())
+	expectedTranslationFile := randTranslationFile(randMessages())
 
-	expectedTranslateFile.ID = uuid.Nil
+	expectedTranslationFile.ID = uuid.Nil
 
-	err = repository.SaveTranslateFile(ctx, service.ID, expectedTranslateFile)
+	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
 	if !assert.NoError(t, err) {
 		return
 	}
 
 	// Check if is inserted
 
-	actualTranslateFile, err := repository.LoadTranslateFile(
+	actualTranslationFile, err := repository.LoadTranslationFile(
 		ctx,
 		service.ID,
-		expectedTranslateFile.Messages.Language,
+		expectedTranslationFile.Messages.Language,
 	)
 	if !assert.NoError(t, err) {
 		return
 	}
 
-	assertEqualTranslateFile(t, expectedTranslateFile, actualTranslateFile)
+	requireEqualTranslationFile(t, expectedTranslationFile, actualTranslationFile)
 }
 
-func Test_UpdateTranslateFile(t *testing.T) {
+func Test_UpdateTranslationFile(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -147,48 +138,48 @@ func Test_UpdateTranslateFile(t *testing.T) {
 		return
 	}
 
-	expectedTranslateFile := randTranslateFile(randMessages())
+	expectedTranslationFile := randTranslationFile(randMessages())
 
-	err = repository.SaveTranslateFile(ctx, service.ID, expectedTranslateFile)
+	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
 	if !assert.NoError(t, err) {
 		return
 	}
 
 	// Actual Test
 
-	expectedTranslateFile.Messages.Messages = randMessages()
+	expectedTranslationFile.Messages.Messages = randMessages()
 
-	err = repository.SaveTranslateFile(ctx, service.ID, expectedTranslateFile)
+	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
 	if !assert.NoError(t, err) {
 		return
 	}
 
 	// Check if updated
 
-	actualTranslateFile, err := repository.LoadTranslateFile(
+	actualTranslationFile, err := repository.LoadTranslationFile(
 		ctx,
 		service.ID,
-		expectedTranslateFile.Messages.Language,
+		expectedTranslationFile.Messages.Language,
 	)
 	if !assert.NoError(t, err) {
 		return
 	}
 
-	assertEqualTranslateFile(t, expectedTranslateFile, actualTranslateFile)
+	requireEqualTranslationFile(t, expectedTranslationFile, actualTranslationFile)
 }
 
-func Test_SaveTranslateFileNoService(t *testing.T) {
+func Test_SaveTranslationFileNoService(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
-	translateFile := randTranslateFile(randMessages())
+	translationFile := randTranslationFile(randMessages())
 
-	err := repository.SaveTranslateFile(ctx, uuid.New(), translateFile)
+	err := repository.SaveTranslationFile(ctx, uuid.New(), translationFile)
 	assert.ErrorIs(t, err, repo.ErrNotFound)
 }
 
-func Test_LoadTranslateFile(t *testing.T) {
+func Test_LoadTranslationFile(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -200,22 +191,22 @@ func Test_LoadTranslateFile(t *testing.T) {
 		return
 	}
 
-	expectedTranslateFile := randTranslateFile(randMessages())
+	expectedTranslationFile := randTranslationFile(randMessages())
 
-	err = repository.SaveTranslateFile(ctx, service.ID, expectedTranslateFile)
+	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
 	if !assert.NoError(t, err) {
 		return
 	}
 
 	tests := []struct {
-		expected    *model.TranslateFile
+		expected    *model.TranslationFile
 		expectedErr error
 		name        string
 		serviceID   uuid.UUID
 	}{
 		{
 			name:        "All OK",
-			expected:    expectedTranslateFile,
+			expected:    expectedTranslationFile,
 			serviceID:   service.ID,
 			expectedErr: nil,
 		},
@@ -231,10 +222,10 @@ func Test_LoadTranslateFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := repository.LoadTranslateFile(
+			actual, err := repository.LoadTranslationFile(
 				ctx,
 				tt.serviceID,
-				expectedTranslateFile.Messages.Language,
+				expectedTranslationFile.Messages.Language,
 			)
 
 			if tt.expectedErr != nil {
@@ -246,7 +237,7 @@ func Test_LoadTranslateFile(t *testing.T) {
 				return
 			}
 
-			assertEqualTranslateFile(t, tt.expected, actual)
+			requireEqualTranslationFile(t, tt.expected, actual)
 		})
 	}
 }

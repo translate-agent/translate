@@ -1,1 +1,1 @@
-DROP TABLE translate_file;
+DROP TABLE translation_file;

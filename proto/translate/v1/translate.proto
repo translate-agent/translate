@@ -41,7 +41,7 @@ message UploadTranslationFileRequest {
   bytes data = 2;
   Schema schema = 3;
   string service_id = 4;
-  string translate_file_id = 5;
+  string translation_file_id = 5;
 }
 
 message DownloadTranslationFileRequest {

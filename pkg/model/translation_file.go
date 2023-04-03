@@ -4,7 +4,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type TranslateFile struct {
+type TranslationFile struct {
 	Messages Messages
 	ID       uuid.UUID
 }

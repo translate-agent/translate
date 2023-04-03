@@ -20,29 +20,29 @@ type dbLanguageTag struct {
 	language.Tag
 }
 
-type dbTranslateFile struct {
+type dbTranslationFile struct {
 	lang     dbLanguageTag
 	messages dbMessageSlice
 	id       uuid.UUID
 }
 
-// fromTranslateFile converts model.TranslateFile to dbTranslateFile.
-func fromTranslateFile(translateFile *model.TranslateFile) *dbTranslateFile {
-	return &dbTranslateFile{
-		lang:     dbLanguageTag{Tag: translateFile.Messages.Language},
-		messages: translateFile.Messages.Messages,
-		id:       translateFile.ID,
+// fromTranslationFile converts model.TranslationFile to dbTranslationFile.
+func fromTranslationFile(translationFile *model.TranslationFile) *dbTranslationFile {
+	return &dbTranslationFile{
+		lang:     dbLanguageTag{Tag: translationFile.Messages.Language},
+		messages: translationFile.Messages.Messages,
+		id:       translationFile.ID,
 	}
 }
 
-// toTranslateFile converts dbTranslateFile to model.TranslateFile.
-func toTranslateFile(translateFile *dbTranslateFile) *model.TranslateFile {
-	return &model.TranslateFile{
+// toTranslationFile converts dbTranslationFile to model.TranslationFile.
+func toTranslationFile(translationFile *dbTranslationFile) *model.TranslationFile {
+	return &model.TranslationFile{
+		ID: translationFile.id,
 		Messages: model.Messages{
-			Language: translateFile.lang.Tag,
-			Messages: translateFile.messages,
+			Language: translationFile.lang.Tag,
+			Messages: translationFile.messages,
 		},
-		ID: translateFile.id,
 	}
 }
 
@@ -100,23 +100,23 @@ func (d dbLanguageTag) Value() (driver.Value, error) {
 
 //--------------------Repo Implementation--------------------
 
-func (r *Repo) SaveTranslateFile(
+func (r *Repo) SaveTranslationFile(
 	ctx context.Context,
 	serviceID uuid.UUID,
-	translateFile *model.TranslateFile,
+	translationFile *model.TranslationFile,
 ) error {
 	_, err := r.LoadService(ctx, serviceID)
 	if err != nil {
 		return fmt.Errorf("repo: load service: %w", err)
 	}
 
-	if translateFile.ID == uuid.Nil {
-		translateFile.ID = uuid.New()
+	if translationFile.ID == uuid.Nil {
+		translationFile.ID = uuid.New()
 	}
 
-	dbFile := fromTranslateFile(translateFile)
+	dbFile := fromTranslationFile(translationFile)
 
-	query := `INSERT INTO translate_file (
+	query := `INSERT INTO translation_file (
 		id, service_id, 
 		language, messages
 		) 
@@ -139,17 +139,17 @@ func (r *Repo) SaveTranslateFile(
 	return nil
 }
 
-func (r *Repo) LoadTranslateFile(
+func (r *Repo) LoadTranslationFile(
 	ctx context.Context,
 	serviceID uuid.UUID,
 	language language.Tag) (
-	*model.TranslateFile, error,
+	*model.TranslationFile, error,
 ) {
-	query := `SELECT id, language, messages FROM translate_file WHERE service_id = UUID_TO_BIN(?) AND language = ?`
+	query := `SELECT id, language, messages FROM translation_file WHERE service_id = UUID_TO_BIN(?) AND language = ?`
 
 	row := r.db.QueryRowContext(ctx, query, serviceID, dbLanguageTag{Tag: language})
 
-	var dbFile dbTranslateFile
+	var dbFile dbTranslationFile
 
 	switch err := row.Scan(
 		&dbFile.id,
@@ -157,7 +157,7 @@ func (r *Repo) LoadTranslateFile(
 		&dbFile.messages,
 	); {
 	default:
-		return toTranslateFile(&dbFile), nil
+		return toTranslationFile(&dbFile), nil
 	case errors.Is(err, sql.ErrNoRows):
 		return nil, repo.ErrNotFound
 	case err != nil:

@@ -1,4 +1,4 @@
-CREATE TABLE translate_file (
+CREATE TABLE translation_file (
   id BINARY(16) PRIMARY KEY,
   service_id BINARY(16),
   language VARCHAR(20),
