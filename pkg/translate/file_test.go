@@ -25,7 +25,7 @@ func Test_ParseUploadParams(t *testing.T) {
 			input: &translatev1.UploadTranslationFileRequest{
 				Language:        gofakeit.LanguageBCP(),
 				Data:            []byte(`{"key":"value"}`),
-				Schema:          translatev1.Schema(gofakeit.IntRange(0, 7)),
+				Schema:          translatev1.Schema(gofakeit.IntRange(1, 7)),
 				ServiceId:       gofakeit.UUID(),
 				TranslateFileId: gofakeit.UUID(),
 			},
@@ -36,7 +36,7 @@ func Test_ParseUploadParams(t *testing.T) {
 			input: &translatev1.UploadTranslationFileRequest{
 				Language:  gofakeit.LanguageBCP(),
 				Data:      []byte(`{"key":"value"}`),
-				Schema:    translatev1.Schema(gofakeit.IntRange(0, 7)),
+				Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
 				ServiceId: gofakeit.UUID(),
 			},
 			expectedErr: nil,
@@ -123,7 +123,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 			input: uploadParams{
 				languageTag: language.MustParse(gofakeit.LanguageBCP()),
 				data:        []byte(`{"key":"value"}`),
-				schema:      translatev1.Schema(gofakeit.IntRange(0, 7)),
+				schema:      translatev1.Schema(gofakeit.IntRange(1, 7)),
 			},
 			expectedErr: nil,
 		},
@@ -131,7 +131,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 			name: "Empty data",
 			input: uploadParams{
 				languageTag: language.MustParse(gofakeit.LanguageBCP()),
-				schema:      translatev1.Schema(gofakeit.IntRange(0, 7)),
+				schema:      translatev1.Schema(gofakeit.IntRange(1, 7)),
 			},
 			expectedErr: errors.New("'data' is required"),
 		},
@@ -177,7 +177,7 @@ func Test_ParseDownloadParams(t *testing.T) {
 			input: &translatev1.DownloadTranslationFileRequest{
 				ServiceId: gofakeit.UUID(),
 				Language:  gofakeit.LanguageBCP(),
-				Schema:    translatev1.Schema(gofakeit.IntRange(0, 7)),
+				Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
 			},
 			expectedErr: nil,
 		},
@@ -252,7 +252,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 			name: "Happy Path",
 			input: downloadParams{
 				languageTag: language.MustParse(gofakeit.LanguageBCP()),
-				schema:      translatev1.Schema(gofakeit.IntRange(0, 7)),
+				schema:      translatev1.Schema(gofakeit.IntRange(1, 7)),
 			},
 			expectedErr: nil,
 		},
