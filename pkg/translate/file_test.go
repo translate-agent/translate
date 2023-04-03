@@ -276,6 +276,8 @@ func Test_ValidateDownloadParams(t *testing.T) {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
+
+			assert.NoError(t, err)
 		})
 	}
 }

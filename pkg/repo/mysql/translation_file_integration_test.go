@@ -40,7 +40,7 @@ func randTranslationFile(messages []model.Message) *model.TranslationFile {
 	}
 }
 
-func requireEqualTranslationFile(t *testing.T, expected, actual *model.TranslationFile) {
+func assertEqualTranslationFile(t *testing.T, expected, actual *model.TranslationFile) {
 	t.Helper()
 
 	require.Equal(t, expected.ID, actual.ID)
@@ -58,18 +58,14 @@ func Test_SaveTranslationFileWithUUID(t *testing.T) {
 	service := randService()
 
 	err := repository.SaveService(ctx, service)
-	if !assert.NoError(t, err, "Prepare test service") {
-		return
-	}
+	require.NoError(t, err, "Prepare test service")
 
 	// Actual test
 
 	expectedTranslationFile := randTranslationFile(randMessages())
 
 	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "Save translation file")
 
 	// Check if is inserted
 
@@ -78,11 +74,9 @@ func Test_SaveTranslationFileWithUUID(t *testing.T) {
 		service.ID,
 		expectedTranslationFile.Messages.Language,
 	)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "Load translation file")
 
-	requireEqualTranslationFile(t, expectedTranslationFile, actualTranslationFile)
+	assertEqualTranslationFile(t, expectedTranslationFile, actualTranslationFile)
 }
 
 func Test_SaveTranslationFileWithoutUUID(t *testing.T) {
@@ -95,9 +89,7 @@ func Test_SaveTranslationFileWithoutUUID(t *testing.T) {
 	service := randService()
 
 	err := repository.SaveService(ctx, service)
-	if !assert.NoError(t, err, "Prepare test service") {
-		return
-	}
+	require.NoError(t, err, "Prepare test service")
 
 	// Actual Test
 
@@ -106,9 +98,7 @@ func Test_SaveTranslationFileWithoutUUID(t *testing.T) {
 	expectedTranslationFile.ID = uuid.Nil
 
 	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "Save translation file")
 
 	// Check if is inserted
 
@@ -117,11 +107,9 @@ func Test_SaveTranslationFileWithoutUUID(t *testing.T) {
 		service.ID,
 		expectedTranslationFile.Messages.Language,
 	)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "Load translation file")
 
-	requireEqualTranslationFile(t, expectedTranslationFile, actualTranslationFile)
+	assertEqualTranslationFile(t, expectedTranslationFile, actualTranslationFile)
 }
 
 func Test_UpdateTranslationFile(t *testing.T) {
@@ -134,25 +122,19 @@ func Test_UpdateTranslationFile(t *testing.T) {
 	service := randService()
 
 	err := repository.SaveService(ctx, service)
-	if !assert.NoError(t, err, "Prepare test service") {
-		return
-	}
+	require.NoError(t, err, "Prepare test service")
 
 	expectedTranslationFile := randTranslationFile(randMessages())
 
 	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "Save translation file")
 
 	// Actual Test
 
 	expectedTranslationFile.Messages.Messages = randMessages()
 
 	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "Update translation file")
 
 	// Check if updated
 
@@ -161,11 +143,9 @@ func Test_UpdateTranslationFile(t *testing.T) {
 		service.ID,
 		expectedTranslationFile.Messages.Language,
 	)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "Load updated translation file")
 
-	requireEqualTranslationFile(t, expectedTranslationFile, actualTranslationFile)
+	assertEqualTranslationFile(t, expectedTranslationFile, actualTranslationFile)
 }
 
 func Test_SaveTranslationFileNoService(t *testing.T) {
@@ -187,16 +167,12 @@ func Test_LoadTranslationFile(t *testing.T) {
 	service := randService()
 
 	err := repository.SaveService(ctx, service)
-	if !assert.NoError(t, err, "Prepare test service") {
-		return
-	}
+	require.NoError(t, err, "Prepare test service")
 
 	expectedTranslationFile := randTranslationFile(randMessages())
 
 	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "Save translation file")
 
 	tests := []struct {
 		expected    *model.TranslationFile
@@ -233,11 +209,9 @@ func Test_LoadTranslationFile(t *testing.T) {
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
-			requireEqualTranslationFile(t, tt.expected, actual)
+			assertEqualTranslationFile(t, tt.expected, actual)
 		})
 	}
 }
