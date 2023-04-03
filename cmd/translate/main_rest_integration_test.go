@@ -134,9 +134,10 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			require.NoError(t, err, "do request")
 
 			defer resp.Body.Close()
+			respBody, _ := ioutil.ReadAll(resp.Body)
 
 			actual := resp.StatusCode
-			assert.Equal(t, int(tt.expected), actual)
+			assert.Equal(t, int(tt.expected), actual, "body: %s", respBody)
 		})
 	}
 }
@@ -161,13 +162,13 @@ func Test_UploadTranslationFileDifferentLanguages_REST(t *testing.T) {
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err, "do request")
 
-		defer resp.Body.Close()
+		respBody, _ := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
 
 		actual := resp.StatusCode
 		expected := http.StatusOK
 
-		require.Equal(t, int(expected), actual)
-
+		require.Equal(t, int(expected), actual, "body: %s", respBody)
 	}
 }
 
@@ -198,11 +199,12 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	require.NoError(t, err, "do request")
 
 	defer resp.Body.Close()
+	respBody, _ := ioutil.ReadAll(resp.Body)
 
 	actual := resp.StatusCode
 	expected := http.StatusOK
 
-	assert.Equal(t, int(expected), actual)
+	require.Equal(t, int(expected), actual, "body: %s", respBody)
 }
 
 func Test_DownloadTranslationFile_REST(t *testing.T) {
@@ -268,11 +270,10 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			require.NoError(t, err, "do request")
 
 			defer resp.Body.Close()
-
 			respBody, _ := ioutil.ReadAll(resp.Body)
 
 			actual := resp.StatusCode
-			assert.Equal(t, int(tt.expected), actual, "body: %s", string(respBody))
+			assert.Equal(t, int(tt.expected), actual, "body: %s", respBody)
 		})
 	}
 }

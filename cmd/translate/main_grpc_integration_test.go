@@ -185,7 +185,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 			_, err := client.UploadTranslationFile(ctx, tt.request)
 
 			actual := status.Code(err)
-			assert.Equal(t, tt.expected, actual, "want codes.%s got codes.%s", tt.expected, actual)
+			assert.Equal(t, tt.expected, actual, "want codes.%s got codes.%s\nerr: %s", tt.expected, actual, err)
 		})
 	}
 }
@@ -206,7 +206,11 @@ func Test_UploadTranslationFileDifferentLanguages_gRPC(t *testing.T) {
 		uploadRequest.Language = gofakeit.LanguageBCP()
 
 		_, err := client.UploadTranslationFile(ctx, uploadRequest)
-		require.Equal(t, codes.OK, status.Code(err), "want codes.OK got codes.%s", status.Code(err))
+
+		expected := codes.OK
+		actual := status.Code(err)
+
+		require.Equal(t, expected, actual, "want codes.%s got codes.%s\nerr: %s", expected, actual, err)
 
 	}
 }
@@ -235,7 +239,11 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
 
 	_, err = client.UploadTranslationFile(ctx, uploadReq)
-	require.NoError(t, err, "update test translation file")
+
+	expected := codes.OK
+	actual := status.Code(err)
+
+	assert.Equal(t, expected, actual, "want codes.%s got codes.%s\nerr: %s", expected, actual, err)
 }
 
 func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslationFileRequest {
@@ -309,7 +317,7 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 			_, err := client.DownloadTranslationFile(ctx, tt.input)
 
 			actual := status.Code(err)
-			assert.Equal(t, tt.expected, actual, "want codes.%s got codes.%s", tt.expected, actual)
+			assert.Equal(t, tt.expected, actual, "want codes.%s got codes.%s\nerr: %s", tt.expected, actual, err)
 		})
 	}
 }
