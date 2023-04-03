@@ -8,8 +8,8 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
-// messagesFromData converts in specific schema serialized data to model.Messages.
-func messagesFromData(schema translatev1.Schema, data []byte) (model.Messages, error) {
+// MessagesFromData converts in specific schema serialized data to model.Messages.
+func MessagesFromData(schema translatev1.Schema, data []byte) (model.Messages, error) {
 	var from func([]byte) (model.Messages, error)
 
 	switch schema {
@@ -34,8 +34,8 @@ func messagesFromData(schema translatev1.Schema, data []byte) (model.Messages, e
 	return from(data)
 }
 
-// messagesToData converts model.Messages to specific schema serialized data.
-func messagesToData(schema translatev1.Schema, messages model.Messages) ([]byte, error) {
+// MessagesToData converts model.Messages to specific schema serialized data.
+func MessagesToData(schema translatev1.Schema, messages model.Messages) ([]byte, error) {
 	var to func(model.Messages) ([]byte, error)
 
 	switch schema {

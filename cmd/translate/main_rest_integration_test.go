@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -14,12 +15,16 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
+// TODO Currently, we manually create requests for the REST API.
+// We could use a client generated from the OpenAPI specification to simplify testing and integration.
+
 // -------------Translation File-------------.
 
-func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string, error) {
+func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string) {
 	t.Helper()
 
 	body := &bytes.Buffer{}
@@ -28,69 +33,96 @@ func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string, error) {
 	defer writer.Close()
 
 	part, err := writer.CreateFormFile("file", "test.json")
-	if err != nil {
-		return nil, "", fmt.Errorf("creating form file: %w", err)
-	}
+	require.NoError(t, err, "create form file")
 
 	_, err = part.Write(text)
-	if err != nil {
-		return nil, "", fmt.Errorf("writing to file: %w", err)
+	require.NoError(t, err, "write to part")
+
+	return body, writer.FormDataContentType()
+}
+
+func gRPCUploadFileToRESTReq(ctx context.Context, t *testing.T, req *translatev1.UploadTranslationFileRequest) *http.Request {
+	t.Helper()
+
+	query := url.Values{}
+	query.Add("schema", req.Schema.String())
+
+	u := url.URL{
+		Scheme:   "http",
+		Host:     host + ":" + port,
+		Path:     fmt.Sprintf("v1/services/%s/files/%s", req.ServiceId, req.Language),
+		RawQuery: query.Encode(),
 	}
 
-	return body, writer.FormDataContentType(), nil
+	body, contentType := attachFile(req.Data, t)
+
+	r, err := http.NewRequestWithContext(ctx, "PUT", u.String(), body)
+	require.NoError(t, err, "create request")
+
+	r.Header.Add("Content-Type", contentType)
+
+	return r
+}
+
+func gRPCDownloadFileToRESTReq(ctx context.Context, t *testing.T, req *translatev1.DownloadTranslationFileRequest) *http.Request {
+	t.Helper()
+
+	query := url.Values{}
+	query.Add("schema", req.Schema.String())
+
+	u := url.URL{
+		Scheme:   "http",
+		Host:     host + ":" + port,
+		Path:     fmt.Sprintf("v1/services/%s/files/%s", req.ServiceId, req.Language),
+		RawQuery: query.Encode(),
+	}
+
+	r, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+	require.NoError(t, err, "create request")
+
+	return r
 }
 
 func Test_UploadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
 
-	type params struct {
-		fileSchema string
-		path       string
-		data       []byte
-	}
+	ctx := context.Background()
+
+	// Prepare
+
+	service := randService()
+
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "create test service")
+
+	// Requests
+
+	happyRequest := randUploadRequest(t, service.Id)
+
+	invalidArgumentRequest := randUploadRequest(t, service.Id)
+	invalidArgumentRequest.Language = ""
+
+	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
 	tests := []struct {
 		name     string
-		input    params
+		request  *http.Request
 		expected uint
 	}{
 		{
-			name: "Happy Path",
-			input: params{
-				fileSchema: "GO",
-				path:       "v1/files/lv-LV",
-				data: []byte(`{
-					"messages": [
-						{
-							"id": "1",
-							"meaning": "When you greet someone",
-							"message": "hello",
-							"translation": "čau",
-							"fuzzy": false
-						}
-					]
-				}`),
-			},
+			name:     "Happy Path",
+			request:  gRPCUploadFileToRESTReq(ctx, t, happyRequest),
 			expected: http.StatusOK,
 		},
 		{
-			name: "Invalid argument",
-			input: params{
-				fileSchema: "GO",
-				path:       "v1/files/lv-LV-asd",
-				data: []byte(`{
-					"messages": [
-						{
-							"id": "1",
-							"meaning": "When you greet someone",
-							"message": "hello",
-							"translation": "čau",
-							"fuzzy": false
-						}
-					]
-				}`),
-			},
+			name:     "Invalid argument missing language",
+			request:  gRPCUploadFileToRESTReq(ctx, t, invalidArgumentRequest),
 			expected: http.StatusBadRequest,
+		},
+		{
+			name:     "Not found service ID",
+			request:  gRPCUploadFileToRESTReq(ctx, t, notFoundServiceIDRequest),
+			expected: http.StatusNotFound,
 		},
 	}
 	for _, tt := range tests {
@@ -98,31 +130,9 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			query := url.Values{}
-			query.Add("schema", tt.input.fileSchema)
+			resp, err := http.DefaultClient.Do(tt.request)
+			require.NoError(t, err, "do request")
 
-			u := url.URL{
-				Scheme:   "http",
-				Host:     host + ":" + port,
-				Path:     tt.input.path,
-				RawQuery: query.Encode(),
-			}
-
-			body, contentType, err := attachFile(tt.input.data, t)
-			if !assert.NoError(t, err) {
-				return
-			}
-
-			req, err := http.NewRequestWithContext(context.Background(), "PUT", u.String(), body)
-			if !assert.NoError(t, err) {
-				return
-			}
-			req.Header.Add("Content-Type", contentType)
-
-			resp, err := http.DefaultClient.Do(req)
-			if !assert.NoError(t, err) {
-				return
-			}
 			defer resp.Body.Close()
 
 			actual := resp.StatusCode
@@ -131,34 +141,122 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	}
 }
 
+func Test_UploadTranslationFileDifferentLanguages_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	service := randService()
+
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "create test service")
+
+	uploadRequest := randUploadRequest(t, service.Id)
+
+	for i := 0; i < 3; i++ {
+		uploadRequest.Language = gofakeit.LanguageBCP()
+
+		req := gRPCUploadFileToRESTReq(ctx, t, uploadRequest)
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err, "do request")
+
+		defer resp.Body.Close()
+
+		actual := resp.StatusCode
+		expected := http.StatusOK
+
+		require.Equal(t, int(expected), actual)
+
+	}
+}
+
+func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	// Prepare
+
+	service := randService()
+
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "create test service")
+
+	// Upload initial
+	uploadReq := randUploadRequest(t, service.Id)
+
+	_, err = client.UploadTranslationFile(ctx, uploadReq)
+	require.NoError(t, err, "create test translation file")
+
+	// Change messages and upload again with the same language and serviceID
+	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
+
+	req := gRPCUploadFileToRESTReq(ctx, t, uploadReq)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err, "do request")
+
+	defer resp.Body.Close()
+
+	actual := resp.StatusCode
+	expected := http.StatusOK
+
+	assert.Equal(t, int(expected), actual)
+}
+
 func Test_DownloadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
 
-	type params struct {
-		fileSchema string
-		path       string
-	}
+	ctx := context.Background()
+
+	// Prepare
+
+	service := randService()
+
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "create test service")
+
+	uploadRequest := randUploadRequest(t, service.Id)
+
+	_, err = client.UploadTranslationFile(ctx, uploadRequest)
+	require.NoError(t, err, "create test translation file")
+
+	// Requests
+
+	happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+
+	invalidArgumentRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+	invalidArgumentRequest.Schema = translatev1.Schema_UNSPECIFIED
+
+	notFoundIDRequest := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
+
+	notFoundLanguageRequest := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
 
 	tests := []struct {
 		name     string
-		input    params
+		request  *http.Request
 		expected uint
 	}{
 		{
-			name: "Happy path",
-			input: params{
-				fileSchema: "GO",
-				path:       "v1/files/lv-LV",
-			},
+			name:     "Happy path",
+			request:  gRPCDownloadFileToRESTReq(ctx, t, happyRequest),
 			expected: http.StatusOK,
 		},
 		{
-			name: "Invalid argument",
-			input: params{
-				fileSchema: "GO",
-				path:       "v1/files/lv-LV-asd",
-			},
+			name:     "Invalid argument unspecified schema",
+			request:  gRPCDownloadFileToRESTReq(ctx, t, invalidArgumentRequest),
 			expected: http.StatusBadRequest,
+		},
+		{
+			name:     "Not found ID",
+			request:  gRPCDownloadFileToRESTReq(ctx, t, notFoundIDRequest),
+			expected: http.StatusNotFound,
+		},
+		{
+			name:     "Not found language",
+			request:  gRPCDownloadFileToRESTReq(ctx, t, notFoundLanguageRequest),
+			expected: http.StatusNotFound,
 		},
 	}
 	for _, tt := range tests {
@@ -166,29 +264,15 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			query := url.Values{}
-			query.Add("schema", tt.input.fileSchema)
+			resp, err := http.DefaultClient.Do(tt.request)
+			require.NoError(t, err, "do request")
 
-			u := url.URL{
-				Scheme:   "http",
-				Host:     host + ":" + port,
-				Path:     tt.input.path,
-				RawQuery: query.Encode(),
-			}
-
-			req, err := http.NewRequestWithContext(context.Background(), "GET", u.String(), nil)
-			if !assert.NoError(t, err) {
-				return
-			}
-
-			resp, err := http.DefaultClient.Do(req)
-			if !assert.NoError(t, err) {
-				return
-			}
 			defer resp.Body.Close()
 
+			respBody, _ := ioutil.ReadAll(resp.Body)
+
 			actual := resp.StatusCode
-			assert.Equal(t, int(tt.expected), actual)
+			assert.Equal(t, int(tt.expected), actual, "body: %s", string(respBody))
 		})
 	}
 }

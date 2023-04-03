@@ -91,12 +91,12 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := messagesFromData(params.schema, params.data)
+	messages, err := MessagesFromData(params.schema, params.data)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	// Some converts do not provide language, so we override it with one from request.
+	// Some converts do not provide language, so we override it with one from request for consistency.
 	messages.Language = params.languageTag
 
 	translateFile := &model.TranslateFile{
@@ -178,7 +178,7 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	data, err := messagesToData(params.schema, translateFile.Messages)
+	data, err := MessagesToData(params.schema, translateFile.Messages)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
