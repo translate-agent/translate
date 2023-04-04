@@ -1,3 +1,5 @@
+//go:build integration
+
 package main
 
 import (
@@ -13,8 +15,13 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/translate"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"golang.org/x/text/language"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -87,75 +94,94 @@ func TestMain(m *testing.M) {
 }
 
 // -------------Translation File-------------.
+
+func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.Tag) {
+	t.Helper()
+
+	messagesCount := gofakeit.IntRange(1, 5)
+
+	lang := language.MustParse(gofakeit.LanguageBCP())
+
+	messages := model.Messages{
+		Language: lang,
+		Messages: make([]model.Message, 0, messagesCount),
+	}
+
+	for i := 0; i < messagesCount; i++ {
+		messages.Messages = append(messages.Messages, model.Message{
+			ID:          gofakeit.SentenceSimple(),
+			Description: gofakeit.SentenceSimple(),
+		},
+		)
+	}
+
+	data, err := translate.MessagesToData(schema, messages)
+	require.NoError(t, err, "convert rand messages to serialized data")
+
+	return data, lang
+}
+
+func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTranslationFileRequest {
+	t.Helper()
+
+	schema := translatev1.Schema(gofakeit.IntRange(1, 7))
+
+	data, lang := randUploadData(t, schema)
+
+	return &translatev1.UploadTranslationFileRequest{
+		ServiceId: serviceID,
+		Language:  lang.String(),
+		Data:      data,
+		Schema:    schema,
+	}
+}
+
+func prepareService(ctx context.Context, t *testing.T) *translatev1.Service {
+	t.Helper()
+
+	service := randService()
+
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "create test service")
+
+	return service
+}
+
 func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
+	service := prepareService(ctx, t)
+
+	// Requests
+
+	happyRequest := randUploadRequest(t, service.Id)
+
+	invalidArgumentRequest := randUploadRequest(t, service.Id)
+	invalidArgumentRequest.Language = ""
+
+	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
+
 	tests := []struct {
-		input    *translatev1.UploadTranslationFileRequest
-		name     string
-		expected codes.Code
+		request      *translatev1.UploadTranslationFileRequest
+		name         string
+		expectedCode codes.Code
 	}{
 		{
-			name: "Happy path",
-			input: &translatev1.UploadTranslationFileRequest{
-				Language: "lv-lv",
-				Data: []byte(`{
-						"language":"lv-lv",
-						"messages":[
-							 {
-									"id":"1",
-									"meaning":"When you greet someone",
-									"message":"hello",
-									"translation":"čau",
-									"fuzzy":false
-							 }
-						]
-				 }`),
-				Schema: translatev1.Schema_GO,
-			},
-			expected: codes.OK,
+			name:         "Happy path",
+			request:      happyRequest,
+			expectedCode: codes.OK,
 		},
 		{
-			name: "Missing language",
-			input: &translatev1.UploadTranslationFileRequest{
-				Data: []byte(`{
-						"messages":[
-							 {
-									"id":"1",
-									"meaning":"When you greet someone",
-									"message":"hello",
-									"translation":"čau",
-									"fuzzy":false
-							 }
-						]
-				 }`),
-				Schema: translatev1.Schema_GO,
-			},
-			expected: codes.InvalidArgument,
+			name:         "Invalid argument No language",
+			request:      invalidArgumentRequest,
+			expectedCode: codes.InvalidArgument,
 		},
 		{
-			name:     "Missing data",
-			input:    &translatev1.UploadTranslationFileRequest{Language: "lv-lv"},
-			expected: codes.InvalidArgument,
-		},
-		{
-			name: "Invalid language",
-			input: &translatev1.UploadTranslationFileRequest{
-				Language: "xyz-ZY-Latn",
-				Data: []byte(`{
-						"messages":[
-							 {
-									"id":"1",
-									"meaning":"When you greet someone",
-									"message":"hello",
-									"translation":"čau",
-									"fuzzy":false
-							 }
-						]
-				 }`),
-				Schema: translatev1.Schema_GO,
-			},
-			expected: codes.InvalidArgument,
+			name:         "Not found service ID",
+			request:      notFoundServiceIDRequest,
+			expectedCode: codes.NotFound,
 		},
 	}
 
@@ -164,31 +190,121 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.UploadTranslationFile(context.Background(), tt.input)
+			_, err := client.UploadTranslationFile(ctx, tt.request)
 
-			actual := status.Code(err)
-			assert.Equal(t, tt.expected, actual)
+			actualCode := status.Code(err)
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
 		})
+	}
+}
+
+func Test_UploadTranslationFileDifferentLanguages_gRPC(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	service := prepareService(ctx, t)
+
+	uploadRequest := randUploadRequest(t, service.Id)
+
+	for i := 0; i < 3; i++ {
+		uploadRequest.Language = gofakeit.LanguageBCP()
+
+		_, err := client.UploadTranslationFile(ctx, uploadRequest)
+
+		expectedCode := codes.OK
+		actualCode := status.Code(err)
+
+		require.Equal(t, expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", expectedCode, actualCode, err)
+
+	}
+}
+
+func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	// Prepare
+
+	service := prepareService(ctx, t)
+
+	// Upload initial
+
+	uploadReq := randUploadRequest(t, service.Id)
+
+	_, err := client.UploadTranslationFile(ctx, uploadReq)
+	require.NoError(t, err, "create test translation file")
+
+	// Change messages and upload again with the same language and serviceID
+
+	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
+
+	_, err = client.UploadTranslationFile(ctx, uploadReq)
+
+	expectedCode := codes.OK
+	actualCode := status.Code(err)
+
+	assert.Equal(t, expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", expectedCode, actualCode, err)
+}
+
+func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslationFileRequest {
+	return &translatev1.DownloadTranslationFileRequest{
+		ServiceId: serviceID,
+		Language:  lang,
+		Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
 	}
 }
 
 func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
+	// Prepare
+
+	service := prepareService(ctx, t)
+
+	uploadRequest := randUploadRequest(t, service.Id)
+
+	_, err := client.UploadTranslationFile(ctx, uploadRequest)
+	require.NoError(t, err, "create test translation file")
+
+	// Requests
+
+	happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+
+	invalidArgumentRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+	invalidArgumentRequest.Schema = translatev1.Schema_UNSPECIFIED
+
+	notFoundIDRequest := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
+
+	notFoundLanguageRequest := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
+
 	tests := []struct {
-		input    *translatev1.DownloadTranslationFileRequest
-		name     string
-		expected codes.Code
+		input        *translatev1.DownloadTranslationFileRequest
+		name         string
+		expectedCode codes.Code
 	}{
 		{
-			name:     "Happy path",
-			input:    &translatev1.DownloadTranslationFileRequest{Language: "lv-lv", Schema: translatev1.Schema_GO},
-			expected: codes.OK,
+			name:         "Happy path",
+			input:        happyRequest,
+			expectedCode: codes.OK,
 		},
 		{
-			name:     "Invalid argument",
-			input:    &translatev1.DownloadTranslationFileRequest{Schema: translatev1.Schema_GO},
-			expected: codes.InvalidArgument,
+			name:         "Invalid argument",
+			input:        invalidArgumentRequest,
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name:         "Not found ID",
+			input:        notFoundIDRequest,
+			expectedCode: codes.NotFound,
+		},
+		{
+			name:         "Not found language",
+			input:        notFoundLanguageRequest,
+			expectedCode: codes.NotFound,
 		},
 	}
 
@@ -197,10 +313,10 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.DownloadTranslationFile(context.Background(), tt.input)
+			_, err := client.DownloadTranslationFile(ctx, tt.input)
 
-			actual := status.Code(err)
-			assert.Equal(t, tt.expected, actual)
+			actualCode := status.Code(err)
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
 		})
 	}
 }

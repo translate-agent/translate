@@ -8,10 +8,13 @@ import "google/protobuf/field_mask.proto";
 
 enum Schema {
   UNSPECIFIED = 0;
-  NG_LOCALISE = 1;
-  NGX_TRANSLATE = 2;
+  JSON_NG_LOCALISE = 1;
+  JSON_NGX_TRANSLATE = 2;
   GO = 3;
   ARB = 4;
+  POT = 5;
+  XLIFF_12 = 6;
+  XLIFF_2 = 7;
 }
 
 message Message {
@@ -37,11 +40,14 @@ message UploadTranslationFileRequest {
   string language = 1;
   bytes data = 2;
   Schema schema = 3;
+  string service_id = 4;
+  string translation_file_id = 5;
 }
 
 message DownloadTranslationFileRequest {
   string language = 1;
   Schema schema = 2;
+  string service_id = 3;
 }
 
 message DownloadTranslationFileResponse {
@@ -104,9 +110,9 @@ service TranslateService {
   }
 
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {put: "/v1/files/{language}"};
+    option (google.api.http) = {put: "/v1/services/{service_id}/files/{language}"};
   }
   rpc DownloadTranslationFile(DownloadTranslationFileRequest) returns (DownloadTranslationFileResponse) {
-    option (google.api.http) = {get: "/v1/files/{language}"};
+    option (google.api.http) = {get: "/v1/services/{service_id}/files/{language}"};
   }
 }
