@@ -136,15 +136,23 @@ func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTransl
 	}
 }
 
-func Test_UploadTranslationFile_gRPC(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
+func prepareService(ctx context.Context, t *testing.T) *translatev1.Service {
+	t.Helper()
 
 	service := randService()
 
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
 	require.NoError(t, err, "create test service")
+
+	return service
+}
+
+func Test_UploadTranslationFile_gRPC(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	service := prepareService(ctx, t)
 
 	// Requests
 
@@ -156,24 +164,24 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
 	tests := []struct {
-		request  *translatev1.UploadTranslationFileRequest
-		name     string
-		expected codes.Code
+		request      *translatev1.UploadTranslationFileRequest
+		name         string
+		expectedCode codes.Code
 	}{
 		{
-			name:     "Happy path",
-			request:  happyRequest,
-			expected: codes.OK,
+			name:         "Happy path",
+			request:      happyRequest,
+			expectedCode: codes.OK,
 		},
 		{
-			name:     "Invalid argument No language",
-			request:  invalidArgumentRequest,
-			expected: codes.InvalidArgument,
+			name:         "Invalid argument No language",
+			request:      invalidArgumentRequest,
+			expectedCode: codes.InvalidArgument,
 		},
 		{
-			name:     "Not found service ID",
-			request:  notFoundServiceIDRequest,
-			expected: codes.NotFound,
+			name:         "Not found service ID",
+			request:      notFoundServiceIDRequest,
+			expectedCode: codes.NotFound,
 		},
 	}
 
@@ -184,8 +192,8 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 			_, err := client.UploadTranslationFile(ctx, tt.request)
 
-			actual := status.Code(err)
-			assert.Equal(t, tt.expected, actual, "want codes.%s got codes.%s\nerr: %s", tt.expected, actual, err)
+			actualCode := status.Code(err)
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
 		})
 	}
 }
@@ -195,10 +203,7 @@ func Test_UploadTranslationFileDifferentLanguages_gRPC(t *testing.T) {
 
 	ctx := context.Background()
 
-	service := randService()
-
-	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	require.NoError(t, err, "create test service")
+	service := prepareService(ctx, t)
 
 	uploadRequest := randUploadRequest(t, service.Id)
 
@@ -207,10 +212,10 @@ func Test_UploadTranslationFileDifferentLanguages_gRPC(t *testing.T) {
 
 		_, err := client.UploadTranslationFile(ctx, uploadRequest)
 
-		expected := codes.OK
-		actual := status.Code(err)
+		expectedCode := codes.OK
+		actualCode := status.Code(err)
 
-		require.Equal(t, expected, actual, "want codes.%s got codes.%s\nerr: %s", expected, actual, err)
+		require.Equal(t, expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", expectedCode, actualCode, err)
 
 	}
 }
@@ -222,16 +227,13 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 
 	// Prepare
 
-	service := randService()
-
-	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	require.NoError(t, err, "create test service")
+	service := prepareService(ctx, t)
 
 	// Upload initial
 
 	uploadReq := randUploadRequest(t, service.Id)
 
-	_, err = client.UploadTranslationFile(ctx, uploadReq)
+	_, err := client.UploadTranslationFile(ctx, uploadReq)
 	require.NoError(t, err, "create test translation file")
 
 	// Change messages and upload again with the same language and serviceID
@@ -240,10 +242,10 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 
 	_, err = client.UploadTranslationFile(ctx, uploadReq)
 
-	expected := codes.OK
-	actual := status.Code(err)
+	expectedCode := codes.OK
+	actualCode := status.Code(err)
 
-	assert.Equal(t, expected, actual, "want codes.%s got codes.%s\nerr: %s", expected, actual, err)
+	assert.Equal(t, expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", expectedCode, actualCode, err)
 }
 
 func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslationFileRequest {
@@ -261,14 +263,11 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 
 	// Prepare
 
-	service := randService()
-
-	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	require.NoError(t, err, "create test service")
+	service := prepareService(ctx, t)
 
 	uploadRequest := randUploadRequest(t, service.Id)
 
-	_, err = client.UploadTranslationFile(ctx, uploadRequest)
+	_, err := client.UploadTranslationFile(ctx, uploadRequest)
 	require.NoError(t, err, "create test translation file")
 
 	// Requests
@@ -283,29 +282,29 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	notFoundLanguageRequest := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
 
 	tests := []struct {
-		input    *translatev1.DownloadTranslationFileRequest
-		name     string
-		expected codes.Code
+		input        *translatev1.DownloadTranslationFileRequest
+		name         string
+		expectedCode codes.Code
 	}{
 		{
-			name:     "Happy path",
-			input:    happyRequest,
-			expected: codes.OK,
+			name:         "Happy path",
+			input:        happyRequest,
+			expectedCode: codes.OK,
 		},
 		{
-			name:     "Invalid argument",
-			input:    invalidArgumentRequest,
-			expected: codes.InvalidArgument,
+			name:         "Invalid argument",
+			input:        invalidArgumentRequest,
+			expectedCode: codes.InvalidArgument,
 		},
 		{
-			name:     "Not found ID",
-			input:    notFoundIDRequest,
-			expected: codes.NotFound,
+			name:         "Not found ID",
+			input:        notFoundIDRequest,
+			expectedCode: codes.NotFound,
 		},
 		{
-			name:     "Not found language",
-			input:    notFoundLanguageRequest,
-			expected: codes.NotFound,
+			name:         "Not found language",
+			input:        notFoundLanguageRequest,
+			expectedCode: codes.NotFound,
 		},
 	}
 
@@ -316,8 +315,8 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 
 			_, err := client.DownloadTranslationFile(ctx, tt.input)
 
-			actual := status.Code(err)
-			assert.Equal(t, tt.expected, actual, "want codes.%s got codes.%s\nerr: %s", tt.expected, actual, err)
+			actualCode := status.Code(err)
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
 		})
 	}
 }

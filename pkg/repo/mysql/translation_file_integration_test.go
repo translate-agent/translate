@@ -40,6 +40,17 @@ func randTranslationFile(messages []model.Message) *model.TranslationFile {
 	}
 }
 
+func prepareService(ctx context.Context, t *testing.T) *model.Service {
+	t.Helper()
+
+	service := randService()
+
+	err := repository.SaveService(ctx, service)
+	require.NoError(t, err, "Prepare test service")
+
+	return service
+}
+
 func assertEqualTranslationFile(t *testing.T, expected, actual *model.TranslationFile) {
 	t.Helper()
 
@@ -48,68 +59,72 @@ func assertEqualTranslationFile(t *testing.T, expected, actual *model.Translatio
 	require.ElementsMatch(t, expected.Messages.Messages, actual.Messages.Messages)
 }
 
-func Test_SaveTranslationFileWithUUID(t *testing.T) {
+func Test_SaveTranslationFile(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
-	// Prepare
+	service := prepareService(ctx, t)
 
-	service := randService()
+	// Translation files
 
-	err := repository.SaveService(ctx, service)
-	require.NoError(t, err, "Prepare test service")
+	happyTranslationFileWithUUID := randTranslationFile(randMessages())
 
-	// Actual test
+	happyTranslationFileWithoutUUID := randTranslationFile(randMessages())
+	happyTranslationFileWithoutUUID.ID = uuid.Nil
 
-	expectedTranslationFile := randTranslationFile(randMessages())
+	missingServiceTranslationFile := randTranslationFile(randMessages())
 
-	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
-	require.NoError(t, err, "Save translation file")
+	tests := []struct {
+		name            string
+		serviceID       uuid.UUID
+		translationFile *model.TranslationFile
+		expectedErr     error
+	}{
+		{
+			name:            "Happy path with UUID",
+			serviceID:       service.ID,
+			translationFile: happyTranslationFileWithUUID,
+			expectedErr:     nil,
+		},
+		{
+			name:            "Happy path without UUID",
+			serviceID:       service.ID,
+			translationFile: happyTranslationFileWithoutUUID,
+			expectedErr:     nil,
+		},
+		{
+			name:            "Error missing service",
+			serviceID:       uuid.New(),
+			translationFile: missingServiceTranslationFile,
+			expectedErr:     repo.ErrNotFound,
+		},
+	}
 
-	// Check if is inserted
+	for _, tt := range tests {
+		tt := tt
 
-	actualTranslationFile, err := repository.LoadTranslationFile(
-		ctx,
-		service.ID,
-		expectedTranslationFile.Messages.Language,
-	)
-	require.NoError(t, err, "Load translation file")
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	assertEqualTranslationFile(t, expectedTranslationFile, actualTranslationFile)
-}
+			err := repository.SaveTranslationFile(ctx, tt.serviceID, tt.translationFile)
 
-func Test_SaveTranslationFileWithoutUUID(t *testing.T) {
-	t.Parallel()
+			if tt.expectedErr != nil {
+				assert.ErrorIs(t, err, tt.expectedErr)
+				return
+			}
 
-	ctx := context.Background()
+			require.NoError(t, err, "Save translation file")
 
-	// Prepare
+			// Check if is inserted
 
-	service := randService()
+			actualTranslationFile, err := repository.LoadTranslationFile(ctx, tt.serviceID, tt.translationFile.Messages.Language)
+			require.NoError(t, err, "Load saved translation file")
 
-	err := repository.SaveService(ctx, service)
-	require.NoError(t, err, "Prepare test service")
+			assertEqualTranslationFile(t, tt.translationFile, actualTranslationFile)
+		})
 
-	// Actual Test
-
-	expectedTranslationFile := randTranslationFile(randMessages())
-
-	expectedTranslationFile.ID = uuid.Nil
-
-	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
-	require.NoError(t, err, "Save translation file")
-
-	// Check if is inserted
-
-	actualTranslationFile, err := repository.LoadTranslationFile(
-		ctx,
-		service.ID,
-		expectedTranslationFile.Messages.Language,
-	)
-	require.NoError(t, err, "Load translation file")
-
-	assertEqualTranslationFile(t, expectedTranslationFile, actualTranslationFile)
+	}
 }
 
 func Test_UpdateTranslationFile(t *testing.T) {
@@ -119,14 +134,11 @@ func Test_UpdateTranslationFile(t *testing.T) {
 
 	// Prepare
 
-	service := randService()
-
-	err := repository.SaveService(ctx, service)
-	require.NoError(t, err, "Prepare test service")
+	service := prepareService(ctx, t)
 
 	expectedTranslationFile := randTranslationFile(randMessages())
 
-	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
+	err := repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
 	require.NoError(t, err, "Save translation file")
 
 	// Actual Test
@@ -148,43 +160,29 @@ func Test_UpdateTranslationFile(t *testing.T) {
 	assertEqualTranslationFile(t, expectedTranslationFile, actualTranslationFile)
 }
 
-func Test_SaveTranslationFileNoService(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-
-	translationFile := randTranslationFile(randMessages())
-
-	err := repository.SaveTranslationFile(ctx, uuid.New(), translationFile)
-	assert.ErrorIs(t, err, repo.ErrNotFound)
-}
-
 func Test_LoadTranslationFile(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
-	service := randService()
-
-	err := repository.SaveService(ctx, service)
-	require.NoError(t, err, "Prepare test service")
+	service := prepareService(ctx, t)
 
 	expectedTranslationFile := randTranslationFile(randMessages())
 
-	err = repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
+	err := repository.SaveTranslationFile(ctx, service.ID, expectedTranslationFile)
 	require.NoError(t, err, "Save translation file")
 
 	tests := []struct {
-		expected    *model.TranslationFile
-		expectedErr error
-		name        string
-		serviceID   uuid.UUID
+		translationFile *model.TranslationFile
+		expectedErr     error
+		name            string
+		serviceID       uuid.UUID
 	}{
 		{
-			name:        "All OK",
-			expected:    expectedTranslationFile,
-			serviceID:   service.ID,
-			expectedErr: nil,
+			name:            "All OK",
+			translationFile: expectedTranslationFile,
+			serviceID:       service.ID,
+			expectedErr:     nil,
 		},
 		{
 			name:        "Nonexistent",
@@ -198,7 +196,7 @@ func Test_LoadTranslationFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := repository.LoadTranslationFile(
+			actualTranslationFile, err := repository.LoadTranslationFile(
 				ctx,
 				tt.serviceID,
 				expectedTranslationFile.Messages.Language,
@@ -211,7 +209,7 @@ func Test_LoadTranslationFile(t *testing.T) {
 
 			require.NoError(t, err)
 
-			assertEqualTranslationFile(t, tt.expected, actual)
+			assertEqualTranslationFile(t, tt.translationFile, actualTranslationFile)
 		})
 	}
 }

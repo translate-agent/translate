@@ -2,7 +2,7 @@ VERSION 0.7
 
 ARG --global go_version=1.20.2
 ARG --global golangci_lint_version=1.52.2
-ARG --global bufbuild_version=1.15.1
+ARG --global bufbuild_version=1.16.0
 ARG --global migrate_version=4.15.2
 ARG --global python_version=3.11 # for sqlfluff
 ARG --global sqlfluff_version=2.0.2
