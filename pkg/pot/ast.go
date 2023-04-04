@@ -41,23 +41,20 @@ type Po struct {
 func TokensToPo(tokens []Token) (Po, error) {
 	var messages []messageNode
 
-	partsN := 2
 	currentMessage := messageNode{}
 	header := headerNode{}
 
 	for _, token := range tokens {
+		if token.Value == "" {
+			continue
+		}
+
 		replacer := strings.NewReplacer("\\n ", "\n", "\\n", "\n")
 		token.Value = replacer.Replace(token.Value)
 
 		switch token.Type {
 		case HeaderLanguage:
-			parts := strings.Split(token.Value, ":")
-			if len(parts) < partsN {
-				return Po{}, fmt.Errorf("invalid language header format")
-			}
-
-			languageCode := strings.TrimSpace(parts[1])
-			header.Language = language.Make(languageCode)
+			header.Language = language.Make(token.Value)
 		case HeaderTranslator:
 			header.Translator = token.Value
 		case HeaderPluralForms:

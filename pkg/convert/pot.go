@@ -24,7 +24,7 @@ const (
 func ToPot(m model.Messages) ([]byte, error) {
 	var b bytes.Buffer
 
-	if _, err := fmt.Fprintf(&b, "\"Language: %s\n", m.Language); err != nil {
+	if _, err := fmt.Fprintf(&b, "msgid \"\"\nmsgstr \"\"\n\"Language: %s\\n\"\n", m.Language); err != nil {
 		return nil, fmt.Errorf("write language: %w", err)
 	}
 
@@ -240,7 +240,7 @@ func writeMessage(b *bytes.Buffer, index int, message model.Message) error {
 
 	if message.PluralID != "" {
 		count := strings.Count(message.Message, "when")
-		if _, err := fmt.Fprintf(b, "# Plural-Forms: nplurals=%d; plural=(n != 1);\n", count); err != nil {
+		if _, err := fmt.Fprintf(b, "\"Plural-Forms: nplurals=%d; plural=(n != 1);\\n\"\n", count); err != nil {
 			return fmt.Errorf("write plural forms: %w", err)
 		}
 	}
