@@ -42,7 +42,7 @@ func FromPot(b []byte) (model.Messages, error) {
 
 	tokens, err := pot.Lex(bytes.NewReader(b))
 	if err != nil {
-		return model.Messages{}, fmt.Errorf("dividing po file to tokens: %w", err)
+		return model.Messages{}, fmt.Errorf("divide po file to tokens: %w", err)
 	}
 
 	po, err := pot.TokensToPo(tokens)
@@ -53,13 +53,12 @@ func FromPot(b []byte) (model.Messages, error) {
 	messages := make([]model.Message, 0, len(po.Messages))
 
 	for _, node := range po.Messages {
-		message := model.Message{ID: node.MsgId}
+		message := model.Message{ID: node.MsgId, PluralID: node.MsgIdPlural}
 
 		switch {
 		case po.Header.PluralForms.NPlurals > pluralCountLimit:
 			return model.Messages{}, fmt.Errorf("plural forms with more than 2 forms are not implemented yet")
 		case po.Header.PluralForms.NPlurals > 1:
-			message.PluralID = node.MsgIdPlural
 			message.Message = convertToFormatMessage(node.MsgStr)
 		default:
 			message.Message = node.MsgStr[0]
@@ -261,11 +260,7 @@ func writeMessage(b *bytes.Buffer, index int, message model.Message) error {
 		}
 	}
 
-	if err := writeTags(b, message); err != nil {
-		return err
-	}
-
-	return nil
+	return writeTags(b, message)
 }
 
 func writeTags(b *bytes.Buffer, message model.Message) error {

@@ -54,13 +54,18 @@ func TokensToPo(tokens []Token) (Po, error) {
 
 		switch token.Type {
 		case HeaderLanguage:
-			header.Language = language.Make(token.Value)
+			headerLang, err := language.Parse(token.Value)
+			if err != nil {
+				return Po{}, fmt.Errorf("invalid language tag: %w", err)
+			}
+
+			header.Language = headerLang
 		case HeaderTranslator:
 			header.Translator = token.Value
 		case HeaderPluralForms:
 			pf, err := parsePluralForms(token.Value)
 			if err != nil {
-				return Po{}, err
+				return Po{}, fmt.Errorf("invalid plural forms: %w", err)
 			}
 
 			header.PluralForms = pf
