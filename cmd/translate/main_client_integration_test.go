@@ -97,7 +97,7 @@ func Test_ServiceUpload(t *testing.T) {
 			"-a", fmt.Sprintf("%s:%s", host, port),
 			"-i", "true",
 
-			"-l", "lv-lx",
+			"-l", "xyz-ZY-Latn",
 			"-p", file.Name(),
 			"-s", fmt.Sprintf("%d", translatev1.Schema_GO),
 		})
@@ -128,7 +128,7 @@ func Test_ServiceUpload(t *testing.T) {
 			"-a", fmt.Sprintf("%s:%s", host, port),
 			"-i", "true",
 
-			"-l", "lv-lx",
+			"-l", "xyz-ZY-Latn",
 			"-p", file.Name(),
 		})
 
