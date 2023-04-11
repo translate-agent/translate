@@ -50,11 +50,11 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"language":"lv-lv",
 			"messages":[
 				 {
-						"id":"1",
-						"meaning":"When you greet someone",
-						"message":"hello",
-						"translation":"čau",
-						"fuzzy":false
+					"id":"1",
+					"meaning":"When you greet someone",
+					"message":"hello",
+					"translation":"čau",
+					"fuzzy":false
 				 }
 			]
 	 }`)); !assert.NoError(t, err) {
