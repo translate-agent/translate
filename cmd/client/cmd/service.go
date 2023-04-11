@@ -39,7 +39,6 @@ func newServiceCmd() *cobra.Command {
 		log.Panicf("service cmd: bind flags: %v", err)
 	}
 
-	// add commands to serviceCmd
 	serviceCmd.AddCommand(newUploadCmd())
 	serviceCmd.AddCommand(newLsCmd())
 

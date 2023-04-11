@@ -12,7 +12,7 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
-func Test_ServiceLs(t *testing.T) {
+func Test_ServiceLsCmd(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "ls",
@@ -38,7 +38,7 @@ func Test_ServiceLs(t *testing.T) {
 	})
 }
 
-func Test_ServiceUpload(t *testing.T) {
+func Test_ServiceUploadCmd(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		file, err := os.CreateTemp(t.TempDir(), "test")
 		if !assert.NoError(t, err) {
@@ -71,7 +71,10 @@ func Test_ServiceUpload(t *testing.T) {
 			"-s", fmt.Sprintf("%d", translatev1.Schema_GO),
 		})
 
-		assert.NoError(t, err)
+		if !assert.NoError(t, err) {
+			return
+		}
+
 		assert.Contains(t, string(res), filepath.Base(file.Name())+" uploaded successfully")
 	})
 
