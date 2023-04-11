@@ -14,6 +14,7 @@ import (
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/transform"
 )
 
 type (
@@ -22,11 +23,6 @@ type (
 	updateServiceRequest translatev1.UpdateServiceRequest
 	deleteServiceRequest translatev1.DeleteServiceRequest
 )
-
-// protoServiceFromService converts model.Service to translatev1.Service.
-func protoServiceFromService(service *model.Service) *translatev1.Service {
-	return &translatev1.Service{Id: service.ID.String(), Name: service.Name}
-}
 
 // ------------------------GetService-------------------------------
 
@@ -66,7 +62,7 @@ func (t *TranslateServiceServer) GetService(
 
 	switch service, err := t.repo.LoadService(ctx, params.id); {
 	default:
-		return protoServiceFromService(service), nil
+		return transform.ProtoServiceFromService(service), nil
 	case errors.Is(err, repo.ErrNotFound):
 		return nil, status.Errorf(codes.NotFound, err.Error())
 	case err != nil:
@@ -91,7 +87,7 @@ func (t *TranslateServiceServer) ListServices(
 
 	for _, v := range services {
 		service := v
-		resp.Services = append(resp.Services, protoServiceFromService(&service))
+		resp.Services = append(resp.Services, transform.ProtoServiceFromService(&service))
 	}
 
 	return resp, nil
@@ -145,7 +141,7 @@ func (t *TranslateServiceServer) CreateService(
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	return protoServiceFromService(service), nil
+	return transform.ProtoServiceFromService(service), nil
 }
 
 // ---------------------UpdateService-------------------------------
@@ -225,7 +221,7 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	return protoServiceFromService(updatedService), nil
+	return transform.ProtoServiceFromService(updatedService), nil
 }
 
 // ----------------------DeleteService------------------------------
