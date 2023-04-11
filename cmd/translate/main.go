@@ -27,7 +27,10 @@ import (
 	"go.expect.digital/translate/pkg/translate"
 )
 
-var cfgFile string
+var (
+	cfgFile      string
+	supportedDBs = []string{"mysql"}
+)
 
 // grpcHandlerFunc returns an http.Handler that routes gRPC and non-gRPC requests to the appropriate handler.
 func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
@@ -67,25 +70,22 @@ var rootCmd = &cobra.Command{
 			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
 			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
 		)
-		// Gracefully stops GRPC server and closes listener (multiplexer).
+		// Gracefully stops GRPC server.
 		defer grpcServer.GracefulStop()
 
 		mux := runtime.NewServeMux()
 
-		var (
-			repository repo.Repo
-			errRepo    error
-		)
+		var repository repo.Repo
 
 		switch v := strings.TrimSpace(strings.ToLower(viper.GetString("service.db"))); v {
 		case "mysql":
-			repository, errRepo = mysql.NewRepo(mysql.WithDefaultDB(ctx))
+			repository, err = mysql.NewRepo(mysql.WithDefaultDB(ctx))
 		default:
-			log.Panicf("unsupported db: '%s'", v)
+			log.Panicf("unsupported db '%s'. List of supported db: %s", v, strings.Join(supportedDBs, ", "))
 		}
 
-		if errRepo != nil {
-			log.Panicf("create new repo: %v", errRepo)
+		if err != nil {
+			log.Panicf("create new repo: %v", err)
 		}
 
 		translatev1.RegisterTranslateServiceServer(grpcServer, translate.NewTranslateServiceServer(repository))
@@ -128,7 +128,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "translate.yaml", "config file")
 	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
 	rootCmd.PersistentFlags().String("host", "localhost", "host to run service on")
-	rootCmd.PersistentFlags().String("db", "mysql", "db to use with service")
+	rootCmd.PersistentFlags().String("db", "mysql", "database to use with service")
 }
 
 // initConfig reads in config file and ENV variables if set.
