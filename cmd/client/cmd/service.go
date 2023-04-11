@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -14,68 +16,77 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-const establishConnTimeout = 5 * time.Second
+const cmdTimeout = 10 * time.Second
 
 func init() {
-	// upload command uploadFlags
+	serviceFlags := serviceCmd.PersistentFlags()
+	serviceFlags.StringP("address", "a", "localhost:8080", `"translate" service address as "host:port"`)
+	serviceFlags.BoolP("insecure", "i", false, `disable transport security (default false)`)
+	serviceFlags.DurationP("timeout", "t", cmdTimeout, `command execution timeout`)
+
+	if err := viper.BindPFlags(serviceFlags); err != nil {
+		log.Panicf("service cmd: bind flags: %v", err)
+	}
+
 	uploadFlags := uploadCmd.Flags()
-	uploadFlags.String("path", "", "path to file")
-	uploadFlags.StringP("address", "a", "localhost:8080", `"translate" service address as "host:port"`)
-	uploadFlags.BoolP("insecure", "i", false, `disable transport security (default false)`)
-	uploadFlags.DurationP("timeout", "t", establishConnTimeout, `timeout for establishing connection with "translate" service`)
+	uploadFlags.StringP("path", "p", "", "file path")
+	uploadFlags.StringP("language", "l", "", "translation language")
+	uploadFlags.IntP("schema", "s", 0, "schema: 1 for NG_LOCALISE, 2 - NGX_TRANSLATE, 3 - GO, 4 - ARB")
 
-	// ls command lsFlags
-	lsFlags := lsCmd.Flags()
-	lsFlags.StringP("address", "a", "localhost:8080", `"translate" service address as "host:port"`)
-	lsFlags.BoolP("insecure", "i", false, `disable transport security (default false)`)
-	lsFlags.DurationP("timeout", "t", establishConnTimeout, `timeout for establishing connection with "translate" service`)
-
-	if err := viper.BindPFlag("address", lsFlags.Lookup("address")); err != nil {
-		log.Panicf("bind address flag: %v", err)
+	if err := uploadCmd.MarkFlagRequired("path"); err != nil {
+		log.Panicf("upload file cmd: set field 'path' as required: %v", err)
 	}
 
-	if err := viper.BindPFlag("insecure", lsFlags.Lookup("insecure")); err != nil {
-		log.Panicf("bind insecure flag: %v", err)
+	if err := uploadCmd.MarkFlagRequired("language"); err != nil {
+		log.Panicf("upload file cmd: set field 'language' as required: %v", err)
 	}
 
-	if err := viper.BindPFlag("timeout", lsFlags.Lookup("timeout")); err != nil {
-		log.Panicf("bind timeout flag: %v", err)
+	if err := uploadCmd.MarkFlagRequired("schema"); err != nil {
+		log.Panicf("upload file cmd: set field 'schema' as required: %v", err)
+	}
+
+	if err := viper.BindPFlags(uploadFlags); err != nil {
+		log.Panicf("upload file cmd: bind flags: %v", err)
 	}
 
 	// add commands to serviceCmd
-	serviceCmd.AddCommand(fileCmd)
+	serviceCmd.AddCommand(uploadCmd)
 	serviceCmd.AddCommand(lsCmd)
-
-	// add commands to fileCmd
-	fileCmd.AddCommand(uploadCmd)
 }
 
 // serviceCmd represents the service command.
 var serviceCmd = &cobra.Command{
 	Use:   "service",
-	Short: "Service holds list of commands for interacting with services.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Short: "Manage services",
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := cmd.Help(); err != nil {
-			log.Panicf("display help: %v", err)
+			return fmt.Errorf("display help: %w", err)
 		}
+		return nil
 	},
 }
 
-// lsCmd represents the lsCmd command.
+// lsCmd represents the ls command.
 var lsCmd = &cobra.Command{
 	Use:   "ls",
-	Short: "Lists services.",
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.Background()
+	Short: "List services",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		timeout, err := cmd.InheritedFlags().GetDuration("timeout")
+		if err != nil {
+			return fmt.Errorf("list services: retrieve cli parameter 'timeout': %w", err)
+		}
+
+		ctx, cancelFunc := context.WithTimeout(context.Background(), timeout)
+		defer cancelFunc()
 
 		client, err := newClientConn(ctx, cmd)
 		if err != nil {
-			log.Panicf("list services: new GRPC client connection: %v", err)
+			return fmt.Errorf("list services: new GRPC client connection: %w", err)
 		}
 
 		resp, err := translatev1.NewTranslateServiceClient(client).ListServices(ctx, &translatev1.ListServicesRequest{})
 		if err != nil {
-			log.Panicf("list services: send GRPC request: %v", err)
+			return fmt.Errorf("list services: send GRPC request: %w", err)
 		}
 
 		t := table.NewWriter()
@@ -91,69 +102,82 @@ var lsCmd = &cobra.Command{
 		t.AppendRows(tableRows)
 		t.AppendFooter(table.Row{"", "Total", len(resp.Services)})
 		t.SetStyle(table.StyleLight)
+		t.SetOutputMirror(cmd.OutOrStdout())
 		t.Render()
+
+		return nil
 	},
 }
 
 // uploadCmd represents the uploadCmd command.
 var uploadCmd = &cobra.Command{
 	Use:   "upload",
-	Short: "Uploads file to translate service.",
-	Run: func(cmd *cobra.Command, args []string) {
-		ctx := context.Background()
+	Short: "Upload file",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		timeout, err := cmd.InheritedFlags().GetDuration("timeout")
+		if err != nil {
+			return fmt.Errorf("upload file: retrieve cli parameter 'timeout': %w", err)
+		}
+
+		ctx, cancelFunc := context.WithTimeout(context.Background(), timeout)
+		defer cancelFunc()
 
 		client, err := newClientConn(ctx, cmd)
 		if err != nil {
-			log.Panicf("list services: new GRPC client connection: %v", err)
+			return fmt.Errorf("upload file: new GRPC client connection: %w", err)
 		}
 
-		filePath, err := cmd.Flags().GetDuration("path")
+		language, err := cmd.Flags().GetString("language")
 		if err != nil {
-			log.Panicf("upload file: retrieve cli parameter 'path': %v", err)
+			return fmt.Errorf("upload file: retrieve cli parameter 'language': %w", err)
 		}
 
-		resp, err := translatev1.NewTranslateServiceClient(client).UploadTranslationFile(context.Background())
+		filePath, err := cmd.Flags().GetString("path")
 		if err != nil {
-			log.Panicf("upload file: send GRPC request: %v", err)
+			return fmt.Errorf("upload file: retrieve cli parameter 'path': %w", err)
 		}
 
-	},
-}
-
-// fileCmd represents the service command.
-var fileCmd = &cobra.Command{
-	Use:   "service",
-	Short: "File holds commands for file transfer in translate service",
-	Run: func(cmd *cobra.Command, args []string) {
-		if err := cmd.Help(); err != nil {
-			log.Panicf("display help: %v", err)
+		schema, err := cmd.Flags().GetInt("schema")
+		if err != nil {
+			return fmt.Errorf("upload file: retrieve cli parameter 'schema': %w", err)
 		}
+
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("upload file: read file from path: %w", err)
+		}
+
+		_, err = translatev1.NewTranslateServiceClient(client).UploadTranslationFile(ctx,
+			&translatev1.UploadTranslationFileRequest{Language: language, Data: data, Schema: translatev1.Schema(schema)})
+		if err != nil {
+			return fmt.Errorf("upload file: send GRPC request: %w", err)
+		}
+
+		output := fmt.Sprintf("%s uploaded successfully", filepath.Base(filePath))
+
+		if _, err := os.Stdout.Write([]byte(output)); err != nil {
+			return fmt.Errorf("upload file: write to stdout: %w", err)
+		}
+
+		return nil
 	},
 }
 
 // helpers
 
 func newClientConn(ctx context.Context, cmd *cobra.Command) (*grpc.ClientConn, error) {
-	addr, err := cmd.Flags().GetString("address")
-	if err != nil {
-		log.Panicf("list services: retrieve cli parameter 'address': %v", err)
-	}
-
-	timeout, err := cmd.Flags().GetDuration("timeout")
-	if err != nil {
-		log.Panicf("list services: retrieve cli parameter 'timeout': %v", err)
-	}
-
-	isInsecure, err := cmd.Flags().GetBool("insecure")
-	if err != nil {
-		log.Panicf("list services: retrieve cli parameter 'insecure': %v", err)
-	}
-
-	ctx, cancelFunc := context.WithTimeout(ctx, timeout)
-	defer cancelFunc()
-
 	opts := []grpc.DialOption{
 		grpc.WithBlock(),
+	}
+
+	address, err := cmd.InheritedFlags().GetString("address")
+	if err != nil {
+		return nil, fmt.Errorf("retrieve cli parameter 'address': %w", err)
+	}
+
+	isInsecure, err := cmd.InheritedFlags().GetBool("insecure")
+	if err != nil {
+		return nil, fmt.Errorf("retrieve cli parameter 'insecure': %w", err)
 	}
 
 	if isInsecure {
@@ -161,5 +185,5 @@ func newClientConn(ctx context.Context, cmd *cobra.Command) (*grpc.ClientConn, e
 	}
 
 	// Wait for the server to start and establish a connection.
-	return grpc.DialContext(ctx, addr, opts...) //nolint:wrapcheck
+	return grpc.DialContext(ctx, address, opts...) //nolint:wrapcheck
 }
