@@ -291,9 +291,11 @@ func Test_UpdateServiceSpecificField_gRPC(t *testing.T) {
 func Test_GetService_gRPC(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	service := randService()
 
-	_, err := client.CreateService(context.Background(), &translatev1.CreateServiceRequest{Service: service})
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
 	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
@@ -320,7 +322,7 @@ func Test_GetService_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.GetService(context.Background(), tt.input)
+			_, err := client.GetService(ctx, tt.input)
 
 			actual := status.Code(err)
 			assert.Equal(t, tt.expected, actual, "want codes.%s got codes.%s", tt.expected, actual)
@@ -331,9 +333,11 @@ func Test_GetService_gRPC(t *testing.T) {
 func Test_DeleteService_gRPC(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
+
 	service := randService()
 
-	_, err := client.CreateService(context.Background(), &translatev1.CreateServiceRequest{Service: service})
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
 	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
@@ -360,7 +364,7 @@ func Test_DeleteService_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.DeleteService(context.Background(), tt.input)
+			_, err := client.DeleteService(ctx, tt.input)
 
 			actual := status.Code(err)
 			assert.Equal(t, tt.expected, actual, "want codes.%s got codes.%s", tt.expected, actual)
