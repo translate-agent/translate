@@ -136,10 +136,8 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: send GRPC request: %w", err)
 			}
 
-			output := fmt.Sprintf("%s uploaded successfully", filepath.Base(filePath))
-
-			if _, err := os.Stdout.Write([]byte(output)); err != nil {
-				return fmt.Errorf("upload file: write to stdout: %w", err)
+			if _, err = fmt.Fprintf(cmd.OutOrStdout(), "%s uploaded successfully", filepath.Base(filePath)); err != nil {
+				return fmt.Errorf("upload file: output response to stdout: %w", err)
 			}
 
 			return nil
