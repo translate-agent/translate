@@ -86,7 +86,6 @@ test-integration:
   COPY .earthly/compose.yaml compose.yaml
   COPY +go/translate /translate
   COPY --dir migrate/mysql migrate
-  # RUN --no-cache ls -lah /go
   WITH DOCKER --compose compose.yaml --service mysql --pull migrate/migrate:v$migrate_version --pull golang:$go_version-alpine
     RUN \
       --mount=type=cache,target=/go/pkg/mod \
