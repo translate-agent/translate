@@ -275,13 +275,9 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-// PATCH
-//
-// NOTE: This test is being skipped because the PATCH request returns a "read: connection reset by peer" error.
+// PATCH.
 func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 	t.Parallel()
-
-	t.Skip()
 
 	ctx := context.Background()
 
