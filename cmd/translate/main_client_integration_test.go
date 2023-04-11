@@ -12,12 +12,9 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
+//nolint:paralleltest
 func Test_ServiceLs(t *testing.T) {
-	t.Skip()
-
 	t.Run("OK", func(t *testing.T) {
-		t.Parallel()
-
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "ls",
 			"-a", fmt.Sprintf("%s:%s", host, port),
@@ -32,8 +29,6 @@ func Test_ServiceLs(t *testing.T) {
 	})
 
 	t.Run("error, no transport security set", func(t *testing.T) {
-		t.Parallel()
-
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "ls",
 			"-a", fmt.Sprintf("%s:%s", host, port),
