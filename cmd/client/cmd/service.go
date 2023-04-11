@@ -94,7 +94,7 @@ func newLsCmd() *cobra.Command {
 func newUploadCmd() *cobra.Command {
 	uploadCmd := &cobra.Command{
 		Use:   "upload",
-		Short: "Upload file",
+		Short: "Upload file to translate service",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			timeout, err := cmd.InheritedFlags().GetDuration("timeout")
 			if err != nil {
