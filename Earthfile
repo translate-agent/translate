@@ -51,7 +51,7 @@ proto:
 lint-migrate:
   FROM sqlfluff/sqlfluff:$sqlfluff_version
   WORKDIR migrate
-  COPY  migrate .sqlfluff .
+  COPY migrate .sqlfluff .
   RUN sqlfluff lint
 
 lint-go:
