@@ -81,7 +81,7 @@ func (t *TranslateServiceServer) ListServices(
 // ---------------------CreateService-------------------------------
 
 type createServiceParams struct {
-	service model.Service
+	service *model.Service
 }
 
 func (c *createServiceRequest) parseParams() (createServiceParams, error) {
@@ -98,7 +98,7 @@ func (c *createServiceRequest) parseParams() (createServiceParams, error) {
 		return createServiceParams{}, fmt.Errorf("parse service: %w", err)
 	}
 
-	return createServiceParams{service: *service}, nil
+	return createServiceParams{service: service}, nil
 }
 
 func (t *TranslateServiceServer) CreateService(
@@ -112,18 +112,18 @@ func (t *TranslateServiceServer) CreateService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if err := t.repo.SaveService(ctx, &params.service); err != nil {
+	if err := t.repo.SaveService(ctx, params.service); err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	return serviceToProto(&params.service), nil
+	return serviceToProto(params.service), nil
 }
 
 // ---------------------UpdateService-------------------------------
 
 type updateServiceParams struct {
 	mask    *fieldmaskpb.FieldMask
-	service model.Service
+	service *model.Service
 }
 
 func (u *updateServiceRequest) parseParams() (updateServiceParams, error) {
@@ -140,7 +140,7 @@ func (u *updateServiceRequest) parseParams() (updateServiceParams, error) {
 		return updateServiceParams{}, fmt.Errorf("parse service: %w", err)
 	}
 
-	return updateServiceParams{service: *service, mask: u.UpdateMask}, nil
+	return updateServiceParams{service: service, mask: u.UpdateMask}, nil
 }
 
 func (u *updateServiceParams) updateServiceFromMask(service *model.Service) (*model.Service, error) {

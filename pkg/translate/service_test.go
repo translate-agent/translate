@@ -97,17 +97,17 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 	malformedIDReq.Service.Id += "_FAIL"
 
 	tests := []struct {
-		input       *translatev1.UpdateServiceRequest
-		expectedErr error
-		name        string
 		expected    updateServiceParams
+		expectedErr error
+		input       *translatev1.UpdateServiceRequest
+		name        string
 	}{
 		{
 			name:  "Happy Path",
 			input: happyReq,
 			expected: updateServiceParams{
 				mask: happyReq.UpdateMask,
-				service: model.Service{
+				service: &model.Service{
 					ID:   uuid.MustParse(happyReq.Service.Id),
 					Name: happyReq.Service.Name,
 				},
@@ -230,15 +230,15 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 	tests := []struct {
 		input       *translatev1.CreateServiceRequest
 		expectedErr error
-		name        string
 		expected    createServiceParams
+		name        string
 	}{
 		{
 			name:        "Happy Path",
 			input:       happyReq,
 			expectedErr: nil,
 			expected: createServiceParams{
-				service: model.Service{
+				service: &model.Service{
 					ID:   uuid.MustParse(happyReq.Service.Id),
 					Name: happyReq.Service.Name,
 				},
