@@ -14,7 +14,6 @@ import (
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
-	"go.expect.digital/translate/pkg/transform"
 )
 
 type (
@@ -35,17 +34,12 @@ func (g *getServiceRequest) parseParams() (getServiceParams, error) {
 		return getServiceParams{}, errors.New("request is nil")
 	}
 
-	var (
-		params getServiceParams
-		err    error
-	)
-
-	params.id, err = uuid.Parse(g.Id)
+	id, err := uuidFromProto(g.Id)
 	if err != nil {
-		return getServiceParams{}, fmt.Errorf("parse uuid: %w", err)
+		return getServiceParams{}, fmt.Errorf("parse id: %w", err)
 	}
 
-	return params, nil
+	return getServiceParams{id: id}, nil
 }
 
 func (t *TranslateServiceServer) GetService(
@@ -62,7 +56,7 @@ func (t *TranslateServiceServer) GetService(
 
 	switch service, err := t.repo.LoadService(ctx, params.id); {
 	default:
-		return transform.ProtoServiceFromService(service), nil
+		return serviceToProto(service), nil
 	case errors.Is(err, repo.ErrNotFound):
 		return nil, status.Errorf(codes.NotFound, err.Error())
 	case err != nil:
@@ -81,23 +75,13 @@ func (t *TranslateServiceServer) ListServices(
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	resp := &translatev1.ListServicesResponse{
-		Services: make([]*translatev1.Service, 0, len(services)),
-	}
-
-	for _, v := range services {
-		service := v
-		resp.Services = append(resp.Services, transform.ProtoServiceFromService(&service))
-	}
-
-	return resp, nil
+	return &translatev1.ListServicesResponse{Services: servicesToProto(services)}, nil
 }
 
 // ---------------------CreateService-------------------------------
 
 type createServiceParams struct {
-	name string
-	id   uuid.UUID
+	service model.Service
 }
 
 func (c *createServiceRequest) parseParams() (createServiceParams, error) {
@@ -109,20 +93,12 @@ func (c *createServiceRequest) parseParams() (createServiceParams, error) {
 		return createServiceParams{}, errors.New("service is nil")
 	}
 
-	params := createServiceParams{name: c.Service.Name}
-
-	if c.Service.Id == "" {
-		return params, nil
-	}
-
-	var err error
-
-	params.id, err = uuid.Parse(c.Service.Id)
+	service, err := serviceFromProto(c.Service)
 	if err != nil {
-		return createServiceParams{}, fmt.Errorf("parse uuid: %w", err)
+		return createServiceParams{}, fmt.Errorf("parse service: %w", err)
 	}
 
-	return params, nil
+	return createServiceParams{service: *service}, nil
 }
 
 func (t *TranslateServiceServer) CreateService(
@@ -136,20 +112,18 @@ func (t *TranslateServiceServer) CreateService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	service := &model.Service{ID: params.id, Name: params.name}
-	if err := t.repo.SaveService(ctx, service); err != nil {
+	if err := t.repo.SaveService(ctx, &params.service); err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	return transform.ProtoServiceFromService(service), nil
+	return serviceToProto(&params.service), nil
 }
 
 // ---------------------UpdateService-------------------------------
 
 type updateServiceParams struct {
-	mask *fieldmaskpb.FieldMask
-	name string
-	id   uuid.UUID
+	mask    *fieldmaskpb.FieldMask
+	service model.Service
 }
 
 func (u *updateServiceRequest) parseParams() (updateServiceParams, error) {
@@ -161,29 +135,25 @@ func (u *updateServiceRequest) parseParams() (updateServiceParams, error) {
 		return updateServiceParams{}, errors.New("service is nil")
 	}
 
-	params := updateServiceParams{name: u.Service.Name, mask: u.UpdateMask}
-
-	var err error
-
-	params.id, err = uuid.Parse(u.Service.Id)
+	service, err := serviceFromProto(u.Service)
 	if err != nil {
-		return updateServiceParams{}, fmt.Errorf("parse uuid: %w", err)
+		return updateServiceParams{}, fmt.Errorf("parse service: %w", err)
 	}
 
-	return params, nil
+	return updateServiceParams{service: *service, mask: u.UpdateMask}, nil
 }
 
 func (u *updateServiceParams) updateServiceFromMask(service *model.Service) (*model.Service, error) {
 	// Replace service resource with the new one from params (PUT)
 	if u.mask == nil {
-		return &model.Service{ID: service.ID, Name: u.name}, nil
+		return &model.Service{ID: service.ID, Name: u.service.Name}, nil
 	}
 
 	// Replace service resource's fields with the new ones from request (PATCH)
 	for _, path := range u.mask.Paths {
 		switch path {
 		case "name":
-			service.Name = u.name
+			service.Name = u.service.Name
 		default:
 			return nil, fmt.Errorf("'%s' is not a valid service field", path)
 		}
@@ -203,7 +173,7 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	oldService, err := t.repo.LoadService(ctx, params.id)
+	oldService, err := t.repo.LoadService(ctx, params.service.ID)
 
 	switch {
 	case errors.Is(err, repo.ErrNotFound):
@@ -221,7 +191,7 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
-	return transform.ProtoServiceFromService(updatedService), nil
+	return serviceToProto(updatedService), nil
 }
 
 // ----------------------DeleteService------------------------------
@@ -235,17 +205,12 @@ func (d *deleteServiceRequest) parseParams() (deleteServiceParams, error) {
 		return deleteServiceParams{}, errors.New("request is nil")
 	}
 
-	var (
-		params deleteServiceParams
-		err    error
-	)
-
-	params.id, err = uuid.Parse(d.Id)
+	id, err := uuidFromProto(d.Id)
 	if err != nil {
-		return deleteServiceParams{}, fmt.Errorf("parse uuid: %w", err)
+		return deleteServiceParams{}, fmt.Errorf("parse id: %w", err)
 	}
 
-	return params, nil
+	return deleteServiceParams{id: id}, nil
 }
 
 func (t *TranslateServiceServer) DeleteService(
