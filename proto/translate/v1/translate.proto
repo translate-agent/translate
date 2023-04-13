@@ -8,7 +8,7 @@ import "google/protobuf/field_mask.proto";
 
 enum Schema {
   UNSPECIFIED = 0;
-  JSON_NG_LOCALISE = 1;
+  JSON_NG_LOCALIZE = 1;
   JSON_NGX_TRANSLATE = 2;
   GO = 3;
   ARB = 4;

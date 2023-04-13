@@ -96,8 +96,8 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 
 	happyRequest := randUploadRequest(t, service.Id)
 
-	invalidArgumentRequest := randUploadRequest(t, service.Id)
-	invalidArgumentRequest.Language = ""
+	missingLanguageRequest := randUploadRequest(t, service.Id)
+	missingLanguageRequest.Language = ""
 
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
@@ -112,8 +112,8 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "Invalid argument missing language",
-			request:      gRPCUploadFileToRESTReq(ctx, t, invalidArgumentRequest),
+			name:         "Bad request missing language",
+			request:      gRPCUploadFileToRESTReq(ctx, t, missingLanguageRequest),
 			expectedCode: http.StatusBadRequest,
 		},
 		{
@@ -131,10 +131,12 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			require.NoError(t, err, "do request")
 
 			defer resp.Body.Close()
+
+			// Read the response to give error message on failure
 			respBody, _ := ioutil.ReadAll(resp.Body)
 
 			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", respBody)
+			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", string(respBody))
 		})
 	}
 }
@@ -162,7 +164,7 @@ func Test_UploadTranslationFileDifferentLanguages_REST(t *testing.T) {
 		actualCode := resp.StatusCode
 		expectedCode := http.StatusOK
 
-		require.Equal(t, int(expectedCode), actualCode, "body: %s", respBody)
+		require.Equal(t, int(expectedCode), actualCode, "body: %s", string(respBody))
 	}
 }
 
@@ -195,7 +197,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	actualCode := resp.StatusCode
 	expectedCode := http.StatusOK
 
-	assert.Equal(t, int(expectedCode), actualCode, "body: %s", respBody)
+	assert.Equal(t, int(expectedCode), actualCode, "body: %s", string(respBody))
 }
 
 func Test_DownloadTranslationFile_REST(t *testing.T) {
@@ -216,12 +218,16 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 
 	happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
 
-	invalidArgumentRequest := randDownloadRequest(service.Id, uploadRequest.Language)
-	invalidArgumentRequest.Schema = translatev1.Schema_UNSPECIFIED
+	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+	unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
 
-	notFoundIDRequest := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
+	notFoundServiceIDRequest := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
 
 	notFoundLanguageRequest := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
+	// Ensure that the language is not the same as the uploaded one.
+	for notFoundLanguageRequest.Language == uploadRequest.Language {
+		notFoundLanguageRequest.Language = gofakeit.LanguageBCP()
+	}
 
 	tests := []struct {
 		name         string
@@ -234,13 +240,13 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "Invalid argument unspecified schema",
-			request:      gRPCDownloadFileToRESTReq(ctx, t, invalidArgumentRequest),
+			name:         "Bad request unspecified schema",
+			request:      gRPCDownloadFileToRESTReq(ctx, t, unspecifiedSchemaRequest),
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name:         "Not found ID",
-			request:      gRPCDownloadFileToRESTReq(ctx, t, notFoundIDRequest),
+			name:         "Not found Service ID",
+			request:      gRPCDownloadFileToRESTReq(ctx, t, notFoundServiceIDRequest),
 			expectedCode: http.StatusNotFound,
 		},
 		{
@@ -261,7 +267,7 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			respBody, _ := ioutil.ReadAll(resp.Body)
 
 			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", respBody)
+			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", string(respBody))
 		})
 	}
 }
@@ -272,34 +278,63 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 func Test_CreateService_REST(t *testing.T) {
 	t.Parallel()
 
-	service := randService()
+	serviceWithID := randService()
 
-	body, err := json.Marshal(service)
-	if !assert.NoError(t, err) {
-		return
+	serviceWithoutID := randService()
+	serviceWithoutID.Id = ""
+
+	serviceMalformedID := randService()
+	serviceMalformedID.Id += "_FAIL"
+
+	tests := []struct {
+		service      *translatev1.Service
+		name         string
+		expectedCode uint
+	}{
+		{
+			name:         "Happy path With ID",
+			service:      serviceWithID,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Happy path Without ID",
+			service:      serviceWithoutID,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Invalid argument malformed ID",
+			service:      serviceMalformedID,
+			expectedCode: http.StatusBadRequest,
+		},
 	}
 
-	u := url.URL{
-		Scheme: "http",
-		Host:   host + ":" + port,
-		Path:   "v1/services",
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			body, err := json.Marshal(tt.service)
+			require.NoError(t, err, "marshal service")
+
+			u := url.URL{
+				Scheme: "http",
+				Host:   host + ":" + port,
+				Path:   "v1/services",
+			}
+
+			req, err := http.NewRequestWithContext(context.Background(), "POST", u.String(), bytes.NewBuffer(body))
+			require.NoError(t, err, "create request")
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "do request")
+
+			defer resp.Body.Close()
+
+			actualCode := resp.StatusCode
+
+			assert.Equal(t, int(tt.expectedCode), actualCode)
+		})
 	}
-
-	req, err := http.NewRequestWithContext(context.Background(), "POST", u.String(), bytes.NewBuffer(body))
-	if !assert.NoError(t, err) {
-		return
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if !assert.NoError(t, err) {
-		return
-	}
-	defer resp.Body.Close()
-
-	actual := resp.StatusCode
-	expected := http.StatusOK
-
-	assert.Equal(t, expected, actual)
 }
 
 type restUpdateBody struct {
@@ -316,16 +351,12 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 
 	// Using gRPC client to create service
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
+	require.NoError(t, err, "prepare test service")
 
 	putBody := restUpdateBody{Name: gofakeit.FirstName()}
 
 	putBodyBytes, err := json.Marshal(putBody)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "marshal put body")
 
 	u := url.URL{
 		Scheme: "http",
@@ -334,20 +365,17 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(putBodyBytes))
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "create request")
 
 	resp, err := http.DefaultClient.Do(req)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "do request")
+
 	defer resp.Body.Close()
 
-	actual := resp.StatusCode
-	expected := http.StatusOK
+	actualCode := resp.StatusCode
+	expectedCode := http.StatusOK
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedCode, actualCode)
 }
 
 // PATCH.
@@ -360,16 +388,12 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 
 	// Using gRPC client to create service
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
+	require.NoError(t, err, "Prepare test service")
 
 	patchBody := restUpdateBody{Name: gofakeit.FirstName()}
 
 	patchBodyBytes, err := json.Marshal(patchBody)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "marshal patch body")
 
 	u := url.URL{
 		Scheme: "http",
@@ -378,20 +402,17 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "PATCH", u.String(), bytes.NewReader(patchBodyBytes))
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "create request")
 
 	resp, err := http.DefaultClient.Do(req)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "do request")
+
 	defer resp.Body.Close()
 
-	actual := resp.StatusCode
-	expected := http.StatusOK
+	actualCode := resp.StatusCode
+	expectedCode := http.StatusOK
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedCode, actualCode)
 }
 
 // GET.
@@ -404,24 +425,22 @@ func Test_GetService_REST(t *testing.T) {
 
 	// Using gRPC client to create service
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
+	require.NoError(t, err, "Prepare test service")
 
 	tests := []struct {
-		serviceID string
-		name      string
-		expected  uint
+		service      *translatev1.Service
+		name         string
+		expectedCode uint
 	}{
 		{
-			serviceID: service.Id,
-			name:      "Happy Path",
-			expected:  http.StatusOK,
+			service:      service,
+			name:         "Happy Path",
+			expectedCode: http.StatusOK,
 		},
 		{
-			serviceID: gofakeit.UUID(),
-			name:      "Not Found",
-			expected:  http.StatusNotFound,
+			service:      randService(),
+			name:         "Not Found",
+			expectedCode: http.StatusNotFound,
 		},
 	}
 
@@ -433,22 +452,19 @@ func Test_GetService_REST(t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.serviceID,
+				Path:   "v1/services/" + tt.service.Id,
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err, "create request")
 
 			resp, err := http.DefaultClient.Do(req)
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err, "do request")
+
 			defer resp.Body.Close()
 
-			actual := resp.StatusCode
-			assert.Equal(t, int(tt.expected), actual)
+			actualCode := resp.StatusCode
+			assert.Equal(t, int(tt.expectedCode), actualCode)
 		})
 	}
 }
@@ -463,24 +479,22 @@ func Test_DeleteService_REST(t *testing.T) {
 
 	// Using gRPC client to create service
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
+	require.NoError(t, err, "Prepare test service")
 
 	tests := []struct {
-		serviceID string
-		name      string
-		expected  uint
+		service      *translatev1.Service
+		name         string
+		expectedCode uint
 	}{
 		{
-			serviceID: service.Id,
-			name:      "Happy Path",
-			expected:  http.StatusOK,
+			service:      service,
+			name:         "Happy Path",
+			expectedCode: http.StatusOK,
 		},
 		{
-			serviceID: gofakeit.UUID(),
-			name:      "Not Found",
-			expected:  http.StatusNotFound,
+			service:      randService(),
+			name:         "Not Found",
+			expectedCode: http.StatusNotFound,
 		},
 	}
 
@@ -492,22 +506,19 @@ func Test_DeleteService_REST(t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.serviceID,
+				Path:   "v1/services/" + tt.service.Id,
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "DELETE", u.String(), nil)
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err, "create request")
 
 			resp, err := http.DefaultClient.Do(req)
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err, "do request")
+
 			defer resp.Body.Close()
 
-			actual := resp.StatusCode
-			assert.Equal(t, int(tt.expected), actual)
+			actualCode := resp.StatusCode
+			assert.Equal(t, int(tt.expectedCode), actualCode)
 		})
 	}
 }
@@ -525,18 +536,15 @@ func Test_ListServices_REST(t *testing.T) {
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "create request")
 
 	resp, err := http.DefaultClient.Do(req)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "do request")
+
 	defer resp.Body.Close()
 
-	actual := resp.StatusCode
-	expected := http.StatusOK
+	actualCode := resp.StatusCode
+	expectedCode := http.StatusOK
 
-	assert.Equal(t, expected, actual)
+	assert.Equal(t, expectedCode, actualCode)
 }
