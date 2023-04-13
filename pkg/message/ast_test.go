@@ -1,8 +1,10 @@
-package messageFormat
+package message
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -12,7 +14,7 @@ func TestTokensToMessageFormat(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		expected    NodeMatch
+		expected    nodeMatch
 		expectedErr error
 		input       []Token
 	}{
@@ -27,18 +29,18 @@ func TestTokensToMessageFormat(t *testing.T) {
 				{Type: Text, Value: "!", Level: 1},
 				{Type: PlaceholderClose, Value: "}", Level: 1},
 			},
-			expected: NodeMatch{
-				Variants: []NodeVariant{
+			expected: nodeMatch{
+				Variants: []nodeVariant{
 					{
 						Keys: []string(nil),
 						Message: []interface{}{
-							NodeText{
+							nodeText{
 								Text: "Hello, ",
 							},
-							NodeVariable{
+							nodeVariable{
 								Name: "userName",
 							},
-							NodeText{
+							nodeText{
 								Text: "!",
 							},
 						},
@@ -69,22 +71,22 @@ func TestTokensToMessageFormat(t *testing.T) {
 				{Type: Text, Value: " notifications.", Level: 1},
 				{Type: PlaceholderClose, Value: "}", Level: 1},
 			},
-			expected: NodeMatch{
-				Selectors: []NodeExpr{
+			expected: nodeMatch{
+				Selectors: []nodeExpr{
 					{
-						Value: NodeVariable{
+						Value: nodeVariable{
 							Name: "count",
 						},
-						Function: NodeFunction{
+						Function: nodeFunction{
 							Name: "number",
 						},
 					},
 				},
-				Variants: []NodeVariant{
+				Variants: []nodeVariant{
 					{
 						Keys: []string{"1"},
 						Message: []interface{}{
-							NodeText{
+							nodeText{
 								Text: "You have one notification.",
 							},
 						},
@@ -92,13 +94,13 @@ func TestTokensToMessageFormat(t *testing.T) {
 					{
 						Keys: []string{"*"},
 						Message: []interface{}{
-							NodeText{
+							nodeText{
 								Text: "You have ",
 							},
-							NodeVariable{
+							nodeVariable{
 								Name: "count",
 							},
-							NodeText{
+							nodeText{
 								Text: " notifications.",
 							},
 						},
@@ -134,22 +136,22 @@ func TestTokensToMessageFormat(t *testing.T) {
 				{Type: Text, Value: " notifications.", Level: 1},
 				{Type: PlaceholderClose, Value: "}", Level: 1},
 			},
-			expected: NodeMatch{
-				Selectors: []NodeExpr{
+			expected: nodeMatch{
+				Selectors: []nodeExpr{
 					{
-						Value: NodeVariable{
+						Value: nodeVariable{
 							Name: "count",
 						},
-						Function: NodeFunction{
+						Function: nodeFunction{
 							Name: "number",
 						},
 					},
 				},
-				Variants: []NodeVariant{
+				Variants: []nodeVariant{
 					{
 						Keys: []string{"0"},
 						Message: []interface{}{
-							NodeText{
+							nodeText{
 								Text: "You have no notifications.",
 							},
 						},
@@ -157,7 +159,7 @@ func TestTokensToMessageFormat(t *testing.T) {
 					{
 						Keys: []string{"1"},
 						Message: []interface{}{
-							NodeText{
+							nodeText{
 								Text: "You have one notification.",
 							},
 						},
@@ -165,13 +167,13 @@ func TestTokensToMessageFormat(t *testing.T) {
 					{
 						Keys: []string{"*"},
 						Message: []interface{}{
-							NodeText{
+							nodeText{
 								Text: "You have ",
 							},
-							NodeVariable{
+							nodeVariable{
 								Name: "count",
 							},
-							NodeText{
+							nodeText{
 								Text: " notifications.",
 							},
 						},
@@ -211,30 +213,30 @@ func TestTokensToMessageFormat(t *testing.T) {
 				{Type: Text, Value: " notifications.", Level: 1},
 				{Type: PlaceholderClose, Value: "}", Level: 1},
 			},
-			expected: NodeMatch{
-				Selectors: []NodeExpr{
+			expected: nodeMatch{
+				Selectors: []nodeExpr{
 					{
-						Value: NodeVariable{
+						Value: nodeVariable{
 							Name: "count",
 						},
-						Function: NodeFunction{
+						Function: nodeFunction{
 							Name: "number",
 						},
 					},
 					{
-						Value: NodeVariable{
+						Value: nodeVariable{
 							Name: "num",
 						},
-						Function: NodeFunction{
+						Function: nodeFunction{
 							Name: "number",
 						},
 					},
 				},
-				Variants: []NodeVariant{
+				Variants: []nodeVariant{
 					{
 						Keys: []string{"0"},
 						Message: []interface{}{
-							NodeText{
+							nodeText{
 								Text: "You have no notifications.",
 							},
 						},
@@ -242,7 +244,7 @@ func TestTokensToMessageFormat(t *testing.T) {
 					{
 						Keys: []string{"1"},
 						Message: []interface{}{
-							NodeText{
+							nodeText{
 								Text: "You have one notification.",
 							},
 						},
@@ -250,13 +252,13 @@ func TestTokensToMessageFormat(t *testing.T) {
 					{
 						Keys: []string{"*"},
 						Message: []interface{}{
-							NodeText{
+							nodeText{
 								Text: "You have ",
 							},
-							NodeVariable{
+							nodeVariable{
 								Name: "count",
 							},
-							NodeText{
+							nodeText{
 								Text: " notifications.",
 							},
 						},
@@ -276,6 +278,11 @@ func TestTokensToMessageFormat(t *testing.T) {
 			},
 			expectedErr: fmt.Errorf("placeholder is not closed"),
 		},
+		{
+			name:        "message with wrong format",
+			input:       []Token{},
+			expectedErr: fmt.Errorf("tokens[] is empty"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -289,9 +296,7 @@ func TestTokensToMessageFormat(t *testing.T) {
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			assert.Equal(t, tt.expected, result)
 		})

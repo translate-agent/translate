@@ -1,7 +1,7 @@
-package messageFormat
+package message
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 )
 
@@ -14,68 +14,78 @@ type Token struct {
 type tokenType int
 
 const (
-	Keyword          tokenType = iota
-	PlaceholderOpen  tokenType = iota
-	PlaceholderClose tokenType = iota
-	Literal          tokenType = iota
-	Text             tokenType = iota
+	Keyword tokenType = iota
+	PlaceholderOpen
+	PlaceholderClose
+	Literal
+	Text
 	Function
 	Variable
+)
+
+const (
+	Match  = "match"
+	Let    = "let"
+	When   = "when"
+	Dollar = '$'
+	Colon  = ':'
+	Plus   = '+'
+	Minus  = '-'
 )
 
 func Lex(str string) ([]Token, error) {
 	var (
 		tokens           []Token
 		parsedTokens     []Token
-		buf              []rune
+		runes            []rune
 		placeholderLevel int
 	)
 
 	for i, r := range str {
 		switch r {
 		case ' ':
-			if len(buf) > 0 {
-				buf = append(buf, r)
-				tokenizeBuffer(buf, &tokens, &placeholderLevel)
-				buf = []rune{}
+			if len(runes) > 0 {
+				runes = append(runes, r)
+				tokenizeBuffer(runes, &tokens, &placeholderLevel)
+				runes = []rune{}
 			} else {
-				buf = append(buf, r)
+				runes = append(runes, r)
 			}
 		case '{':
-			if len(buf) > 0 {
-				tokenizeBuffer(buf, &tokens, &placeholderLevel)
-				buf = []rune{}
+			if len(runes) > 0 {
+				tokenizeBuffer(runes, &tokens, &placeholderLevel)
+				runes = []rune{}
 			}
 
 			placeholderLevel++
 
 			tokens = append(tokens, Token{Type: PlaceholderOpen, Value: "{", Level: placeholderLevel})
 		case '}':
-			if len(buf) > 0 {
-				tokenizeBuffer(buf, &tokens, &placeholderLevel)
-				buf = []rune{}
+			if len(runes) > 0 {
+				tokenizeBuffer(runes, &tokens, &placeholderLevel)
+				runes = []rune{}
 			}
 
 			tokens = append(tokens, Token{Type: PlaceholderClose, Value: "}", Level: placeholderLevel})
 			placeholderLevel--
 		case '$', ':', '+', '-':
-			if str[i+1] == ' ' {
-				return []Token{}, fmt.Errorf("variable or function name starts with a space")
+			if i+1 < len(str) && str[i+1] == ' ' {
+				return []Token{}, errors.New("variable or function name starts with a space")
 			}
 
-			if len(buf) > 0 {
-				tokenizeBuffer(buf, &tokens, &placeholderLevel)
-				buf = []rune{}
+			if len(runes) > 0 {
+				tokenizeBuffer(runes, &tokens, &placeholderLevel)
+				runes = []rune{}
 			}
 
-			buf = append(buf, r)
+			runes = append(runes, r)
 		default:
-			buf = append(buf, r)
+			runes = append(runes, r)
 		}
 	}
 
-	if len(buf) > 0 {
-		tokenizeBuffer(buf, &tokens, &placeholderLevel)
+	if len(runes) > 0 {
+		tokenizeBuffer(runes, &tokens, &placeholderLevel)
 	}
 
 	parsedTokens = combineTextTokens(tokens, parsedTokens)
@@ -83,19 +93,19 @@ func Lex(str string) ([]Token, error) {
 	return parsedTokens, nil
 }
 
-func combineTextTokens(tokens []Token, parsedTokens []Token) []Token {
+func combineTextTokens(tokens, parsedTokens []Token) []Token {
 	txt := ""
 
-	for y := range tokens {
-		if tokens[y].Type == Text {
-			txt += tokens[y].Value
+	for i := range tokens {
+		if tokens[i].Type == Text {
+			txt += tokens[i].Value
 
-			if tokens[y+1].Type != Text {
-				parsedTokens = append(parsedTokens, Token{Type: Text, Value: txt, Level: tokens[y].Level})
+			if tokens[i+1].Type != Text {
+				parsedTokens = append(parsedTokens, Token{Type: Text, Value: txt, Level: tokens[i].Level})
 				txt = ""
 			}
 		} else {
-			parsedTokens = append(parsedTokens, tokens[y])
+			parsedTokens = append(parsedTokens, tokens[i])
 		}
 	}
 
@@ -104,19 +114,19 @@ func combineTextTokens(tokens []Token, parsedTokens []Token) []Token {
 
 func tokenizeBuffer(buf []rune, tokens *[]Token, placeholderLevel *int) {
 	switch strings.TrimSpace(string(buf)) {
-	case "match", "let", "when":
+	case Match, Let, When:
 		*tokens = append(*tokens, Token{Type: Keyword, Value: string(buf), Level: *placeholderLevel})
 	default:
 		if *placeholderLevel == 0 {
 			*tokens = append(*tokens, Token{Type: Literal, Value: string(buf), Level: *placeholderLevel})
 		} else {
 			switch buf[0] {
-			case '$', '+', '-':
+			case Dollar, Plus, Minus:
 				if *placeholderLevel > 0 {
 					str := strings.ReplaceAll(string(buf), "$", "")
 					*tokens = append(*tokens, Token{Type: Variable, Value: str, Level: *placeholderLevel})
 				}
-			case ':':
+			case Colon:
 				if *placeholderLevel > 0 {
 					str := strings.ReplaceAll(string(buf), ":", "")
 					*tokens = append(*tokens, Token{Type: Function, Value: str, Level: *placeholderLevel})
