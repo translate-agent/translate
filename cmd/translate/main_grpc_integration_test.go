@@ -124,6 +124,9 @@ func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTransl
 	t.Helper()
 
 	schema := translatev1.Schema(gofakeit.IntRange(1, 7))
+	for schema == translatev1.Schema_POT {
+		schema = translatev1.Schema(gofakeit.IntRange(1, 7))
+	}
 
 	data, lang := randUploadData(t, schema)
 
@@ -248,10 +251,15 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 }
 
 func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslationFileRequest {
+	schema := translatev1.Schema(gofakeit.IntRange(1, 7))
+	for schema == translatev1.Schema_POT {
+		schema = translatev1.Schema(gofakeit.IntRange(1, 7))
+	}
+
 	return &translatev1.DownloadTranslationFileRequest{
 		ServiceId: serviceID,
 		Language:  lang,
-		Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
+		Schema:    schema,
 	}
 }
 
