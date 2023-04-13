@@ -109,32 +109,44 @@ func Test_ServiceUploadCmd(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' missing", func(t *testing.T) {
-		file, err := os.CreateTemp(t.TempDir(), "test")
-		if !assert.NoError(t, err) {
-			return
-		}
-
-		if _, err = file.Write([]byte(`
-		{
-		  "locale": "xyz-ZY-Latn",
-		  "translations": {
-			"Hello": "Bonjour",
-			"Welcome": "Bienvenue"
-		  }
-		}`)); !assert.NoError(t, err) {
-			return
-		}
-
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
 			"-a", fmt.Sprintf("%s:%s", host, port),
 			"-i", "true",
 
 			"-l", "xyz-ZY-Latn",
-			"-p", file.Name(),
+			"-p", "test.json",
 		})
 
 		assert.ErrorContains(t, err, "required flag(s) \"schema\" not set")
+		assert.Nil(t, res)
+	})
+
+	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
+		res, err := cmd.ExecuteWithParams([]string{
+			"service", "upload",
+			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-i", "true",
+
+			"-p", "test.json",
+			"-s", fmt.Sprintf("%d", translatev1.Schema_GO),
+		})
+
+		assert.ErrorContains(t, err, "required flag(s) \"language\" not set")
+		assert.Nil(t, res)
+	})
+
+	t.Run("error, path parameter 'path' missing", func(t *testing.T) {
+		res, err := cmd.ExecuteWithParams([]string{
+			"service", "upload",
+			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-i", "true",
+
+			"-l", "xyz-ZY-Latn",
+			"-s", fmt.Sprintf("%d", translatev1.Schema_GO),
+		})
+
+		assert.ErrorContains(t, err, "required flag(s) \"path\" not set")
 		assert.Nil(t, res)
 	})
 }
