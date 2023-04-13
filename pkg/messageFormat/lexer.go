@@ -3,8 +3,6 @@ package messageFormat
 import (
 	"fmt"
 	"strings"
-
-	_ "golang.org/x/exp/slices"
 )
 
 type Token struct {
