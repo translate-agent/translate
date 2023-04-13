@@ -281,36 +281,36 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 
 	happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
 
-	invalidArgumentRequest := randDownloadRequest(service.Id, uploadRequest.Language)
-	invalidArgumentRequest.Schema = translatev1.Schema_UNSPECIFIED
+	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+	unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
 
-	notFoundIDRequest := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
+	notFoundServiceIDRequest := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
 
 	notFoundLanguageRequest := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
 
 	tests := []struct {
-		input        *translatev1.DownloadTranslationFileRequest
+		request      *translatev1.DownloadTranslationFileRequest
 		name         string
 		expectedCode codes.Code
 	}{
 		{
 			name:         "Happy path",
-			input:        happyRequest,
+			request:      happyRequest,
 			expectedCode: codes.OK,
 		},
 		{
-			name:         "Invalid argument",
-			input:        invalidArgumentRequest,
+			name:         "Invalid argument unspecified schema",
+			request:      unspecifiedSchemaRequest,
 			expectedCode: codes.InvalidArgument,
 		},
 		{
-			name:         "Not found ID",
-			input:        notFoundIDRequest,
+			name:         "Not found Service ID",
+			request:      notFoundServiceIDRequest,
 			expectedCode: codes.NotFound,
 		},
 		{
 			name:         "Not found language",
-			input:        notFoundLanguageRequest,
+			request:      notFoundLanguageRequest,
 			expectedCode: codes.NotFound,
 		},
 	}
@@ -320,7 +320,7 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.DownloadTranslationFile(ctx, tt.input)
+			_, err := client.DownloadTranslationFile(ctx, tt.request)
 
 			actualCode := status.Code(err)
 			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)

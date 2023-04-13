@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"golang.org/x/text/language"
 )
 
 // ----------------------Common types----------------------
@@ -31,6 +32,22 @@ func uuidFromProto(s string) (uuid.UUID, error) {
 	}
 
 	return id, nil
+}
+
+// langTagToProto converts language.Tag to string.
+func langTagToProto(l language.Tag) string {
+	return l.String()
+}
+
+// langTagFromProto converts string to language.Tag.
+func langTagFromProto(s string) (language.Tag, error) {
+	// if s is empty string, language.Parse returns language.Und.
+	l, err := language.Parse(s)
+	if err != nil {
+		return language.Und, fmt.Errorf("parse language tag: %w", err)
+	}
+
+	return l, nil
 }
 
 // ----------------------Service----------------------

@@ -56,7 +56,7 @@ func assertEqualTranslationFile(t *testing.T, expected, actual *model.Translatio
 
 	require.Equal(t, expected.ID, actual.ID)
 	require.Equal(t, expected.Messages.Language, actual.Messages.Language)
-	require.ElementsMatch(t, expected.Messages.Messages, actual.Messages.Messages)
+	assert.ElementsMatch(t, expected.Messages.Messages, actual.Messages.Messages)
 }
 
 func Test_SaveTranslationFile(t *testing.T) {
@@ -94,7 +94,7 @@ func Test_SaveTranslationFile(t *testing.T) {
 			expectedErr:     nil,
 		},
 		{
-			name:            "Error missing service",
+			name:            "Missing service",
 			serviceID:       uuid.New(),
 			translationFile: missingServiceTranslationFile,
 			expectedErr:     repo.ErrNotFound,

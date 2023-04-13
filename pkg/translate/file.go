@@ -40,23 +40,19 @@ func (u *uploadTranslationFileRequest) parseParams() (uploadParams, error) {
 		err    error
 	)
 
-	params.languageTag, err = language.Parse(u.Language)
+	params.languageTag, err = langTagFromProto(u.Language)
 	if err != nil {
 		return uploadParams{}, fmt.Errorf("parse language: %w", err)
 	}
 
-	params.serviceID, err = uuid.Parse(u.ServiceId)
+	params.serviceID, err = uuidFromProto(u.ServiceId)
 	if err != nil {
-		return uploadParams{}, fmt.Errorf("parse service uuid: %w", err)
+		return uploadParams{}, fmt.Errorf("parse service id: %w", err)
 	}
 
-	if u.TranslationFileId == "" {
-		return params, nil
-	}
-
-	params.translationFileID, err = uuid.Parse(u.TranslationFileId)
+	params.translationFileID, err = uuidFromProto(u.TranslationFileId)
 	if err != nil {
-		return uploadParams{}, fmt.Errorf("parse translate file uuid: %w", err)
+		return uploadParams{}, fmt.Errorf("parse translation file id: %w", err)
 	}
 
 	return params, nil
@@ -132,12 +128,12 @@ func (d *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
 		err    error
 	)
 
-	params.serviceID, err = uuid.Parse(d.ServiceId)
+	params.serviceID, err = uuidFromProto(d.ServiceId)
 	if err != nil {
-		return downloadParams{}, fmt.Errorf("parse service uuid: %w", err)
+		return downloadParams{}, fmt.Errorf("parse service id: %w", err)
 	}
 
-	params.languageTag, err = language.Parse(d.Language)
+	params.languageTag, err = langTagFromProto(d.Language)
 	if err != nil {
 		return downloadParams{}, fmt.Errorf("parse language: %w", err)
 	}

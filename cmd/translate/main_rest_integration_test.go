@@ -96,8 +96,8 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 
 	happyRequest := randUploadRequest(t, service.Id)
 
-	invalidArgumentRequest := randUploadRequest(t, service.Id)
-	invalidArgumentRequest.Language = ""
+	missingLanguageRequest := randUploadRequest(t, service.Id)
+	missingLanguageRequest.Language = ""
 
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
@@ -112,8 +112,8 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "Invalid argument missing language",
-			request:      gRPCUploadFileToRESTReq(ctx, t, invalidArgumentRequest),
+			name:         "Bad request missing language",
+			request:      gRPCUploadFileToRESTReq(ctx, t, missingLanguageRequest),
 			expectedCode: http.StatusBadRequest,
 		},
 		{
@@ -131,10 +131,12 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			require.NoError(t, err, "do request")
 
 			defer resp.Body.Close()
+
+			// Read the response to give error message on failure
 			respBody, _ := ioutil.ReadAll(resp.Body)
 
 			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", respBody)
+			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", string(respBody))
 		})
 	}
 }
@@ -162,7 +164,7 @@ func Test_UploadTranslationFileDifferentLanguages_REST(t *testing.T) {
 		actualCode := resp.StatusCode
 		expectedCode := http.StatusOK
 
-		require.Equal(t, int(expectedCode), actualCode, "body: %s", respBody)
+		require.Equal(t, int(expectedCode), actualCode, "body: %s", string(respBody))
 	}
 }
 
@@ -195,7 +197,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	actualCode := resp.StatusCode
 	expectedCode := http.StatusOK
 
-	assert.Equal(t, int(expectedCode), actualCode, "body: %s", respBody)
+	assert.Equal(t, int(expectedCode), actualCode, "body: %s", string(respBody))
 }
 
 func Test_DownloadTranslationFile_REST(t *testing.T) {
@@ -216,10 +218,10 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 
 	happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
 
-	invalidArgumentRequest := randDownloadRequest(service.Id, uploadRequest.Language)
-	invalidArgumentRequest.Schema = translatev1.Schema_UNSPECIFIED
+	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+	unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
 
-	notFoundIDRequest := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
+	notFoundServiceIDRequest := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
 
 	notFoundLanguageRequest := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
 
@@ -234,13 +236,13 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "Invalid argument unspecified schema",
-			request:      gRPCDownloadFileToRESTReq(ctx, t, invalidArgumentRequest),
+			name:         "Bad request unspecified schema",
+			request:      gRPCDownloadFileToRESTReq(ctx, t, unspecifiedSchemaRequest),
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name:         "Not found ID",
-			request:      gRPCDownloadFileToRESTReq(ctx, t, notFoundIDRequest),
+			name:         "Not found Service ID",
+			request:      gRPCDownloadFileToRESTReq(ctx, t, notFoundServiceIDRequest),
 			expectedCode: http.StatusNotFound,
 		},
 		{
@@ -261,7 +263,7 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			respBody, _ := ioutil.ReadAll(resp.Body)
 
 			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", respBody)
+			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", string(respBody))
 		})
 	}
 }
