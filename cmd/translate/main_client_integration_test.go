@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/cmd/client/cmd"
-	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
 func Test_ServiceLsCmd(t *testing.T) {
@@ -63,7 +62,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 
 			"-l", "lv-lv",
 			"-p", file.Name(),
-			"-s", fmt.Sprintf("%d", translatev1.Schema_GO),
+			"-s", "ng_localise",
 		})
 
 		require.NoError(t, err)
@@ -93,10 +92,25 @@ func Test_ServiceUploadCmd(t *testing.T) {
 
 			"-l", "xyz-ZY-Latn",
 			"-p", file.Name(),
-			"-s", fmt.Sprintf("%d", translatev1.Schema_GO),
+			"-s", "ng_localise",
 		})
 
 		assert.ErrorContains(t, err, "well-formed but unknown")
+		assert.Nil(t, res)
+	})
+
+	t.Run("error, path parameter 'schema' unrecognized", func(t *testing.T) {
+		res, err := cmd.ExecuteWithParams([]string{
+			"service", "upload",
+			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-i", "true",
+
+			"-l", "xyz-ZY-Latn",
+			"-p", "test.json",
+			"-s", "unrecognized",
+		})
+
+		assert.ErrorContains(t, err, "flag: must be one of \"ng_localise\", \"ngx_translate\", \"go\", \"arb")
 		assert.Nil(t, res)
 	})
 
@@ -121,7 +135,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-i", "true",
 
 			"-p", "test.json",
-			"-s", fmt.Sprintf("%d", translatev1.Schema_GO),
+			"-s", "ng_localise",
 		})
 
 		assert.ErrorContains(t, err, "required flag(s) \"language\" not set")
@@ -135,7 +149,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-i", "true",
 
 			"-l", "xyz-ZY-Latn",
-			"-s", fmt.Sprintf("%d", translatev1.Schema_GO),
+			"-s", "ng_localise",
 		})
 
 		assert.ErrorContains(t, err, "required flag(s) \"path\" not set")

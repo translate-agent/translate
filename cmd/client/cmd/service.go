@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -91,6 +93,8 @@ func newLsCmd() *cobra.Command {
 }
 
 func newUploadCmd() *cobra.Command {
+	var schemaFlag schema
+
 	uploadCmd := &cobra.Command{
 		Use:   "upload",
 		Short: "Upload file to translate agent service",
@@ -118,18 +122,18 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: retrieve cli parameter 'path': %w", err)
 			}
 
-			schema, err := cmd.Flags().GetInt("schema")
-			if err != nil {
-				return fmt.Errorf("upload file: retrieve cli parameter 'schema': %w", err)
-			}
-
 			data, err := os.ReadFile(filePath)
 			if err != nil {
 				return fmt.Errorf("upload file: read file from path: %w", err)
 			}
 
+			translateSchema, err := schemaFlag.ToTranslateSchema()
+			if err != nil {
+				return fmt.Errorf("upload file: schema to translate schema: %w", err)
+			}
+
 			_, err = translatev1.NewTranslateServiceClient(client).UploadTranslationFile(ctx,
-				&translatev1.UploadTranslationFileRequest{Language: language, Data: data, Schema: translatev1.Schema(schema)})
+				&translatev1.UploadTranslationFileRequest{Language: language, Data: data, Schema: translateSchema})
 			if err != nil {
 				return fmt.Errorf("upload file: send GRPC request: %w", err)
 			}
@@ -145,7 +149,7 @@ func newUploadCmd() *cobra.Command {
 	uploadFlags := uploadCmd.Flags()
 	uploadFlags.StringP("path", "p", "", "file path")
 	uploadFlags.StringP("language", "l", "", "translation language")
-	uploadFlags.IntP("schema", "s", 0, "schema: 1 for NG_LOCALISE, 2 - NGX_TRANSLATE, 3 - GO, 4 - ARB")
+	uploadFlags.VarP(&schemaFlag, "schema", "s", `translate schema, allowed: 'ng_localise', 'ngx_translate', 'go', 'arb'`)
 
 	if err := uploadCmd.MarkFlagRequired("path"); err != nil {
 		log.Panicf("upload file cmd: set field 'path' as required: %v", err)
@@ -189,4 +193,35 @@ func newClientConn(ctx context.Context, cmd *cobra.Command) (*grpc.ClientConn, e
 
 	// Wait for the server to start and establish a connection.
 	return grpc.DialContext(ctx, address, opts...) //nolint:wrapcheck
+}
+
+type schema string
+
+// String is used both by fmt.Print and by Cobra in help text.
+func (s *schema) String() string {
+	return string(*s)
+}
+
+// Set must have pointer receiver so it doesn't change the value of a copy.
+func (s *schema) Set(v string) error {
+	switch v {
+	case "ng_localise", "ngx_translate", "go", "arb":
+		*s = schema(v)
+		return nil
+	default:
+		return errors.New(`must be one of "ng_localise", "ngx_translate", "go", "arb"`)
+	}
+}
+
+// Type is only used in help text.
+func (s *schema) Type() string {
+	return "schema"
+}
+
+func (s schema) ToTranslateSchema() (translatev1.Schema, error) {
+	if schemaNum, ok := translatev1.Schema_value[strings.ToUpper(s.String())]; ok {
+		return translatev1.Schema(schemaNum), nil
+	}
+
+	return translatev1.Schema_UNSPECIFIED, errors.New("schema doesn't match translate schema patterns")
 }
