@@ -4,7 +4,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -75,7 +74,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			return
 		}
 
-		assert.Contains(t, string(res), filepath.Base(file.Name())+" uploaded successfully")
+		assert.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
 	t.Run("error, malformed language tag", func(t *testing.T) {
