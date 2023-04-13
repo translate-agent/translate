@@ -38,11 +38,9 @@ func Test_ServiceLsCmd(t *testing.T) {
 func Test_ServiceUploadCmd(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 
-		if _, err = file.Write([]byte(`
+		_, err = file.Write([]byte(`
 		{
 			"language":"lv-lv",
 			"messages":[
@@ -54,9 +52,9 @@ func Test_ServiceUploadCmd(t *testing.T) {
 					"fuzzy":false
 				 }
 			]
-	 }`)); !assert.NoError(t, err) {
-			return
-		}
+	 }`))
+
+		require.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
@@ -68,29 +66,25 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-s", fmt.Sprintf("%d", translatev1.Schema_GO),
 		})
 
-		if !assert.NoError(t, err) {
-			return
-		}
-
+		require.NoError(t, err)
 		assert.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
 	t.Run("error, malformed language tag", func(t *testing.T) {
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		if !assert.NoError(t, err) {
-			return
-		}
 
-		if _, err = file.Write([]byte(`
+		require.NoError(t, err)
+
+		_, err = file.Write([]byte(`
 		{
 		  "locale": "xyz-ZY-Latn",
 		  "translations": {
 			"Hello": "Bonjour",
 			"Welcome": "Bienvenue"
 		  }
-		}`)); !assert.NoError(t, err) {
-			return
-		}
+		}`))
+
+		require.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
