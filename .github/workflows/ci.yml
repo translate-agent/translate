@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: earthly/actions-setup@v1
         with:
-          version: $EARTHLY_VERSION
+          version: ${{ env.EARTHLY_VERSION }}
           use-cache: true
       - uses: actions/checkout@v3
       - name: Proto
@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: earthly/actions-setup@v1
         with:
-          version: $EARTHLY_VERSION
+          version: ${{ env.EARTHLY_VERSION }}
           use-cache: true
       - uses: actions/checkout@v3
       - name: Unit
