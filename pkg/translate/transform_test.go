@@ -48,7 +48,7 @@ func Test_TransformLangTag(t *testing.T) {
 
 	conf := &quick.Config{
 		MaxCount: 1000,
-		Values: func(values []reflect.Value, rand *rand.Rand) {
+		Values: func(values []reflect.Value, _ *rand.Rand) {
 			values[0] = reflect.ValueOf(language.MustParse(gofakeit.LanguageBCP()))
 		},
 	}
