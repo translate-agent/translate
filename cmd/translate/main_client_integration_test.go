@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/cmd/client/cmd"
 )
 
@@ -17,10 +18,7 @@ func Test_ServiceLs(t *testing.T) {
 			"-i", "true",
 		})
 
-		if !assert.NoError(t, err) {
-			return
-		}
-
+		require.NoError(t, err)
 		assert.Contains(t, string(res), "TOTAL")
 	})
 
