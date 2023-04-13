@@ -69,6 +69,14 @@ func (u *uploadParams) validate() error {
 		return fmt.Errorf("'schema' is required")
 	}
 
+	if u.serviceID == uuid.Nil {
+		return fmt.Errorf("'service_id' is required")
+	}
+
+	if u.languageTag == language.Und {
+		return fmt.Errorf("'language' is required")
+	}
+
 	return nil
 }
 
@@ -145,6 +153,14 @@ func (d *downloadParams) validate() error {
 	// Enforce that schema is present. (Temporal solution)
 	if d.schema == translatev1.Schema_UNSPECIFIED {
 		return fmt.Errorf("'schema' is required")
+	}
+
+	if d.serviceID == uuid.Nil {
+		return fmt.Errorf("'service_id' is required")
+	}
+
+	if d.languageTag == language.Und {
+		return fmt.Errorf("'language' is required")
 	}
 
 	return nil
