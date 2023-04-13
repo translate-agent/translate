@@ -17,7 +17,7 @@ func MessagesFromData(schema translatev1.Schema, data []byte) (model.Messages, e
 		from = convert.FromArb
 	case translatev1.Schema_GO:
 		from = convert.FromGo
-	case translatev1.Schema_JSON_NG_LOCALISE:
+	case translatev1.Schema_JSON_NG_LOCALIZE:
 		from = convert.FromNgLocalize
 	case translatev1.Schema_JSON_NGX_TRANSLATE:
 		from = convert.FromNgxTranslate
@@ -43,7 +43,7 @@ func MessagesToData(schema translatev1.Schema, messages model.Messages) ([]byte,
 		to = convert.ToArb
 	case translatev1.Schema_GO:
 		to = convert.ToGo
-	case translatev1.Schema_JSON_NG_LOCALISE:
+	case translatev1.Schema_JSON_NG_LOCALIZE:
 		to = convert.ToNgLocalize
 	case translatev1.Schema_JSON_NGX_TRANSLATE:
 		to = convert.ToNgxTranslate
