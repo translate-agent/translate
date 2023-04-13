@@ -287,6 +287,10 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	notFoundServiceIDRequest := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
 
 	notFoundLanguageRequest := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
+	// Ensure that the language is not the same as the uploaded one.
+	for notFoundLanguageRequest.Language == uploadRequest.Language {
+		notFoundLanguageRequest.Language = gofakeit.LanguageBCP()
+	}
 
 	tests := []struct {
 		request      *translatev1.DownloadTranslationFileRequest
