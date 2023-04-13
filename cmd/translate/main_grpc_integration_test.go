@@ -15,13 +15,14 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 var (
@@ -219,73 +220,105 @@ func randService() *translatev1.Service {
 func Test_CreateService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	service := randService()
+	serviceWithID := randService()
 
-	_, err := client.CreateService(context.Background(), &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
+	serviceWithoutID := randService()
+	serviceWithoutID.Id = ""
+
+	serviceMalformedID := randService()
+	serviceMalformedID.Id += "_FAIL"
+
+	tests := []struct {
+		request      *translatev1.CreateServiceRequest
+		name         string
+		expectedCode codes.Code
+	}{
+		{
+			name:         "Happy path With ID",
+			request:      &translatev1.CreateServiceRequest{Service: serviceWithID},
+			expectedCode: codes.OK,
+		},
+		{
+			name:         "Happy path Without ID",
+			request:      &translatev1.CreateServiceRequest{Service: serviceWithoutID},
+			expectedCode: codes.OK,
+		},
+		{
+			name:         "Invalid argument malformed ID",
+			request:      &translatev1.CreateServiceRequest{Service: serviceMalformedID},
+			expectedCode: codes.InvalidArgument,
+		},
 	}
 
-	actual := status.Code(err)
-	expected := codes.OK
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	assert.Equal(t, expected, actual, "want codes.%s got codes.%s", expected, actual)
+			_, err := client.CreateService(context.Background(), tt.request)
+
+			actualCode := status.Code(err)
+
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+		})
+	}
 }
 
-func Test_UpdateServiceAllFields_gRPC(t *testing.T) {
+func Test_UpdateService_gRPC(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
-	service := randService()
-
-	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
+	test := []struct {
+		request      *translatev1.UpdateServiceRequest
+		name         string
+		expectedCode codes.Code
+	}{
+		{
+			name:         "Happy path all fields",
+			expectedCode: codes.OK,
+			request: &translatev1.UpdateServiceRequest{
+				Service:    randService(),
+				UpdateMask: nil,
+			},
+		},
+		{
+			name:         "Happy path one field",
+			expectedCode: codes.OK,
+			request: &translatev1.UpdateServiceRequest{
+				Service: randService(),
+				UpdateMask: &field_mask.FieldMask{
+					Paths: []string{"name"},
+				},
+			},
+		},
+		{
+			name:         "Invalid field in update mask",
+			expectedCode: codes.InvalidArgument,
+			request: &translatev1.UpdateServiceRequest{
+				Service: randService(),
+				UpdateMask: &field_mask.FieldMask{
+					Paths: []string{"invalid_field"},
+				},
+			},
+		},
 	}
 
-	service.Name = gofakeit.FirstName()
+	for _, tt := range test {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	_, err = client.UpdateService(ctx, &translatev1.UpdateServiceRequest{
-		Service:    service,
-		UpdateMask: nil,
-	})
-	if !assert.NoError(t, err) {
-		return
+			_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: tt.request.Service})
+			require.NoError(t, err, "Prepare test service")
+
+			_, err = client.UpdateService(ctx, tt.request)
+
+			actualCode := status.Code(err)
+
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+		})
 	}
-
-	actual := status.Code(err)
-	expected := codes.OK
-
-	assert.Equal(t, expected, actual, "want codes.%s got codes.%s", expected, actual)
-}
-
-func Test_UpdateServiceSpecificField_gRPC(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-
-	service := randService()
-
-	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
-
-	service.Name = gofakeit.FirstName()
-
-	_, err = client.UpdateService(ctx, &translatev1.UpdateServiceRequest{
-		Service:    service,
-		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"name"}},
-	})
-	if !assert.NoError(t, err) {
-		return
-	}
-
-	actual := status.Code(err)
-	expected := codes.OK
-
-	assert.Equal(t, expected, actual, "want codes.%s got codes.%s", expected, actual)
 }
 
 func Test_GetService_gRPC(t *testing.T) {
@@ -296,24 +329,22 @@ func Test_GetService_gRPC(t *testing.T) {
 	service := randService()
 
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
+	require.NoError(t, err, "Prepare test service")
 
 	tests := []struct {
-		input    *translatev1.GetServiceRequest
-		name     string
-		expected codes.Code
+		request      *translatev1.GetServiceRequest
+		name         string
+		expectedCode codes.Code
 	}{
 		{
-			input:    &translatev1.GetServiceRequest{Id: service.Id},
-			name:     "Happy Path",
-			expected: codes.OK,
+			name:         "Happy Path",
+			request:      &translatev1.GetServiceRequest{Id: service.Id},
+			expectedCode: codes.OK,
 		},
 		{
-			input:    &translatev1.GetServiceRequest{Id: gofakeit.UUID()},
-			name:     "Not found",
-			expected: codes.NotFound,
+			name:         "Not found",
+			request:      &translatev1.GetServiceRequest{Id: gofakeit.UUID()},
+			expectedCode: codes.NotFound,
 		},
 	}
 
@@ -322,10 +353,10 @@ func Test_GetService_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.GetService(ctx, tt.input)
+			_, err := client.GetService(ctx, tt.request)
 
-			actual := status.Code(err)
-			assert.Equal(t, tt.expected, actual, "want codes.%s got codes.%s", tt.expected, actual)
+			actualCode := status.Code(err)
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
 		})
 	}
 }
@@ -338,24 +369,22 @@ func Test_DeleteService_gRPC(t *testing.T) {
 	service := randService()
 
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
+	require.NoError(t, err, "Prepare test service")
 
 	tests := []struct {
-		input    *translatev1.DeleteServiceRequest
-		name     string
-		expected codes.Code
+		request      *translatev1.DeleteServiceRequest
+		name         string
+		expectedCode codes.Code
 	}{
 		{
-			input:    &translatev1.DeleteServiceRequest{Id: service.Id},
-			name:     "Happy Path",
-			expected: codes.OK,
+			request:      &translatev1.DeleteServiceRequest{Id: service.Id},
+			name:         "Happy Path",
+			expectedCode: codes.OK,
 		},
 		{
-			input:    &translatev1.DeleteServiceRequest{Id: gofakeit.UUID()},
-			name:     "Not found",
-			expected: codes.NotFound,
+			request:      &translatev1.DeleteServiceRequest{Id: gofakeit.UUID()},
+			name:         "Not found",
+			expectedCode: codes.NotFound,
 		},
 	}
 
@@ -364,10 +393,10 @@ func Test_DeleteService_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.DeleteService(ctx, tt.input)
+			_, err := client.DeleteService(ctx, tt.request)
 
-			actual := status.Code(err)
-			assert.Equal(t, tt.expected, actual, "want codes.%s got codes.%s", tt.expected, actual)
+			actualCode := status.Code(err)
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
 		})
 	}
 }
@@ -377,8 +406,8 @@ func Test_ListServices_gRPC(t *testing.T) {
 
 	_, err := client.ListServices(context.Background(), &translatev1.ListServicesRequest{})
 
-	expected := codes.OK
-	actual := status.Code(err)
+	expectedCode := codes.OK
+	actualCode := status.Code(err)
 
-	assert.Equal(t, expected, actual, "want codes.%s got codes.%s", expected, actual)
+	assert.Equal(t, expectedCode, actualCode, "want codes.%s got codes.%s", expectedCode, actualCode)
 }
