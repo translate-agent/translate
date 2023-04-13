@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -94,7 +93,7 @@ func newLsCmd() *cobra.Command {
 func newUploadCmd() *cobra.Command {
 	uploadCmd := &cobra.Command{
 		Use:   "upload",
-		Short: "Upload file to translate service",
+		Short: "Upload file to translate agent service",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			timeout, err := cmd.InheritedFlags().GetDuration("timeout")
 			if err != nil {
@@ -135,7 +134,7 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: send GRPC request: %w", err)
 			}
 
-			if _, err = fmt.Fprintf(cmd.OutOrStdout(), "%s uploaded successfully", filepath.Base(filePath)); err != nil {
+			if _, err = fmt.Fprintln(cmd.OutOrStdout(), "File uploaded successfully."); err != nil {
 				return fmt.Errorf("upload file: output response to stdout: %w", err)
 			}
 
