@@ -3,6 +3,9 @@ name: CI
 on:
   push:
 
+env:
+  EARTHLY_VERSION: 0.7.4
+
 jobs:
   lint:
     name: lint
@@ -10,7 +13,7 @@ jobs:
     steps:
       - uses: earthly/actions-setup@v1
         with:
-          version: 0.7.2
+          version: ${{ env.EARTHLY_VERSION }}
           use-cache: true
       - uses: actions/checkout@v3
       - name: Proto
@@ -25,7 +28,7 @@ jobs:
     steps:
       - uses: earthly/actions-setup@v1
         with:
-          version: 0.7.2
+          version: ${{ env.EARTHLY_VERSION }}
           use-cache: true
       - uses: actions/checkout@v3
       - name: Unit
