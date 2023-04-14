@@ -176,7 +176,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 		assert.Nil(t, res)
 	})
 
-	t.Run("error, path parameter 'uuid' missing", func(t *testing.T) {
+	t.Run("error, path parameter 'serviceUUID' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
 			"-a", fmt.Sprintf("%s:%s", host, port),
@@ -269,7 +269,7 @@ func Test_DownloadCmd(t *testing.T) {
 		assert.Nil(t, res)
 	})
 
-	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
+	t.Run("error, path parameter 'schema' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "download",
 			"-a", fmt.Sprintf("%s:%s", host, port),
@@ -284,7 +284,7 @@ func Test_DownloadCmd(t *testing.T) {
 		assert.Nil(t, res)
 	})
 
-	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
+	t.Run("error, path parameter 'serviceUUID' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "download",
 			"-a", fmt.Sprintf("%s:%s", host, port),
@@ -299,7 +299,7 @@ func Test_DownloadCmd(t *testing.T) {
 		assert.Nil(t, res)
 	})
 
-	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
+	t.Run("error, path parameter 'path' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "download",
 			"-a", fmt.Sprintf("%s:%s", host, port),
