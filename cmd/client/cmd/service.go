@@ -124,6 +124,11 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: get cli parameter 'file': %w", err)
 			}
 
+			fileID, err := cmd.Flags().GetString("fileUUID")
+			if err != nil {
+				return fmt.Errorf("upload file: get cli parameter 'fileUUID': %w", err)
+			}
+
 			data, err := os.ReadFile(filePath)
 			if err != nil {
 				return fmt.Errorf("upload file: read file from path: %w", err)
@@ -136,7 +141,7 @@ func newUploadCmd() *cobra.Command {
 
 			if _, err = translatev1.NewTranslateServiceClient(client).UploadTranslationFile(ctx,
 				&translatev1.UploadTranslationFileRequest{
-					Language: language, Data: data, Schema: translateSchema, ServiceId: serviceID,
+					Language: language, Data: data, Schema: translateSchema, ServiceId: serviceID, TranslationFileId: fileID,
 				}); err != nil {
 				return fmt.Errorf("upload file: send GRPC request: %w", err)
 			}
@@ -152,6 +157,7 @@ func newUploadCmd() *cobra.Command {
 	uploadFlags := uploadCmd.Flags()
 	uploadFlags.StringP("uuid", "u", "", "service UUID")
 	uploadFlags.StringP("file", "f", "", "file path")
+	uploadFlags.StringP("fileUUID", "p", "", "translation file UUID")
 	uploadFlags.StringP("language", "l", "", "translation language")
 	uploadFlags.VarP(&schemaFlag, "schema", "s",
 		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)

@@ -73,6 +73,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-f", file.Name(),
 			"-s", "json_ng_localize",
 			"-u", service.Id,
+			"-p", gofakeit.UUID(),
 		})
 
 		require.NoError(t, err)
