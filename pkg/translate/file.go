@@ -30,9 +30,9 @@ type uploadParams struct {
 	translationFileID uuid.UUID
 }
 
-func (u *uploadTranslationFileRequest) parseParams() (uploadParams, error) {
+func (u *uploadTranslationFileRequest) parseParams() (*uploadParams, error) {
 	if u == nil {
-		return uploadParams{}, errors.New("request is nil")
+		return nil, errors.New("request is nil")
 	}
 
 	var (
@@ -42,20 +42,20 @@ func (u *uploadTranslationFileRequest) parseParams() (uploadParams, error) {
 
 	params.languageTag, err = langTagFromProto(u.Language)
 	if err != nil {
-		return uploadParams{}, fmt.Errorf("parse language: %w", err)
+		return nil, fmt.Errorf("parse language: %w", err)
 	}
 
 	params.serviceID, err = uuidFromProto(u.ServiceId)
 	if err != nil {
-		return uploadParams{}, fmt.Errorf("parse service id: %w", err)
+		return nil, fmt.Errorf("parse service id: %w", err)
 	}
 
 	params.translationFileID, err = uuidFromProto(u.TranslationFileId)
 	if err != nil {
-		return uploadParams{}, fmt.Errorf("parse translation file id: %w", err)
+		return nil, fmt.Errorf("parse translation file id: %w", err)
 	}
 
-	return params, nil
+	return &params, nil
 }
 
 // Validates request parameters for UploadTranslationFile.
@@ -126,9 +126,9 @@ type downloadParams struct {
 	serviceID   uuid.UUID
 }
 
-func (d *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
+func (d *downloadTranslationFileRequest) parseParams() (*downloadParams, error) {
 	if d == nil {
-		return downloadParams{}, errors.New("request is nil")
+		return nil, errors.New("request is nil")
 	}
 
 	var (
@@ -138,15 +138,15 @@ func (d *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
 
 	params.serviceID, err = uuidFromProto(d.ServiceId)
 	if err != nil {
-		return downloadParams{}, fmt.Errorf("parse service id: %w", err)
+		return nil, fmt.Errorf("parse service id: %w", err)
 	}
 
 	params.languageTag, err = langTagFromProto(d.Language)
 	if err != nil {
-		return downloadParams{}, fmt.Errorf("parse language: %w", err)
+		return nil, fmt.Errorf("parse language: %w", err)
 	}
 
-	return params, nil
+	return &params, nil
 }
 
 func (d *downloadParams) validate() error {
