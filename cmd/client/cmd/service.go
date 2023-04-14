@@ -51,7 +51,7 @@ func newLsCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			timeout, err := cmd.InheritedFlags().GetDuration("timeout")
 			if err != nil {
-				return fmt.Errorf("list services: retrieve cli parameter 'timeout': %w", err)
+				return fmt.Errorf("list services: get cli parameter 'timeout': %w", err)
 			}
 
 			ctx, cancelFunc := context.WithTimeout(context.Background(), timeout)
@@ -69,14 +69,12 @@ func newLsCmd() *cobra.Command {
 
 			headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 			columnFmt := color.New(color.FgYellow).SprintfFunc()
-			tbl := table.New("#", "ID", "Name")
+			tbl := table.New("ID", "Name")
 			tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
-			for i, v := range resp.Services {
-				tbl.AddRow(i+1, v.Id, v.Name)
+			for _, v := range resp.Services {
+				tbl.AddRow(v.Id, v.Name)
 			}
-
-			tbl.AddRow("", "TOTAL", len(resp.Services))
 
 			tbl.WithWriter(cmd.OutOrStdout())
 			tbl.Print()
@@ -97,12 +95,12 @@ func newClientConn(ctx context.Context, cmd *cobra.Command) (*grpc.ClientConn, e
 
 	address, err := cmd.InheritedFlags().GetString("address")
 	if err != nil {
-		return nil, fmt.Errorf("retrieve cli parameter 'address': %w", err)
+		return nil, fmt.Errorf("get cli parameter 'address': %w", err)
 	}
 
 	connIsInsecure, err := cmd.InheritedFlags().GetBool("insecure")
 	if err != nil {
-		return nil, fmt.Errorf("retrieve cli parameter 'insecure': %w", err)
+		return nil, fmt.Errorf("get cli parameter 'insecure': %w", err)
 	}
 
 	if connIsInsecure {
