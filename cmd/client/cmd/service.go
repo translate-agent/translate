@@ -185,6 +185,81 @@ func newUploadCmd() *cobra.Command {
 	return uploadCmd
 }
 
+func newDownloadCmd() *cobra.Command {
+	var schemaFlag schema
+
+	downloadCmd := &cobra.Command{
+		Use:   "download",
+		Short: "Download file from translate agent service",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			timeout, err := cmd.InheritedFlags().GetDuration("timeout")
+			if err != nil {
+				return fmt.Errorf("download file: get cli parameter 'timeout': %w", err)
+			}
+
+			ctx, cancelFunc := context.WithTimeout(context.Background(), timeout)
+			defer cancelFunc()
+
+			client, err := newClientConn(ctx, cmd)
+			if err != nil {
+				return fmt.Errorf("download file: new GRPC client connection: %w", err)
+			}
+
+			serviceID, err := cmd.Flags().GetString("uuid")
+			if err != nil {
+				return fmt.Errorf("upload file: get cli parameter 'uuid': %w", err)
+			}
+
+			language, err := cmd.Flags().GetString("language")
+			if err != nil {
+				return fmt.Errorf("download file: get cli parameter 'language': %w", err)
+			}
+
+			translateSchema, err := schemaFlag.ToTranslateSchema()
+			if err != nil {
+				return fmt.Errorf("download file: schema to translate schema: %w", err)
+			}
+
+			_, err = translatev1.NewTranslateServiceClient(client).DownloadTranslationFile(ctx,
+				&translatev1.DownloadTranslationFileRequest{
+					Language: language, Schema: translateSchema, ServiceId: serviceID,
+				})
+			if err != nil {
+				return fmt.Errorf("download file: send GRPC request: %w", err)
+			}
+
+			if _, err = fmt.Fprintln(cmd.OutOrStdout(), "File download successful."); err != nil {
+				return fmt.Errorf("download file: output response to stdout: %w", err)
+			}
+
+			return nil
+		},
+	}
+
+	downloadFlags := downloadCmd.Flags()
+	downloadFlags.StringP("file", "f", "", "file path")
+	downloadFlags.StringP("language", "l", "", "translation language")
+	downloadFlags.VarP(&schemaFlag, "schema", "s", `translate schema, allowed: 'ng_localise', 'ngx_translate', 'go', 'arb'`)
+
+	if err := downloadCmd.MarkFlagRequired("file"); err != nil {
+		log.Panicf("upload file cmd: set field 'file' as required: %v", err)
+	}
+
+	if err := downloadCmd.MarkFlagRequired("language"); err != nil {
+		log.Panicf("upload file cmd: set field 'language' as required: %v", err)
+	}
+
+	if err := downloadCmd.MarkFlagRequired("schema"); err != nil {
+		log.Panicf("upload file cmd: set field 'schema' as required: %v", err)
+	}
+
+	if err := viper.BindPFlags(downloadFlags); err != nil {
+		log.Panicf("upload file cmd: bind flags: %v", err)
+	}
+
+	return downloadCmd
+}
+
 // helpers
 
 func newClientConn(ctx context.Context, cmd *cobra.Command) (*grpc.ClientConn, error) {
