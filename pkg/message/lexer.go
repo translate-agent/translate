@@ -99,7 +99,7 @@ func Lex(str string) ([]Token, error) {
 	return parsedTokens, nil
 }
 
-// Combining Text tokens into one sentence.
+// combineTextTokens combining Text tokens into one sentence.
 func combineTextTokens(tokens, parsedTokens []Token) ([]Token, error) {
 	var txt strings.Builder
 
@@ -122,7 +122,7 @@ func combineTextTokens(tokens, parsedTokens []Token) ([]Token, error) {
 	return parsedTokens, nil
 }
 
-// Breaks the input text into tokens that can be processed separately.
+// createTokensFromBuffer breaks the input text into tokens that can be processed separately.
 func createTokensFromBuffer(buffer []rune, placeholderLevel int) []Token {
 	var newTokens []Token
 
