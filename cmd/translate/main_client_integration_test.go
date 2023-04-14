@@ -2,13 +2,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/cmd/client/cmd"
+	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
 func Test_ServiceLsCmd(t *testing.T) {
@@ -36,6 +39,12 @@ func Test_ServiceLsCmd(t *testing.T) {
 
 func Test_ServiceUploadCmd(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
+		service, err := client.CreateService(context.Background(),
+			&translatev1.CreateServiceRequest{Service: randService()})
+
+		require.NoError(t, err)
+		require.NotNil(t, service)
+
 		file, err := os.CreateTemp(t.TempDir(), "test")
 		require.NoError(t, err)
 
@@ -62,7 +71,8 @@ func Test_ServiceUploadCmd(t *testing.T) {
 
 			"-l", "lv-lv",
 			"-f", file.Name(),
-			"-s", "ng_localise",
+			"-s", "json_ng_localize",
+			"-u", service.Id,
 		})
 
 		require.NoError(t, err)
@@ -92,7 +102,8 @@ func Test_ServiceUploadCmd(t *testing.T) {
 
 			"-l", "xyz-ZY-Latn",
 			"-f", file.Name(),
-			"-s", "ng_localise",
+			"-s", "json_ng_localize",
+			"-u", gofakeit.UUID(),
 		})
 
 		assert.ErrorContains(t, err, "well-formed but unknown")
@@ -108,9 +119,11 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-l", "xyz-ZY-Latn",
 			"-f", "test.json",
 			"-s", "unrecognized",
+			"-u", gofakeit.UUID(),
 		})
 
-		assert.ErrorContains(t, err, "flag: must be one of \"ng_localise\", \"ngx_translate\", \"go\", \"arb")
+		assert.ErrorContains(t, err,
+			"must be one of \"json_ng_localize\", \"json_ngx_translate\", \"go\", \"arb\", \"pot\", \"xliff_12\", \"xliff_2\"")
 		assert.Nil(t, res)
 	})
 
@@ -122,6 +135,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 
 			"-l", "xyz-ZY-Latn",
 			"-f", "test.json",
+			"-u", gofakeit.UUID(),
 		})
 
 		assert.ErrorContains(t, err, "required flag(s) \"schema\" not set")
@@ -135,7 +149,8 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-i", "true",
 
 			"-f", "test.json",
-			"-s", "ng_localise",
+			"-s", "json_ng_localize",
+			"-u", gofakeit.UUID(),
 		})
 
 		assert.ErrorContains(t, err, "required flag(s) \"language\" not set")
@@ -149,10 +164,26 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-i", "true",
 
 			"-l", "xyz-ZY-Latn",
-			"-s", "ng_localise",
+			"-s", "json_ng_localize",
+			"-u", gofakeit.UUID(),
 		})
 
 		assert.ErrorContains(t, err, "required flag(s) \"file\" not set")
+		assert.Nil(t, res)
+	})
+
+	t.Run("error, path parameter 'uuid' missing", func(t *testing.T) {
+		res, err := cmd.ExecuteWithParams([]string{
+			"service", "upload",
+			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-i", "true",
+
+			"-f", "test.json",
+			"-l", "xyz-ZY-Latn",
+			"-s", "json_ng_localize",
+		})
+
+		assert.ErrorContains(t, err, "required flag(s) \"uuid\" not set")
 		assert.Nil(t, res)
 	})
 }

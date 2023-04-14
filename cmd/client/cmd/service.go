@@ -109,6 +109,11 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: new GRPC client connection: %w", err)
 			}
 
+			serviceID, err := cmd.Flags().GetString("uuid")
+			if err != nil {
+				return fmt.Errorf("upload file: get cli parameter 'uuid': %w", err)
+			}
+
 			language, err := cmd.Flags().GetString("language")
 			if err != nil {
 				return fmt.Errorf("upload file: get cli parameter 'language': %w", err)
@@ -129,9 +134,10 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: schema to translate schema: %w", err)
 			}
 
-			_, err = translatev1.NewTranslateServiceClient(client).UploadTranslationFile(ctx,
-				&translatev1.UploadTranslationFileRequest{Language: language, Data: data, Schema: translateSchema})
-			if err != nil {
+			if _, err = translatev1.NewTranslateServiceClient(client).UploadTranslationFile(ctx,
+				&translatev1.UploadTranslationFileRequest{
+					Language: language, Data: data, Schema: translateSchema, ServiceId: serviceID,
+				}); err != nil {
 				return fmt.Errorf("upload file: send GRPC request: %w", err)
 			}
 
@@ -144,9 +150,15 @@ func newUploadCmd() *cobra.Command {
 	}
 
 	uploadFlags := uploadCmd.Flags()
+	uploadFlags.StringP("uuid", "u", "", "service UUID")
 	uploadFlags.StringP("file", "f", "", "file path")
 	uploadFlags.StringP("language", "l", "", "translation language")
-	uploadFlags.VarP(&schemaFlag, "schema", "s", `translate schema, allowed: 'ng_localise', 'ngx_translate', 'go', 'arb'`)
+	uploadFlags.VarP(&schemaFlag, "schema", "s",
+		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)
+
+	if err := uploadCmd.MarkFlagRequired("uuid"); err != nil {
+		log.Panicf("upload file cmd: set field 'uuid' as required: %v", err)
+	}
 
 	if err := uploadCmd.MarkFlagRequired("file"); err != nil {
 		log.Panicf("upload file cmd: set field 'file' as required: %v", err)
@@ -202,11 +214,12 @@ func (s *schema) String() string {
 // Set must have pointer receiver so it doesn't change the value of a copy.
 func (s *schema) Set(v string) error {
 	switch v {
-	case "ng_localise", "ngx_translate", "go", "arb":
+	case "json_ng_localize", "json_ngx_translate", "go", "arb", "pot", "xliff_12", "xliff_2":
 		*s = schema(v)
 		return nil
 	default:
-		return errors.New(`must be one of "ng_localise", "ngx_translate", "go", "arb"`)
+		return errors.New(
+			`must be one of "json_ng_localize", "json_ngx_translate", "go", "arb", "pot", "xliff_12", "xliff_2"`)
 	}
 }
 
