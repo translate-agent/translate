@@ -185,7 +185,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-s", "json_ng_localize",
 		})
 
-		assert.ErrorContains(t, err, "required flag(s) \"uuid\" not set")
+		assert.ErrorContains(t, err, "required flag(s) \"serviceUUID\" not set")
 		assert.Nil(t, res)
 	})
 }
@@ -250,5 +250,65 @@ func Test_DownloadCmd(t *testing.T) {
 
 		_, err = os.Stat(filepath.Join(tempDir, service.Id+".xml"))
 		assert.NoError(t, err)
+	})
+
+	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
+		res, err := cmd.ExecuteWithParams([]string{
+			"service", "download",
+			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-i", "true",
+
+			"-s", "xliff_12",
+			"-u", gofakeit.UUID(),
+			"-p", t.TempDir(),
+		})
+
+		assert.ErrorContains(t, err, "required flag(s) \"language\" not set")
+		assert.Nil(t, res)
+	})
+
+	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
+		res, err := cmd.ExecuteWithParams([]string{
+			"service", "download",
+			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-i", "true",
+
+			"-l", "lv-lv",
+			"-u", gofakeit.UUID(),
+			"-p", t.TempDir(),
+		})
+
+		assert.ErrorContains(t, err, "required flag(s) \"schema\" not set")
+		assert.Nil(t, res)
+	})
+
+	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
+		res, err := cmd.ExecuteWithParams([]string{
+			"service", "download",
+			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-i", "true",
+
+			"-l", "lv-lv",
+			"-s", "xliff_12",
+			"-p", t.TempDir(),
+		})
+
+		assert.ErrorContains(t, err, "required flag(s) \"serviceUUID\" not set")
+		assert.Nil(t, res)
+	})
+
+	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
+		res, err := cmd.ExecuteWithParams([]string{
+			"service", "download",
+			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-i", "true",
+
+			"-l", "lv-lv",
+			"-s", "xliff_12",
+			"-u", gofakeit.UUID(),
+		})
+
+		assert.ErrorContains(t, err, "required flag(s) \"path\" not set")
+		assert.Nil(t, res)
 	})
 }
