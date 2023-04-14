@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -186,5 +187,68 @@ func Test_ServiceUploadCmd(t *testing.T) {
 
 		assert.ErrorContains(t, err, "required flag(s) \"uuid\" not set")
 		assert.Nil(t, res)
+	})
+}
+
+func Test_DownloadCmd(t *testing.T) {
+	t.Run("OK", func(t *testing.T) {
+		service, err := client.CreateService(context.Background(),
+			&translatev1.CreateServiceRequest{Service: randService()})
+
+		require.NoError(t, err)
+		require.NotNil(t, service)
+
+		tempDir := t.TempDir()
+
+		file, err := os.CreateTemp(tempDir, "test")
+		require.NoError(t, err)
+
+		_, err = file.Write([]byte(`
+		{
+			"language":"lv-lv",
+			"messages":[
+				 {
+					"id":"1",
+					"meaning":"When you greet someone",
+					"message":"hello",
+					"translation":"čau",
+					"fuzzy":false
+				 }
+			]
+	 }`))
+
+		require.NoError(t, err)
+
+		res, err := cmd.ExecuteWithParams([]string{
+			"service", "upload",
+			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-i", "true",
+
+			"-l", "lv-lv",
+			"-f", file.Name(),
+			"-s", "json_ng_localize",
+			"-u", service.Id,
+			"-p", gofakeit.UUID(),
+		})
+
+		require.NoError(t, err)
+		require.Equal(t, "File uploaded successfully.\n", string(res))
+
+		res, err = cmd.ExecuteWithParams([]string{
+			"service", "download",
+			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-i", "true",
+
+			"-l", "lv-lv",
+			"-s", "xliff_12",
+			"-u", service.Id,
+			"-p", tempDir,
+		})
+
+		require.NoError(t, err)
+		require.Equal(t, "File downloaded successfully.\n", string(res))
+
+		_, err = os.Stat(filepath.Join(tempDir, service.Id+".xml"))
+		assert.NoError(t, err)
 	})
 }
