@@ -7,8 +7,6 @@ import (
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"golang.org/x/text/language"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -96,8 +94,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 
 	messages, err := MessagesFromData(params.schema, params.data)
 	if err != nil {
-		// TODO CHECK CONVERT ERROR
-		return nil, convertErrorToStatus(err)
+		return nil, convertFromErrorToStatus(&convertError{field: "data", err: err, schema: params.schema.String()})
 	}
 
 	// Some converts do not provide language, so we override it with one from request for consistency.
@@ -184,7 +181,7 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 
 	data, err := MessagesToData(params.schema, translationFile.Messages)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, convertToErrorToStatus(&convertError{err: err, schema: params.schema.String()})
 	}
 
 	return &translatev1.DownloadTranslationFileResponse{Data: data}, nil

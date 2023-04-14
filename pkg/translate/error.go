@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// getOriginalErr returns the original error from the error chain.
 func getOriginalErr(err error) error {
 	for {
 		unwrappedErr := errors.Unwrap(err)
@@ -33,6 +34,7 @@ var (
 	errNilService = errors.New("service is nil")
 )
 
+// parseParamError is an error that occurs when parsing request parameters.
 type parseParamError struct {
 	err   error
 	field string
@@ -42,6 +44,7 @@ func (p *parseParamError) Error() string {
 	return fmt.Sprintf("parse %s: %s", p.field, p.err)
 }
 
+// updateMaskError is an error that occurs when the updateMask contains field which entity does not have.
 type updateMaskError struct {
 	entity string
 	field  string
@@ -52,6 +55,7 @@ func (u *updateMaskError) Error() string {
 	return fmt.Sprintf("'%s' is not valid field for %s", u.field, u.entity)
 }
 
+// validateParamError is an error that occurs when validating request parameters.
 type validateParamError struct {
 	param  string
 	reason string
@@ -61,6 +65,7 @@ func (v *validateParamError) Error() string {
 	return fmt.Sprintf("%s %s", v.param, v.reason)
 }
 
+// requestErrorToStatus converts request-related error to gRPC error status.
 func requestErrorToStatus(err error) error {
 	var reqToErrStatus func() error
 
@@ -96,6 +101,7 @@ func nilServiceErrStatus() error {
 	return status.Errorf(codes.InvalidArgument, errNilService.Error())
 }
 
+// parseParamsError.status returns gRPC error status with details about failed parameter.
 func (p *parseParamError) status() error {
 	st, err := status.Newf(
 		codes.InvalidArgument,
@@ -115,6 +121,7 @@ func (p *parseParamError) status() error {
 	return st.Err() //nolint:wrapcheck
 }
 
+// updateMaskError.status returns gRPC error status with details about failed updateMask.
 func (u *updateMaskError) status() error {
 	st, err := status.New(
 		codes.InvalidArgument,
@@ -133,6 +140,7 @@ func (u *updateMaskError) status() error {
 	return st.Err() //nolint:wrapcheck
 }
 
+// validateParamError.status returns gRPC error status with details about failed validation.
 func (v *validateParamError) status() error {
 	st, err := status.Newf(
 		codes.InvalidArgument,
@@ -154,6 +162,7 @@ func (v *validateParamError) status() error {
 
 // ----------------------RepoErrors------------------------------
 
+// repoNotFoundErrStatus converts repo.NotFoundError to gRPC error status.
 func repoNotFoundErrStatus(repoErr *repo.NotFoundError) error {
 	st, err := status.Newf(
 		codes.NotFound,
@@ -172,6 +181,7 @@ func repoNotFoundErrStatus(repoErr *repo.NotFoundError) error {
 	return st.Err() //nolint:wrapcheck
 }
 
+// repoDefaultErrStatus converts repo.DefaultError to gRPC error status.
 func repoDefaultErrStatus(repoErr *repo.DefaultError) error {
 	st, err := status.Newf(
 		codes.Internal,
@@ -190,6 +200,7 @@ func repoDefaultErrStatus(repoErr *repo.DefaultError) error {
 	return st.Err() //nolint:wrapcheck
 }
 
+// repoErrorToStatus converts repo-related error to gRPC error status.
 func repoErrorToStatus(err error) error {
 	var (
 		repoDefaultErr  *repo.DefaultError
@@ -208,33 +219,43 @@ func repoErrorToStatus(err error) error {
 
 // ----------------------ConvertErrors------------------------------
 
-func convertErrorToStatus(err error) error {
+// convertError is an error that occurs when converting ToMessages or FromMessages fails.
+type convertError struct {
+	schema string
+	err    error
+	field  string
+}
+
+func (c *convertError) Error() string {
+	return fmt.Sprintf("Convert %s data to %s: %s", c.field, c.schema, c.err.Error())
+}
+
+// convertFromErrorToStatus converts convertError to gRPC status.
+// This function assumes that convertError is always caused by user providing malformed data.
+func convertFromErrorToStatus(convertErr *convertError) error {
 	var (
-		jsonSyntaxErr    *json.SyntaxError
-		jsonUnmarshalErr *json.UnmarshalTypeError
-		xmlSyntaxErr     *xml.SyntaxError
+		jsonSyntaxErr *json.SyntaxError
+		xmlSyntaxErr  *xml.SyntaxError
 	)
+
+	var errMsg string
 
 	switch {
-	case errors.As(err, &jsonSyntaxErr):
-		return jsonSyntaxErrorToStatus(*jsonSyntaxErr)
-	case errors.As(err, &jsonUnmarshalErr):
-		return jsonUnmarshalTypeErrorToStatus(*jsonUnmarshalErr)
-	case errors.As(err, &xmlSyntaxErr):
-		return xmlSyntaxErrorToStatus(*xmlSyntaxErr)
+	case errors.As(convertErr.err, &jsonSyntaxErr):
+		errMsg = "Invalid JSON"
+	case errors.As(convertErr.err, &xmlSyntaxErr):
+		errMsg = "Invalid XML"
 	default:
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		errMsg = fmt.Sprintf("Cannot convert from %s schema", convertErr.schema)
 	}
-}
 
-func jsonSyntaxErrorToStatus(syntaxErr json.SyntaxError) error {
 	st, err := status.New(
 		codes.InvalidArgument,
-		"Invalid JSON",
+		errMsg,
 	).WithDetails(
 		&errdetails.BadRequest_FieldViolation{
-			Field:       "data",
-			Description: syntaxErr.Error(),
+			Field:       convertErr.field,
+			Description: getOriginalErr(convertErr.err).Error(),
 		},
 	)
 	if err != nil {
@@ -244,36 +265,25 @@ func jsonSyntaxErrorToStatus(syntaxErr json.SyntaxError) error {
 	return st.Err() //nolint:wrapcheck
 }
 
-func jsonUnmarshalTypeErrorToStatus(unmarshalErr json.UnmarshalTypeError) error {
+// convertToErrorToStatus converts convertError to gRPC status.
+// This function assumes that convertError is always caused by server inability
+// to convert messages to requested schema.
+func convertToErrorToStatus(convertError *convertError) error {
 	st, err := status.Newf(
-		codes.InvalidArgument,
-		"Unmarshal '%s'",
-		unmarshalErr.Field,
+		codes.Internal,
+		"Cannot convert to %s schema",
+		convertError.schema,
 	).WithDetails(
-		&errdetails.BadRequest_FieldViolation{
-			Field:       "data",
-			Description: unmarshalErr.Error(),
+		&errdetails.ErrorInfo{
+			Reason: getOriginalErr(convertError.err).Error(),
+			Domain: "convert",
+			Metadata: map[string]string{
+				"full_error": convertError.Error(),
+			},
 		},
 	)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, err.Error())
-	}
-
-	return st.Err() //nolint:wrapcheck
-}
-
-func xmlSyntaxErrorToStatus(syntaxErr xml.SyntaxError) error {
-	st, err := status.New(
-		codes.InvalidArgument,
-		"Invalid XML",
-	).WithDetails(
-		&errdetails.BadRequest_FieldViolation{
-			Field:       "data",
-			Description: syntaxErr.Error(),
-		},
-	)
-	if err != nil {
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		return status.Errorf(codes.Internal, err.Error())
 	}
 
 	return st.Err() //nolint:wrapcheck
