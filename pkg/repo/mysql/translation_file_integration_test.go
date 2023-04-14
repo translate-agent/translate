@@ -4,6 +4,7 @@ package mysql
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -110,8 +111,8 @@ func Test_SaveTranslationFile(t *testing.T) {
 			err := repository.SaveTranslationFile(ctx, tt.serviceID, tt.translationFile)
 
 			if tt.expectedErr != nil {
-				var e *repo.NotFoundError
-				require.ErrorAs(t, err, &e)
+				e := reflect.New(reflect.TypeOf(tt.expectedErr).Elem()).Interface()
+				assert.ErrorAs(t, err, &e)
 
 				return
 			}
@@ -205,7 +206,7 @@ func Test_LoadTranslationFile(t *testing.T) {
 			)
 
 			if tt.expectedErr != nil {
-				var e *repo.NotFoundError
+				e := reflect.New(reflect.TypeOf(tt.expectedErr).Elem()).Interface()
 				assert.ErrorAs(t, err, &e)
 
 				return

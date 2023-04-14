@@ -2,7 +2,6 @@ package translate
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -153,12 +152,12 @@ func (u *updateServiceParams) updateServiceFromMask(service *model.Service) (*mo
 	}
 
 	// Replace service resource's fields with the new ones from request (PATCH)
-	for i, path := range u.mask.Paths {
+	for _, path := range u.mask.Paths {
 		switch path {
 		case "name":
 			service.Name = u.service.Name
 		default:
-			return nil, &updateMaskError{field: fmt.Sprintf("update_mask.paths[%d]", i+1), value: path, entity: "Service"}
+			return nil, &updateMaskError{field: path, entity: "service"}
 		}
 	}
 

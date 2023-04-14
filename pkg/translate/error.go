@@ -44,11 +44,10 @@ func (p *parseParamError) Error() string {
 	return fmt.Sprintf("parse %s: %s", p.field, p.err)
 }
 
-// updateMaskError is an error that occurs when the updateMask contains field which entity does not have.
+// updateMaskError is an error that occurs when the updateMask contains a field which the entity does not have.
 type updateMaskError struct {
 	entity string
 	field  string
-	value  string
 }
 
 func (u *updateMaskError) Error() string {
@@ -63,34 +62,6 @@ type validateParamError struct {
 
 func (v *validateParamError) Error() string {
 	return fmt.Sprintf("%s %s", v.param, v.reason)
-}
-
-// requestErrorToStatus converts request-related error to gRPC error status.
-func requestErrorToStatus(err error) error {
-	var reqToErrStatus func() error
-
-	var (
-		parseParamErr    *parseParamError
-		updateMaskErr    *updateMaskError
-		validateParamErr *validateParamError
-	)
-
-	switch {
-	case errors.Is(err, errNilRequest):
-		reqToErrStatus = nilRequestErrStatus
-	case errors.Is(err, errNilService):
-		reqToErrStatus = nilServiceErrStatus
-	case errors.As(err, &parseParamErr):
-		reqToErrStatus = parseParamErr.status
-	case errors.As(err, &updateMaskErr):
-		reqToErrStatus = updateMaskErr.status
-	case errors.As(err, &validateParamErr):
-		reqToErrStatus = validateParamErr.status
-	default:
-		reqToErrStatus = func() error { return status.Errorf(codes.InvalidArgument, err.Error()) }
-	}
-
-	return reqToErrStatus()
 }
 
 func nilRequestErrStatus() error {
@@ -160,6 +131,34 @@ func (v *validateParamError) status() error {
 	return st.Err() //nolint:wrapcheck
 }
 
+// requestErrorToStatus converts request-related error to gRPC error status.
+func requestErrorToStatus(err error) error {
+	var reqToErrStatus func() error
+
+	var (
+		parseParamErr    *parseParamError
+		updateMaskErr    *updateMaskError
+		validateParamErr *validateParamError
+	)
+
+	switch {
+	case errors.Is(err, errNilRequest):
+		reqToErrStatus = nilRequestErrStatus
+	case errors.Is(err, errNilService):
+		reqToErrStatus = nilServiceErrStatus
+	case errors.As(err, &parseParamErr):
+		reqToErrStatus = parseParamErr.status
+	case errors.As(err, &updateMaskErr):
+		reqToErrStatus = updateMaskErr.status
+	case errors.As(err, &validateParamErr):
+		reqToErrStatus = validateParamErr.status
+	default:
+		reqToErrStatus = func() error { return status.Errorf(codes.InvalidArgument, err.Error()) }
+	}
+
+	return reqToErrStatus()
+}
+
 // ----------------------RepoErrors------------------------------
 
 // repoNotFoundErrStatus converts repo.NotFoundError to gRPC error status.
@@ -185,7 +184,7 @@ func repoNotFoundErrStatus(repoErr *repo.NotFoundError) error {
 func repoDefaultErrStatus(repoErr *repo.DefaultError) error {
 	st, err := status.Newf(
 		codes.Internal,
-		"Error while accessing %s",
+		"Cannot access %s",
 		repoErr.Entity,
 	).WithDetails(
 		&errdetails.ErrorInfo{
@@ -227,7 +226,7 @@ type convertError struct {
 }
 
 func (c *convertError) Error() string {
-	return fmt.Sprintf("Convert %s data to %s: %s", c.field, c.schema, c.err.Error())
+	return fmt.Sprintf("convert: %s", c.err.Error())
 }
 
 // convertFromErrorToStatus converts convertError to gRPC status.
