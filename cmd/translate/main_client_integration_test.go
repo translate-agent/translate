@@ -192,7 +192,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 	})
 }
 
-func Test_DownloadCmd(t *testing.T) {
+func Test_ServiceDownloadCmd(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		service, err := client.CreateService(context.Background(),
 			&translatev1.CreateServiceRequest{Service: randService()})
