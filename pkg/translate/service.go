@@ -26,19 +26,17 @@ type getServiceParams struct {
 	id uuid.UUID
 }
 
-// TODO change to pointer all returning params
-
-func (g *getServiceRequest) parseParams() (getServiceParams, error) {
+func (g *getServiceRequest) parseParams() (*getServiceParams, error) {
 	if g == nil {
-		return getServiceParams{}, errNilRequest
+		return nil, errNilRequest
 	}
 
 	id, err := uuidFromProto(g.Id)
 	if err != nil {
-		return getServiceParams{}, &parseParamError{field: "id", err: err}
+		return nil, &parseParamError{field: "id", err: err}
 	}
 
-	return getServiceParams{id: id}, nil
+	return &getServiceParams{id: id}, nil
 }
 
 func (t *TranslateServiceServer) GetService(
@@ -81,24 +79,24 @@ type createServiceParams struct {
 	service *model.Service
 }
 
-func (c *createServiceRequest) parseParams() (createServiceParams, error) {
+func (c *createServiceRequest) parseParams() (*createServiceParams, error) {
 	if c == nil {
-		return createServiceParams{}, errNilRequest
+		return nil, errNilRequest
 	}
 
 	if c.Service == nil {
-		return createServiceParams{}, errNilService
+		return nil, errNilService
 	}
 
 	service, err := serviceFromProto(c.Service)
 
 	switch {
 	case err == nil:
-		return createServiceParams{service: service}, nil
+		return &createServiceParams{service: service}, nil
 	case strings.Contains(err.Error(), "service id"):
-		return createServiceParams{}, &parseParamError{field: "service.id", err: err}
+		return nil, &parseParamError{field: "service.id", err: err}
 	default:
-		return createServiceParams{}, &parseParamError{field: "service", err: err}
+		return nil, &parseParamError{field: "service", err: err}
 	}
 }
 
@@ -127,24 +125,24 @@ type updateServiceParams struct {
 	service *model.Service
 }
 
-func (u *updateServiceRequest) parseParams() (updateServiceParams, error) {
+func (u *updateServiceRequest) parseParams() (*updateServiceParams, error) {
 	if u == nil {
-		return updateServiceParams{}, errNilRequest
+		return nil, errNilRequest
 	}
 
 	if u.Service == nil {
-		return updateServiceParams{}, errNilService
+		return nil, errNilService
 	}
 
 	service, err := serviceFromProto(u.Service)
 
 	switch {
 	case err == nil:
-		return updateServiceParams{service: service, mask: u.UpdateMask}, nil
+		return &updateServiceParams{service: service, mask: u.UpdateMask}, nil
 	case strings.Contains(err.Error(), "service id"):
-		return updateServiceParams{}, &parseParamError{field: "service.id", err: err}
+		return nil, &parseParamError{field: "service.id", err: err}
 	default:
-		return updateServiceParams{}, &parseParamError{field: "service", err: err}
+		return nil, &parseParamError{field: "service", err: err}
 	}
 }
 
@@ -201,17 +199,17 @@ type deleteServiceParams struct {
 	id uuid.UUID
 }
 
-func (d *deleteServiceRequest) parseParams() (deleteServiceParams, error) {
+func (d *deleteServiceRequest) parseParams() (*deleteServiceParams, error) {
 	if d == nil {
-		return deleteServiceParams{}, errNilRequest
+		return nil, errNilRequest
 	}
 
 	id, err := uuidFromProto(d.Id)
 	if err != nil {
-		return deleteServiceParams{}, &parseParamError{field: "id", err: err}
+		return nil, &parseParamError{field: "id", err: err}
 	}
 
-	return deleteServiceParams{id: id}, nil
+	return &deleteServiceParams{id: id}, nil
 }
 
 func (t *TranslateServiceServer) DeleteService(

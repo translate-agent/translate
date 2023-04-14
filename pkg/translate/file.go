@@ -29,9 +29,9 @@ type uploadParams struct {
 	translationFileID uuid.UUID
 }
 
-func (u *uploadTranslationFileRequest) parseParams() (uploadParams, error) {
+func (u *uploadTranslationFileRequest) parseParams() (*uploadParams, error) {
 	if u == nil {
-		return uploadParams{}, errNilRequest
+		return nil, errNilRequest
 	}
 
 	var (
@@ -41,20 +41,20 @@ func (u *uploadTranslationFileRequest) parseParams() (uploadParams, error) {
 
 	params.languageTag, err = langTagFromProto(u.Language)
 	if err != nil {
-		return uploadParams{}, &parseParamError{field: "language", err: err}
+		return nil, &parseParamError{field: "language", err: err}
 	}
 
 	params.serviceID, err = uuidFromProto(u.ServiceId)
 	if err != nil {
-		return uploadParams{}, &parseParamError{field: "service_id", err: err}
+		return nil, &parseParamError{field: "service_id", err: err}
 	}
 
 	params.translationFileID, err = uuidFromProto(u.TranslationFileId)
 	if err != nil {
-		return uploadParams{}, &parseParamError{field: "translation_file_id", err: err}
+		return nil, &parseParamError{field: "translation_file_id", err: err}
 	}
 
-	return params, nil
+	return &params, nil
 }
 
 // Validates request parameters for UploadTranslationFile.
@@ -123,9 +123,9 @@ type downloadParams struct {
 	serviceID   uuid.UUID
 }
 
-func (d *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
+func (d *downloadTranslationFileRequest) parseParams() (*downloadParams, error) {
 	if d == nil {
-		return downloadParams{}, errNilRequest
+		return nil, errNilRequest
 	}
 
 	var (
@@ -135,15 +135,15 @@ func (d *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
 
 	params.serviceID, err = uuidFromProto(d.ServiceId)
 	if err != nil {
-		return downloadParams{}, &parseParamError{field: "service_id", err: err}
+		return nil, &parseParamError{field: "service_id", err: err}
 	}
 
 	params.languageTag, err = langTagFromProto(d.Language)
 	if err != nil {
-		return downloadParams{}, &parseParamError{field: "language", err: err}
+		return nil, &parseParamError{field: "language", err: err}
 	}
 
-	return params, nil
+	return &params, nil
 }
 
 func (d *downloadParams) validate() error {
