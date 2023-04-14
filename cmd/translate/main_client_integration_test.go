@@ -20,7 +20,7 @@ func Test_ServiceLsCmd(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Contains(t, string(res), "TOTAL")
+		assert.Contains(t, string(res), "ID")
 	})
 
 	t.Run("error, no transport security set", func(t *testing.T) {
@@ -61,7 +61,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-i", "true",
 
 			"-l", "lv-lv",
-			"-p", file.Name(),
+			"-f", file.Name(),
 			"-s", "ng_localise",
 		})
 
@@ -91,7 +91,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-i", "true",
 
 			"-l", "xyz-ZY-Latn",
-			"-p", file.Name(),
+			"-f", file.Name(),
 			"-s", "ng_localise",
 		})
 
@@ -106,7 +106,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-i", "true",
 
 			"-l", "xyz-ZY-Latn",
-			"-p", "test.json",
+			"-f", "test.json",
 			"-s", "unrecognized",
 		})
 
@@ -121,7 +121,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-i", "true",
 
 			"-l", "xyz-ZY-Latn",
-			"-p", "test.json",
+			"-f", "test.json",
 		})
 
 		assert.ErrorContains(t, err, "required flag(s) \"schema\" not set")
@@ -134,7 +134,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-a", fmt.Sprintf("%s:%s", host, port),
 			"-i", "true",
 
-			"-p", "test.json",
+			"-f", "test.json",
 			"-s", "ng_localise",
 		})
 
@@ -152,7 +152,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-s", "ng_localise",
 		})
 
-		assert.ErrorContains(t, err, "required flag(s) \"path\" not set")
+		assert.ErrorContains(t, err, "required flag(s) \"file\" not set")
 		assert.Nil(t, res)
 	})
 }
