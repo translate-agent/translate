@@ -1,3 +1,4 @@
+//nolint:paralleltest
 package main
 
 import (
@@ -9,7 +10,6 @@ import (
 	"go.expect.digital/translate/cmd/client/cmd"
 )
 
-//nolint:paralleltest
 func Test_ServiceLs(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
@@ -19,7 +19,7 @@ func Test_ServiceLs(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Contains(t, string(res), "TOTAL")
+		assert.Contains(t, string(res), "ID")
 	})
 
 	t.Run("error, no transport security set", func(t *testing.T) {
