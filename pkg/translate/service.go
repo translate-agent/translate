@@ -29,17 +29,17 @@ type getServiceParams struct {
 	id uuid.UUID
 }
 
-func (g *getServiceRequest) parseParams() (getServiceParams, error) {
+func (g *getServiceRequest) parseParams() (*getServiceParams, error) {
 	if g == nil {
-		return getServiceParams{}, errors.New("request is nil")
+		return nil, errors.New("request is nil")
 	}
 
 	id, err := uuidFromProto(g.Id)
 	if err != nil {
-		return getServiceParams{}, fmt.Errorf("parse id: %w", err)
+		return nil, fmt.Errorf("parse id: %w", err)
 	}
 
-	return getServiceParams{id: id}, nil
+	return &getServiceParams{id: id}, nil
 }
 
 func (t *TranslateServiceServer) GetService(
@@ -84,21 +84,21 @@ type createServiceParams struct {
 	service *model.Service
 }
 
-func (c *createServiceRequest) parseParams() (createServiceParams, error) {
+func (c *createServiceRequest) parseParams() (*createServiceParams, error) {
 	if c == nil {
-		return createServiceParams{}, errors.New("request is nil")
+		return nil, errors.New("request is nil")
 	}
 
 	if c.Service == nil {
-		return createServiceParams{}, errors.New("service is nil")
+		return nil, errors.New("service is nil")
 	}
 
 	service, err := serviceFromProto(c.Service)
 	if err != nil {
-		return createServiceParams{}, fmt.Errorf("parse service: %w", err)
+		return nil, fmt.Errorf("parse service: %w", err)
 	}
 
-	return createServiceParams{service: service}, nil
+	return &createServiceParams{service: service}, nil
 }
 
 func (t *TranslateServiceServer) CreateService(
@@ -126,21 +126,21 @@ type updateServiceParams struct {
 	service *model.Service
 }
 
-func (u *updateServiceRequest) parseParams() (updateServiceParams, error) {
+func (u *updateServiceRequest) parseParams() (*updateServiceParams, error) {
 	if u == nil {
-		return updateServiceParams{}, errors.New("request is nil")
+		return nil, errors.New("request is nil")
 	}
 
 	if u.Service == nil {
-		return updateServiceParams{}, errors.New("service is nil")
+		return nil, errors.New("service is nil")
 	}
 
 	service, err := serviceFromProto(u.Service)
 	if err != nil {
-		return updateServiceParams{}, fmt.Errorf("parse service: %w", err)
+		return nil, fmt.Errorf("parse service: %w", err)
 	}
 
-	return updateServiceParams{service: service, mask: u.UpdateMask}, nil
+	return &updateServiceParams{service: service, mask: u.UpdateMask}, nil
 }
 
 func (u *updateServiceParams) updateServiceFromMask(service *model.Service) (*model.Service, error) {
@@ -200,17 +200,17 @@ type deleteServiceParams struct {
 	id uuid.UUID
 }
 
-func (d *deleteServiceRequest) parseParams() (deleteServiceParams, error) {
+func (d *deleteServiceRequest) parseParams() (*deleteServiceParams, error) {
 	if d == nil {
-		return deleteServiceParams{}, errors.New("request is nil")
+		return nil, errors.New("request is nil")
 	}
 
 	id, err := uuidFromProto(d.Id)
 	if err != nil {
-		return deleteServiceParams{}, fmt.Errorf("parse id: %w", err)
+		return nil, fmt.Errorf("parse id: %w", err)
 	}
 
-	return deleteServiceParams{id: id}, nil
+	return &deleteServiceParams{id: id}, nil
 }
 
 func (t *TranslateServiceServer) DeleteService(

@@ -30,15 +30,15 @@ func Test_ParseGetServiceParams(t *testing.T) {
 	malformedIDReq.Id += "_FAIL" //nolint:goconst
 
 	tests := []struct {
+		expected    *getServiceParams
 		input       *translatev1.GetServiceRequest
 		expectedErr error
 		name        string
-		expected    getServiceParams
 	}{
 		{
 			name:  "Happy Path",
 			input: happyReq,
-			expected: getServiceParams{
+			expected: &getServiceParams{
 				id: uuid.MustParse(happyReq.Id),
 			},
 			expectedErr: nil,
@@ -97,7 +97,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 	malformedIDReq.Service.Id += "_FAIL"
 
 	tests := []struct {
-		expected    updateServiceParams
+		expected    *updateServiceParams
 		expectedErr error
 		input       *translatev1.UpdateServiceRequest
 		name        string
@@ -105,7 +105,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 		{
 			name:  "Happy Path",
 			input: happyReq,
-			expected: updateServiceParams{
+			expected: &updateServiceParams{
 				mask: happyReq.UpdateMask,
 				service: &model.Service{
 					ID:   uuid.MustParse(happyReq.Service.Id),
@@ -164,15 +164,15 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 	malformedIDReq.Id += "_FAIL"
 
 	tests := []struct {
+		expected    *deleteServiceParams
 		input       *translatev1.DeleteServiceRequest
 		expectedErr error
 		name        string
-		expected    deleteServiceParams
 	}{
 		{
 			name:        "Happy Path",
 			input:       happyReq,
-			expected:    deleteServiceParams{id: uuid.MustParse(happyReq.Id)},
+			expected:    &deleteServiceParams{id: uuid.MustParse(happyReq.Id)},
 			expectedErr: nil,
 		},
 		{
@@ -230,14 +230,14 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 	tests := []struct {
 		input       *translatev1.CreateServiceRequest
 		expectedErr error
-		expected    createServiceParams
+		expected    *createServiceParams
 		name        string
 	}{
 		{
 			name:        "Happy Path",
 			input:       happyReq,
 			expectedErr: nil,
-			expected: createServiceParams{
+			expected: &createServiceParams{
 				service: &model.Service{
 					ID:   uuid.MustParse(happyReq.Service.Id),
 					Name: happyReq.Service.Name,
