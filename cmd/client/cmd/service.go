@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
-	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/fatih/color"
+	"github.com/rodaine/table"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
@@ -67,21 +67,19 @@ func newLsCmd() *cobra.Command {
 				return fmt.Errorf("list services: send GRPC request: %w", err)
 			}
 
-			t := table.NewWriter()
-			t.SetOutputMirror(os.Stdout)
-			t.AppendHeader(table.Row{"#", "ID", "Name"})
+			headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
+			columnFmt := color.New(color.FgYellow).SprintfFunc()
+			tbl := table.New("#", "ID", "Name")
+			tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
-			tableRows := make([]table.Row, 0, len(resp.Services))
-
-			for i := range resp.Services {
-				tableRows = append(tableRows, table.Row{i + 1, resp.Services[i].Id, resp.Services[i].Name})
+			for i, v := range resp.Services {
+				tbl.AddRow(i+1, v.Id, v.Name)
 			}
 
-			t.AppendRows(tableRows)
-			t.AppendFooter(table.Row{"", "Total", len(resp.Services)})
-			t.SetStyle(table.StyleLight)
-			t.SetOutputMirror(cmd.OutOrStdout())
-			t.Render()
+			tbl.AddRow("", "TOTAL", len(resp.Services))
+
+			tbl.WithWriter(cmd.OutOrStdout())
+			tbl.Print()
 
 			return nil
 		},
