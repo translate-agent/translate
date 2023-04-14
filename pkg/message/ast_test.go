@@ -182,7 +182,7 @@ func TestTokensToMessageFormat(t *testing.T) {
 			},
 		},
 		{
-			name: "message with multiple plurals and selctors",
+			name: "message with multiple plurals and selectors",
 			input: []Token{
 				{Type: Keyword, Value: "match ", Level: 0},
 				{Type: PlaceholderOpen, Value: "{", Level: 1},

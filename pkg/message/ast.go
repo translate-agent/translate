@@ -33,6 +33,10 @@ type nodeFunction struct {
 }
 
 func TokensToMessageFormat(tokens []Token) (nodeMatch, error) {
+	if len(tokens) == 0 {
+		return nodeMatch{}, errors.New("tokens[] is empty")
+	}
+
 	var (
 		match               nodeMatch
 		currentVariant      nodeVariant
@@ -41,10 +45,6 @@ func TokensToMessageFormat(tokens []Token) (nodeMatch, error) {
 		currentLevel        int
 		token               Token
 	)
-
-	if len(tokens) == 0 {
-		return nodeMatch{}, errors.New("tokens[] is empty")
-	}
 
 	// If message format starts with placeholder {
 	if tokens[0].Type == PlaceholderOpen {

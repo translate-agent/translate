@@ -46,14 +46,16 @@ func Lex(str string) ([]Token, error) {
 		case ' ':
 			if len(runes) > 0 {
 				runes = append(runes, r)
-				tokenizeBuffer(runes, &tokens, &placeholderLevel)
+				tokens = append(tokens, createTokensFromBuffer(runes, placeholderLevel)...)
+
 				runes = []rune{}
 			} else {
 				runes = append(runes, r)
 			}
 		case '{':
 			if len(runes) > 0 {
-				tokenizeBuffer(runes, &tokens, &placeholderLevel)
+				tokens = append(tokens, createTokensFromBuffer(runes, placeholderLevel)...)
+
 				runes = []rune{}
 			}
 
@@ -62,7 +64,8 @@ func Lex(str string) ([]Token, error) {
 			tokens = append(tokens, Token{Type: PlaceholderOpen, Value: "{", Level: placeholderLevel})
 		case '}':
 			if len(runes) > 0 {
-				tokenizeBuffer(runes, &tokens, &placeholderLevel)
+				tokens = append(tokens, createTokensFromBuffer(runes, placeholderLevel)...)
+
 				runes = []rune{}
 			}
 
@@ -74,7 +77,7 @@ func Lex(str string) ([]Token, error) {
 			}
 
 			if len(runes) > 0 {
-				tokenizeBuffer(runes, &tokens, &placeholderLevel)
+				tokens = append(tokens, createTokensFromBuffer(runes, placeholderLevel)...)
 				runes = []rune{}
 			}
 
@@ -85,55 +88,74 @@ func Lex(str string) ([]Token, error) {
 	}
 
 	if len(runes) > 0 {
-		tokenizeBuffer(runes, &tokens, &placeholderLevel)
+		tokens = append(tokens, createTokensFromBuffer(runes, placeholderLevel)...)
 	}
 
-	parsedTokens = combineTextTokens(tokens, parsedTokens)
+	parsedTokens, err := combineTextTokens(tokens, parsedTokens)
+	if err != nil {
+		return []Token{}, errors.New("combine Text tokens")
+	}
 
 	return parsedTokens, nil
 }
 
-func combineTextTokens(tokens, parsedTokens []Token) []Token {
-	txt := ""
+// Combining Text tokens into one sentence.
+func combineTextTokens(tokens, parsedTokens []Token) ([]Token, error) {
+	var txt strings.Builder
 
-	for i := range tokens {
+	for i := 0; i < len(tokens); i++ {
 		if tokens[i].Type == Text {
-			txt += tokens[i].Value
+			if _, err := txt.WriteString(tokens[i].Value); err != nil {
+				return []Token{}, errors.New("write Text token")
+			}
 
-			if tokens[i+1].Type != Text {
-				parsedTokens = append(parsedTokens, Token{Type: Text, Value: txt, Level: tokens[i].Level})
-				txt = ""
+			if i+1 < len(tokens) && tokens[i+1].Type != Text {
+				parsedTokens = append(parsedTokens, Token{Type: Text, Value: txt.String(), Level: tokens[i].Level})
+
+				txt.Reset()
 			}
 		} else {
 			parsedTokens = append(parsedTokens, tokens[i])
 		}
 	}
 
-	return parsedTokens
+	return parsedTokens, nil
 }
 
-func tokenizeBuffer(buf []rune, tokens *[]Token, placeholderLevel *int) {
-	switch strings.TrimSpace(string(buf)) {
+// Breaks the input text into tokens that can be processed separately.
+func createTokensFromBuffer(buffer []rune, placeholderLevel int) []Token {
+	var newTokens []Token
+
+	switch strings.TrimSpace(string(buffer)) {
 	case Match, Let, When:
-		*tokens = append(*tokens, Token{Type: Keyword, Value: string(buf), Level: *placeholderLevel})
+		newTokens = append(newTokens, Token{Type: Keyword, Value: string(buffer), Level: placeholderLevel})
 	default:
-		if *placeholderLevel == 0 {
-			*tokens = append(*tokens, Token{Type: Literal, Value: string(buf), Level: *placeholderLevel})
+		if placeholderLevel == 0 {
+			newTokens = append(newTokens, Token{Type: Literal, Value: string(buffer), Level: placeholderLevel})
 		} else {
-			switch buf[0] {
+			switch buffer[0] {
 			case Dollar, Plus, Minus:
-				if *placeholderLevel > 0 {
-					str := strings.ReplaceAll(string(buf), "$", "")
-					*tokens = append(*tokens, Token{Type: Variable, Value: str, Level: *placeholderLevel})
+				if placeholderLevel > 0 {
+					newTokens = append(newTokens,
+						Token{
+							Type:  Variable,
+							Value: strings.ReplaceAll(string(buffer), "$", ""),
+							Level: placeholderLevel,
+						})
 				}
 			case Colon:
-				if *placeholderLevel > 0 {
-					str := strings.ReplaceAll(string(buf), ":", "")
-					*tokens = append(*tokens, Token{Type: Function, Value: str, Level: *placeholderLevel})
+				if placeholderLevel > 0 {
+					newTokens = append(newTokens, Token{
+						Type:  Function,
+						Value: strings.ReplaceAll(string(buffer), ":", ""),
+						Level: placeholderLevel,
+					})
 				}
 			default:
-				*tokens = append(*tokens, Token{Type: Text, Value: string(buf), Level: *placeholderLevel})
+				newTokens = append(newTokens, Token{Type: Text, Value: string(buffer), Level: placeholderLevel})
 			}
 		}
 	}
+
+	return newTokens
 }
