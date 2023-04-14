@@ -1,5 +1,3 @@
-//go:build integration
-
 package main
 
 import (
@@ -218,7 +216,6 @@ func Test_UploadTranslationFileDifferentLanguages_gRPC(t *testing.T) {
 		actualCode := status.Code(err)
 
 		require.Equal(t, expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", expectedCode, actualCode, err)
-
 	}
 }
 
