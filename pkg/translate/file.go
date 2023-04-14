@@ -2,7 +2,6 @@ package translate
 
 import (
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
@@ -12,6 +11,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+const emptyParamMessage = "must not be empty"
 
 type (
 	uploadTranslationFileRequest   translatev1.UploadTranslationFileRequest
@@ -59,21 +60,20 @@ func (u *uploadTranslationFileRequest) parseParams() (uploadParams, error) {
 // Validates request parameters for UploadTranslationFile.
 func (u *uploadParams) validate() error {
 	if len(u.data) == 0 {
-		// TODO make as constant
-		return &validateParamError{param: "data", reason: "must not be empty"}
+		return &validateParamError{param: "data", reason: emptyParamMessage}
 	}
 
 	// Enforce that schema is present. (Temporal solution)
 	if u.schema == translatev1.Schema_UNSPECIFIED {
-		return &validateParamError{param: "schema", reason: "must not be empty"}
+		return &validateParamError{param: "schema", reason: emptyParamMessage}
 	}
 
 	if u.serviceID == uuid.Nil {
-		return &validateParamError{param: "service_id", reason: "must not be empty"}
+		return &validateParamError{param: "service_id", reason: emptyParamMessage}
 	}
 
 	if u.languageTag == language.Und {
-		return &validateParamError{param: "language", reason: "must not be empty"}
+		return &validateParamError{param: "language", reason: emptyParamMessage}
 	}
 
 	return nil
@@ -135,12 +135,12 @@ func (d *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
 
 	params.serviceID, err = uuidFromProto(d.ServiceId)
 	if err != nil {
-		return downloadParams{}, &parseParamError{field: "service_id", err: errors.Unwrap(err)}
+		return downloadParams{}, &parseParamError{field: "service_id", err: err}
 	}
 
 	params.languageTag, err = langTagFromProto(d.Language)
 	if err != nil {
-		return downloadParams{}, &parseParamError{field: "language", err: errors.Unwrap(err)}
+		return downloadParams{}, &parseParamError{field: "language", err: err}
 	}
 
 	return params, nil
@@ -148,15 +148,15 @@ func (d *downloadTranslationFileRequest) parseParams() (downloadParams, error) {
 
 func (d *downloadParams) validate() error {
 	if d.schema == translatev1.Schema_UNSPECIFIED {
-		return &validateParamError{param: "schema", reason: "must not be empty"}
+		return &validateParamError{param: "schema", reason: emptyParamMessage}
 	}
 
 	if d.serviceID == uuid.Nil {
-		return &validateParamError{param: "service_id", reason: "must not be empty"}
+		return &validateParamError{param: "service_id", reason: emptyParamMessage}
 	}
 
 	if d.languageTag == language.Und {
-		return &validateParamError{param: "language", reason: "must not be empty"}
+		return &validateParamError{param: "language", reason: emptyParamMessage}
 	}
 
 	return nil
