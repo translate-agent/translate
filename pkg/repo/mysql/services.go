@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
@@ -20,7 +19,7 @@ func (r *Repo) SaveService(ctx context.Context, service *model.Service) error {
 
 	_, err := r.db.ExecContext(ctx, query, service.ID, service.Name)
 	if err != nil {
-		return fmt.Errorf("repo: insert service: %w", err)
+		return &repo.DefaultError{Entity: "service", Err: err, Operation: "Insert"}
 	}
 
 	return nil
@@ -36,9 +35,9 @@ func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Ser
 	default:
 		return &service, nil
 	case errors.Is(err, sql.ErrNoRows):
-		return nil, repo.ErrNotFound
+		return nil, &repo.NotFoundError{Entity: "service", Fields: map[string]string{"id": serviceID.String()}}
 	case err != nil:
-		return nil, fmt.Errorf("repo: select service: %w", err)
+		return nil, &repo.DefaultError{Entity: "service", Err: err, Operation: "Select"}
 	}
 }
 
@@ -47,7 +46,7 @@ func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
 
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("repo: select services: %w", err)
+		return nil, &repo.DefaultError{Entity: "service", Err: err, Operation: "Select"}
 	}
 	defer rows.Close()
 
@@ -58,14 +57,14 @@ func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
 
 		err = rows.Scan(&service.ID, &service.Name)
 		if err != nil {
-			return nil, fmt.Errorf("repo: scan service: %w", err)
+			return nil, &repo.DefaultError{Entity: "service", Err: err, Operation: "Scan"}
 		}
 
 		services = append(services, service)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("repo: scan services: %w", err)
+		return nil, &repo.DefaultError{Entity: "service", Err: err, Operation: "Scan"}
 	}
 
 	return services, nil
@@ -76,15 +75,15 @@ func (r *Repo) DeleteService(ctx context.Context, serviceID uuid.UUID) error {
 
 	result, err := r.db.ExecContext(ctx, query, serviceID)
 	if err != nil {
-		return fmt.Errorf("repo: delete service: %w", err)
+		return &repo.DefaultError{Entity: "service", Err: err, Operation: "Delete"}
 	}
 
 	switch count, err := result.RowsAffected(); {
 	default:
 		return nil
 	case err != nil:
-		return fmt.Errorf("repo: delete service result: %w", err)
+		return &repo.DefaultError{Entity: "service", Err: err, Operation: "Delete Result"}
 	case count == 0:
-		return repo.ErrNotFound
+		return &repo.NotFoundError{Entity: "service", Fields: map[string]string{"id": serviceID.String()}}
 	}
 }

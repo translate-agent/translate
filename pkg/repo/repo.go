@@ -2,14 +2,38 @@ package repo
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
 
-var ErrNotFound = errors.New("entity not found")
+type NotFoundError struct {
+	Fields map[string]string
+	Entity string
+}
+
+func (n *NotFoundError) Error() string {
+	fields := make([]string, 0, len(n.Fields))
+
+	for k, v := range n.Fields {
+		fields = append(fields, fmt.Sprintf("%s '%s'", k, v))
+	}
+
+	return fmt.Sprintf("%s with %s does not exist", n.Entity, strings.Join(fields, " and "))
+}
+
+type DefaultError struct {
+	Entity    string
+	Err       error
+	Operation string
+}
+
+func (d *DefaultError) Error() string {
+	return fmt.Sprintf("%s: %s", d.Entity, d.Err.Error())
+}
 
 type ServicesRepo interface {
 	// SaveService handles both Create and Update

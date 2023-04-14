@@ -97,7 +97,7 @@ func Test_SaveTranslationFile(t *testing.T) {
 			name:            "Missing service",
 			serviceID:       uuid.New(),
 			translationFile: missingServiceTranslationFile,
-			expectedErr:     repo.ErrNotFound,
+			expectedErr:     &repo.NotFoundError{},
 		},
 	}
 
@@ -110,7 +110,9 @@ func Test_SaveTranslationFile(t *testing.T) {
 			err := repository.SaveTranslationFile(ctx, tt.serviceID, tt.translationFile)
 
 			if tt.expectedErr != nil {
-				assert.ErrorIs(t, err, tt.expectedErr)
+				var e *repo.NotFoundError
+				require.ErrorAs(t, err, &e)
+
 				return
 			}
 
@@ -187,7 +189,7 @@ func Test_LoadTranslationFile(t *testing.T) {
 		{
 			name:        "Nonexistent",
 			serviceID:   uuid.New(),
-			expectedErr: repo.ErrNotFound,
+			expectedErr: &repo.NotFoundError{},
 		},
 	}
 
@@ -203,7 +205,9 @@ func Test_LoadTranslationFile(t *testing.T) {
 			)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				var e *repo.NotFoundError
+				assert.ErrorAs(t, err, &e)
+
 				return
 			}
 

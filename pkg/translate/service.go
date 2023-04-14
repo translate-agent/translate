@@ -2,18 +2,15 @@ package translate
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/repo"
 )
 
 type (
@@ -29,14 +26,16 @@ type getServiceParams struct {
 	id uuid.UUID
 }
 
+// TODO change to pointer all returning params
+
 func (g *getServiceRequest) parseParams() (getServiceParams, error) {
 	if g == nil {
-		return getServiceParams{}, errors.New("request is nil")
+		return getServiceParams{}, errNilRequest
 	}
 
 	id, err := uuidFromProto(g.Id)
 	if err != nil {
-		return getServiceParams{}, fmt.Errorf("parse id: %w", err)
+		return getServiceParams{}, &parseParamError{field: "id", err: err}
 	}
 
 	return getServiceParams{id: id}, nil
@@ -51,17 +50,15 @@ func (t *TranslateServiceServer) GetService(
 
 	params, err := getReq.parseParams()
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, requestErrorToStatus(err)
 	}
 
-	switch service, err := t.repo.LoadService(ctx, params.id); {
-	default:
-		return serviceToProto(service), nil
-	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, err.Error())
-	case err != nil:
-		return nil, status.Errorf(codes.Internal, err.Error())
+	service, err := t.repo.LoadService(ctx, params.id)
+	if err != nil {
+		return nil, repoErrorToStatus(err)
 	}
+
+	return serviceToProto(service), nil
 }
 
 // ----------------------ListServices-------------------------------
@@ -72,7 +69,7 @@ func (t *TranslateServiceServer) ListServices(
 ) (*translatev1.ListServicesResponse, error) {
 	services, err := t.repo.LoadServices(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, repoErrorToStatus(err)
 	}
 
 	return &translatev1.ListServicesResponse{Services: servicesToProto(services)}, nil
@@ -86,19 +83,23 @@ type createServiceParams struct {
 
 func (c *createServiceRequest) parseParams() (createServiceParams, error) {
 	if c == nil {
-		return createServiceParams{}, errors.New("request is nil")
+		return createServiceParams{}, errNilRequest
 	}
 
 	if c.Service == nil {
-		return createServiceParams{}, errors.New("service is nil")
+		return createServiceParams{}, errNilService
 	}
 
 	service, err := serviceFromProto(c.Service)
-	if err != nil {
-		return createServiceParams{}, fmt.Errorf("parse service: %w", err)
-	}
 
-	return createServiceParams{service: service}, nil
+	switch {
+	case err == nil:
+		return createServiceParams{service: service}, nil
+	case strings.Contains(err.Error(), "service id"):
+		return createServiceParams{}, &parseParamError{field: "service.id", err: err}
+	default:
+		return createServiceParams{}, &parseParamError{field: "service", err: err}
+	}
 }
 
 func (t *TranslateServiceServer) CreateService(
@@ -109,11 +110,11 @@ func (t *TranslateServiceServer) CreateService(
 
 	params, err := createReq.parseParams()
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, requestErrorToStatus(err)
 	}
 
 	if err := t.repo.SaveService(ctx, params.service); err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, repoErrorToStatus(err)
 	}
 
 	return serviceToProto(params.service), nil
@@ -128,19 +129,23 @@ type updateServiceParams struct {
 
 func (u *updateServiceRequest) parseParams() (updateServiceParams, error) {
 	if u == nil {
-		return updateServiceParams{}, errors.New("request is nil")
+		return updateServiceParams{}, errNilRequest
 	}
 
 	if u.Service == nil {
-		return updateServiceParams{}, errors.New("service is nil")
+		return updateServiceParams{}, errNilService
 	}
 
 	service, err := serviceFromProto(u.Service)
-	if err != nil {
-		return updateServiceParams{}, fmt.Errorf("parse service: %w", err)
-	}
 
-	return updateServiceParams{service: service, mask: u.UpdateMask}, nil
+	switch {
+	case err == nil:
+		return updateServiceParams{service: service, mask: u.UpdateMask}, nil
+	case strings.Contains(err.Error(), "service id"):
+		return updateServiceParams{}, &parseParamError{field: "service.id", err: err}
+	default:
+		return updateServiceParams{}, &parseParamError{field: "service", err: err}
+	}
 }
 
 func (u *updateServiceParams) updateServiceFromMask(service *model.Service) (*model.Service, error) {
@@ -150,12 +155,12 @@ func (u *updateServiceParams) updateServiceFromMask(service *model.Service) (*mo
 	}
 
 	// Replace service resource's fields with the new ones from request (PATCH)
-	for _, path := range u.mask.Paths {
+	for i, path := range u.mask.Paths {
 		switch path {
 		case "name":
 			service.Name = u.service.Name
 		default:
-			return nil, fmt.Errorf("'%s' is not a valid service field", path)
+			return nil, &updateMaskError{field: fmt.Sprintf("update_mask.paths[%d]", i+1), value: path, entity: "Service"}
 		}
 	}
 
@@ -170,25 +175,21 @@ func (t *TranslateServiceServer) UpdateService(
 
 	params, err := updateReq.parseParams()
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, requestErrorToStatus(err)
 	}
 
 	oldService, err := t.repo.LoadService(ctx, params.service.ID)
-
-	switch {
-	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
-	case err != nil:
-		return nil, status.Errorf(codes.Internal, err.Error())
+	if err != nil {
+		return nil, repoErrorToStatus(err)
 	}
 
 	updatedService, err := params.updateServiceFromMask(oldService)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, requestErrorToStatus(err)
 	}
 
 	if err := t.repo.SaveService(ctx, updatedService); err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, repoErrorToStatus(err)
 	}
 
 	return serviceToProto(updatedService), nil
@@ -202,12 +203,12 @@ type deleteServiceParams struct {
 
 func (d *deleteServiceRequest) parseParams() (deleteServiceParams, error) {
 	if d == nil {
-		return deleteServiceParams{}, errors.New("request is nil")
+		return deleteServiceParams{}, errNilRequest
 	}
 
 	id, err := uuidFromProto(d.Id)
 	if err != nil {
-		return deleteServiceParams{}, fmt.Errorf("parse id: %w", err)
+		return deleteServiceParams{}, &parseParamError{field: "id", err: err}
 	}
 
 	return deleteServiceParams{id: id}, nil
@@ -221,15 +222,12 @@ func (t *TranslateServiceServer) DeleteService(
 
 	params, err := deleteReq.parseParams()
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, requestErrorToStatus(err)
 	}
 
-	switch err := t.repo.DeleteService(ctx, params.id); {
-	default:
-		return &emptypb.Empty{}, nil
-	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, err.Error())
-	case err != nil:
-		return nil, status.Errorf(codes.Internal, err.Error())
+	if err := t.repo.DeleteService(ctx, params.id); err != nil {
+		return nil, repoErrorToStatus(err)
 	}
+
+	return &emptypb.Empty{}, nil
 }

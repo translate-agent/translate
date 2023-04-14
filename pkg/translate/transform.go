@@ -66,7 +66,7 @@ func serviceFromProto(s *translatev1.Service) (*model.Service, error) {
 
 	service.ID, err = uuidFromProto(s.Id)
 	if err != nil {
-		return nil, fmt.Errorf("transform id: %w", err)
+		return nil, fmt.Errorf("transform service id: %w", err)
 	}
 
 	return service, nil

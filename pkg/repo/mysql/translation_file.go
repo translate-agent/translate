@@ -131,9 +131,8 @@ func (r *Repo) SaveTranslationFile(
 		dbFile.id, serviceID,
 		dbFile.lang, dbFile.messages,
 	)
-
 	if err != nil {
-		return fmt.Errorf("repo: insert translate file: %w", err)
+		return &repo.DefaultError{Entity: "translation_file", Err: err, Operation: "Insert"}
 	}
 
 	return nil
@@ -159,8 +158,11 @@ func (r *Repo) LoadTranslationFile(
 	default:
 		return toTranslationFile(&dbFile), nil
 	case errors.Is(err, sql.ErrNoRows):
-		return nil, repo.ErrNotFound
+		return nil, &repo.NotFoundError{
+			Entity: "translation_file",
+			Fields: map[string]string{"service_id": serviceID.String(), "language": language.String()},
+		}
 	case err != nil:
-		return nil, fmt.Errorf("repo: select translate file: %w", err)
+		return nil, &repo.DefaultError{Entity: "translation_file", Err: err, Operation: "Select"}
 	}
 }

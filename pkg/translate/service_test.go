@@ -1,7 +1,6 @@
 package translate
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -31,7 +30,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 
 	tests := []struct {
 		input       *translatev1.GetServiceRequest
-		expectedErr error
+		expectedErr *parseParamError
 		name        string
 		expected    getServiceParams
 	}{
@@ -46,12 +45,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 		{
 			name:        "Malformed UUID",
 			input:       malformedIDReq,
-			expectedErr: errors.New("invalid UUID length"),
-		},
-		{
-			name:        "NIL request",
-			input:       nil,
-			expectedErr: errors.New("request is nil"),
+			expectedErr: &parseParamError{field: "id"},
 		},
 	}
 
@@ -65,12 +59,15 @@ func Test_ParseGetServiceParams(t *testing.T) {
 			actual, err := req.parseParams()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				var e *parseParamError
+				require.ErrorAs(t, err, &e)
+
+				// Check if parameter which caused error is the same as expected
+				assert.Equal(t, tt.expectedErr.field, e.field)
 				return
 			}
 
 			require.NoError(t, err)
-
 			assert.Equal(t, tt.expected, actual)
 		})
 	}
@@ -98,7 +95,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 
 	tests := []struct {
 		expected    updateServiceParams
-		expectedErr error
+		expectedErr *parseParamError
 		input       *translatev1.UpdateServiceRequest
 		name        string
 	}{
@@ -117,12 +114,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 		{
 			name:        "Malformed Service UUID",
 			input:       malformedIDReq,
-			expectedErr: errors.New("invalid UUID length"),
-		},
-		{
-			name:        "NIL request",
-			input:       nil,
-			expectedErr: errors.New("request is nil"),
+			expectedErr: &parseParamError{field: "service.id"},
 		},
 	}
 
@@ -136,13 +128,18 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			actual, err := req.parseParams()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				var e *parseParamError
+				require.ErrorAs(t, err, &e)
+
+				// Check if parameter which caused error is the same as expected
+				assert.Equal(t, tt.expectedErr.field, e.field)
 				return
 			}
 
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.expected, actual)
+			require.Equal(t, tt.expected.service, actual.service)
+			assert.ElementsMatch(t, tt.expected.mask.Paths, actual.mask.Paths)
 		})
 	}
 }
@@ -165,7 +162,7 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 
 	tests := []struct {
 		input       *translatev1.DeleteServiceRequest
-		expectedErr error
+		expectedErr *parseParamError
 		name        string
 		expected    deleteServiceParams
 	}{
@@ -178,12 +175,7 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 		{
 			name:        "Malformed UUID",
 			input:       malformedIDReq,
-			expectedErr: errors.New("invalid UUID length"),
-		},
-		{
-			name:        "NIL request",
-			input:       nil,
-			expectedErr: errors.New("request is nil"),
+			expectedErr: &parseParamError{field: "id"},
 		},
 	}
 
@@ -197,12 +189,15 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 			actual, err := req.parseParams()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				var e *parseParamError
+				require.ErrorAs(t, err, &e)
+
+				// Check if parameter which caused error is the same as expected
+				assert.Equal(t, tt.expectedErr.field, e.field)
 				return
 			}
 
 			require.NoError(t, err)
-
 			assert.Equal(t, tt.expected, actual)
 		})
 	}
@@ -229,7 +224,7 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 
 	tests := []struct {
 		input       *translatev1.CreateServiceRequest
-		expectedErr error
+		expectedErr *parseParamError
 		expected    createServiceParams
 		name        string
 	}{
@@ -247,12 +242,7 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 		{
 			name:        "Malformed UUID",
 			input:       malformedIDReq,
-			expectedErr: errors.New("invalid UUID length"),
-		},
-		{
-			name:        "NIL request",
-			input:       nil,
-			expectedErr: errors.New("request is nil"),
+			expectedErr: &parseParamError{field: "service.id"},
 		},
 	}
 
@@ -266,12 +256,15 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 			actual, err := req.parseParams()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				var e *parseParamError
+				require.ErrorAs(t, err, &e)
+
+				// Check if parameter which caused error is the same as expected
+				assert.Equal(t, tt.expectedErr.field, e.field)
 				return
 			}
 
 			require.NoError(t, err)
-
 			assert.Equal(t, tt.expected, actual)
 		})
 	}

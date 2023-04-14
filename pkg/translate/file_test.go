@@ -1,7 +1,6 @@
 package translate
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -43,7 +42,7 @@ func Test_ParseUploadParams(t *testing.T) {
 
 	tests := []struct {
 		input       *translatev1.UploadTranslationFileRequest
-		expectedErr error
+		expectedErr *parseParamError
 		name        string
 	}{
 		{
@@ -59,18 +58,18 @@ func Test_ParseUploadParams(t *testing.T) {
 		{
 			name:        "Malformed language tag",
 			input:       malformedLangReq,
-			expectedErr: errors.New("parse language"),
+			expectedErr: &parseParamError{field: "language"},
 		},
 
 		{
 			name:        "Malformed service ID",
 			input:       malformedServiceIDReq,
-			expectedErr: errors.New("parse service id"),
+			expectedErr: &parseParamError{field: "service_id"},
 		},
 		{
 			name:        "Malformed File ID",
 			input:       malformedFileIDReq,
-			expectedErr: errors.New("parse translation file id"),
+			expectedErr: &parseParamError{field: "translation_file_id"},
 		},
 	}
 
@@ -84,12 +83,15 @@ func Test_ParseUploadParams(t *testing.T) {
 			params, err := req.parseParams()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				var e *parseParamError
+				require.ErrorAs(t, err, &e)
+
+				// Check if parameter which caused error is the same as expected
+				assert.Equal(t, tt.expectedErr.field, e.field)
 				return
 			}
 
 			require.NoError(t, err)
-
 			assert.NotEmpty(t, params)
 		})
 	}
@@ -116,15 +118,15 @@ func Test_ValidateUploadParams(t *testing.T) {
 	unspecifiedSchemaParams := randUploadParams()
 	unspecifiedSchemaParams.schema = translatev1.Schema_UNSPECIFIED
 
-	unspecifiedLangReq := randUploadParams()
-	unspecifiedLangReq.languageTag = language.Und
+	unspecifiedLangParams := randUploadParams()
+	unspecifiedLangParams.languageTag = language.Und
 
-	unspecifiedServiceIDReq := randUploadParams()
-	unspecifiedServiceIDReq.serviceID = uuid.Nil
+	unspecifiedServiceParams := randUploadParams()
+	unspecifiedServiceParams.serviceID = uuid.Nil
 
 	tests := []struct {
 		name        string
-		expectedErr error
+		expectedErr *validateParamError
 		input       uploadParams
 	}{
 		{
@@ -135,22 +137,22 @@ func Test_ValidateUploadParams(t *testing.T) {
 		{
 			name:        "Empty data",
 			input:       emptyDataParams,
-			expectedErr: errors.New("'data' is required"),
+			expectedErr: &validateParamError{param: "data"},
 		},
 		{
 			name:        "Unspecified schema",
 			input:       unspecifiedSchemaParams,
-			expectedErr: errors.New("'schema' is required"),
+			expectedErr: &validateParamError{param: "schema"},
 		},
 		{
 			name:        "Unspecified language",
-			input:       unspecifiedLangReq,
-			expectedErr: errors.New("'language' is required"),
+			input:       unspecifiedLangParams,
+			expectedErr: &validateParamError{param: "language"},
 		},
 		{
 			name:        "Unspecified service ID",
-			input:       unspecifiedServiceIDReq,
-			expectedErr: errors.New("'service_id' is required"),
+			input:       unspecifiedServiceParams,
+			expectedErr: &validateParamError{param: "service_id"},
 		},
 	}
 	for _, tt := range tests {
@@ -161,7 +163,11 @@ func Test_ValidateUploadParams(t *testing.T) {
 			err := tt.input.validate()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				var e *validateParamError
+				require.ErrorAs(t, err, &e)
+
+				// Check if parameter which caused error is the same as expected
+				assert.Equal(t, tt.expectedErr.param, e.param)
 				return
 			}
 
@@ -195,7 +201,7 @@ func Test_ParseDownloadParams(t *testing.T) {
 	malformedLangTagReq.Language += "_FAIL"
 
 	tests := []struct {
-		expectedErr error
+		expectedErr *parseParamError
 		input       *translatev1.DownloadTranslationFileRequest
 		name        string
 	}{
@@ -207,12 +213,12 @@ func Test_ParseDownloadParams(t *testing.T) {
 		{
 			name:        "Malformed service ID",
 			input:       malformedServiceIDReq,
-			expectedErr: errors.New("parse service id"),
+			expectedErr: &parseParamError{field: "service_id"},
 		},
 		{
 			name:        "Malformed language tag",
 			input:       malformedLangTagReq,
-			expectedErr: errors.New("parse language"),
+			expectedErr: &parseParamError{field: "language"},
 		},
 	}
 	for _, tt := range tests {
@@ -225,12 +231,15 @@ func Test_ParseDownloadParams(t *testing.T) {
 			params, err := req.parseParams()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				var e *parseParamError
+				require.ErrorAs(t, err, &e)
+
+				// Check if parameter which caused error is the same as expected
+				assert.Equal(t, tt.expectedErr.field, e.field)
 				return
 			}
 
 			require.NoError(t, err)
-
 			assert.NotEmpty(t, params)
 		})
 	}
@@ -255,12 +264,12 @@ func Test_ValidateDownloadParams(t *testing.T) {
 	unspecifiedServiceIDParams := randDownloadParams()
 	unspecifiedServiceIDParams.serviceID = uuid.Nil
 
-	unspecifiedLanguageTagReq := randDownloadParams()
-	unspecifiedLanguageTagReq.languageTag = language.Und
+	unspecifiedLangParams := randDownloadParams()
+	unspecifiedLangParams.languageTag = language.Und
 
 	tests := []struct {
 		name        string
-		expectedErr error
+		expectedErr *validateParamError
 		input       downloadParams
 	}{
 		{
@@ -271,17 +280,17 @@ func Test_ValidateDownloadParams(t *testing.T) {
 		{
 			name:        "Unspecified schema",
 			input:       unspecifiedSchemaParams,
-			expectedErr: errors.New("'schema' is required"),
+			expectedErr: &validateParamError{param: "schema"},
 		},
 		{
 			name:        "Unspecified service ID",
 			input:       unspecifiedServiceIDParams,
-			expectedErr: errors.New("'service_id' is required"),
+			expectedErr: &validateParamError{param: "service_id"},
 		},
 		{
 			name:        "Unspecified language tag",
-			input:       unspecifiedLanguageTagReq,
-			expectedErr: errors.New("'language' is required"),
+			input:       unspecifiedLangParams,
+			expectedErr: &validateParamError{param: "language"},
 		},
 	}
 	for _, tt := range tests {
@@ -292,7 +301,11 @@ func Test_ValidateDownloadParams(t *testing.T) {
 			err := tt.input.validate()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				var e *validateParamError
+				require.ErrorAs(t, err, &e)
+
+				// Check if parameter which caused error is the same as expected
+				assert.Equal(t, tt.expectedErr.param, e.param)
 				return
 			}
 

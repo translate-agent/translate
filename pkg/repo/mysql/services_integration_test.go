@@ -6,6 +6,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/tracer"
@@ -80,15 +82,11 @@ func Test_SaveService(t *testing.T) {
 			t.Parallel()
 
 			err := repository.SaveService(ctx, tt.service)
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			// check if really saved
 			actualService, err := repository.LoadService(ctx, tt.service.ID)
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			assert.Equal(t, tt.service, actualService)
 		})
@@ -103,23 +101,17 @@ func Test_UpdateService(t *testing.T) {
 	expectedService := randService()
 
 	err := repository.SaveService(ctx, expectedService)
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
+	require.NoError(t, err, "Prepare test service")
 
 	// update service fields and save
 	expectedService.Name = gofakeit.FirstName()
 
 	err = repository.SaveService(ctx, expectedService)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "Update service")
 
 	// check if really updated
 	actualService, err := repository.LoadService(ctx, expectedService.ID)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err, "Load updated service")
 
 	assert.Equal(t, expectedService, actualService)
 }
@@ -132,9 +124,7 @@ func Test_LoadService(t *testing.T) {
 	service := randService()
 
 	err := repository.SaveService(ctx, service)
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
+	require.NoError(t, err, "Prepare test service")
 
 	tests := []struct {
 		expected    *model.Service
@@ -151,7 +141,7 @@ func Test_LoadService(t *testing.T) {
 		{
 			name:        "Nonexistent",
 			serviceID:   uuid.New(),
-			expectedErr: repo.ErrNotFound,
+			expectedErr: &repo.NotFoundError{},
 		},
 	}
 	for _, tt := range tests {
@@ -162,14 +152,13 @@ func Test_LoadService(t *testing.T) {
 			actual, err := repository.LoadService(ctx, tt.serviceID)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				e := reflect.New(reflect.TypeOf(tt.expectedErr).Elem()).Interface()
+				assert.ErrorAs(t, err, &e)
+
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
-
+			require.NoError(t, err)
 			assert.Equal(t, tt.expected, actual)
 		})
 	}
@@ -180,28 +169,24 @@ func Test_LoadServices(t *testing.T) {
 
 	ctx := context.Background()
 
-	expectedServices := make([]model.Service, 3)
+	count := gofakeit.IntRange(1, 7)
 
-	for i := 0; i < 3; i++ {
+	expectedServices := make([]model.Service, count)
+
+	for i := 0; i < count; i++ {
 		service := randService()
 
 		err := repository.SaveService(ctx, service)
-		if !assert.NoError(t, err, "Prepare test data") {
-			return
-		}
+		require.NoError(t, err, "Prepare test service")
 
 		expectedServices[i] = *service
 	}
 
 	actual, err := repository.LoadServices(ctx)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 
 	for _, expected := range expectedServices {
-		if !assert.Contains(t, actual, expected) {
-			return
-		}
+		require.Contains(t, actual, expected)
 	}
 }
 
@@ -213,9 +198,7 @@ func Test_DeleteService(t *testing.T) {
 	service := randService()
 
 	err := repository.SaveService(ctx, service)
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
+	require.NoError(t, err, "Prepare test service")
 
 	tests := []struct {
 		expectedErr error
@@ -230,7 +213,7 @@ func Test_DeleteService(t *testing.T) {
 		{
 			name:        "Nonexistent",
 			serviceID:   uuid.New(),
-			expectedErr: repo.ErrNotFound,
+			expectedErr: &repo.DefaultError{},
 		},
 	}
 	for _, tt := range tests {
@@ -240,17 +223,18 @@ func Test_DeleteService(t *testing.T) {
 
 			err := repository.DeleteService(ctx, tt.serviceID)
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				e := reflect.New(reflect.TypeOf(tt.expectedErr).Elem()).Interface()
+				assert.ErrorAs(t, err, &e)
+
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			// check if really is deleted
 			_, err = repository.LoadService(ctx, tt.serviceID)
-			assert.ErrorIs(t, err, repo.ErrNotFound)
+			var e *repo.NotFoundError
+			assert.ErrorAs(t, err, &e)
 		})
 	}
 }
