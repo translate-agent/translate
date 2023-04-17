@@ -14,33 +14,33 @@ func TestTokensToMessageFormat(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		expected    nodeMatch
+		expected    NodeMatch
 		expectedErr error
 		input       []Token
 	}{
 		{
 			name: "message with variable",
 			input: []Token{
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Text, Value: "Hello, ", Level: 1},
-				{Type: PlaceholderOpen, Value: "{", Level: 2},
-				{Type: Variable, Value: "userName", Level: 2},
-				{Type: PlaceholderClose, Value: "}", Level: 2},
-				{Type: Text, Value: "!", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "Hello, ", Level: 1},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 2},
+				{Type: TokenTypeVariable, Value: "userName", Level: 2},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 2},
+				{Type: TokenTypeText, Value: "!", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
 			},
-			expected: nodeMatch{
-				Variants: []nodeVariant{
+			expected: NodeMatch{
+				Variants: []NodeVariant{
 					{
 						Keys: []string(nil),
 						Message: []interface{}{
-							nodeText{
+							NodeText{
 								Text: "Hello, ",
 							},
-							nodeVariable{
+							NodeVariable{
 								Name: "userName",
 							},
-							nodeText{
+							NodeText{
 								Text: "!",
 							},
 						},
@@ -51,42 +51,42 @@ func TestTokensToMessageFormat(t *testing.T) {
 		{
 			name: "message format is plural",
 			input: []Token{
-				{Type: Keyword, Value: "match ", Level: 0},
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Variable, Value: "count ", Level: 1},
-				{Type: Function, Value: "number", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
-				{Type: Keyword, Value: " when ", Level: 0},
-				{Type: Literal, Value: "1 ", Level: 0},
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Text, Value: "You have one notification.", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
-				{Type: Keyword, Value: " when ", Level: 0},
-				{Type: Literal, Value: "* ", Level: 0},
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Text, Value: "You have ", Level: 1},
-				{Type: PlaceholderOpen, Value: "{", Level: 2},
-				{Type: Variable, Value: "count", Level: 2},
-				{Type: PlaceholderClose, Value: "}", Level: 2},
-				{Type: Text, Value: " notifications.", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: "match", Level: 0},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeVariable, Value: "count", Level: 1},
+				{Type: TokenTypeFunction, Value: "number", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: " when", Level: 0},
+				{Type: TokenTypeLiteral, Value: "1", Level: 0},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "You have one notification.", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: "when", Level: 0},
+				{Type: TokenTypeLiteral, Value: "*", Level: 0},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "You have ", Level: 1},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 2},
+				{Type: TokenTypeVariable, Value: "count", Level: 2},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 2},
+				{Type: TokenTypeText, Value: " notifications.", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
 			},
-			expected: nodeMatch{
-				Selectors: []nodeExpr{
+			expected: NodeMatch{
+				Selectors: []NodeExpr{
 					{
-						Value: nodeVariable{
+						Value: NodeVariable{
 							Name: "count",
 						},
-						Function: nodeFunction{
+						Function: NodeFunction{
 							Name: "number",
 						},
 					},
 				},
-				Variants: []nodeVariant{
+				Variants: []NodeVariant{
 					{
 						Keys: []string{"1"},
 						Message: []interface{}{
-							nodeText{
+							NodeText{
 								Text: "You have one notification.",
 							},
 						},
@@ -94,13 +94,13 @@ func TestTokensToMessageFormat(t *testing.T) {
 					{
 						Keys: []string{"*"},
 						Message: []interface{}{
-							nodeText{
+							NodeText{
 								Text: "You have ",
 							},
-							nodeVariable{
+							NodeVariable{
 								Name: "count",
 							},
-							nodeText{
+							NodeText{
 								Text: " notifications.",
 							},
 						},
@@ -111,47 +111,47 @@ func TestTokensToMessageFormat(t *testing.T) {
 		{
 			name: "message with multiple plurals",
 			input: []Token{
-				{Type: Keyword, Value: "match ", Level: 0},
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Variable, Value: "count ", Level: 1},
-				{Type: Function, Value: "number", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
-				{Type: Keyword, Value: " when ", Level: 0},
-				{Type: Literal, Value: "0 ", Level: 0},
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Text, Value: "You have no notifications.", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
-				{Type: Keyword, Value: " when ", Level: 0},
-				{Type: Literal, Value: "1 ", Level: 0},
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Text, Value: "You have one notification.", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
-				{Type: Keyword, Value: " when ", Level: 0},
-				{Type: Literal, Value: "* ", Level: 0},
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Text, Value: "You have ", Level: 1},
-				{Type: PlaceholderOpen, Value: "{", Level: 2},
-				{Type: Variable, Value: "count", Level: 2},
-				{Type: PlaceholderClose, Value: "}", Level: 2},
-				{Type: Text, Value: " notifications.", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: "match", Level: 0},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeVariable, Value: "count", Level: 1},
+				{Type: TokenTypeFunction, Value: "number", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: "when", Level: 0},
+				{Type: TokenTypeLiteral, Value: "0", Level: 0},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "You have no notifications.", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: "when", Level: 0},
+				{Type: TokenTypeLiteral, Value: "1", Level: 0},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "You have one notification.", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: "when", Level: 0},
+				{Type: TokenTypeLiteral, Value: "*", Level: 0},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "You have ", Level: 1},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 2},
+				{Type: TokenTypeVariable, Value: "count", Level: 2},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 2},
+				{Type: TokenTypeText, Value: " notifications.", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
 			},
-			expected: nodeMatch{
-				Selectors: []nodeExpr{
+			expected: NodeMatch{
+				Selectors: []NodeExpr{
 					{
-						Value: nodeVariable{
+						Value: NodeVariable{
 							Name: "count",
 						},
-						Function: nodeFunction{
+						Function: NodeFunction{
 							Name: "number",
 						},
 					},
 				},
-				Variants: []nodeVariant{
+				Variants: []NodeVariant{
 					{
 						Keys: []string{"0"},
 						Message: []interface{}{
-							nodeText{
+							NodeText{
 								Text: "You have no notifications.",
 							},
 						},
@@ -159,7 +159,7 @@ func TestTokensToMessageFormat(t *testing.T) {
 					{
 						Keys: []string{"1"},
 						Message: []interface{}{
-							nodeText{
+							NodeText{
 								Text: "You have one notification.",
 							},
 						},
@@ -167,13 +167,13 @@ func TestTokensToMessageFormat(t *testing.T) {
 					{
 						Keys: []string{"*"},
 						Message: []interface{}{
-							nodeText{
+							NodeText{
 								Text: "You have ",
 							},
-							nodeVariable{
+							NodeVariable{
 								Name: "count",
 							},
-							nodeText{
+							NodeText{
 								Text: " notifications.",
 							},
 						},
@@ -184,59 +184,59 @@ func TestTokensToMessageFormat(t *testing.T) {
 		{
 			name: "message with multiple plurals and selectors",
 			input: []Token{
-				{Type: Keyword, Value: "match ", Level: 0},
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Variable, Value: "count ", Level: 1},
-				{Type: Function, Value: "number", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Variable, Value: "num ", Level: 1},
-				{Type: Function, Value: "number", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
-				{Type: Keyword, Value: " when ", Level: 0},
-				{Type: Literal, Value: "0 ", Level: 0},
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Text, Value: "You have no notifications.", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
-				{Type: Keyword, Value: " when ", Level: 0},
-				{Type: Literal, Value: "1 ", Level: 0},
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Text, Value: "You have one notification.", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
-				{Type: Keyword, Value: " when ", Level: 0},
-				{Type: Literal, Value: "* ", Level: 0},
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Text, Value: "You have ", Level: 1},
-				{Type: PlaceholderOpen, Value: "{", Level: 2},
-				{Type: Variable, Value: "count", Level: 2},
-				{Type: PlaceholderClose, Value: "}", Level: 2},
-				{Type: Text, Value: " notifications.", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: "match", Level: 0},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeVariable, Value: "count", Level: 1},
+				{Type: TokenTypeFunction, Value: "number", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeVariable, Value: "num ", Level: 1},
+				{Type: TokenTypeFunction, Value: "number", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: "when", Level: 0},
+				{Type: TokenTypeLiteral, Value: "0", Level: 0},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "You have no notifications.", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: "when", Level: 0},
+				{Type: TokenTypeLiteral, Value: "1", Level: 0},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "You have one notification.", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: "when", Level: 0},
+				{Type: TokenTypeLiteral, Value: "*", Level: 0},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "You have ", Level: 1},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 2},
+				{Type: TokenTypeVariable, Value: "count", Level: 2},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 2},
+				{Type: TokenTypeText, Value: " notifications.", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
 			},
-			expected: nodeMatch{
-				Selectors: []nodeExpr{
+			expected: NodeMatch{
+				Selectors: []NodeExpr{
 					{
-						Value: nodeVariable{
+						Value: NodeVariable{
 							Name: "count",
 						},
-						Function: nodeFunction{
+						Function: NodeFunction{
 							Name: "number",
 						},
 					},
 					{
-						Value: nodeVariable{
+						Value: NodeVariable{
 							Name: "num",
 						},
-						Function: nodeFunction{
+						Function: NodeFunction{
 							Name: "number",
 						},
 					},
 				},
-				Variants: []nodeVariant{
+				Variants: []NodeVariant{
 					{
 						Keys: []string{"0"},
 						Message: []interface{}{
-							nodeText{
+							NodeText{
 								Text: "You have no notifications.",
 							},
 						},
@@ -244,7 +244,7 @@ func TestTokensToMessageFormat(t *testing.T) {
 					{
 						Keys: []string{"1"},
 						Message: []interface{}{
-							nodeText{
+							NodeText{
 								Text: "You have one notification.",
 							},
 						},
@@ -252,13 +252,13 @@ func TestTokensToMessageFormat(t *testing.T) {
 					{
 						Keys: []string{"*"},
 						Message: []interface{}{
-							nodeText{
+							NodeText{
 								Text: "You have ",
 							},
-							nodeVariable{
+							NodeVariable{
 								Name: "count",
 							},
-							nodeText{
+							NodeText{
 								Text: " notifications.",
 							},
 						},
@@ -269,12 +269,12 @@ func TestTokensToMessageFormat(t *testing.T) {
 		{
 			name: "message with wrong format",
 			input: []Token{
-				{Type: PlaceholderOpen, Value: "{", Level: 1},
-				{Type: Text, Value: "Hello, ", Level: 1},
-				{Type: PlaceholderOpen, Value: "{", Level: 2},
-				{Type: Variable, Value: "userName", Level: 2},
-				{Type: Text, Value: "!", Level: 1},
-				{Type: PlaceholderClose, Value: "}", Level: 1},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "Hello, ", Level: 1},
+				{Type: TokenTypePlaceholderOpen, Value: "{", Level: 2},
+				{Type: TokenTypeVariable, Value: "userName", Level: 2},
+				{Type: TokenTypeText, Value: "!", Level: 1},
+				{Type: TokenTypePlaceholderClose, Value: "}", Level: 1},
 			},
 			expectedErr: fmt.Errorf("placeholder is not closed"),
 		},

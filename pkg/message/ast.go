@@ -5,92 +5,96 @@ import (
 	"strings"
 )
 
-type nodeMatch struct {
-	Selectors []nodeExpr
-	Variants  []nodeVariant
+type NodeMatch struct {
+	Selectors []NodeExpr
+	Variants  []NodeVariant
 }
 
-type nodeVariable struct {
+type NodeVariable struct {
 	Name string
 }
 
-type nodeText struct {
+type NodeLiteral struct {
+	Value string
+}
+
+type NodeText struct {
 	Text string
 }
 
-type nodeExpr struct {
-	Value    interface{}
-	Function nodeFunction
+type NodeExpr struct {
+	Value    interface{} // NodeLiteral | NodeVariable
+	Function NodeFunction
 }
 
-type nodeVariant struct {
+type NodeVariant struct {
 	Keys    []string
 	Message []interface{}
 }
 
-type nodeFunction struct {
+type NodeFunction struct {
 	Name string
 }
 
-func TokensToMessageFormat(tokens []Token) (nodeMatch, error) {
+func TokensToMessageFormat(tokens []Token) (NodeMatch, error) {
 	if len(tokens) == 0 {
-		return nodeMatch{}, errors.New("tokens[] is empty")
+		return NodeMatch{}, errors.New("tokens[] is empty")
 	}
 
 	var (
-		match               nodeMatch
-		currentVariant      nodeVariant
-		currentExpr         nodeExpr
+		match               NodeMatch
+		currentVariant      NodeVariant
+		currentExpr         NodeExpr
 		isPlaceholderClosed bool
 		currentLevel        int
 		token               Token
 	)
 
 	// If message format starts with placeholder {
-	if tokens[0].Type == PlaceholderOpen {
+	if tokens[0].Type == TokenTypePlaceholderOpen {
 		tokens[0] = token
 		tokens[len(tokens)-1] = token
 	}
 
 	for i, token := range tokens {
 		switch token.Type {
-		case Literal:
+		case TokenTypeLiteral:
 			currentVariant.Keys = append(currentVariant.Keys, strings.TrimSpace(token.Value))
 			currentLevel++
-		case Text:
-			currentVariant.Message = append(currentVariant.Message, nodeText{Text: token.Value})
-		case Variable:
+		case TokenTypeText:
+			currentVariant.Message = append(currentVariant.Message, NodeText{Text: token.Value})
+		case TokenTypeVariable:
 			switch token.Level {
 			case 1:
-				currentExpr.Value = nodeVariable{Name: strings.TrimSpace(token.Value)}
-				if tokens[i+1].Type == Function {
-					currentExpr.Function = nodeFunction{Name: tokens[i+1].Value}
+				currentExpr.Value = NodeVariable{Name: strings.TrimSpace(token.Value)}
+				if tokens[i+1].Type == TokenTypeFunction {
+					currentExpr.Function = NodeFunction{Name: tokens[i+1].Value}
 				}
 
 				match.Selectors = append(match.Selectors, currentExpr)
-				currentExpr = nodeExpr{}
+				currentExpr = NodeExpr{}
 			default:
-				currentVariant.Message = append(currentVariant.Message, nodeVariable{Name: token.Value})
+				currentVariant.Message = append(currentVariant.Message, NodeVariable{Name: token.Value})
 			}
-		case Function:
-			currentExpr.Function = nodeFunction{Name: token.Value}
-		case PlaceholderOpen:
+		case TokenTypeFunction:
+			currentExpr.Function = NodeFunction{Name: token.Value}
+		case TokenTypePlaceholderOpen:
 			isPlaceholderClosed = false
-		case PlaceholderClose:
+		case TokenTypePlaceholderClose:
 			if token.Level == currentLevel && token.Level != 0 {
 				match.Variants = append(match.Variants, currentVariant)
-				currentVariant = nodeVariant{}
+				currentVariant = NodeVariant{}
 				currentLevel = 0
 			}
 
 			isPlaceholderClosed = true
-		case Keyword:
+		case TokenTypeKeyword:
 			continue
 		}
 	}
 
 	if !isPlaceholderClosed {
-		return nodeMatch{}, errors.New("placeholder is not closed")
+		return NodeMatch{}, errors.New("placeholder is not closed")
 	}
 
 	if tokens[len(tokens)-1] == token {

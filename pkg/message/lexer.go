@@ -8,19 +8,20 @@ import (
 type Token struct {
 	Value string
 	Level int
-	Type  tokenType
+	Type  TokenType
 }
 
-type tokenType int
+type TokenType int
 
 const (
-	Keyword tokenType = iota
-	PlaceholderOpen
-	PlaceholderClose
-	Literal
-	Text
-	Function
-	Variable
+	TokenTypeUnknown TokenType = iota
+	TokenTypeKeyword
+	TokenTypePlaceholderOpen
+	TokenTypePlaceholderClose
+	TokenTypeLiteral
+	TokenTypeText
+	TokenTypeFunction
+	TokenTypeVariable
 )
 
 const (
@@ -61,7 +62,7 @@ func Lex(str string) ([]Token, error) {
 
 			placeholderLevel++
 
-			tokens = append(tokens, Token{Type: PlaceholderOpen, Value: "{", Level: placeholderLevel})
+			tokens = append(tokens, Token{Type: TokenTypePlaceholderOpen, Value: "{", Level: placeholderLevel})
 		case '}':
 			if len(runes) > 0 {
 				tokens = append(tokens, createTokensFromBuffer(runes, placeholderLevel)...)
@@ -69,7 +70,7 @@ func Lex(str string) ([]Token, error) {
 				runes = []rune{}
 			}
 
-			tokens = append(tokens, Token{Type: PlaceholderClose, Value: "}", Level: placeholderLevel})
+			tokens = append(tokens, Token{Type: TokenTypePlaceholderClose, Value: "}", Level: placeholderLevel})
 			placeholderLevel--
 		case '$', ':', '+', '-':
 			if i+1 < len(str) && str[i+1] == ' ' {
@@ -104,13 +105,13 @@ func combineTextTokens(tokens, parsedTokens []Token) ([]Token, error) {
 	var txt strings.Builder
 
 	for i := 0; i < len(tokens); i++ {
-		if tokens[i].Type == Text {
+		if tokens[i].Type == TokenTypeText {
 			if _, err := txt.WriteString(tokens[i].Value); err != nil {
 				return []Token{}, errors.New("write Text token")
 			}
 
-			if i+1 < len(tokens) && tokens[i+1].Type != Text {
-				parsedTokens = append(parsedTokens, Token{Type: Text, Value: txt.String(), Level: tokens[i].Level})
+			if i+1 < len(tokens) && tokens[i+1].Type != TokenTypeText {
+				parsedTokens = append(parsedTokens, Token{Type: TokenTypeText, Value: txt.String(), Level: tokens[i].Level})
 
 				txt.Reset()
 			}
@@ -126,33 +127,34 @@ func combineTextTokens(tokens, parsedTokens []Token) ([]Token, error) {
 func createTokensFromBuffer(buffer []rune, placeholderLevel int) []Token {
 	var newTokens []Token
 
-	switch strings.TrimSpace(string(buffer)) {
+	v := strings.TrimSpace(string(buffer))
+	switch v {
 	case Match, Let, When:
-		newTokens = append(newTokens, Token{Type: Keyword, Value: string(buffer), Level: placeholderLevel})
+		newTokens = append(newTokens, Token{Type: TokenTypeKeyword, Value: v, Level: placeholderLevel})
 	default:
 		if placeholderLevel == 0 {
-			newTokens = append(newTokens, Token{Type: Literal, Value: string(buffer), Level: placeholderLevel})
+			newTokens = append(newTokens, Token{Type: TokenTypeLiteral, Value: v, Level: placeholderLevel})
 		} else {
 			switch buffer[0] {
 			case Dollar, Plus, Minus:
 				if placeholderLevel > 0 {
 					newTokens = append(newTokens,
 						Token{
-							Type:  Variable,
-							Value: strings.ReplaceAll(string(buffer), "$", ""),
+							Type:  TokenTypeVariable,
+							Value: strings.ReplaceAll(v, "$", ""),
 							Level: placeholderLevel,
 						})
 				}
 			case Colon:
 				if placeholderLevel > 0 {
 					newTokens = append(newTokens, Token{
-						Type:  Function,
-						Value: strings.ReplaceAll(string(buffer), ":", ""),
+						Type:  TokenTypeFunction,
+						Value: strings.ReplaceAll(v, ":", ""),
 						Level: placeholderLevel,
 					})
 				}
 			default:
-				newTokens = append(newTokens, Token{Type: Text, Value: string(buffer), Level: placeholderLevel})
+				newTokens = append(newTokens, Token{Type: TokenTypeText, Value: string(buffer), Level: placeholderLevel})
 			}
 		}
 	}
