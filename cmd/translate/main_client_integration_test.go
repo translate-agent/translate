@@ -250,7 +250,7 @@ func Test_ServiceDownloadCmd(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "File downloaded successfully.\n", string(res))
 
-		_, err = os.Stat(filepath.Join(tempDir, service.Id+".xml"))
+		_, err = os.Stat(filepath.Join(tempDir, service.Id+".xlf"))
 		assert.NoError(t, err)
 	})
 
