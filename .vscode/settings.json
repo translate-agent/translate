@@ -9,6 +9,7 @@
     ]
   },
   "go.testEnvFile": "${workspaceFolder}/.env.test",
+  "go.buildTags": "integration",
   // SQLFluff
   "sqlfluff.config": "${workspaceFolder}/.sqlfluff",
   "sqlfluff.linter.diagnosticSeverity": "warning",
