@@ -19,10 +19,14 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+const cmdTimeout = 10 * time.Second
+
+// file formats
 const (
-	cmdTimeout = 10 * time.Second
-	json       = "json"
-	xml        = "xml"
+	arb  = ".arb"
+	json = ".json"
+	pot  = ".po"
+	xlf  = ".xlf"
 )
 
 func newServiceCmd() *cobra.Command {
@@ -244,11 +248,15 @@ func newDownloadCmd() *cobra.Command {
 			switch translateSchema {
 			case translatev1.Schema_UNSPECIFIED:
 				return errors.New("download file: unspecified file schema")
+			case translatev1.Schema_ARB:
+				fileName += arb
 			case translatev1.Schema_JSON_NG_LOCALIZE, translatev1.Schema_JSON_NGX_TRANSLATE,
-				translatev1.Schema_GO, translatev1.Schema_ARB, translatev1.Schema_POT:
-				fileName += "." + json
+				translatev1.Schema_GO:
+				fileName += json
+			case translatev1.Schema_POT:
+				fileName += pot
 			case translatev1.Schema_XLIFF_12, translatev1.Schema_XLIFF_2:
-				fileName += "." + xml
+				fileName += xlf
 			}
 
 			if err = os.WriteFile(filepath.Join(path, fileName), res.Data, 0600); err != nil { //nolint:gomnd,gofumpt
