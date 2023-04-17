@@ -259,7 +259,7 @@ func newDownloadCmd() *cobra.Command {
 				fileName += xlf
 			}
 
-			if err = os.WriteFile(filepath.Join(path, fileName), res.Data, 0600); err != nil { //nolint:gomnd,gofumpt
+			if err = os.WriteFile(filepath.Join(path, fileName), res.Data, 0644); err != nil { //nolint:gomnd,gofumpt,gosec
 				return fmt.Errorf("download file: write file to path: %w", err)
 			}
 
