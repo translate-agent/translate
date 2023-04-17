@@ -21,7 +21,7 @@ import (
 
 const cmdTimeout = 10 * time.Second
 
-// file formats
+// file formats.
 const (
 	arb  = ".arb"
 	json = ".json"
@@ -250,8 +250,7 @@ func newDownloadCmd() *cobra.Command {
 				return errors.New("download file: unspecified file schema")
 			case translatev1.Schema_ARB:
 				fileName += arb
-			case translatev1.Schema_JSON_NG_LOCALIZE, translatev1.Schema_JSON_NGX_TRANSLATE,
-				translatev1.Schema_GO:
+			case translatev1.Schema_JSON_NG_LOCALIZE, translatev1.Schema_JSON_NGX_TRANSLATE, translatev1.Schema_GO:
 				fileName += json
 			case translatev1.Schema_POT:
 				fileName += pot
