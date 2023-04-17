@@ -17,12 +17,9 @@ func Test_TransformUUID(t *testing.T) {
 		t.Parallel()
 
 		f := func(expectedID uuid.UUID) bool {
-			stringID := uuidToProto(expectedID)
+			restoredID, err := uuidFromProto(uuidToProto(expectedID))
 
-			restoredID, err := uuidFromProto(stringID)
-			require.NoError(t, err)
-
-			return assert.Equal(t, expectedID, restoredID)
+			return assert.NoError(t, err) && assert.Equal(t, expectedID, restoredID)
 		}
 
 		assert.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
@@ -33,9 +30,8 @@ func Test_TransformUUID(t *testing.T) {
 		t.Parallel()
 
 		expectedID := uuid.Nil
-		stringID := uuidToProto(expectedID)
 
-		restoredID, err := uuidFromProto(stringID)
+		restoredID, err := uuidFromProto(uuidToProto(expectedID))
 		require.NoError(t, err)
 
 		assert.Equal(t, expectedID, restoredID)
@@ -49,12 +45,9 @@ func Test_TransformService(t *testing.T) {
 		t.Parallel()
 
 		f := func(expectedService model.Service) bool {
-			protoService := serviceToProto(&expectedService)
+			restoredService, err := serviceFromProto(serviceToProto(&expectedService))
 
-			restoredService, err := serviceFromProto(protoService)
-			require.NoError(t, err)
-
-			return assert.Equal(t, expectedService, *restoredService)
+			return assert.NoError(t, err) && assert.Equal(t, expectedService, *restoredService)
 		}
 
 		assert.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
@@ -64,12 +57,9 @@ func Test_TransformService(t *testing.T) {
 		t.Parallel()
 
 		f := func(expectedServices []model.Service) bool {
-			protoServices := servicesToProto(expectedServices)
+			restoredServices, err := servicesFromProto(servicesToProto(expectedServices))
 
-			restoredServices, err := servicesFromProto(protoServices)
-			require.NoError(t, err)
-
-			return assert.ElementsMatch(t, expectedServices, restoredServices)
+			return assert.NoError(t, err) && assert.ElementsMatch(t, expectedServices, restoredServices)
 		}
 		assert.NoError(t, quick.Check(f, &quick.Config{MaxCount: 100}))
 	})
