@@ -17,7 +17,7 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
-func Test_ServiceLsCmd(t *testing.T) {
+func Test_ListServices(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "ls",
@@ -40,7 +40,7 @@ func Test_ServiceLsCmd(t *testing.T) {
 	})
 }
 
-func Test_ServiceUploadCmd(t *testing.T) {
+func Test_TranslationFileUpload(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		service, err := client.CreateService(context.Background(),
 			&translatev1.CreateServiceRequest{Service: randService()})
@@ -176,7 +176,7 @@ func Test_ServiceUploadCmd(t *testing.T) {
 		assert.Nil(t, res)
 	})
 
-	t.Run("error, path parameter 'serviceUUID' missing", func(t *testing.T) {
+	t.Run("error, path parameter 'serviceID' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
 			"-a", fmt.Sprintf("%s:%s", host, port),
@@ -187,12 +187,12 @@ func Test_ServiceUploadCmd(t *testing.T) {
 			"-s", "json_ng_localize",
 		})
 
-		assert.ErrorContains(t, err, "required flag(s) \"serviceUUID\" not set")
+		assert.ErrorContains(t, err, "required flag(s) \"serviceID\" not set")
 		assert.Nil(t, res)
 	})
 }
 
-func Test_ServiceDownloadCmd(t *testing.T) {
+func Test_TranslationFileDownload(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		service, err := client.CreateService(context.Background(),
 			&translatev1.CreateServiceRequest{Service: randService()})
@@ -284,7 +284,7 @@ func Test_ServiceDownloadCmd(t *testing.T) {
 		assert.Nil(t, res)
 	})
 
-	t.Run("error, path parameter 'serviceUUID' missing", func(t *testing.T) {
+	t.Run("error, path parameter 'serviceID' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "download",
 			"-a", fmt.Sprintf("%s:%s", host, port),
@@ -295,7 +295,7 @@ func Test_ServiceDownloadCmd(t *testing.T) {
 			"-p", t.TempDir(),
 		})
 
-		assert.ErrorContains(t, err, "required flag(s) \"serviceUUID\" not set")
+		assert.ErrorContains(t, err, "required flag(s) \"serviceID\" not set")
 		assert.Nil(t, res)
 	})
 
