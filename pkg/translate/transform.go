@@ -41,7 +41,10 @@ func langTagToProto(l language.Tag) string {
 
 // langTagFromProto converts string to language.Tag.
 func langTagFromProto(s string) (language.Tag, error) {
-	// if s is empty string, language.Parse returns language.Und.
+	if s == "" {
+		return language.Und, nil
+	}
+
 	l, err := language.Parse(s)
 	if err != nil {
 		return language.Und, fmt.Errorf("parse language tag: %w", err)
