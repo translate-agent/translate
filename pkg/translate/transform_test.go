@@ -54,9 +54,8 @@ func Test_TransformLangTag(t *testing.T) {
 
 	f := func(expectedLangTag language.Tag) bool {
 		restoredLangTag, err := langTagFromProto(langTagToProto(expectedLangTag))
-		require.NoError(t, err)
 
-		return assert.Equal(t, expectedLangTag, restoredLangTag)
+		return assert.NoError(t, err) && assert.Equal(t, expectedLangTag, restoredLangTag)
 	}
 
 	assert.NoError(t, quick.Check(f, conf))
