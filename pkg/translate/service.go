@@ -153,7 +153,10 @@ func validateUpdateServiceParams(params *updateServiceParams) error {
 	if params.mask != nil {
 		for _, path := range params.mask.Paths {
 			if !slices.Contains(updateMaskAcceptablePaths, path) {
-				return &fieldViolationError{field: "update_mask.paths", err: fmt.Errorf("'%s' is not an valid field", path)}
+				return &fieldViolationError{
+					field: "update_mask.paths",
+					err:   fmt.Errorf("'%s' is not an valid service field", path),
+				}
 			}
 		}
 	}
