@@ -15,11 +15,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type (
-	uploadTranslationFileRequest   translatev1.UploadTranslationFileRequest
-	downloadTranslationFileRequest translatev1.DownloadTranslationFileRequest
-)
-
 // ----------------------UploadTranslationFile-------------------------------
 
 type uploadParams struct {
@@ -30,50 +25,45 @@ type uploadParams struct {
 	translationFileID uuid.UUID
 }
 
-func (u *uploadTranslationFileRequest) parseParams() (*uploadParams, error) {
-	if u == nil {
-		return nil, errors.New("request is nil")
-	}
-
+func parseUploadTranslationFileRequestParams(req *translatev1.UploadTranslationFileRequest) (*uploadParams, error) {
 	var (
-		params = uploadParams{data: u.Data, schema: u.Schema}
+		params = &uploadParams{data: req.GetData(), schema: req.GetSchema()}
 		err    error
 	)
 
-	params.languageTag, err = langTagFromProto(u.Language)
+	params.languageTag, err = langTagFromProto(req.GetLanguage())
 	if err != nil {
 		return nil, fmt.Errorf("parse language: %w", err)
 	}
 
-	params.serviceID, err = uuidFromProto(u.ServiceId)
+	params.serviceID, err = uuidFromProto(req.GetServiceId())
 	if err != nil {
-		return nil, fmt.Errorf("parse service id: %w", err)
+		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	params.translationFileID, err = uuidFromProto(u.TranslationFileId)
+	params.translationFileID, err = uuidFromProto(req.GetTranslationFileId())
 	if err != nil {
-		return nil, fmt.Errorf("parse translation file id: %w", err)
+		return nil, fmt.Errorf("parse translation_file_id: %w", err)
 	}
 
-	return &params, nil
+	return params, nil
 }
 
-// Validates request parameters for UploadTranslationFile.
-func (u *uploadParams) validate() error {
-	if len(u.data) == 0 {
+func validateUploadTranslationFileRequestParams(params *uploadParams) error {
+	if len(params.data) == 0 {
 		return fmt.Errorf("'data' is required")
 	}
 
 	// Enforce that schema is present. (Temporal solution)
-	if u.schema == translatev1.Schema_UNSPECIFIED {
+	if params.schema == translatev1.Schema_UNSPECIFIED {
 		return fmt.Errorf("'schema' is required")
 	}
 
-	if u.serviceID == uuid.Nil {
+	if params.serviceID == uuid.Nil {
 		return fmt.Errorf("'service_id' is required")
 	}
 
-	if u.languageTag == language.Und {
+	if params.languageTag == language.Und {
 		return fmt.Errorf("'language' is required")
 	}
 
@@ -84,14 +74,12 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	ctx context.Context,
 	req *translatev1.UploadTranslationFileRequest,
 ) (*emptypb.Empty, error) {
-	uploadReq := (*uploadTranslationFileRequest)(req)
-
-	params, err := uploadReq.parseParams()
+	params, err := parseUploadTranslationFileRequestParams(req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if err = params.validate(); err != nil {
+	if err = validateUploadTranslationFileRequestParams(params); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
@@ -112,9 +100,9 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	default:
 		return &emptypb.Empty{}, nil
 	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, err.Error())
+		return nil, status.Errorf(codes.NotFound, "file not found")
 	case err != nil:
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "")
 	}
 }
 
@@ -126,40 +114,38 @@ type downloadParams struct {
 	serviceID   uuid.UUID
 }
 
-func (d *downloadTranslationFileRequest) parseParams() (*downloadParams, error) {
-	if d == nil {
-		return nil, errors.New("request is nil")
-	}
-
+func parseDownloadTranslationFileRequestParams(
+	req *translatev1.DownloadTranslationFileRequest,
+) (*downloadParams, error) {
 	var (
-		params = downloadParams{schema: d.Schema}
+		params = &downloadParams{schema: req.GetSchema()}
 		err    error
 	)
 
-	params.serviceID, err = uuidFromProto(d.ServiceId)
+	params.serviceID, err = uuidFromProto(req.GetServiceId())
 	if err != nil {
-		return nil, fmt.Errorf("parse service id: %w", err)
+		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	params.languageTag, err = langTagFromProto(d.Language)
+	params.languageTag, err = langTagFromProto(req.GetLanguage())
 	if err != nil {
 		return nil, fmt.Errorf("parse language: %w", err)
 	}
 
-	return &params, nil
+	return params, nil
 }
 
-func (d *downloadParams) validate() error {
-	// Enforce that schema is present. (Temporal solution)
-	if d.schema == translatev1.Schema_UNSPECIFIED {
+func validateDownloadTranslationFileRequestParams(params *downloadParams) error {
+	// Enforce that schema is present.
+	if params.schema == translatev1.Schema_UNSPECIFIED {
 		return fmt.Errorf("'schema' is required")
 	}
 
-	if d.serviceID == uuid.Nil {
+	if params.serviceID == uuid.Nil {
 		return fmt.Errorf("'service_id' is required")
 	}
 
-	if d.languageTag == language.Und {
+	if params.languageTag == language.Und {
 		return fmt.Errorf("'language' is required")
 	}
 
@@ -170,14 +156,12 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 	ctx context.Context,
 	req *translatev1.DownloadTranslationFileRequest,
 ) (*translatev1.DownloadTranslationFileResponse, error) {
-	downloadReq := (*downloadTranslationFileRequest)(req)
-
-	params, err := downloadReq.parseParams()
+	params, err := parseDownloadTranslationFileRequestParams(req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if err = params.validate(); err != nil {
+	if err = validateDownloadTranslationFileRequestParams(params); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
@@ -185,9 +169,9 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 
 	switch {
 	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, err.Error())
+		return nil, status.Errorf(codes.NotFound, "file not found")
 	case err != nil:
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "")
 	}
 
 	data, err := MessagesToData(params.schema, translationFile.Messages)

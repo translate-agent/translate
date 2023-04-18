@@ -22,9 +22,8 @@ func Test_TransformUUID(t *testing.T) {
 
 		f := func(expectedID uuid.UUID) bool {
 			restoredID, err := uuidFromProto(uuidToProto(expectedID))
-			require.NoError(t, err)
 
-			return assert.Equal(t, expectedID, restoredID)
+			return assert.NoError(t, err) && assert.Equal(t, expectedID, restoredID)
 		}
 
 		assert.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
@@ -55,9 +54,8 @@ func Test_TransformLangTag(t *testing.T) {
 
 	f := func(expectedLangTag language.Tag) bool {
 		restoredLangTag, err := langTagFromProto(langTagToProto(expectedLangTag))
-		require.NoError(t, err)
 
-		return assert.Equal(t, expectedLangTag, restoredLangTag)
+		return assert.NoError(t, err) && assert.Equal(t, expectedLangTag, restoredLangTag)
 	}
 
 	assert.NoError(t, quick.Check(f, conf))
@@ -71,9 +69,8 @@ func Test_TransformService(t *testing.T) {
 
 		f := func(expectedService model.Service) bool {
 			restoredService, err := serviceFromProto(serviceToProto(&expectedService))
-			require.NoError(t, err)
 
-			return assert.Equal(t, expectedService, *restoredService)
+			return assert.NoError(t, err) && assert.Equal(t, expectedService, *restoredService)
 		}
 
 		assert.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
@@ -84,9 +81,8 @@ func Test_TransformService(t *testing.T) {
 
 		f := func(expectedServices []model.Service) bool {
 			restoredServices, err := servicesFromProto(servicesToProto(expectedServices))
-			require.NoError(t, err)
 
-			return assert.ElementsMatch(t, expectedServices, restoredServices)
+			return assert.NoError(t, err) && assert.ElementsMatch(t, expectedServices, restoredServices)
 		}
 		assert.NoError(t, quick.Check(f, &quick.Config{MaxCount: 100}))
 	})

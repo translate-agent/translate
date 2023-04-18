@@ -3,8 +3,8 @@ module go.expect.digital/translate
 go 1.20
 
 require (
-	github.com/XSAM/otelsql v0.20.0
-	github.com/brianvoe/gofakeit/v6 v6.20.2
+	github.com/XSAM/otelsql v0.21.0
+	github.com/brianvoe/gofakeit/v6 v6.21.0
 	github.com/fatih/color v1.15.0
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/google/uuid v1.3.0
@@ -18,6 +18,7 @@ require (
 	go.opentelemetry.io/otel v1.14.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.14.0
 	go.opentelemetry.io/otel/sdk v1.14.0
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	golang.org/x/net v0.9.0
 	golang.org/x/text v0.9.0
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1
@@ -26,7 +27,7 @@ require (
 )
 
 require (
-	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
+	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
