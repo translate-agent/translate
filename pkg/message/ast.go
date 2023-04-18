@@ -51,7 +51,7 @@ func TokensToMessageFormat(tokens []Token) (NodeMatch, error) {
 	)
 
 	// If message format starts with placeholder {
-	if tokens[0].Type == TokenTypePlaceholderOpen {
+	if tokens[0].Type == TokenTypeDelimiterOpen {
 		tokens[0] = token
 		tokens[len(tokens)-1] = token
 	}
@@ -78,9 +78,9 @@ func TokensToMessageFormat(tokens []Token) (NodeMatch, error) {
 			}
 		case TokenTypeFunction:
 			currentExpr.Function = NodeFunction{Name: token.Value}
-		case TokenTypePlaceholderOpen:
+		case TokenTypeDelimiterOpen:
 			isPlaceholderClosed = false
-		case TokenTypePlaceholderClose:
+		case TokenTypeDelimiterClose:
 			if token.Level == currentLevel && token.Level != 0 {
 				match.Variants = append(match.Variants, currentVariant)
 				currentVariant = NodeVariant{}

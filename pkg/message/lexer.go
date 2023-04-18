@@ -16,22 +16,23 @@ type TokenType int
 const (
 	TokenTypeUnknown TokenType = iota
 	TokenTypeKeyword
-	TokenTypePlaceholderOpen
-	TokenTypePlaceholderClose
+	TokenTypeDelimiterOpen
+	TokenTypeDelimiterClose
 	TokenTypeLiteral
 	TokenTypeText
 	TokenTypeFunction
 	TokenTypeVariable
+	TokenTypeEOF
 )
 
 const (
-	Match  = "match"
-	Let    = "let"
-	When   = "when"
-	Dollar = '$'
-	Colon  = ':'
-	Plus   = '+'
-	Minus  = '-'
+	KeywordMatch = "match"
+	KeywordLet   = "let"
+	KeywordWhen  = "when"
+	Dollar       = '$'
+	Colon        = ':'
+	Plus         = '+'
+	Minus        = '-'
 )
 
 func Lex(str string) ([]Token, error) {
@@ -62,7 +63,7 @@ func Lex(str string) ([]Token, error) {
 
 			placeholderLevel++
 
-			tokens = append(tokens, Token{Type: TokenTypePlaceholderOpen, Value: "{", Level: placeholderLevel})
+			tokens = append(tokens, Token{Type: TokenTypeDelimiterOpen, Value: "{", Level: placeholderLevel})
 		case '}':
 			if len(runes) > 0 {
 				tokens = append(tokens, createTokensFromBuffer(runes, placeholderLevel)...)
@@ -70,11 +71,11 @@ func Lex(str string) ([]Token, error) {
 				runes = []rune{}
 			}
 
-			tokens = append(tokens, Token{Type: TokenTypePlaceholderClose, Value: "}", Level: placeholderLevel})
+			tokens = append(tokens, Token{Type: TokenTypeDelimiterClose, Value: "}", Level: placeholderLevel})
 			placeholderLevel--
 		case '$', ':', '+', '-':
 			if i+1 < len(str) && str[i+1] == ' ' {
-				return []Token{}, errors.New("variable or function name starts with a space")
+				return nil, errors.New("variable or function name starts with a space")
 			}
 
 			if len(runes) > 0 {
@@ -94,10 +95,10 @@ func Lex(str string) ([]Token, error) {
 
 	parsedTokens, err := combineTextTokens(tokens, parsedTokens)
 	if err != nil {
-		return []Token{}, errors.New("combine Text tokens")
+		return nil, errors.New("combine Text tokens")
 	}
 
-	return parsedTokens, nil
+	return append(parsedTokens, Token{Type: TokenTypeEOF}), nil
 }
 
 // combineTextTokens combining Text tokens into one sentence.
@@ -129,7 +130,7 @@ func createTokensFromBuffer(buffer []rune, placeholderLevel int) []Token {
 
 	v := strings.TrimSpace(string(buffer))
 	switch v {
-	case Match, Let, When:
+	case KeywordMatch, KeywordLet, KeywordWhen:
 		newTokens = append(newTokens, Token{Type: TokenTypeKeyword, Value: v, Level: placeholderLevel})
 	default:
 		if placeholderLevel == 0 {

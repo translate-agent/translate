@@ -20,28 +20,27 @@ func (p *parser) parse(s string) ([]interface{}, error) {
 	var tree []interface{}
 
 	for p.pos < len(p.tokens) {
-		token := p.tokens[p.pos]
+		token := p.currentToken()
 
 		switch {
 		default:
 			return nil, fmt.Errorf("unknown token: %+v", token)
-		case token.Type == TokenTypeKeyword && token.Value == Match:
+		case token.Type == TokenTypeKeyword && token.Value == KeywordMatch:
 			match, err := p.parseMatch()
 			if err != nil {
 				return nil, err
 			}
 
 			tree = append(tree, match)
-		case token.Type == TokenTypePlaceholderOpen:
+		case token.Type == TokenTypeDelimiterOpen:
 			text, err := p.parseText()
 			if err != nil {
 				return nil, err
 			}
 
-			for _, element := range text {
-				tree = append(tree, element)
-			}
-
+			tree = append(tree, text...)
+		case token.Type == TokenTypeEOF:
+			return tree, nil
 		}
 
 		p.pos++
@@ -51,115 +50,74 @@ func (p *parser) parse(s string) ([]interface{}, error) {
 
 }
 
-func (p *parser) nextToken() Token {
-	p.pos++
+func (p *parser) currentToken() Token {
 	return p.tokens[p.pos]
 }
 
-func (p *parser) lookup(pos int) Token {
-	if len(p.tokens) <= pos {
-		return Token{}
-	}
+func (p *parser) nextToken() Token {
+	p.pos++
 
-	return p.tokens[pos]
+	return p.tokens[p.pos]
 }
 
-// Old Version
-//func (p *parser) parseText() (NodeText, error) {
-//	if p.tokens[p.pos].Type != TokenTypePlaceholderOpen {
-//		return NodeText{}, errors.New(`text does not start with "{"`)
-//	}
-//
-//	var text NodeText
-//
-//	for {
-//		p.pos++
-//
-//		if len(p.tokens) <= p.pos {
-//			return NodeText{}, errors.New("invalid text node")
-//		}
-//
-//		token := p.tokens[p.pos]
-//
-//		switch token.Type {
-//		case TokenTypeText:
-//			text.Text = token.Value
-//		// TODO
-//		/*		case TokenTypePlaceholderOpen:
-//				//
-//				//expr, err := p.parseExpr()
-//				//if err != nil {
-//				//	return NodeText{}, err
-//				//}
-//				//expr.Value = expr
-//				p.pos++*/
-//		case TokenTypePlaceholderClose:
-//			return text, nil
-//		}
-//	}
-//}
+func (p *parser) isEOF() bool { return p.tokens[p.pos].Type == TokenTypeEOF }
 
-// New version
 func (p *parser) parseText() ([]interface{}, error) {
-	if p.tokens[p.pos].Type != TokenTypePlaceholderOpen {
+	if p.currentToken().Type != TokenTypeDelimiterOpen {
 		return nil, errors.New(`text does not start with "{"`)
 	}
 
-	var variantValues []interface{}
-	//var text NodeText
+	var text []interface{}
 
-	for {
-		p.pos++
-
-		if len(p.tokens) <= p.pos {
-			return nil, errors.New("invalid text node")
-		}
-
-		token := p.tokens[p.pos]
+	for !p.isEOF() {
+		token := p.nextToken()
 
 		switch token.Type {
 		case TokenTypeText:
-			variantValues = append(variantValues, NodeText{Text: token.Value})
-		// TODO
-		case TokenTypePlaceholderOpen:
+			text = append(text, NodeText{Text: token.Value})
+			// TODO
+		case TokenTypeDelimiterOpen:
 			variable, err := p.parseVariable()
 			if err != nil {
 				return nil, fmt.Errorf("new error: %w", err)
 			}
-			variantValues = append(variantValues, variable)
+			text = append(text, variable)
 			p.pos++
-		case TokenTypePlaceholderClose:
-			return variantValues, nil
+		case TokenTypeDelimiterClose:
+			p.pos++
+
+			return text, nil
 		}
 	}
+
+	return nil, fmt.Errorf("invalid text node")
 }
 
 func (p *parser) parseMatch() (NodeMatch, error) {
 	var match NodeMatch
 
-	if p.tokens[p.pos].Type != TokenTypeKeyword || p.tokens[p.pos].Value != Match {
+	if v := p.currentToken(); v.Type != TokenTypeKeyword || v.Value != KeywordMatch {
 		return match, errors.New(`match node does not start with "match"`)
 	}
 
-	for {
-		p.pos++
+	for !p.isEOF() {
+		token := p.currentToken()
 
-		if len(p.tokens) <= p.pos {
-			// TODO: verify we have at least one variant
-			return match, nil
+		if token.Type != TokenTypeKeyword {
+			return NodeMatch{}, fmt.Errorf("invalid match")
 		}
 
-		token := p.tokens[p.pos]
+		switch token.Value {
+		case KeywordMatch:
+			p.pos++
 
-		switch {
-		case token.Type == TokenTypePlaceholderOpen:
 			expr, err := p.parseExpr()
 			if err != nil {
 				return NodeMatch{}, err
 			}
 
 			match.Selectors = append(match.Selectors, expr)
-		case token.Type == TokenTypeKeyword && token.Value == When:
+		case KeywordWhen:
 			variant, err := p.parseVariant()
 			if err != nil {
 				return NodeMatch{}, err
@@ -168,20 +126,19 @@ func (p *parser) parseMatch() (NodeMatch, error) {
 			match.Variants = append(match.Variants, variant)
 		}
 	}
+
+	return match, nil
 }
 
 func (p *parser) parseExpr() (NodeExpr, error) {
-	// {$count}
-	if p.tokens[p.pos].Type != TokenTypePlaceholderOpen {
+	if p.currentToken().Type != TokenTypeDelimiterOpen {
 		return NodeExpr{}, errors.New(`expression does not start with "{"`)
 	}
 
 	var expr NodeExpr
 
-	for {
-		p.pos++
-
-		token := p.tokens[p.pos]
+	for !p.isEOF() {
+		token := p.nextToken()
 
 		switch token.Type {
 		case TokenTypeVariable:
@@ -193,19 +150,18 @@ func (p *parser) parseExpr() (NodeExpr, error) {
 			}
 
 			expr.Function = function
-		case TokenTypePlaceholderClose:
-			//p.pos++
+		case TokenTypeDelimiterClose:
+			p.pos++
 
 			return expr, nil
-
 		}
 	}
+
+	return NodeExpr{}, fmt.Errorf("invalid expression node")
 }
 
 func (p *parser) parseVariant() (NodeVariant, error) {
 	var variant NodeVariant
-
-	// when * {Hello, world!}
 
 	literal := p.nextToken()
 
@@ -222,9 +178,7 @@ func (p *parser) parseVariant() (NodeVariant, error) {
 		return NodeVariant{}, err
 	}
 
-	for _, element := range text {
-		variant.Message = append(variant.Message, element)
-	}
+	variant.Message = append(variant.Message, text...)
 
 	return variant, nil
 }
@@ -236,7 +190,7 @@ func (p *parser) parseFunction() (NodeFunction, error) {
 		return function, errors.New(`function does not follow variable`)
 	}
 
-	function.Name = p.tokens[p.pos].Value
+	function.Name = p.currentToken().Value
 
 	return function, nil
 }
@@ -246,11 +200,11 @@ func (p *parser) parseVariable() (NodeVariable, error) {
 
 	var variable NodeVariable
 
-	if p.tokens[p.pos-1].Type != TokenTypePlaceholderOpen {
+	if p.tokens[p.pos-1].Type != TokenTypeDelimiterOpen {
 		return variable, errors.New(`function does not follow placeholder open`)
 	}
 
-	variable.Name = p.tokens[p.pos].Value
+	variable.Name = p.currentToken().Value
 
 	return variable, nil
 }
