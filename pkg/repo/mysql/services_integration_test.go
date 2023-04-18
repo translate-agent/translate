@@ -153,7 +153,9 @@ func Test_LoadService(t *testing.T) {
 
 			if tt.expectedErr != nil {
 				e := reflect.New(reflect.TypeOf(tt.expectedErr).Elem()).Interface()
-				assert.ErrorAs(t, err, &e)
+
+				require.ErrorAs(t, err, &e)
+				assert.NotEmpty(t, e)
 
 				return
 			}
@@ -213,7 +215,7 @@ func Test_DeleteService(t *testing.T) {
 		{
 			name:        "Nonexistent",
 			serviceID:   uuid.New(),
-			expectedErr: &repo.DefaultError{},
+			expectedErr: &repo.NotFoundError{},
 		},
 	}
 	for _, tt := range tests {
@@ -224,7 +226,9 @@ func Test_DeleteService(t *testing.T) {
 			err := repository.DeleteService(ctx, tt.serviceID)
 			if tt.expectedErr != nil {
 				e := reflect.New(reflect.TypeOf(tt.expectedErr).Elem()).Interface()
-				assert.ErrorAs(t, err, &e)
+
+				require.ErrorAs(t, err, &e)
+				assert.NotEmpty(t, e)
 
 				return
 			}
@@ -233,8 +237,10 @@ func Test_DeleteService(t *testing.T) {
 
 			// check if really is deleted
 			_, err = repository.LoadService(ctx, tt.serviceID)
+
 			var e *repo.NotFoundError
-			assert.ErrorAs(t, err, &e)
+			require.ErrorAs(t, err, &e)
+			assert.NotEmpty(t, e)
 		})
 	}
 }

@@ -32,7 +32,7 @@ type DefaultError struct {
 }
 
 func (d *DefaultError) Error() string {
-	return fmt.Sprintf("%s: %s", d.Entity, d.Err.Error())
+	return fmt.Sprintf("%s %s: %s", d.Operation, d.Entity, d.Err.Error())
 }
 
 type ServicesRepo interface {

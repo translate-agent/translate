@@ -71,16 +71,16 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 ) (*emptypb.Empty, error) {
 	params, err := parseUploadTranslationFileRequestParams(req)
 	if err != nil {
-		return nil, requestErrorToStatus(err)
+		return nil, requestErrorToStatusErr(err)
 	}
 
 	if err = validateUploadTranslationFileRequestParams(params); err != nil {
-		return nil, requestErrorToStatus(err)
+		return nil, requestErrorToStatusErr(err)
 	}
 
 	messages, err := MessagesFromData(params.schema, params.data)
 	if err != nil {
-		return nil, convertFromErrorToStatus(&convertError{field: "data", err: err, schema: params.schema.String()})
+		return nil, convertFromErrorToStatusErr(&convertError{field: "data", err: err, schema: params.schema.String()})
 	}
 
 	// Some converts do not provide language, so we override it with one from request for consistency.
@@ -92,7 +92,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	}
 
 	if err := t.repo.SaveTranslationFile(ctx, params.serviceID, translationFile); err != nil {
-		return nil, repoErrorToStatus(err)
+		return nil, repoErrorToStatusErr(err)
 	}
 
 	return &emptypb.Empty{}, nil
@@ -150,21 +150,21 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 ) (*translatev1.DownloadTranslationFileResponse, error) {
 	params, err := parseDownloadTranslationFileRequestParams(req)
 	if err != nil {
-		return nil, requestErrorToStatus(err)
+		return nil, requestErrorToStatusErr(err)
 	}
 
 	if err = validateDownloadTranslationFileRequestParams(params); err != nil {
-		return nil, requestErrorToStatus(err)
+		return nil, requestErrorToStatusErr(err)
 	}
 
 	translationFile, err := t.repo.LoadTranslationFile(ctx, params.serviceID, params.languageTag)
 	if err != nil {
-		return nil, repoErrorToStatus(err)
+		return nil, repoErrorToStatusErr(err)
 	}
 
 	data, err := MessagesToData(params.schema, translationFile.Messages)
 	if err != nil {
-		return nil, convertToErrorToStatus(&convertError{err: err, schema: params.schema.String()})
+		return nil, convertToErrorToStatusErr(&convertError{err: err, schema: params.schema.String()})
 	}
 
 	return &translatev1.DownloadTranslationFileResponse{Data: data}, nil

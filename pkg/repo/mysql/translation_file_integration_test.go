@@ -112,7 +112,9 @@ func Test_SaveTranslationFile(t *testing.T) {
 
 			if tt.expectedErr != nil {
 				e := reflect.New(reflect.TypeOf(tt.expectedErr).Elem()).Interface()
-				assert.ErrorAs(t, err, &e)
+
+				require.ErrorAs(t, err, &e)
+				assert.NotEmpty(t, e)
 
 				return
 			}
@@ -188,7 +190,7 @@ func Test_LoadTranslationFile(t *testing.T) {
 			expectedErr:     nil,
 		},
 		{
-			name:        "Nonexistent",
+			name:        "Missing Service",
 			serviceID:   uuid.New(),
 			expectedErr: &repo.NotFoundError{},
 		},
@@ -207,7 +209,9 @@ func Test_LoadTranslationFile(t *testing.T) {
 
 			if tt.expectedErr != nil {
 				e := reflect.New(reflect.TypeOf(tt.expectedErr).Elem()).Interface()
-				assert.ErrorAs(t, err, &e)
+
+				require.ErrorAs(t, err, &e)
+				assert.NotEmpty(t, e)
 
 				return
 			}

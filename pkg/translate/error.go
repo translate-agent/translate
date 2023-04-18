@@ -39,14 +39,14 @@ func newStatusWithDetails(code codes.Code, msg string, details ...proto.Message)
 	}
 
 	// Convert details to protoiface.MessageV1.
-	v1Details := make([]protoiface.MessageV1, len(details))
+	v1Details := make([]protoiface.MessageV1, 0, len(details))
 
-	for i, detail := range details {
+	for _, detail := range details {
 		if detail == nil {
 			continue
 		}
 
-		v1Details[i] = detail.(protoiface.MessageV1)
+		v1Details = append(v1Details, detail.(protoiface.MessageV1))
 	}
 
 	stWithDetails, err := st.WithDetails(v1Details...)
@@ -69,12 +69,12 @@ func (f *fieldViolationError) Error() string {
 	return fmt.Sprintf("field '%s': %s", f.field, f.err)
 }
 
-// requestErrorToStatus converts a request error to a gRPC error status.
+// requestErrorToStatusErr converts a request error to a gRPC error status.
 //
 // NOTE:
 // For now, it only supports field validation errors. In the future, it can support
 // other types of request errors. E.g. UNAUTHENTICATED, PERMISSION_DENIED, etc.
-func requestErrorToStatus(reqErr error) error {
+func requestErrorToStatusErr(reqErr error) error {
 	var fieldErr *fieldViolationError
 
 	var (
@@ -108,59 +108,46 @@ func requestErrorToStatus(reqErr error) error {
 
 // ----------------------RepoErrors------------------------------
 
-// repoNotFoundErrStatus converts repo.NotFoundError to gRPC error status.
-func repoNotFoundErrStatus(repoErr *repo.NotFoundError) error {
-	st, err := status.Newf(
-		codes.NotFound,
-		"%s does not exist",
-		repoErr.Entity,
-	).WithDetails(
-		&errdetails.ErrorInfo{
-			Reason: getOriginalErr(repoErr).Error(),
-			Domain: "repo",
-		},
-	)
-	if err != nil {
-		return status.Errorf(codes.NotFound, repoErr.Error())
-	}
-
-	return st.Err() //nolint:wrapcheck
-}
-
-// repoDefaultErrStatus converts repo.DefaultError to gRPC error status.
-func repoDefaultErrStatus(repoErr *repo.DefaultError) error {
-	st, err := status.Newf(
-		codes.Internal,
-		"Cannot access %s",
-		repoErr.Entity,
-	).WithDetails(
-		&errdetails.ErrorInfo{
-			Reason: getOriginalErr(repoErr).Error(),
-			Domain: "repo",
-		},
-	)
-	if err != nil {
-		return status.Errorf(codes.Internal, repoErr.Error())
-	}
-
-	return st.Err() //nolint:wrapcheck
-}
-
-// repoErrorToStatus converts repo-related error to gRPC error status.
-func repoErrorToStatus(err error) error {
+// repoErrorToStatusErr converts repo-related error to gRPC error status.
+func repoErrorToStatusErr(repoErr error) error {
 	var (
 		repoDefaultErr  *repo.DefaultError
 		repoNotFoundErr *repo.NotFoundError
 	)
 
+	var (
+		code    codes.Code
+		msg     string
+		details proto.Message
+	)
+
 	switch {
-	case errors.As(err, &repoNotFoundErr):
-		return repoNotFoundErrStatus(repoNotFoundErr)
-	case errors.As(err, &repoDefaultErr):
-		return repoDefaultErrStatus(repoDefaultErr)
+	case errors.As(repoErr, &repoNotFoundErr):
+		code = codes.NotFound
+		msg = fmt.Sprintf("%s does not exist", repoNotFoundErr.Entity)
+		details = &errdetails.ErrorInfo{
+			Reason: getOriginalErr(repoNotFoundErr).Error(),
+			Domain: "repo",
+		}
+	case errors.As(repoErr, &repoDefaultErr):
+		code = codes.Internal
+		msg = fmt.Sprintf("Cannot access %s", repoDefaultErr.Entity)
+		details = &errdetails.ErrorInfo{
+			Domain: "repo",
+		}
 	default:
-		return status.Errorf(codes.Internal, err.Error())
+		code = codes.Unknown
+		msg = "Unknown error"
 	}
+
+	st, err := newStatusWithDetails(code, msg, details)
+	// If newStatusWithDetails returns an error, it means that the details cannot be marshalled.
+	// In this case, we return the original error.
+	if err != nil {
+		return status.Errorf(code, msg)
+	}
+
+	return st.Err() //nolint:wrapcheck
 }
 
 // ----------------------ConvertErrors------------------------------
@@ -176,15 +163,18 @@ func (c *convertError) Error() string {
 	return fmt.Sprintf("convert: %s", c.err.Error())
 }
 
-// convertFromErrorToStatus converts convertError to gRPC status.
+// convertFromErrorToStatusErr converts convertError to gRPC status.
 // This function assumes that convertError is always caused by user providing malformed data.
-func convertFromErrorToStatus(convertErr *convertError) error {
+func convertFromErrorToStatusErr(convertErr *convertError) error {
 	var (
 		jsonSyntaxErr *json.SyntaxError
 		xmlSyntaxErr  *xml.SyntaxError
 	)
 
-	var errMsg string
+	var (
+		errMsg string
+		code   = codes.InvalidArgument
+	)
 
 	switch {
 	case errors.As(convertErr.err, &jsonSyntaxErr):
@@ -195,41 +185,34 @@ func convertFromErrorToStatus(convertErr *convertError) error {
 		errMsg = fmt.Sprintf("Cannot convert from %s schema", convertErr.schema)
 	}
 
-	st, err := status.New(
-		codes.InvalidArgument,
+	st, err := newStatusWithDetails(
+		code,
 		errMsg,
-	).WithDetails(
 		&errdetails.BadRequest_FieldViolation{
 			Field:       convertErr.field,
 			Description: getOriginalErr(convertErr.err).Error(),
 		},
 	)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		return status.Errorf(code, getOriginalErr(convertErr.err).Error())
 	}
 
 	return st.Err() //nolint:wrapcheck
 }
 
-// convertToErrorToStatus converts convertError to gRPC status.
+// convertToErrorToStatusErr converts convertError to gRPC status.
 // This function assumes that convertError is always caused by server inability
 // to convert messages to requested schema.
-func convertToErrorToStatus(convertError *convertError) error {
-	st, err := status.Newf(
+func convertToErrorToStatusErr(convertError *convertError) error {
+	st, err := newStatusWithDetails(
 		codes.Internal,
-		"Cannot convert to %s schema",
-		convertError.schema,
-	).WithDetails(
+		fmt.Sprintf("Cannot convert to %s schema", convertError.schema),
 		&errdetails.ErrorInfo{
 			Reason: getOriginalErr(convertError.err).Error(),
 			Domain: "convert",
-			Metadata: map[string]string{
-				"full_error": convertError.Error(),
-			},
-		},
-	)
+		})
 	if err != nil {
-		return status.Errorf(codes.Internal, err.Error())
+		return status.Errorf(codes.Internal, getOriginalErr(convertError.err).Error())
 	}
 
 	return st.Err() //nolint:wrapcheck

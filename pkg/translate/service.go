@@ -46,16 +46,16 @@ func (t *TranslateServiceServer) GetService(
 ) (*translatev1.Service, error) {
 	params, err := parseGetServiceRequestParams(req)
 	if err != nil {
-		return nil, requestErrorToStatus(err)
+		return nil, requestErrorToStatusErr(err)
 	}
 
 	if err = validateGetServiceRequestParams(params); err != nil {
-		return nil, requestErrorToStatus(err)
+		return nil, requestErrorToStatusErr(err)
 	}
 
 	service, err := t.repo.LoadService(ctx, params.id)
 	if err != nil {
-		return nil, repoErrorToStatus(err)
+		return nil, repoErrorToStatusErr(err)
 	}
 
 	return serviceToProto(service), nil
@@ -69,7 +69,7 @@ func (t *TranslateServiceServer) ListServices(
 ) (*translatev1.ListServicesResponse, error) {
 	services, err := t.repo.LoadServices(ctx)
 	if err != nil {
-		return nil, repoErrorToStatus(err)
+		return nil, repoErrorToStatusErr(err)
 	}
 
 	return &translatev1.ListServicesResponse{Services: servicesToProto(services)}, nil
@@ -108,15 +108,15 @@ func (t *TranslateServiceServer) CreateService(
 ) (*translatev1.Service, error) {
 	params, err := parseCreateServiceParams(req)
 	if err != nil {
-		return nil, requestErrorToStatus(err)
+		return nil, requestErrorToStatusErr(err)
 	}
 
 	if err := validateCreateServiceParams(params); err != nil {
-		return nil, requestErrorToStatus(err)
+		return nil, requestErrorToStatusErr(err)
 	}
 
 	if err := t.repo.SaveService(ctx, params.service); err != nil {
-		return nil, repoErrorToStatus(err)
+		return nil, repoErrorToStatusErr(err)
 	}
 
 	return serviceToProto(params.service), nil
@@ -189,22 +189,22 @@ func (t *TranslateServiceServer) UpdateService(
 ) (*translatev1.Service, error) {
 	params, err := parseUpdateServiceParams(req)
 	if err != nil {
-		return nil, requestErrorToStatus(err)
+		return nil, requestErrorToStatusErr(err)
 	}
 
 	if err = validateUpdateServiceParams(params); err != nil {
-		return nil, requestErrorToStatus(err)
+		return nil, requestErrorToStatusErr(err)
 	}
 
 	oldService, err := t.repo.LoadService(ctx, params.service.ID)
 	if err != nil {
-		return nil, repoErrorToStatus(err)
+		return nil, repoErrorToStatusErr(err)
 	}
 
 	updatedService := updateServiceFromParams(oldService, params)
 
 	if err := t.repo.SaveService(ctx, updatedService); err != nil {
-		return nil, repoErrorToStatus(err)
+		return nil, repoErrorToStatusErr(err)
 	}
 
 	return serviceToProto(updatedService), nil
@@ -239,15 +239,15 @@ func (t *TranslateServiceServer) DeleteService(
 ) (*emptypb.Empty, error) {
 	params, err := parseDeleteServiceRequest(req)
 	if err != nil {
-		return nil, requestErrorToStatus(err)
+		return nil, requestErrorToStatusErr(err)
 	}
 
 	if err := validateDeleteServiceParams(params); err != nil {
-		return nil, requestErrorToStatus(err)
+		return nil, requestErrorToStatusErr(err)
 	}
 
 	if err := t.repo.DeleteService(ctx, params.id); err != nil {
-		return nil, repoErrorToStatus(err)
+		return nil, repoErrorToStatusErr(err)
 	}
 
 	return &emptypb.Empty{}, nil
