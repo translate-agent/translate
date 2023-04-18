@@ -10,8 +10,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-const emptyParamMessage = "must not be empty"
-
 // ----------------------UploadTranslationFile-------------------------------
 
 type uploadParams struct {
@@ -30,17 +28,17 @@ func parseUploadTranslationFileRequestParams(req *translatev1.UploadTranslationF
 
 	params.languageTag, err = langTagFromProto(req.GetLanguage())
 	if err != nil {
-		return nil, &parseParamError{field: "language", err: err}
+		return nil, &fieldViolationError{field: "language", err: err}
 	}
 
 	params.serviceID, err = uuidFromProto(req.GetServiceId())
 	if err != nil {
-		return nil, &parseParamError{field: "service_id", err: err}
+		return nil, &fieldViolationError{field: "service_id", err: err}
 	}
 
 	params.translationFileID, err = uuidFromProto(req.GetTranslationFileId())
 	if err != nil {
-		return nil, &parseParamError{field: "translation_file_id", err: err}
+		return nil, &fieldViolationError{field: "translation_file_id", err: err}
 	}
 
 	return params, nil
@@ -48,20 +46,20 @@ func parseUploadTranslationFileRequestParams(req *translatev1.UploadTranslationF
 
 func validateUploadTranslationFileRequestParams(params *uploadParams) error {
 	if len(params.data) == 0 {
-		return &validateParamError{param: "data", reason: emptyParamMessage}
+		return &fieldViolationError{field: "data", err: errEmptyField}
 	}
 
 	// Enforce that schema is present. (Temporal solution)
 	if params.schema == translatev1.Schema_UNSPECIFIED {
-		return &validateParamError{param: "schema", reason: emptyParamMessage}
+		return &fieldViolationError{field: "schema", err: errEmptyField}
 	}
 
 	if params.serviceID == uuid.Nil {
-		return &validateParamError{param: "service_id", reason: emptyParamMessage}
+		return &fieldViolationError{field: "service_id", err: errEmptyField}
 	}
 
 	if params.languageTag == language.Und {
-		return &validateParamError{param: "language", reason: emptyParamMessage}
+		return &fieldViolationError{field: "language", err: errEmptyField}
 	}
 
 	return nil
@@ -118,12 +116,12 @@ func parseDownloadTranslationFileRequestParams(
 
 	params.serviceID, err = uuidFromProto(req.GetServiceId())
 	if err != nil {
-		return nil, &parseParamError{field: "service_id", err: err}
+		return nil, &fieldViolationError{field: "service_id", err: err}
 	}
 
 	params.languageTag, err = langTagFromProto(req.GetLanguage())
 	if err != nil {
-		return nil, &parseParamError{field: "language", err: err}
+		return nil, &fieldViolationError{field: "language", err: err}
 	}
 
 	return params, nil
@@ -132,15 +130,15 @@ func parseDownloadTranslationFileRequestParams(
 func validateDownloadTranslationFileRequestParams(params *downloadParams) error {
 	// Enforce that schema is present.
 	if params.schema == translatev1.Schema_UNSPECIFIED {
-		return &validateParamError{param: "schema", reason: emptyParamMessage}
+		return &fieldViolationError{field: "schema", err: errEmptyField}
 	}
 
 	if params.serviceID == uuid.Nil {
-		return &validateParamError{param: "service_id", reason: emptyParamMessage}
+		return &fieldViolationError{field: "service_id", err: errEmptyField}
 	}
 
 	if params.languageTag == language.Und {
-		return &validateParamError{param: "language", reason: emptyParamMessage}
+		return &fieldViolationError{field: "language", err: errEmptyField}
 	}
 
 	return nil

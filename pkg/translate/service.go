@@ -2,6 +2,7 @@ package translate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -16,6 +17,8 @@ import (
 
 // ------------------------GetService-------------------------------
 
+var errEmptyField = errors.New("must not be empty")
+
 type getServiceParams struct {
 	id uuid.UUID
 }
@@ -23,7 +26,7 @@ type getServiceParams struct {
 func parseGetServiceRequestParams(req *translatev1.GetServiceRequest) (*getServiceParams, error) {
 	id, err := uuidFromProto(req.GetId())
 	if err != nil {
-		return nil, &parseParamError{field: "id", err: err}
+		return nil, &fieldViolationError{field: "id", err: err}
 	}
 
 	return &getServiceParams{id: id}, nil
@@ -31,7 +34,7 @@ func parseGetServiceRequestParams(req *translatev1.GetServiceRequest) (*getServi
 
 func validateGetServiceRequestParams(params *getServiceParams) error {
 	if params.id == uuid.Nil {
-		return &validateParamError{param: "id", reason: emptyParamMessage}
+		return &fieldViolationError{field: "id", err: errEmptyField}
 	}
 
 	return nil
@@ -46,7 +49,7 @@ func (t *TranslateServiceServer) GetService(
 		return nil, requestErrorToStatus(err)
 	}
 
-	if err := validateGetServiceRequestParams(params); err != nil {
+	if err = validateGetServiceRequestParams(params); err != nil {
 		return nil, requestErrorToStatus(err)
 	}
 
@@ -80,22 +83,20 @@ type createServiceParams struct {
 
 func parseCreateServiceParams(req *translatev1.CreateServiceRequest) (*createServiceParams, error) {
 	service, err := serviceFromProto(req.GetService())
-	if err != nil {
-		return nil, fmt.Errorf("parse service: %w", err)
-	}
+
 	switch {
 	case err == nil:
 		return &createServiceParams{service: service}, nil
 	case strings.Contains(err.Error(), "service id"):
-		return nil, &parseParamError{field: "service.id", err: err}
+		return nil, &fieldViolationError{field: "service.id", err: err}
 	default:
-		return nil, &parseParamError{field: "service", err: err}
+		return nil, &fieldViolationError{field: "service", err: err}
 	}
 }
 
 func validateCreateServiceParams(params *createServiceParams) error {
 	if params.service == nil {
-		return &validateParamError{param: "service", reason: emptyParamMessage}
+		return &fieldViolationError{field: "service", err: errEmptyField}
 	}
 
 	return nil
@@ -123,6 +124,7 @@ func (t *TranslateServiceServer) CreateService(
 
 // ---------------------UpdateService-------------------------------
 
+// updateMaskAcceptablePaths is a list of acceptable paths for the Service update mask.
 var updateMaskAcceptablePaths = []string{"name"}
 
 type updateServiceParams struct {
@@ -137,21 +139,21 @@ func parseUpdateServiceParams(req *translatev1.UpdateServiceRequest) (*updateSer
 	case err == nil:
 		return &updateServiceParams{service: service, mask: req.GetUpdateMask()}, nil
 	case strings.Contains(err.Error(), "service id"):
-		return nil, &parseParamError{field: "service.id", err: err}
+		return nil, &fieldViolationError{field: "service.id", err: err}
 	default:
-		return nil, &parseParamError{field: "service", err: err}
+		return nil, &fieldViolationError{field: "service", err: err}
 	}
 }
 
 func validateUpdateServiceParams(params *updateServiceParams) error {
 	if params.service == nil {
-		return &validateParamError{param: "service", reason: emptyParamMessage}
+		return &fieldViolationError{field: "service", err: errEmptyField}
 	}
 
 	if params.mask != nil {
 		for _, path := range params.mask.Paths {
 			if !slices.Contains(updateMaskAcceptablePaths, path) {
-				return &updateMaskError{field: path, entity: "service"}
+				return &fieldViolationError{field: "update_mask.paths", err: fmt.Errorf("'%s' is not an valid field", path)}
 			}
 		}
 	}
@@ -217,7 +219,7 @@ type deleteServiceParams struct {
 func parseDeleteServiceRequest(req *translatev1.DeleteServiceRequest) (*deleteServiceParams, error) {
 	id, err := uuidFromProto(req.Id)
 	if err != nil {
-		return nil, &parseParamError{field: "id", err: err}
+		return nil, &fieldViolationError{field: "id", err: err}
 	}
 
 	return &deleteServiceParams{id: id}, nil
@@ -225,7 +227,7 @@ func parseDeleteServiceRequest(req *translatev1.DeleteServiceRequest) (*deleteSe
 
 func validateDeleteServiceParams(params *deleteServiceParams) error {
 	if params.id == uuid.Nil {
-		return &validateParamError{param: "id", reason: emptyParamMessage}
+		return &fieldViolationError{field: "id", err: errEmptyField}
 	}
 
 	return nil

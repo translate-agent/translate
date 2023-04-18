@@ -8,9 +8,12 @@ import (
 	"strings"
 
 	"go.expect.digital/translate/pkg/repo"
+
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/runtime/protoiface"
 )
 
 // getOriginalErr returns the original error from the error chain.
@@ -27,136 +30,80 @@ func getOriginalErr(err error) error {
 	return err
 }
 
+// newStatusWithDetails creates a new gRPC error status with details.
+func newStatusWithDetails(code codes.Code, msg string, details ...proto.Message) (*status.Status, error) {
+	st := status.New(code, msg)
+
+	if len(details) == 0 {
+		return st, nil
+	}
+
+	// Convert details to protoiface.MessageV1.
+	v1Details := make([]protoiface.MessageV1, len(details))
+
+	for i, detail := range details {
+		if detail == nil {
+			continue
+		}
+
+		v1Details[i] = detail.(protoiface.MessageV1)
+	}
+
+	stWithDetails, err := st.WithDetails(v1Details...)
+	if err != nil {
+		return nil, fmt.Errorf("append details: %w", err)
+	}
+
+	return stWithDetails, nil
+}
+
 // ----------------------RequestRelatedErrors-----------------------------
 
-var (
-	errNilRequest = errors.New("request is nil")
-	errNilService = errors.New("service is nil")
-)
-
-// parseParamError is an error that occurs when parsing request parameters.
-type parseParamError struct {
+// fieldViolationError occurs when a request field does not pass validation or could not be parsed.
+type fieldViolationError struct {
 	err   error
 	field string
 }
 
-func (p *parseParamError) Error() string {
-	return fmt.Sprintf("parse %s: %s", p.field, p.err)
+func (f *fieldViolationError) Error() string {
+	return fmt.Sprintf("field '%s': %s", f.field, f.err)
 }
 
-// updateMaskError is an error that occurs when the updateMask contains a field which the entity does not have.
-type updateMaskError struct {
-	entity string
-	field  string
-}
-
-func (u *updateMaskError) Error() string {
-	return fmt.Sprintf("'%s' is not valid field for %s", u.field, u.entity)
-}
-
-// validateParamError is an error that occurs when validating request parameters.
-type validateParamError struct {
-	param  string
-	reason string
-}
-
-func (v *validateParamError) Error() string {
-	return fmt.Sprintf("%s %s", v.param, v.reason)
-}
-
-func nilRequestErrStatus() error {
-	return status.Errorf(codes.InvalidArgument, errNilRequest.Error())
-}
-
-func nilServiceErrStatus() error {
-	return status.Errorf(codes.InvalidArgument, errNilService.Error())
-}
-
-// parseParamsError.status returns gRPC error status with details about failed parameter.
-func (p *parseParamError) status() error {
-	st, err := status.Newf(
-		codes.InvalidArgument,
-		"Invalid %s",
-		strings.Split(p.field, ".")[0],
-	).WithDetails(
-		&errdetails.BadRequest_FieldViolation{
-			Field:       p.field,
-			Description: getOriginalErr(p.err).Error(),
-		},
-	)
-	// If we cannot construct error with details, return plain error.
-	if err != nil {
-		return status.Errorf(codes.InvalidArgument, p.Error())
-	}
-
-	return st.Err() //nolint:wrapcheck
-}
-
-// updateMaskError.status returns gRPC error status with details about failed updateMask.
-func (u *updateMaskError) status() error {
-	st, err := status.New(
-		codes.InvalidArgument,
-		"Invalid update mask",
-	).WithDetails(
-		&errdetails.BadRequest_FieldViolation{
-			Field:       u.field,
-			Description: getOriginalErr(u).Error(),
-		},
-	)
-	// If we cannot construct error with details, return plain error.
-	if err != nil {
-		return status.Errorf(codes.InvalidArgument, u.Error())
-	}
-
-	return st.Err() //nolint:wrapcheck
-}
-
-// validateParamError.status returns gRPC error status with details about failed validation.
-func (v *validateParamError) status() error {
-	st, err := status.Newf(
-		codes.InvalidArgument,
-		"Invalid %s",
-		v.param,
-	).WithDetails(
-		&errdetails.BadRequest_FieldViolation{
-			Field:       v.param,
-			Description: getOriginalErr(v).Error(),
-		},
-	)
-	// If we cannot construct error with details, return plain error.
-	if err != nil {
-		return status.Errorf(codes.InvalidArgument, v.Error())
-	}
-
-	return st.Err() //nolint:wrapcheck
-}
-
-// requestErrorToStatus converts request-related error to gRPC error status.
-func requestErrorToStatus(err error) error {
-	var reqToErrStatus func() error
+// requestErrorToStatus converts a request error to a gRPC error status.
+//
+// NOTE:
+// For now, it only supports field validation errors. In the future, it can support
+// other types of request errors. E.g. UNAUTHENTICATED, PERMISSION_DENIED, etc.
+func requestErrorToStatus(reqErr error) error {
+	var fieldErr *fieldViolationError
 
 	var (
-		parseParamErr    *parseParamError
-		updateMaskErr    *updateMaskError
-		validateParamErr *validateParamError
+		code    codes.Code
+		msg     string
+		details proto.Message
 	)
 
 	switch {
-	case errors.Is(err, errNilRequest):
-		reqToErrStatus = nilRequestErrStatus
-	case errors.Is(err, errNilService):
-		reqToErrStatus = nilServiceErrStatus
-	case errors.As(err, &parseParamErr):
-		reqToErrStatus = parseParamErr.status
-	case errors.As(err, &updateMaskErr):
-		reqToErrStatus = updateMaskErr.status
-	case errors.As(err, &validateParamErr):
-		reqToErrStatus = validateParamErr.status
+	case errors.As(reqErr, &fieldErr):
+		code = codes.InvalidArgument
+		msg = fmt.Sprintf("Invalid %s", strings.Split(fieldErr.field, ".")[0])
+		details = &errdetails.BadRequest_FieldViolation{
+			Field:       fieldErr.field,
+			Description: getOriginalErr(fieldErr.err).Error(),
+		}
 	default:
-		reqToErrStatus = func() error { return status.Errorf(codes.InvalidArgument, err.Error()) }
+		code = codes.Unknown
+		msg = getOriginalErr(reqErr).Error()
 	}
 
-	return reqToErrStatus()
+	st, err := newStatusWithDetails(code, msg, details)
+	// If newStatusWithDetails returns an error, it means that the details cannot be marshalled.
+	// In this case, we return the original error.
+	if err != nil {
+		return status.Errorf(code, getOriginalErr(reqErr).Error())
+	}
+
+	return st.Err() //nolint:wrapcheck
 }
 
 // ----------------------RepoErrors------------------------------

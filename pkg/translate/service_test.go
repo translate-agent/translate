@@ -1,7 +1,6 @@
 package translate
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -12,6 +11,24 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
+
+func assertFieldViolationError(t *testing.T, expectedErr *fieldViolationError, actualErr error) {
+	t.Helper()
+
+	var e *fieldViolationError
+
+	require.ErrorAs(t, actualErr, &e, "error type mismatch")
+
+	// If the expected error has a field name, assert that the actual error has the same field name.
+	if expectedErr.field != "" {
+		require.Equal(t, expectedErr.field, e.field, "field name mismatch")
+	}
+
+	// If the expected error has an error, assert that the actual error contains same error message.
+	if expectedErr.err != nil {
+		require.ErrorContains(t, actualErr, expectedErr.err.Error(), "error message mismatch")
+	}
+}
 
 // ----------------------GetService-------------------------------
 
@@ -35,7 +52,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 	tests := []struct {
 		expected    *getServiceParams
 		request     *translatev1.GetServiceRequest
-		expectedErr *parseParamError
+		expectedErr *fieldViolationError
 		name        string
 	}{
 		{
@@ -52,7 +69,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 		{
 			name:        "Malformed ID",
 			request:     malformedIDReq,
-			expectedErr: &parseParamError{field: "id"},
+			expectedErr: &fieldViolationError{field: "id"},
 		},
 	}
 
@@ -64,11 +81,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 			actual, err := parseGetServiceRequestParams(tt.request)
 
 			if tt.expectedErr != nil {
-				var e *parseParamError
-				require.ErrorAs(t, err, &e)
-
-				// Check if parameter which caused error is the same as expected
-				assert.Equal(t, tt.expectedErr.field, e.field)
+				assertFieldViolationError(t, tt.expectedErr, err)
 				return
 			}
 
@@ -83,7 +96,7 @@ func Test_ValidateGetServiceParams(t *testing.T) {
 
 	tests := []struct {
 		params      *getServiceParams
-		expectedErr *validateParamError
+		expectedErr *fieldViolationError
 		name        string
 	}{
 		{
@@ -94,7 +107,7 @@ func Test_ValidateGetServiceParams(t *testing.T) {
 		{
 			name:        "Empty ID",
 			params:      &getServiceParams{id: uuid.Nil},
-			expectedErr: &validateParamError{param: "id"},
+			expectedErr: &fieldViolationError{field: "id"},
 		},
 	}
 
@@ -106,11 +119,7 @@ func Test_ValidateGetServiceParams(t *testing.T) {
 			err := validateGetServiceRequestParams(tt.params)
 
 			if tt.expectedErr != nil {
-				var e *validateParamError
-				require.ErrorAs(t, err, &e)
-
-				// Check if parameter which caused error is the same as expected
-				assert.Equal(t, tt.expectedErr.param, e.param)
+				assertFieldViolationError(t, tt.expectedErr, err)
 				return
 			}
 
@@ -154,7 +163,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 
 	tests := []struct {
 		expected    *updateServiceParams
-		expectedErr *parseParamError
+		expectedErr *fieldViolationError
 		request     *translatev1.UpdateServiceRequest
 		name        string
 	}{
@@ -206,7 +215,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 		{
 			name:        "Malformed Service ID",
 			request:     malformedIDReq,
-			expectedErr: &parseParamError{field: "service.id"},
+			expectedErr: &fieldViolationError{field: "service.id"},
 		},
 	}
 
@@ -218,11 +227,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			actual, err := parseUpdateServiceParams(tt.request)
 
 			if tt.expectedErr != nil {
-				var e *parseParamError
-				require.ErrorAs(t, err, &e)
-
-				// Check if parameter which caused error is the same as expected
-				assert.Equal(t, tt.expectedErr.field, e.field)
+				assertFieldViolationError(t, tt.expectedErr, err)
 				return
 			}
 
@@ -258,7 +263,7 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 
 	tests := []struct {
 		params      *updateServiceParams
-		expectedErr *validateParamError
+		expectedErr *fieldViolationError
 		name        string
 	}{
 		{
@@ -279,13 +284,13 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 		{
 			name:        "Missing Service",
 			params:      missingServiceParams,
-			expectedErr: &validateParamError{param: "service"},
+			expectedErr: &fieldViolationError{field: "service"},
 		},
 
 		{
 			name:        "Invalid Update Mask Path",
 			params:      invalidUpdateMaskPathParams,
-			expectedErr: &validateParamError{param: "update_mask.paths"},
+			expectedErr: &fieldViolationError{field: "update_mask.paths"},
 		},
 	}
 
@@ -297,11 +302,7 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 			err := validateUpdateServiceParams(tt.params)
 
 			if tt.expectedErr != nil {
-				var e *validateParamError
-				require.ErrorAs(t, err, &e)
-
-				// Check if parameter which caused error is the same as expected
-				assert.Equal(t, tt.expectedErr.param, e.param)
+				assertFieldViolationError(t, tt.expectedErr, err)
 				return
 			}
 
@@ -394,7 +395,7 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 	tests := []struct {
 		expected    *deleteServiceParams
 		request     *translatev1.DeleteServiceRequest
-		expectedErr *parseParamError
+		expectedErr *fieldViolationError
 		name        string
 	}{
 		{
@@ -412,7 +413,7 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 		{
 			name:        "Malformed ID",
 			request:     malformedIDReq,
-			expectedErr: &parseParamError{field: "id"},
+			expectedErr: &fieldViolationError{field: "id"},
 		},
 	}
 
@@ -424,11 +425,7 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 			actual, err := parseDeleteServiceRequest(tt.request)
 
 			if tt.expectedErr != nil {
-				var e *parseParamError
-				require.ErrorAs(t, err, &e)
-
-				// Check if parameter which caused error is the same as expected
-				assert.Equal(t, tt.expectedErr.field, e.field)
+				assertFieldViolationError(t, tt.expectedErr, err)
 				return
 			}
 
@@ -452,7 +449,7 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 
 	tests := []struct {
 		params      *deleteServiceParams
-		expectedErr *validateParamError
+		expectedErr *fieldViolationError
 		name        string
 	}{
 		{
@@ -463,7 +460,7 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 		{
 			name:        "Empty ID",
 			params:      emptyIdParams,
-			expectedErr: &validateParamError{param: "id"},
+			expectedErr: &fieldViolationError{field: "id"},
 		},
 	}
 
@@ -475,11 +472,7 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 			err := validateDeleteServiceParams(tt.params)
 
 			if tt.expectedErr != nil {
-				var e *validateParamError
-				require.ErrorAs(t, err, &e)
-
-				// Check if parameter which caused error is the same as expected
-				assert.Equal(t, tt.expectedErr.param, e.param)
+				assertFieldViolationError(t, tt.expectedErr, err)
 				return
 			}
 
@@ -512,7 +505,7 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 
 	tests := []struct {
 		request     *translatev1.CreateServiceRequest
-		expectedErr *parseParamError
+		expectedErr *fieldViolationError
 		expected    *createServiceParams
 		name        string
 	}{
@@ -549,7 +542,7 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 		{
 			name:        "Malformed Service ID",
 			request:     malformedServiceIDReq,
-			expectedErr: &parseParamError{field: "service.id"},
+			expectedErr: &fieldViolationError{field: "service.id"},
 		},
 	}
 
@@ -561,11 +554,7 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 			actual, err := parseCreateServiceParams(tt.request)
 
 			if tt.expectedErr != nil {
-				var e *parseParamError
-				require.ErrorAs(t, err, &e)
-
-				// Check if parameter which caused error is the same as expected
-				assert.Equal(t, tt.expectedErr.field, e.field)
+				assertFieldViolationError(t, tt.expectedErr, err)
 				return
 			}
 
@@ -589,7 +578,7 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 
 	tests := []struct {
 		params      *createServiceParams
-		expectedErr error
+		expectedErr *fieldViolationError
 		name        string
 	}{
 		{
@@ -600,7 +589,7 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 		{
 			name:        "Empty Service",
 			params:      emptyServiceParams,
-			expectedErr: errors.New("'service' is required"),
+			expectedErr: &fieldViolationError{field: "service"},
 		},
 	}
 
@@ -612,7 +601,7 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 			err := validateCreateServiceParams(tt.params)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				assertFieldViolationError(t, tt.expectedErr, err)
 				return
 			}
 

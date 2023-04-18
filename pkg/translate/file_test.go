@@ -42,7 +42,7 @@ func Test_ParseUploadParams(t *testing.T) {
 
 	tests := []struct {
 		request     *translatev1.UploadTranslationFileRequest
-		expectedErr *parseParamError
+		expectedErr *fieldViolationError
 		name        string
 	}{
 		{
@@ -58,18 +58,18 @@ func Test_ParseUploadParams(t *testing.T) {
 		{
 			name:        "Malformed language tag",
 			request:     malformedLangReq,
-			expectedErr: &parseParamError{field: "language"},
+			expectedErr: &fieldViolationError{field: "language"},
 		},
 
 		{
 			name:        "Malformed service ID",
 			request:     malformedServiceIDReq,
-			expectedErr: &parseParamError{field: "service_id"},
+			expectedErr: &fieldViolationError{field: "service_id"},
 		},
 		{
 			name:        "Malformed File ID",
 			request:     malformedFileIDReq,
-			expectedErr: &parseParamError{field: "translation_file_id"},
+			expectedErr: &fieldViolationError{field: "translation_file_id"},
 		},
 	}
 
@@ -81,11 +81,7 @@ func Test_ParseUploadParams(t *testing.T) {
 			params, err := parseUploadTranslationFileRequestParams(tt.request)
 
 			if tt.expectedErr != nil {
-				var e *parseParamError
-				require.ErrorAs(t, err, &e)
-
-				// Check if parameter which caused error is the same as expected
-				assert.Equal(t, tt.expectedErr.field, e.field)
+				assertFieldViolationError(t, tt.expectedErr, err)
 				return
 			}
 
@@ -124,8 +120,8 @@ func Test_ValidateUploadParams(t *testing.T) {
 
 	tests := []struct {
 		params      *uploadParams
+		expectedErr *fieldViolationError
 		name        string
-		expectedErr *validateParamError
 	}{
 		{
 			name:        "Happy Path",
@@ -135,22 +131,22 @@ func Test_ValidateUploadParams(t *testing.T) {
 		{
 			name:        "Empty data",
 			params:      emptyDataParams,
-			expectedErr: &validateParamError{param: "data"},
+			expectedErr: &fieldViolationError{field: "data"},
 		},
 		{
 			name:        "Unspecified schema",
 			params:      unspecifiedSchemaParams,
-			expectedErr: &validateParamError{param: "schema"},
+			expectedErr: &fieldViolationError{field: "schema"},
 		},
 		{
 			name:        "Unspecified language",
 			params:      unspecifiedLangParams,
-			expectedErr: &validateParamError{param: "language"},
+			expectedErr: &fieldViolationError{field: "language"},
 		},
 		{
 			name:        "Unspecified service ID",
 			params:      unspecifiedServiceParams,
-			expectedErr: &validateParamError{param: "service_id"},
+			expectedErr: &fieldViolationError{field: "service_id"},
 		},
 	}
 	for _, tt := range tests {
@@ -161,11 +157,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 			err := validateUploadTranslationFileRequestParams(tt.params)
 
 			if tt.expectedErr != nil {
-				var e *validateParamError
-				require.ErrorAs(t, err, &e)
-
-				// Check if parameter which caused error is the same as expected
-				assert.Equal(t, tt.expectedErr.param, e.param)
+				assertFieldViolationError(t, tt.expectedErr, err)
 				return
 			}
 
@@ -199,7 +191,7 @@ func Test_ParseDownloadParams(t *testing.T) {
 	malformedLangTagReq.Language += "_FAIL"
 
 	tests := []struct {
-		expectedErr *parseParamError
+		expectedErr *fieldViolationError
 		request     *translatev1.DownloadTranslationFileRequest
 		name        string
 	}{
@@ -211,12 +203,12 @@ func Test_ParseDownloadParams(t *testing.T) {
 		{
 			name:        "Malformed service ID",
 			request:     malformedServiceIDReq,
-			expectedErr: &parseParamError{field: "service_id"},
+			expectedErr: &fieldViolationError{field: "service_id"},
 		},
 		{
 			name:        "Malformed language tag",
 			request:     malformedLangTagReq,
-			expectedErr: &parseParamError{field: "language"},
+			expectedErr: &fieldViolationError{field: "language"},
 		},
 	}
 	for _, tt := range tests {
@@ -227,11 +219,7 @@ func Test_ParseDownloadParams(t *testing.T) {
 			params, err := parseDownloadTranslationFileRequestParams(tt.request)
 
 			if tt.expectedErr != nil {
-				var e *parseParamError
-				require.ErrorAs(t, err, &e)
-
-				// Check if parameter which caused error is the same as expected
-				assert.Equal(t, tt.expectedErr.field, e.field)
+				assertFieldViolationError(t, tt.expectedErr, err)
 				return
 			}
 
@@ -265,7 +253,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 
 	tests := []struct {
 		params      *downloadParams
-		expectedErr *validateParamError
+		expectedErr *fieldViolationError
 		name        string
 	}{
 		{
@@ -276,17 +264,17 @@ func Test_ValidateDownloadParams(t *testing.T) {
 		{
 			name:        "Unspecified schema",
 			params:      unspecifiedSchemaParams,
-			expectedErr: &validateParamError{param: "schema"},
+			expectedErr: &fieldViolationError{field: "schema"},
 		},
 		{
 			name:        "Unspecified service ID",
 			params:      unspecifiedServiceIDParams,
-			expectedErr: &validateParamError{param: "service_id"},
+			expectedErr: &fieldViolationError{field: "service_id"},
 		},
 		{
 			name:        "Unspecified language tag",
 			params:      unspecifiedLangParams,
-			expectedErr: &validateParamError{param: "language"},
+			expectedErr: &fieldViolationError{field: "language"},
 		},
 	}
 	for _, tt := range tests {
@@ -297,11 +285,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 			err := validateDownloadTranslationFileRequestParams(tt.params)
 
 			if tt.expectedErr != nil {
-				var e *validateParamError
-				require.ErrorAs(t, err, &e)
-
-				// Check if parameter which caused error is the same as expected
-				assert.Equal(t, tt.expectedErr.param, e.param)
+				assertFieldViolationError(t, tt.expectedErr, err)
 				return
 			}
 
