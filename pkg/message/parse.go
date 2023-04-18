@@ -38,7 +38,10 @@ func (p *parser) parse(s string) ([]interface{}, error) {
 				return nil, err
 			}
 
-			tree = append(tree, text)
+			for _, element := range text {
+				tree = append(tree, element)
+			}
+
 		}
 
 		p.pos++
@@ -61,30 +64,72 @@ func (p *parser) lookup(pos int) Token {
 	return p.tokens[pos]
 }
 
-func (p *parser) parseText() (NodeText, error) {
+// Old Version
+//func (p *parser) parseText() (NodeText, error) {
+//	if p.tokens[p.pos].Type != TokenTypePlaceholderOpen {
+//		return NodeText{}, errors.New(`text does not start with "{"`)
+//	}
+//
+//	var text NodeText
+//
+//	for {
+//		p.pos++
+//
+//		if len(p.tokens) <= p.pos {
+//			return NodeText{}, errors.New("invalid text node")
+//		}
+//
+//		token := p.tokens[p.pos]
+//
+//		switch token.Type {
+//		case TokenTypeText:
+//			text.Text = token.Value
+//		// TODO
+//		/*		case TokenTypePlaceholderOpen:
+//				//
+//				//expr, err := p.parseExpr()
+//				//if err != nil {
+//				//	return NodeText{}, err
+//				//}
+//				//expr.Value = expr
+//				p.pos++*/
+//		case TokenTypePlaceholderClose:
+//			return text, nil
+//		}
+//	}
+//}
+
+// New version
+func (p *parser) parseText() ([]interface{}, error) {
 	if p.tokens[p.pos].Type != TokenTypePlaceholderOpen {
-		return NodeText{}, errors.New(`text does not start with "{"`)
+		return nil, errors.New(`text does not start with "{"`)
 	}
 
-	var text NodeText
+	var variantValues []interface{}
+	//var text NodeText
 
 	for {
 		p.pos++
 
 		if len(p.tokens) <= p.pos {
-			return NodeText{}, errors.New("invalid text node")
+			return nil, errors.New("invalid text node")
 		}
 
 		token := p.tokens[p.pos]
 
 		switch token.Type {
 		case TokenTypeText:
-			text.Text = token.Value
+			variantValues = append(variantValues, NodeText{Text: token.Value})
 		// TODO
-		// case TokenTypePlaceholderOpen:
-		// 	p.parseExpr()
+		case TokenTypePlaceholderOpen:
+			variable, err := p.parseVariable()
+			if err != nil {
+				return nil, fmt.Errorf("new error: %w", err)
+			}
+			variantValues = append(variantValues, variable)
+			p.pos++
 		case TokenTypePlaceholderClose:
-			return text, nil
+			return variantValues, nil
 		}
 	}
 }
@@ -141,10 +186,18 @@ func (p *parser) parseExpr() (NodeExpr, error) {
 		switch token.Type {
 		case TokenTypeVariable:
 			expr.Value = NodeVariable{Name: token.Value}
+		case TokenTypeFunction:
+			function, err := p.parseFunction()
+			if err != nil {
+				return NodeExpr{}, err
+			}
+
+			expr.Function = function
 		case TokenTypePlaceholderClose:
-			p.pos++
+			//p.pos++
 
 			return expr, nil
+
 		}
 	}
 }
@@ -157,19 +210,49 @@ func (p *parser) parseVariant() (NodeVariant, error) {
 	literal := p.nextToken()
 
 	if literal.Type != TokenTypeLiteral {
-		return NodeVariant{}, fmt.Errorf(`literal does not follow keword "when"`)
+		return NodeVariant{}, fmt.Errorf(`literal does not follow keyword "when"`)
 	}
 
 	variant.Keys = append(variant.Keys, literal.Value)
+
+	p.pos++
 
 	text, err := p.parseText()
 	if err != nil {
 		return NodeVariant{}, err
 	}
 
-	variant.Message = append(variant.Message, text)
+	for _, element := range text {
+		variant.Message = append(variant.Message, element)
+	}
 
 	return variant, nil
+}
+
+func (p *parser) parseFunction() (NodeFunction, error) {
+	var function NodeFunction
+
+	if p.tokens[p.pos-1].Type != TokenTypeVariable {
+		return function, errors.New(`function does not follow variable`)
+	}
+
+	function.Name = p.tokens[p.pos].Value
+
+	return function, nil
+}
+
+func (p *parser) parseVariable() (NodeVariable, error) {
+	p.pos++
+
+	var variable NodeVariable
+
+	if p.tokens[p.pos-1].Type != TokenTypePlaceholderOpen {
+		return variable, errors.New(`function does not follow placeholder open`)
+	}
+
+	variable.Name = p.tokens[p.pos].Value
+
+	return variable, nil
 }
 
 func Parse(s string) ([]interface{}, error) {
