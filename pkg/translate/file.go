@@ -12,11 +12,6 @@ import (
 
 const emptyParamMessage = "must not be empty"
 
-type (
-	uploadTranslationFileRequest   translatev1.UploadTranslationFileRequest
-	downloadTranslationFileRequest translatev1.DownloadTranslationFileRequest
-)
-
 // ----------------------UploadTranslationFile-------------------------------
 
 type uploadParams struct {
@@ -27,50 +22,45 @@ type uploadParams struct {
 	translationFileID uuid.UUID
 }
 
-func (u *uploadTranslationFileRequest) parseParams() (*uploadParams, error) {
-	if u == nil {
-		return nil, errNilRequest
-	}
-
+func parseUploadTranslationFileRequestParams(req *translatev1.UploadTranslationFileRequest) (*uploadParams, error) {
 	var (
-		params = uploadParams{data: u.Data, schema: u.Schema}
+		params = &uploadParams{data: req.GetData(), schema: req.GetSchema()}
 		err    error
 	)
 
-	params.languageTag, err = langTagFromProto(u.Language)
+	params.languageTag, err = langTagFromProto(req.GetLanguage())
 	if err != nil {
 		return nil, &parseParamError{field: "language", err: err}
 	}
 
-	params.serviceID, err = uuidFromProto(u.ServiceId)
+	params.serviceID, err = uuidFromProto(req.GetServiceId())
 	if err != nil {
 		return nil, &parseParamError{field: "service_id", err: err}
 	}
 
-	params.translationFileID, err = uuidFromProto(u.TranslationFileId)
+	params.translationFileID, err = uuidFromProto(req.GetTranslationFileId())
 	if err != nil {
 		return nil, &parseParamError{field: "translation_file_id", err: err}
 	}
 
-	return &params, nil
+	return params, nil
 }
 
-// Validates request parameters for UploadTranslationFile.
-func (u *uploadParams) validate() error {
-	if len(u.data) == 0 {
+func validateUploadTranslationFileRequestParams(params *uploadParams) error {
+	if len(params.data) == 0 {
 		return &validateParamError{param: "data", reason: emptyParamMessage}
 	}
 
 	// Enforce that schema is present. (Temporal solution)
-	if u.schema == translatev1.Schema_UNSPECIFIED {
+	if params.schema == translatev1.Schema_UNSPECIFIED {
 		return &validateParamError{param: "schema", reason: emptyParamMessage}
 	}
 
-	if u.serviceID == uuid.Nil {
+	if params.serviceID == uuid.Nil {
 		return &validateParamError{param: "service_id", reason: emptyParamMessage}
 	}
 
-	if u.languageTag == language.Und {
+	if params.languageTag == language.Und {
 		return &validateParamError{param: "language", reason: emptyParamMessage}
 	}
 
@@ -81,14 +71,12 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	ctx context.Context,
 	req *translatev1.UploadTranslationFileRequest,
 ) (*emptypb.Empty, error) {
-	uploadReq := (*uploadTranslationFileRequest)(req)
-
-	params, err := uploadReq.parseParams()
+	params, err := parseUploadTranslationFileRequestParams(req)
 	if err != nil {
 		return nil, requestErrorToStatus(err)
 	}
 
-	if err = params.validate(); err != nil {
+	if err = validateUploadTranslationFileRequestParams(params); err != nil {
 		return nil, requestErrorToStatus(err)
 	}
 
@@ -120,39 +108,38 @@ type downloadParams struct {
 	serviceID   uuid.UUID
 }
 
-func (d *downloadTranslationFileRequest) parseParams() (*downloadParams, error) {
-	if d == nil {
-		return nil, errNilRequest
-	}
-
+func parseDownloadTranslationFileRequestParams(
+	req *translatev1.DownloadTranslationFileRequest,
+) (*downloadParams, error) {
 	var (
-		params = downloadParams{schema: d.Schema}
+		params = &downloadParams{schema: req.GetSchema()}
 		err    error
 	)
 
-	params.serviceID, err = uuidFromProto(d.ServiceId)
+	params.serviceID, err = uuidFromProto(req.GetServiceId())
 	if err != nil {
 		return nil, &parseParamError{field: "service_id", err: err}
 	}
 
-	params.languageTag, err = langTagFromProto(d.Language)
+	params.languageTag, err = langTagFromProto(req.GetLanguage())
 	if err != nil {
 		return nil, &parseParamError{field: "language", err: err}
 	}
 
-	return &params, nil
+	return params, nil
 }
 
-func (d *downloadParams) validate() error {
-	if d.schema == translatev1.Schema_UNSPECIFIED {
+func validateDownloadTranslationFileRequestParams(params *downloadParams) error {
+	// Enforce that schema is present.
+	if params.schema == translatev1.Schema_UNSPECIFIED {
 		return &validateParamError{param: "schema", reason: emptyParamMessage}
 	}
 
-	if d.serviceID == uuid.Nil {
+	if params.serviceID == uuid.Nil {
 		return &validateParamError{param: "service_id", reason: emptyParamMessage}
 	}
 
-	if d.languageTag == language.Und {
+	if params.languageTag == language.Und {
 		return &validateParamError{param: "language", reason: emptyParamMessage}
 	}
 
@@ -163,14 +150,12 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 	ctx context.Context,
 	req *translatev1.DownloadTranslationFileRequest,
 ) (*translatev1.DownloadTranslationFileResponse, error) {
-	downloadReq := (*downloadTranslationFileRequest)(req)
-
-	params, err := downloadReq.parseParams()
+	params, err := parseDownloadTranslationFileRequestParams(req)
 	if err != nil {
 		return nil, requestErrorToStatus(err)
 	}
 
-	if err = params.validate(); err != nil {
+	if err = validateDownloadTranslationFileRequestParams(params); err != nil {
 		return nil, requestErrorToStatus(err)
 	}
 
