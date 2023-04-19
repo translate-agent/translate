@@ -12,7 +12,6 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/runtime/protoiface"
 )
 
@@ -31,27 +30,10 @@ func getOriginalErr(err error) error {
 }
 
 // newStatusWithDetails creates a new gRPC error status with details.
-func newStatusWithDetails(code codes.Code, msg string, details ...proto.Message) (*status.Status, error) {
-	st := status.New(code, msg)
-
-	if len(details) == 0 {
-		return st, nil
-	}
-
-	// Convert details to protoiface.MessageV1.
-	v1Details := make([]protoiface.MessageV1, 0, len(details))
-
-	for _, detail := range details {
-		if detail == nil {
-			continue
-		}
-
-		v1Details = append(v1Details, detail.(protoiface.MessageV1))
-	}
-
-	stWithDetails, err := st.WithDetails(v1Details...)
+func newStatusWithDetails(code codes.Code, msg string, details ...protoiface.MessageV1) (*status.Status, error) {
+	stWithDetails, err := status.New(code, msg).WithDetails(details...)
 	if err != nil {
-		return nil, fmt.Errorf("append details: %w", err)
+		return nil, fmt.Errorf("add details to status: %w", err)
 	}
 
 	return stWithDetails, nil
@@ -80,7 +62,7 @@ func requestErrorToStatusErr(reqErr error) error {
 	var (
 		code    codes.Code
 		msg     string
-		details proto.Message
+		details protoiface.MessageV1
 	)
 
 	switch {
@@ -118,7 +100,7 @@ func repoErrorToStatusErr(repoErr error) error {
 	var (
 		code    codes.Code
 		msg     string
-		details proto.Message
+		details protoiface.MessageV1
 	)
 
 	switch {

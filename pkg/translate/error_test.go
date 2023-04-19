@@ -15,7 +15,7 @@ import (
 	"go.expect.digital/translate/pkg/repo"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/runtime/protoiface"
 )
 
 func Test_GetOriginalErr(t *testing.T) {
@@ -58,7 +58,7 @@ func Test_NewStatusWithDetails(t *testing.T) {
 		t.Parallel()
 
 		detailCount := gofakeit.IntRange(1, 10)
-		details := make([]proto.Message, 0, detailCount)
+		details := make([]protoiface.MessageV1, 0, detailCount)
 
 		for i := 0; i < detailCount; i++ {
 			details = append(details, &errdetails.BadRequest_FieldViolation{
