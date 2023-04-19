@@ -8,7 +8,6 @@ import (
 
 type Token struct {
 	Value string
-	Level int
 	Type  TokenType
 }
 
@@ -17,8 +16,8 @@ type TokenType int
 const (
 	TokenTypeUnknown TokenType = iota
 	TokenTypeKeyword
-	TokenTypeDelimiterOpen
-	TokenTypeDelimiterClose
+	TokenTypeSeparatorOpen
+	TokenTypeSeparatorClose
 	TokenTypeLiteral
 	TokenTypeText
 	TokenTypeFunction
@@ -27,79 +26,147 @@ const (
 )
 
 const (
-	KeywordMatch = "match"
-	KeywordLet   = "let"
-	KeywordWhen  = "when"
-	Dollar       = '$'
-	Colon        = ':'
-	Plus         = '+'
-	Minus        = '-'
+	KeywordMatch   = "match"
+	KeywordLet     = "let"
+	KeywordWhen    = "when"
+	Dollar         = '$'
+	Colon          = ':'
+	Plus           = '+'
+	Minus          = '-'
+	SeparatorOpen  = '{'
+	SeparatorClose = '}'
+	EOF            = rune(0)
 )
 
-func Lex(str string) ([]Token, error) {
-	var (
-		tokens           []Token
-		parsedTokens     []Token
-		runes            []rune
-		placeholderLevel int
-	)
+type lexer struct {
+	str []rune
+	pos int
+}
 
-	for i, r := range str {
-		switch r {
-		case ' ':
-			if len(runes) > 0 {
-				runes = append(runes, r)
-				tokens = append(tokens, createTokensFromBuffer(runes, placeholderLevel)...)
+func (l *lexer) current() rune {
+	return l.str[l.pos]
+}
 
-				runes = []rune{}
-			} else {
-				runes = append(runes, r)
-			}
-		case '{':
-			if len(runes) > 0 {
-				tokens = append(tokens, createTokensFromBuffer(runes, placeholderLevel)...)
+func (l *lexer) next() rune {
+	l.pos++
 
-				runes = []rune{}
-			}
+	if l.pos == len(l.str) {
+		return EOF
+	}
 
-			placeholderLevel++
+	return l.str[l.pos]
+}
 
-			tokens = append(tokens, Token{Type: TokenTypeDelimiterOpen, Value: "{", Level: placeholderLevel})
-		case '}':
-			if len(runes) > 0 {
-				tokens = append(tokens, createTokensFromBuffer(runes, placeholderLevel)...)
+func (l *lexer) lookup(i int) rune {
+	return l.str[i]
+}
 
-				runes = []rune{}
-			}
+func (l *lexer) isEOF() bool {
+	return len(l.str) <= l.pos
+}
 
-			tokens = append(tokens, Token{Type: TokenTypeDelimiterClose, Value: "}", Level: placeholderLevel})
-			placeholderLevel--
-		case '$', ':', '+', '-':
-			if i+1 < len(str) && str[i+1] == ' ' {
-				return nil, errors.New("variable or function name starts with a space")
-			}
+func (l *lexer) parse() ([]Token, error) {
+	var tokens []Token
 
-			if len(runes) > 0 {
-				tokens = append(tokens, createTokensFromBuffer(runes, placeholderLevel)...)
-				runes = []rune{}
-			}
+	for !l.isEOF() {
+		v := l.current()
 
-			runes = append(runes, r)
+		switch v {
 		default:
-			runes = append(runes, r)
+			l.pos++
+		case SeparatorOpen:
+			l.pos++
+
+			if l.current() == Dollar {
+				tokens = append(tokens, l.parseVariable()...)
+			} else {
+				tokens = append(tokens, Token{Type: TokenTypeSeparatorOpen, Value: "{"}, l.parseText())
+			}
+		case SeparatorClose:
+			l.pos++
+
+			tokens = append(tokens, Token{Type: TokenTypeSeparatorClose, Value: "}"})
+		case 'm':
+			if strings.HasPrefix(string(l.str[l.pos:]), KeywordMatch) {
+				tokens = append(tokens, Token{Type: TokenTypeKeyword, Value: KeywordMatch})
+				l.pos += len(KeywordMatch)
+			}
 		}
 	}
 
-	if len(runes) > 0 {
-		tokens = append(tokens, createTokensFromBuffer(runes, placeholderLevel)...)
+	return append(tokens, Token{Type: TokenTypeEOF}), nil
+}
+
+func (l *lexer) parseFunction() []Token {
+	var tokens []Token
+
+	l.pos++
+
+	function := Token{Type: TokenTypeFunction}
+
+	for {
+		v := l.current()
+
+		if v == SeparatorClose {
+			break
+		}
+
+		function.Value += string(v)
+
+		l.pos++
 	}
 
-	parsedTokens, err := combineTextTokens(tokens, parsedTokens)
-	if err != nil {
-		return nil, errors.New("combine Text tokens")
+	return append(tokens, function)
+}
+
+func (l *lexer) parseText() Token {
+	token := Token{Type: TokenTypeText}
+
+	for l.current() != SeparatorClose {
+		token.Value += string(l.current())
+
+		l.pos++
 	}
 
-	return append(parsedTokens, Token{Type: TokenTypeEOF}), nil
+	return token
+}
+
+func (l *lexer) parseVariable() []Token {
+	tokens := []Token{
+		{Type: TokenTypeSeparatorOpen, Value: "{"},
+		{Type: TokenTypeVariable},
+	}
+
+	variable := &tokens[1]
+
+	l.pos++
+
+	for {
+		v := l.current()
+
+		if v == Colon {
+			tokens = append(tokens, l.parseFunction()...)
+			continue
+		}
+
+		if v == SeparatorClose {
+			break
+		}
+
+		variable.Value += string(v)
+
+		l.pos++
+	}
+
+	l.pos++
+
+	return append(tokens, Token{Type: TokenTypeSeparatorClose, Value: "}"})
+}
+
+func Lex(str string) ([]Token, error) {
+	l := lexer{str: []rune(str)}
+
+	return l.parse()
 }
 
 // combineTextTokens combining Text tokens into one sentence.
@@ -113,7 +180,7 @@ func combineTextTokens(tokens, parsedTokens []Token) ([]Token, error) {
 			}
 
 			if i+1 < len(tokens) && tokens[i+1].Type != TokenTypeText {
-				parsedTokens = append(parsedTokens, Token{Type: TokenTypeText, Value: txt.String(), Level: tokens[i].Level})
+				parsedTokens = append(parsedTokens, Token{Type: TokenTypeText, Value: txt.String()})
 
 				txt.Reset()
 			}
@@ -135,10 +202,10 @@ func createTokensFromBuffer(buffer []rune, placeholderLevel int) []Token {
 	if v != "" {
 		switch v {
 		case KeywordMatch, KeywordLet, KeywordWhen:
-			newTokens = append(newTokens, Token{Type: TokenTypeKeyword, Value: v, Level: placeholderLevel})
+			newTokens = append(newTokens, Token{Type: TokenTypeKeyword, Value: v})
 		default:
 			if placeholderLevel == 0 {
-				newTokens = append(newTokens, Token{Type: TokenTypeLiteral, Value: v, Level: placeholderLevel})
+				newTokens = append(newTokens, Token{Type: TokenTypeLiteral, Value: v})
 			} else {
 				switch buffer[0] {
 				case Dollar, Plus, Minus:
@@ -147,7 +214,6 @@ func createTokensFromBuffer(buffer []rune, placeholderLevel int) []Token {
 							Token{
 								Type:  TokenTypeVariable,
 								Value: strings.ReplaceAll(v, "$", ""),
-								Level: placeholderLevel,
 							})
 					}
 				case Colon:
@@ -155,11 +221,10 @@ func createTokensFromBuffer(buffer []rune, placeholderLevel int) []Token {
 						newTokens = append(newTokens, Token{
 							Type:  TokenTypeFunction,
 							Value: strings.ReplaceAll(v, ":", ""),
-							Level: placeholderLevel,
 						})
 					}
 				default:
-					newTokens = append(newTokens, Token{Type: TokenTypeText, Value: string(buffer), Level: placeholderLevel})
+					newTokens = append(newTokens, Token{Type: TokenTypeText, Value: string(buffer)})
 				}
 			}
 		}

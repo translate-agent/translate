@@ -32,7 +32,7 @@ func (p *parser) parse(s string) ([]interface{}, error) {
 			}
 
 			tree = append(tree, match)
-		case token.Type == TokenTypeDelimiterOpen:
+		case token.Type == TokenTypeSeparatorOpen:
 			text, err := p.parseText()
 			if err != nil {
 				return nil, err
@@ -63,7 +63,7 @@ func (p *parser) nextToken() Token {
 func (p *parser) isEOF() bool { return p.tokens[p.pos].Type == TokenTypeEOF }
 
 func (p *parser) parseText() ([]interface{}, error) {
-	if p.currentToken().Type != TokenTypeDelimiterOpen {
+	if p.currentToken().Type != TokenTypeSeparatorOpen {
 		return nil, errors.New(`text does not start with "{"`)
 	}
 
@@ -76,14 +76,14 @@ func (p *parser) parseText() ([]interface{}, error) {
 		case TokenTypeText:
 			text = append(text, NodeText{Text: token.Value})
 			// TODO
-		case TokenTypeDelimiterOpen:
+		case TokenTypeSeparatorOpen:
 			variable, err := p.parseVariable()
 			if err != nil {
 				return nil, fmt.Errorf("new error: %w", err)
 			}
 			text = append(text, variable)
 			p.pos++
-		case TokenTypeDelimiterClose:
+		case TokenTypeSeparatorClose:
 			p.pos++
 
 			return text, nil
@@ -131,7 +131,7 @@ func (p *parser) parseMatch() (NodeMatch, error) {
 }
 
 func (p *parser) parseExpr() (NodeExpr, error) {
-	if p.currentToken().Type != TokenTypeDelimiterOpen {
+	if p.currentToken().Type != TokenTypeSeparatorOpen {
 		return NodeExpr{}, errors.New(`expression does not start with "{"`)
 	}
 
@@ -150,7 +150,7 @@ func (p *parser) parseExpr() (NodeExpr, error) {
 			}
 
 			expr.Function = function
-		case TokenTypeDelimiterClose:
+		case TokenTypeSeparatorClose:
 			p.pos++
 
 			return expr, nil
@@ -200,7 +200,7 @@ func (p *parser) parseVariable() (NodeVariable, error) {
 
 	var variable NodeVariable
 
-	if p.tokens[p.pos-1].Type != TokenTypeDelimiterOpen {
+	if p.tokens[p.pos-1].Type != TokenTypeSeparatorOpen {
 		return variable, errors.New(`function does not follow placeholder open`)
 	}
 
