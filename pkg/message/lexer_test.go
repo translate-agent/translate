@@ -29,7 +29,7 @@ func TestLexMessage(t *testing.T) {
 			},
 		},
 		{
-			name:  "simple message",
+			name:  "simple message with escapes",
 			input: "{Hello, world!} \n\t\\ ",
 			expected: []Token{
 				{Type: TokenTypeSeparatorOpen, Value: "{"},
@@ -165,7 +165,7 @@ func TestLexMessage(t *testing.T) {
 			},
 		},
 		{
-			name:        "message with Variable",
+			name:        "variable starts with space",
 			input:       "{Hello, {$ userName}!}",
 			expectedErr: fmt.Errorf("variable should not contains space"),
 		},

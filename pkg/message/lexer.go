@@ -80,7 +80,8 @@ func (l *lexer) parse() ([]Token, error) {
 			if l.current() == Dollar {
 				tokens = append(tokens, l.parseVariable()...)
 			} else {
-				tokens = append(tokens, Token{Type: TokenTypeSeparatorOpen, Value: "{"}, l.parseText())
+				tokens = append(tokens, Token{Type: TokenTypeSeparatorOpen, Value: "{"})
+				tokens = append(tokens, l.parseText()...)
 			}
 		case SeparatorClose:
 			l.pos++
@@ -90,6 +91,12 @@ func (l *lexer) parse() ([]Token, error) {
 			if strings.HasPrefix(string(l.str[l.pos:]), KeywordMatch) {
 				tokens = append(tokens, Token{Type: TokenTypeKeyword, Value: KeywordMatch})
 				l.pos += len(KeywordMatch)
+			}
+		case 'w':
+			if strings.HasPrefix(string(l.str[l.pos:]), KeywordWhen) {
+				tokens = append(tokens, Token{Type: TokenTypeKeyword, Value: KeywordWhen})
+				l.pos += len(KeywordWhen)
+				tokens = append(tokens, l.parseLiteral())
 			}
 		}
 	}
@@ -119,16 +126,48 @@ func (l *lexer) parseFunction() []Token {
 	return append(tokens, function)
 }
 
-func (l *lexer) parseText() Token {
+func (l *lexer) parseText() []Token {
+	var tokens []Token
 	token := Token{Type: TokenTypeText}
 
-	for l.current() != SeparatorClose {
-		token.Value += string(l.current())
+	for {
+		if l.current() == SeparatorOpen {
+			l.pos++
+			tokens = append(tokens, token)
+
+			variable := l.parseVariable()
+			tokens = append(tokens, variable...)
+			token.Value = string(l.current())
+		} else if l.current() == SeparatorClose {
+			tokens = append(tokens, token)
+			break
+		} else {
+			token.Value += string(l.current())
+		}
 
 		l.pos++
 	}
 
-	return token
+	return tokens
+}
+func (l *lexer) parseLiteral() Token {
+	l.pos++
+
+	literal := Token{Type: TokenTypeLiteral}
+
+	for {
+		v := l.current()
+
+		if v == SeparatorOpen {
+			break
+		}
+
+		literal.Value += strings.TrimSpace(string(v))
+
+		l.pos++
+	}
+
+	return literal
 }
 
 func (l *lexer) parseVariable() []Token {
@@ -153,7 +192,7 @@ func (l *lexer) parseVariable() []Token {
 			break
 		}
 
-		variable.Value += string(v)
+		variable.Value += strings.TrimSpace(string(v))
 
 		l.pos++
 	}
