@@ -2,6 +2,7 @@ package message
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 )
 
@@ -128,34 +129,38 @@ func combineTextTokens(tokens, parsedTokens []Token) ([]Token, error) {
 func createTokensFromBuffer(buffer []rune, placeholderLevel int) []Token {
 	var newTokens []Token
 
-	v := strings.TrimSpace(string(buffer))
-	switch v {
-	case KeywordMatch, KeywordLet, KeywordWhen:
-		newTokens = append(newTokens, Token{Type: TokenTypeKeyword, Value: v, Level: placeholderLevel})
-	default:
-		if placeholderLevel == 0 {
-			newTokens = append(newTokens, Token{Type: TokenTypeLiteral, Value: v, Level: placeholderLevel})
-		} else {
-			switch buffer[0] {
-			case Dollar, Plus, Minus:
-				if placeholderLevel > 0 {
-					newTokens = append(newTokens,
-						Token{
-							Type:  TokenTypeVariable,
-							Value: strings.ReplaceAll(v, "$", ""),
+	re := regexp.MustCompile(`\\[^\S\n]?`)
+	v := re.ReplaceAllString(strings.TrimSpace(string(buffer)), "")
+
+	if v != "" {
+		switch v {
+		case KeywordMatch, KeywordLet, KeywordWhen:
+			newTokens = append(newTokens, Token{Type: TokenTypeKeyword, Value: v, Level: placeholderLevel})
+		default:
+			if placeholderLevel == 0 {
+				newTokens = append(newTokens, Token{Type: TokenTypeLiteral, Value: v, Level: placeholderLevel})
+			} else {
+				switch buffer[0] {
+				case Dollar, Plus, Minus:
+					if placeholderLevel > 0 {
+						newTokens = append(newTokens,
+							Token{
+								Type:  TokenTypeVariable,
+								Value: strings.ReplaceAll(v, "$", ""),
+								Level: placeholderLevel,
+							})
+					}
+				case Colon:
+					if placeholderLevel > 0 {
+						newTokens = append(newTokens, Token{
+							Type:  TokenTypeFunction,
+							Value: strings.ReplaceAll(v, ":", ""),
 							Level: placeholderLevel,
 						})
+					}
+				default:
+					newTokens = append(newTokens, Token{Type: TokenTypeText, Value: string(buffer), Level: placeholderLevel})
 				}
-			case Colon:
-				if placeholderLevel > 0 {
-					newTokens = append(newTokens, Token{
-						Type:  TokenTypeFunction,
-						Value: strings.ReplaceAll(v, ":", ""),
-						Level: placeholderLevel,
-					})
-				}
-			default:
-				newTokens = append(newTokens, Token{Type: TokenTypeText, Value: string(buffer), Level: placeholderLevel})
 			}
 		}
 	}

@@ -29,6 +29,17 @@ func TestLexMessage(t *testing.T) {
 			},
 		},
 		{
+			name:  "simple message",
+			input: "{Hello, world!} \n\t\\ ",
+			expected: []Token{
+				{Type: TokenTypeDelimiterOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "Hello, world!", Level: 1},
+				{Type: TokenTypeDelimiterClose, Value: "}", Level: 1},
+				{Type: TokenTypeEOF},
+			},
+		},
+
+		{
 			name:  "message with variable",
 			input: "{Hello, {$userName}!}",
 			expected: []Token{
@@ -45,6 +56,32 @@ func TestLexMessage(t *testing.T) {
 		{
 			name:  "message with plurals",
 			input: "match {$count :number} when 1 {You have one notification.} when * {You have {$count} notifications.}",
+			expected: []Token{
+				{Type: TokenTypeKeyword, Value: "match", Level: 0},
+				{Type: TokenTypeDelimiterOpen, Value: "{", Level: 1},
+				{Type: TokenTypeVariable, Value: "count", Level: 1},
+				{Type: TokenTypeFunction, Value: "number", Level: 1},
+				{Type: TokenTypeDelimiterClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: "when", Level: 0},
+				{Type: TokenTypeLiteral, Value: "1", Level: 0},
+				{Type: TokenTypeDelimiterOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "You have one notification.", Level: 1},
+				{Type: TokenTypeDelimiterClose, Value: "}", Level: 1},
+				{Type: TokenTypeKeyword, Value: "when", Level: 0},
+				{Type: TokenTypeLiteral, Value: "*", Level: 0},
+				{Type: TokenTypeDelimiterOpen, Value: "{", Level: 1},
+				{Type: TokenTypeText, Value: "You have ", Level: 1},
+				{Type: TokenTypeDelimiterOpen, Value: "{", Level: 2},
+				{Type: TokenTypeVariable, Value: "count", Level: 2},
+				{Type: TokenTypeDelimiterClose, Value: "}", Level: 2},
+				{Type: TokenTypeText, Value: " notifications.", Level: 1},
+				{Type: TokenTypeDelimiterClose, Value: "}", Level: 1},
+				{Type: TokenTypeEOF},
+			},
+		},
+		{
+			name:  "message with plurals",
+			input: "match {$count \n\t\\:number\n \n} when 1 {You have one notification.} when * {You have {\t$count\n } notifications.}",
 			expected: []Token{
 				{Type: TokenTypeKeyword, Value: "match", Level: 0},
 				{Type: TokenTypeDelimiterOpen, Value: "{", Level: 1},
