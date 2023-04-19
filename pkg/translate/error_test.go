@@ -101,7 +101,10 @@ func Test_RequestErrorToStatusErr(t *testing.T) {
 			err:   gofakeit.Error(),
 		}
 
-		assert.ErrorContains(t, requestErrorToStatusErr(err), codes.InvalidArgument.String())
+		statusErr := requestErrorToStatusErr(err)
+
+		require.ErrorContains(t, statusErr, codes.InvalidArgument.String())
+		assert.ErrorContains(t, statusErr, err.field)
 	})
 
 	t.Run("Unknown", func(t *testing.T) {
@@ -121,7 +124,10 @@ func Test_RepoErrorToStatusErr(t *testing.T) {
 			Entity: gofakeit.Word(),
 		}
 
-		assert.ErrorContains(t, repoErrorToStatusErr(err), codes.NotFound.String())
+		statusErr := repoErrorToStatusErr(err)
+
+		require.ErrorContains(t, statusErr, codes.NotFound.String())
+		assert.ErrorContains(t, statusErr, err.Entity)
 	})
 
 	t.Run("Internal", func(t *testing.T) {
@@ -131,7 +137,10 @@ func Test_RepoErrorToStatusErr(t *testing.T) {
 			Operation: gofakeit.Word(),
 		}
 
-		assert.ErrorContains(t, repoErrorToStatusErr(err), codes.Internal.String())
+		statusErr := repoErrorToStatusErr(err)
+
+		require.ErrorContains(t, statusErr, codes.Internal.String())
+		assert.ErrorContains(t, statusErr, err.Entity)
 	})
 
 	t.Run("Unknown", func(t *testing.T) {
@@ -152,7 +161,10 @@ func Test_ConvertToErrorToStatusErr(t *testing.T) {
 			field: gofakeit.Word(),
 		}
 
-		assert.ErrorContains(t, convertFromErrorToStatusErr(err), codes.InvalidArgument.String())
+		statusErr := convertFromErrorToStatusErr(err)
+
+		require.ErrorContains(t, statusErr, codes.InvalidArgument.String())
+		assert.ErrorContains(t, statusErr, "JSON")
 	})
 
 	t.Run("XML SyntaxError", func(t *testing.T) {
@@ -162,7 +174,10 @@ func Test_ConvertToErrorToStatusErr(t *testing.T) {
 			field: gofakeit.Word(),
 		}
 
-		assert.ErrorContains(t, convertFromErrorToStatusErr(err), codes.InvalidArgument.String())
+		statusErr := convertFromErrorToStatusErr(err)
+
+		require.ErrorContains(t, statusErr, codes.InvalidArgument.String())
+		assert.ErrorContains(t, statusErr, "XML")
 	})
 
 	t.Run("Random Error", func(t *testing.T) {
@@ -172,7 +187,10 @@ func Test_ConvertToErrorToStatusErr(t *testing.T) {
 			field: gofakeit.Word(),
 		}
 
-		assert.ErrorContains(t, convertFromErrorToStatusErr(err), codes.InvalidArgument.String())
+		statusErr := convertFromErrorToStatusErr(err)
+
+		require.ErrorContains(t, statusErr, codes.InvalidArgument.String())
+		assert.ErrorContains(t, statusErr, "Cannot convert")
 	})
 }
 
@@ -180,9 +198,12 @@ func Test_ConvertFromErrorToStatusErr(t *testing.T) {
 	t.Parallel()
 
 	err := &convertError{
-		err:   gofakeit.Error(),
-		field: gofakeit.Word(),
+		err:    gofakeit.Error(),
+		schema: gofakeit.Word(),
 	}
 
-	assert.ErrorContains(t, convertToErrorToStatusErr(err), codes.Internal.String())
+	statusErr := convertToErrorToStatusErr(err)
+
+	require.ErrorContains(t, statusErr, codes.Internal.String())
+	assert.ErrorContains(t, statusErr, err.schema)
 }
