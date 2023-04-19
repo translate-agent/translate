@@ -51,7 +51,7 @@ func Test_NewStatusWithDetails(t *testing.T) {
 	t.Parallel()
 
 	randCodeAndMsg := func() (codes.Code, string) {
-		return codes.Code(gofakeit.IntRange(0, 15)), gofakeit.SentenceSimple()
+		return codes.Code(gofakeit.IntRange(1, 15)), gofakeit.SentenceSimple()
 	}
 
 	t.Run("With Details", func(t *testing.T) {
@@ -74,7 +74,7 @@ func Test_NewStatusWithDetails(t *testing.T) {
 
 		require.Equal(t, c, st.Code())
 		require.Equal(t, msg, st.Message())
-		assert.NotEmpty(t, st.Details())
+		assert.Len(t, st.Details(), detailCount)
 	})
 
 	t.Run("Without Details", func(t *testing.T) {
