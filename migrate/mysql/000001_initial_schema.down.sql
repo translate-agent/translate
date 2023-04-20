@@ -1,3 +1,5 @@
-DROP TABLE translation_file;
+DROP TABLE message;
+
+DROP TABLE messages;
 
 DROP TABLE service;
