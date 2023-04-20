@@ -94,6 +94,8 @@ func (l *lexer) parse() ([]Token, error) {
 
 	var nextTokenType string
 
+	var textToFollow bool
+
 	for !l.isEOF() {
 		v := l.current()
 
@@ -101,16 +103,22 @@ func (l *lexer) parse() ([]Token, error) {
 
 		switch {
 		default:
+			textToFollow = false
 			text, err := l.parseText()
 			if err != nil {
 				return nil, err
 			}
 
+			if l.lookup(l.pos) != SeparatorClose {
+				textToFollow = true
+			}
+
 			tokens = append(tokens, text)
-		case l.isWhitespace(v):
+		case l.isWhitespace(v) && !textToFollow:
 			if l.isEOF() {
 				return tokens, nil
 			}
+
 			l.pos++
 			// noop
 		case nextTokenType == "literal":
