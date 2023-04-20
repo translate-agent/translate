@@ -103,7 +103,7 @@ func Test_ValidateGetServiceParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := validateGetServiceRequestParams(tt.params)
+			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
@@ -285,7 +285,7 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := validateUpdateServiceParams(tt.params)
+			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
@@ -456,7 +456,7 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := validateDeleteServiceParams(tt.params)
+			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
@@ -585,7 +585,7 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := validateCreateServiceParams(tt.params)
+			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())

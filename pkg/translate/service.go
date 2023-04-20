@@ -32,8 +32,8 @@ func parseGetServiceRequestParams(req *translatev1.GetServiceRequest) (*getServi
 	return &getServiceParams{id: id}, nil
 }
 
-func validateGetServiceRequestParams(params *getServiceParams) error {
-	if params.id == uuid.Nil {
+func (g *getServiceParams) validate() error {
+	if g.id == uuid.Nil {
 		return errors.New("'id' is required")
 	}
 
@@ -49,7 +49,7 @@ func (t *TranslateServiceServer) GetService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if err := validateGetServiceRequestParams(params); err != nil {
+	if err := params.validate(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
@@ -92,8 +92,8 @@ func parseCreateServiceParams(req *translatev1.CreateServiceRequest) (*createSer
 	return &createServiceParams{service: service}, nil
 }
 
-func validateCreateServiceParams(params *createServiceParams) error {
-	if params.service == nil {
+func (c *createServiceParams) validate() error {
+	if c.service == nil {
 		return errors.New("'service' is required")
 	}
 
@@ -109,7 +109,7 @@ func (t *TranslateServiceServer) CreateService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if err := validateCreateServiceParams(params); err != nil {
+	if err := params.validate(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
@@ -138,13 +138,13 @@ func parseUpdateServiceParams(req *translatev1.UpdateServiceRequest) (*updateSer
 	return &updateServiceParams{mask: req.GetUpdateMask(), service: service}, nil
 }
 
-func validateUpdateServiceParams(params *updateServiceParams) error {
-	if params.service == nil {
+func (u *updateServiceParams) validate() error {
+	if u.service == nil {
 		return errors.New("'service' is required")
 	}
 
-	if params.mask != nil {
-		for _, path := range params.mask.Paths {
+	if u.mask != nil {
+		for _, path := range u.mask.Paths {
 			if !slices.Contains(updateMaskAcceptablePaths, path) {
 				return fmt.Errorf("'%s' is not a valid service field", path)
 			}
@@ -185,7 +185,7 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if err = validateUpdateServiceParams(params); err != nil {
+	if err = params.validate(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
@@ -222,8 +222,8 @@ func parseDeleteServiceRequest(req *translatev1.DeleteServiceRequest) (*deleteSe
 	return &deleteServiceParams{id: id}, nil
 }
 
-func validateDeleteServiceParams(params *deleteServiceParams) error {
-	if params.id == uuid.Nil {
+func (d *deleteServiceParams) validate() error {
+	if d.id == uuid.Nil {
 		return errors.New("'id' is required")
 	}
 
@@ -239,7 +239,7 @@ func (t *TranslateServiceServer) DeleteService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if err := validateDeleteServiceParams(params); err != nil {
+	if err := params.validate(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
