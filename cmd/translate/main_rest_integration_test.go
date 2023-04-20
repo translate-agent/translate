@@ -3,14 +3,20 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/url"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
+
+// -------------Translation File-------------.
 
 func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string, error) {
 	t.Helper()
@@ -56,7 +62,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 					"messages": [
 						{
 							"id": "1",
-							"meaning": "When you great someone",
+							"meaning": "When you greet someone",
 							"message": "hello",
 							"translation": "čau",
 							"fuzzy": false
@@ -75,7 +81,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 					"messages": [
 						{
 							"id": "1",
-							"meaning": "When you great someone",
+							"meaning": "When you greet someone",
 							"message": "hello",
 							"translation": "čau",
 							"fuzzy": false
@@ -119,7 +125,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			defer resp.Body.Close()
 
 			actual := resp.StatusCode
-			assert.EqualValues(t, tt.expected, actual)
+			assert.Equal(t, int(tt.expected), actual)
 		})
 	}
 }
@@ -181,7 +187,284 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			defer resp.Body.Close()
 
 			actual := resp.StatusCode
-			assert.EqualValues(t, tt.expected, actual)
+			assert.Equal(t, int(tt.expected), actual)
 		})
 	}
+}
+
+// ------------------Service------------------
+
+// POST.
+func Test_CreateService_REST(t *testing.T) {
+	t.Parallel()
+
+	serviceWithID := randService()
+
+	serviceWithoutID := randService()
+	serviceWithoutID.Id = ""
+
+	serviceMalformedID := randService()
+	serviceMalformedID.Id += "_FAIL"
+
+	tests := []struct {
+		service      *translatev1.Service
+		name         string
+		expectedCode uint
+	}{
+		{
+			name:         "Happy path With ID",
+			service:      serviceWithID,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Happy path Without ID",
+			service:      serviceWithoutID,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Invalid argument malformed ID",
+			service:      serviceMalformedID,
+			expectedCode: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			body, err := json.Marshal(tt.service)
+			require.NoError(t, err, "marshal service")
+
+			u := url.URL{
+				Scheme: "http",
+				Host:   host + ":" + port,
+				Path:   "v1/services",
+			}
+
+			req, err := http.NewRequestWithContext(context.Background(), "POST", u.String(), bytes.NewBuffer(body))
+			require.NoError(t, err, "create request")
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "do request")
+
+			defer resp.Body.Close()
+
+			actualCode := resp.StatusCode
+
+			assert.Equal(t, int(tt.expectedCode), actualCode)
+		})
+	}
+}
+
+type restUpdateBody struct {
+	Name string `json:"name,omitempty"`
+}
+
+// PUT.
+func Test_UpdateServiceAllFields_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	service := randService()
+
+	// Using gRPC client to create service
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "prepare test service")
+
+	putBody := restUpdateBody{Name: gofakeit.FirstName()}
+
+	putBodyBytes, err := json.Marshal(putBody)
+	require.NoError(t, err, "marshal put body")
+
+	u := url.URL{
+		Scheme: "http",
+		Host:   host + ":" + port,
+		Path:   "v1/services/" + service.Id,
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(putBodyBytes))
+	require.NoError(t, err, "create request")
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err, "do request")
+
+	defer resp.Body.Close()
+
+	actualCode := resp.StatusCode
+	expectedCode := http.StatusOK
+
+	assert.Equal(t, expectedCode, actualCode)
+}
+
+// PATCH.
+func Test_UpdateServiceSpecificField_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	service := randService()
+
+	// Using gRPC client to create service
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "Prepare test service")
+
+	patchBody := restUpdateBody{Name: gofakeit.FirstName()}
+
+	patchBodyBytes, err := json.Marshal(patchBody)
+	require.NoError(t, err, "marshal patch body")
+
+	u := url.URL{
+		Scheme: "http",
+		Host:   host + ":" + port,
+		Path:   "v1/services/" + service.Id,
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "PATCH", u.String(), bytes.NewReader(patchBodyBytes))
+	require.NoError(t, err, "create request")
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err, "do request")
+
+	defer resp.Body.Close()
+
+	actualCode := resp.StatusCode
+	expectedCode := http.StatusOK
+
+	assert.Equal(t, expectedCode, actualCode)
+}
+
+// GET.
+func Test_GetService_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	service := randService()
+
+	// Using gRPC client to create service
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "Prepare test service")
+
+	tests := []struct {
+		service      *translatev1.Service
+		name         string
+		expectedCode uint
+	}{
+		{
+			service:      service,
+			name:         "Happy Path",
+			expectedCode: http.StatusOK,
+		},
+		{
+			service:      randService(),
+			name:         "Not Found",
+			expectedCode: http.StatusNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			u := url.URL{
+				Scheme: "http",
+				Host:   host + ":" + port,
+				Path:   "v1/services/" + tt.service.Id,
+			}
+
+			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+			require.NoError(t, err, "create request")
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "do request")
+
+			defer resp.Body.Close()
+
+			actualCode := resp.StatusCode
+			assert.Equal(t, int(tt.expectedCode), actualCode)
+		})
+	}
+}
+
+// DELETE.
+func Test_DeleteService_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	service := randService()
+
+	// Using gRPC client to create service
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "Prepare test service")
+
+	tests := []struct {
+		service      *translatev1.Service
+		name         string
+		expectedCode uint
+	}{
+		{
+			service:      service,
+			name:         "Happy Path",
+			expectedCode: http.StatusOK,
+		},
+		{
+			service:      randService(),
+			name:         "Not Found",
+			expectedCode: http.StatusNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			u := url.URL{
+				Scheme: "http",
+				Host:   host + ":" + port,
+				Path:   "v1/services/" + tt.service.Id,
+			}
+
+			req, err := http.NewRequestWithContext(ctx, "DELETE", u.String(), nil)
+			require.NoError(t, err, "create request")
+
+			resp, err := http.DefaultClient.Do(req)
+			require.NoError(t, err, "do request")
+
+			defer resp.Body.Close()
+
+			actualCode := resp.StatusCode
+			assert.Equal(t, int(tt.expectedCode), actualCode)
+		})
+	}
+}
+
+// GET (list).
+func Test_ListServices_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	u := url.URL{
+		Scheme: "http",
+		Host:   host + ":" + port,
+		Path:   "v1/services",
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+	require.NoError(t, err, "create request")
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err, "do request")
+
+	defer resp.Body.Close()
+
+	actualCode := resp.StatusCode
+	expectedCode := http.StatusOK
+
+	assert.Equal(t, expectedCode, actualCode)
 }
