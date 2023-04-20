@@ -7,7 +7,7 @@ import (
 )
 
 func Test_Parse(t *testing.T) {
-
+	t.Parallel()
 	for _, test := range []struct {
 		name, message string
 		expectedErr   bool
@@ -77,13 +77,17 @@ func Test_Parse(t *testing.T) {
 					{Keys: []string{"*"}, Message: []interface{}{
 						NodeText{Text: "Buy "},
 						NodeVariable{Name: "count"},
-						NodeText{Text: " apples!"}}},
+						NodeText{Text: " apples!"},
+					}},
 				},
 			},
 		},
 	}, {
-		name:    "match with plurals",
-		message: "match {$count :number} when 0 {No apples!} when 1 {Buy {$count}{$count2} apple!} when * {Buy {$count} apples 2!} ",
+		name: "match with plurals",
+		message: "match {$count :number} " +
+			"when 0 {No apples!} " +
+			"when 1 {Buy {$count}{$count2} apple!} " +
+			"when * {Buy {$count} apples 2!} ",
 		expectedTree: []interface{}{
 			NodeMatch{
 				Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
@@ -93,11 +97,13 @@ func Test_Parse(t *testing.T) {
 						NodeText{Text: "Buy "},
 						NodeVariable{Name: "count"},
 						NodeVariable{Name: "count2"},
-						NodeText{Text: " apple!"}}},
+						NodeText{Text: " apple!"},
+					}},
 					{Keys: []string{"*"}, Message: []interface{}{
 						NodeText{Text: "Buy "},
 						NodeVariable{Name: "count"},
-						NodeText{Text: " apples 2!"}}},
+						NodeText{Text: " apples 2!"},
+					}},
 				},
 			},
 		},

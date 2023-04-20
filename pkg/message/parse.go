@@ -47,7 +47,6 @@ func (p *parser) parse(s string) ([]interface{}, error) {
 	}
 
 	return tree, nil
-
 }
 
 func (p *parser) currentToken() Token {
@@ -81,6 +80,7 @@ func (p *parser) parseText() ([]interface{}, error) {
 			if err != nil {
 				return nil, fmt.Errorf("new error: %w", err)
 			}
+
 			text = append(text, variable)
 			p.pos++
 		case TokenTypeSeparatorClose:

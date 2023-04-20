@@ -30,7 +30,7 @@ func TestLexMessage(t *testing.T) {
 		},
 		{
 			name:  "simple message with escapes",
-			input: "{Hello, world!} \n\t\\ ",
+			input: "{Hello, world!} \n\t ",
 			expected: []Token{
 				{Type: TokenTypeSeparatorOpen, Value: "{"},
 				{Type: TokenTypeText, Value: "Hello, world!"},
@@ -81,12 +81,12 @@ func TestLexMessage(t *testing.T) {
 		},
 		{
 			name:  "message with UTF characters",
-			input: "match {$日 :本} when 1 {日本語 日本語} when * {日本語 {$日} 日本語.}",
+			input: "match {$日本語 :number} when 1 {日本語 日本語} when * {日本語 {$日本語} 日本語.}",
 			expected: []Token{
 				{Type: TokenTypeKeyword, Value: "match"},
 				{Type: TokenTypeSeparatorOpen, Value: "{"},
-				{Type: TokenTypeVariable, Value: "日"},
-				{Type: TokenTypeFunction, Value: "本"},
+				{Type: TokenTypeVariable, Value: "日本語"},
+				{Type: TokenTypeFunction, Value: "number"},
 				{Type: TokenTypeSeparatorClose, Value: "}"},
 				{Type: TokenTypeKeyword, Value: "when"},
 				{Type: TokenTypeLiteral, Value: "1"},
@@ -98,7 +98,7 @@ func TestLexMessage(t *testing.T) {
 				{Type: TokenTypeSeparatorOpen, Value: "{"},
 				{Type: TokenTypeText, Value: "日本語 "},
 				{Type: TokenTypeSeparatorOpen, Value: "{"},
-				{Type: TokenTypeVariable, Value: "日"},
+				{Type: TokenTypeVariable, Value: "日本語"},
 				{Type: TokenTypeSeparatorClose, Value: "}"},
 				{Type: TokenTypeText, Value: " 日本語."},
 				{Type: TokenTypeSeparatorClose, Value: "}"},

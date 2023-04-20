@@ -1,9 +1,8 @@
 package message
 
 import (
-	"errors"
-	"regexp"
 	"strings"
+	"unicode"
 )
 
 type Token struct {
@@ -29,8 +28,8 @@ const (
 	KeywordMatch   = "match"
 	KeywordLet     = "let"
 	KeywordWhen    = "when"
-	Dollar         = '$'
-	Colon          = ':'
+	Dollar         = "$"
+	Colon          = ":"
 	Plus           = '+'
 	Minus          = '-'
 	SeparatorOpen  = '{'
@@ -102,24 +101,45 @@ func (l *lexer) parse() ([]Token, error) {
 
 		switch {
 		default:
-			text, _ := l.parseText()
+			text, err := l.parseText()
+			if err != nil {
+				return nil, err
+			}
 
 			tokens = append(tokens, text)
 		case l.isWhitespace(v):
+			if l.isEOF() {
+				return tokens, nil
+			}
+			l.pos++
 			// noop
 		case nextTokenType == "literal":
-			l.parseLiteral()
+			literal, err := l.parseLiteral()
+			if err != nil {
+				return nil, err
+			}
 
+			tokens = append(tokens, literal)
 			nextTokenType = ""
-		case strings.HasPrefix(s, "{$"):
-			// TODO: parse variable
-		case v == SeparatorOpen:
-			l.pos++
+		case strings.HasPrefix(s, Dollar):
+			variable, err := l.parseVariable()
+			if err != nil {
+				return nil, err
+			}
 
+			tokens = append(tokens, variable)
+		case strings.HasPrefix(s, Colon):
+			function, err := l.parseFunction()
+			if err != nil {
+				return nil, err
+			}
+
+			tokens = append(tokens, function)
+		case v == SeparatorOpen:
 			tokens = append(tokens, Token{Type: TokenTypeSeparatorOpen, Value: "{"})
+			l.pos++
 		case v == SeparatorClose:
 			tokens = append(tokens, Token{Type: TokenTypeSeparatorClose, Value: "}"})
-
 			l.pos++
 		case strings.HasPrefix(s, KeywordMatch):
 			tokens = append(tokens, Token{Type: TokenTypeKeyword, Value: KeywordMatch})
@@ -137,16 +157,10 @@ func (l *lexer) parse() ([]Token, error) {
 	return append(tokens, Token{Type: TokenTypeEOF}), nil
 }
 
-func (l *lexer) parseFunction() ([]Token, error) {
-	var tokens []Token
-
-	l.pos++
-
+func (l *lexer) parseFunction() (Token, error) {
 	function := Token{Type: TokenTypeFunction}
 
-	if l.current() == ' ' {
-		return nil, errors.New(`function does not starts with ":"`)
-	}
+	l.pos++
 
 	for {
 		v := l.current()
@@ -160,7 +174,7 @@ func (l *lexer) parseFunction() ([]Token, error) {
 		l.pos++
 	}
 
-	return append(tokens, function), nil
+	return function, nil
 }
 
 func (l *lexer) parseText() (Token, error) {
@@ -174,12 +188,12 @@ func (l *lexer) parseText() (Token, error) {
 		}
 
 		text.Value += string(v)
+
+		l.pos++
 	}
 }
 
-func (l *lexer) parseLiteral() Token {
-	l.pos++
-
+func (l *lexer) parseLiteral() (Token, error) {
 	literal := Token{Type: TokenTypeLiteral}
 
 	for {
@@ -194,7 +208,7 @@ func (l *lexer) parseLiteral() Token {
 		l.pos++
 	}
 
-	return literal
+	return literal, nil
 }
 
 // parseVariable parses variable name according to https://github.com/unicode-org/message-format-wg/blob/main/spec/syntax.md#names.
@@ -211,11 +225,12 @@ func (l *lexer) parseLiteral() Token {
 //	/ %x0300-036F / %x203F-2040
 func (l *lexer) parseVariable() (Token, error) {
 	variable := Token{Type: TokenTypeVariable}
+	l.pos++
 
 	for {
 		v := l.current()
 
-		if !l.isAlpha(v) && v != '_' || l.isEOF() {
+		if !unicode.IsLetter(v) && v != '_' || l.isEOF() {
 			return variable, nil
 		}
 
@@ -232,65 +247,65 @@ func Lex(str string) ([]Token, error) {
 }
 
 // combineTextTokens combining Text tokens into one sentence.
-func combineTextTokens(tokens, parsedTokens []Token) ([]Token, error) {
-	var txt strings.Builder
-
-	for i := 0; i < len(tokens); i++ {
-		if tokens[i].Type == TokenTypeText {
-			if _, err := txt.WriteString(tokens[i].Value); err != nil {
-				return []Token{}, errors.New("write Text token")
-			}
-
-			if i+1 < len(tokens) && tokens[i+1].Type != TokenTypeText {
-				parsedTokens = append(parsedTokens, Token{Type: TokenTypeText, Value: txt.String()})
-
-				txt.Reset()
-			}
-		} else {
-			parsedTokens = append(parsedTokens, tokens[i])
-		}
-	}
-
-	return parsedTokens, nil
-}
+// func combineTextTokens(tokens, parsedTokens []Token) ([]Token, error) {
+//	var txt strings.Builder
+//
+//	for i := 0; i < len(tokens); i++ {
+//		if tokens[i].Type == TokenTypeText {
+//			if _, err := txt.WriteString(tokens[i].Value); err != nil {
+//				return []Token{}, errors.New("write Text token")
+//			}
+//
+//			if i+1 < len(tokens) && tokens[i+1].Type != TokenTypeText {
+//				parsedTokens = append(parsedTokens, Token{Type: TokenTypeText, Value: txt.String()})
+//
+//				txt.Reset()
+//			}
+//		} else {
+//			parsedTokens = append(parsedTokens, tokens[i])
+//		}
+//	}
+//
+//	return parsedTokens, nil
+// }
 
 // createTokensFromBuffer breaks the input text into tokens that can be processed separately.
-func createTokensFromBuffer(buffer []rune, placeholderLevel int) []Token {
-	var newTokens []Token
-
-	re := regexp.MustCompile(`\\[^\S\n]?`)
-	v := re.ReplaceAllString(strings.TrimSpace(string(buffer)), "")
-
-	if v != "" {
-		switch v {
-		case KeywordMatch, KeywordLet, KeywordWhen:
-			newTokens = append(newTokens, Token{Type: TokenTypeKeyword, Value: v})
-		default:
-			if placeholderLevel == 0 {
-				newTokens = append(newTokens, Token{Type: TokenTypeLiteral, Value: v})
-			} else {
-				switch buffer[0] {
-				case Dollar, Plus, Minus:
-					if placeholderLevel > 0 {
-						newTokens = append(newTokens,
-							Token{
-								Type:  TokenTypeVariable,
-								Value: strings.ReplaceAll(v, "$", ""),
-							})
-					}
-				case Colon:
-					if placeholderLevel > 0 {
-						newTokens = append(newTokens, Token{
-							Type:  TokenTypeFunction,
-							Value: strings.ReplaceAll(v, ":", ""),
-						})
-					}
-				default:
-					newTokens = append(newTokens, Token{Type: TokenTypeText, Value: string(buffer)})
-				}
-			}
-		}
-	}
-
-	return newTokens
-}
+// func createTokensFromBuffer(buffer []rune, placeholderLevel int) []Token {
+//	var newTokens []Token
+//
+//	re := regexp.MustCompile(`\\[^\S\n]?`)
+//	v := re.ReplaceAllString(strings.TrimSpace(string(buffer)), "")
+//
+//	if v != "" {
+//		switch v {
+//		case KeywordMatch, KeywordLet, KeywordWhen:
+//			newTokens = append(newTokens, Token{Type: TokenTypeKeyword, Value: v})
+//		default:
+//			if placeholderLevel == 0 {
+//				newTokens = append(newTokens, Token{Type: TokenTypeLiteral, Value: v})
+//			} else {
+//				switch buffer[0] {
+//				case Dollar, Plus, Minus:
+//					if placeholderLevel > 0 {
+//						newTokens = append(newTokens,
+//							Token{
+//								Type:  TokenTypeVariable,
+//								Value: strings.ReplaceAll(v, "$", ""),
+//							})
+//					}
+//				case Colon:
+//					if placeholderLevel > 0 {
+//						newTokens = append(newTokens, Token{
+//							Type:  TokenTypeFunction,
+//							Value: strings.ReplaceAll(v, ":", ""),
+//						})
+//					}
+//				default:
+//					newTokens = append(newTokens, Token{Type: TokenTypeText, Value: string(buffer)})
+//				}
+//			}
+//		}
+//	}
+//
+//	return newTokens
+// }
