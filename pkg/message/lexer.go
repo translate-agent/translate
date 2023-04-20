@@ -2,6 +2,7 @@ package message
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -78,10 +79,18 @@ func (l *lexer) parse() ([]Token, error) {
 			l.pos++
 
 			if l.current() == Dollar {
-				tokens = append(tokens, l.parseVariable()...)
+				variable, err := l.parseVariable()
+				if err != nil {
+					return nil, fmt.Errorf("parse variable: %w", err)
+				}
+				tokens = append(tokens, variable...)
 			} else {
 				tokens = append(tokens, Token{Type: TokenTypeSeparatorOpen, Value: "{"})
-				tokens = append(tokens, l.parseText()...)
+				text, err := l.parseText()
+				if err != nil {
+					return nil, err
+				}
+				tokens = append(tokens, text...)
 			}
 		case SeparatorClose:
 			l.pos++
@@ -104,12 +113,16 @@ func (l *lexer) parse() ([]Token, error) {
 	return append(tokens, Token{Type: TokenTypeEOF}), nil
 }
 
-func (l *lexer) parseFunction() []Token {
+func (l *lexer) parseFunction() ([]Token, error) {
 	var tokens []Token
 
 	l.pos++
 
 	function := Token{Type: TokenTypeFunction}
+
+	if l.current() == ' ' {
+		return nil, errors.New(`function does not starts with ":"`)
+	}
 
 	for {
 		v := l.current()
@@ -123,19 +136,23 @@ func (l *lexer) parseFunction() []Token {
 		l.pos++
 	}
 
-	return append(tokens, function)
+	return append(tokens, function), nil
 }
 
-func (l *lexer) parseText() []Token {
+func (l *lexer) parseText() ([]Token, error) {
 	var tokens []Token
 	token := Token{Type: TokenTypeText}
 
 	for {
 		if l.current() == SeparatorOpen {
-			l.pos++
 			tokens = append(tokens, token)
+			l.pos++
 
-			variable := l.parseVariable()
+			variable, err := l.parseVariable()
+			if err != nil {
+				return nil, fmt.Errorf("parse variable: %w", err)
+			}
+
 			tokens = append(tokens, variable...)
 			token.Value = string(l.current())
 		} else if l.current() == SeparatorClose {
@@ -148,7 +165,7 @@ func (l *lexer) parseText() []Token {
 		l.pos++
 	}
 
-	return tokens
+	return tokens, nil
 }
 func (l *lexer) parseLiteral() Token {
 	l.pos++
@@ -170,7 +187,8 @@ func (l *lexer) parseLiteral() Token {
 	return literal
 }
 
-func (l *lexer) parseVariable() []Token {
+func (l *lexer) parseVariable() ([]Token, error) {
+
 	tokens := []Token{
 		{Type: TokenTypeSeparatorOpen, Value: "{"},
 		{Type: TokenTypeVariable},
@@ -180,11 +198,19 @@ func (l *lexer) parseVariable() []Token {
 
 	l.pos++
 
+	if l.current() == ' ' {
+		return nil, errors.New(`variable does not start with "$"`)
+	}
+
 	for {
 		v := l.current()
 
 		if v == Colon {
-			tokens = append(tokens, l.parseFunction()...)
+			function, err := l.parseFunction()
+			if err != nil {
+				return nil, fmt.Errorf("parse function: %w", err)
+			}
+			tokens = append(tokens, function...)
 			continue
 		}
 
@@ -199,7 +225,7 @@ func (l *lexer) parseVariable() []Token {
 
 	l.pos++
 
-	return append(tokens, Token{Type: TokenTypeSeparatorClose, Value: "}"})
+	return append(tokens, Token{Type: TokenTypeSeparatorClose, Value: "}"}), nil
 }
 
 func Lex(str string) ([]Token, error) {

@@ -167,17 +167,17 @@ func TestLexMessage(t *testing.T) {
 		{
 			name:        "variable starts with space",
 			input:       "{Hello, {$ userName}!}",
-			expectedErr: fmt.Errorf("variable should not contains space"),
+			expectedErr: fmt.Errorf(`variable does not starts with "$"`),
 		},
 		{
 			name:        "message with plurals with invalid function",
 			input:       "match {$count : number} when 1 {You have one notification.} when * {You have {$count} notifications.}",
-			expectedErr: fmt.Errorf("variable should not contains space"),
+			expectedErr: fmt.Errorf(`function does not starts with ":"`),
 		},
 		{
 			name:        "message with UTF characters",
 			input:       "{Hello, {$ 日本語}!}",
-			expectedErr: fmt.Errorf("variable should not contains space"),
+			expectedErr: fmt.Errorf(`variable does not starts with "$"`),
 		},
 	}
 
