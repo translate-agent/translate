@@ -143,6 +143,10 @@ func (u *updateServiceParams) validate() error {
 		return errors.New("'service' is required")
 	}
 
+	if u.service.ID == uuid.Nil {
+		return errors.New("'service.id' is required")
+	}
+
 	if u.mask != nil {
 		for _, path := range u.mask.Paths {
 			if !slices.Contains(updateMaskAcceptablePaths, path) {

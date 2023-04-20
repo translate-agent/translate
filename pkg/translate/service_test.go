@@ -236,14 +236,15 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 
 	happyParams := randParams()
 
-	happyParamsMissingServiceID := randParams()
-	happyParamsMissingServiceID.service.ID = uuid.Nil
-
 	happyParamsMissingUpdateMask := randParams()
 	happyParamsMissingUpdateMask.mask = nil
 
 	missingServiceParams := randParams()
 	missingServiceParams.service = nil
+
+	// when updating a service, the service.ID is required and validation fails without it.
+	missingServiceIDParams := randParams()
+	missingServiceIDParams.service.ID = uuid.Nil
 
 	invalidUpdateMaskPathParams := randParams()
 	invalidUpdateMaskPathParams.mask.Paths = gofakeit.NiceColors()
@@ -259,11 +260,6 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "Happy Path Missing Service ID",
-			params:      happyParamsMissingServiceID,
-			expectedErr: nil,
-		},
-		{
 			name:        "Happy Path Missing Update Mask",
 			params:      happyParamsMissingUpdateMask,
 			expectedErr: nil,
@@ -272,6 +268,11 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 			name:        "Missing Service",
 			params:      missingServiceParams,
 			expectedErr: errors.New("'service' is required"),
+		},
+		{
+			name:        "Missing Service ID",
+			params:      missingServiceIDParams,
+			expectedErr: errors.New("'service.id' is required"),
 		},
 		{
 			name:        "Invalid Update Mask Path",
@@ -560,6 +561,10 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 
 	happyParams := randParams()
 
+	// when creating a service, the service.ID is optional and validation passes.
+	happyParamsEmptyServiceId := randParams()
+	happyParamsEmptyServiceId.service.ID = uuid.Nil
+
 	emptyServiceParams := randParams()
 	emptyServiceParams.service = nil
 
@@ -571,6 +576,11 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 		{
 			name:        "Happy Path",
 			params:      happyParams,
+			expectedErr: nil,
+		},
+		{
+			name:        "Happy Path Empty Service ID",
+			params:      happyParamsEmptyServiceId,
 			expectedErr: nil,
 		},
 		{
