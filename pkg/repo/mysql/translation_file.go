@@ -9,8 +9,6 @@ import (
 	"golang.org/x/text/language"
 )
 
-//--------------------Repo Implementation--------------------
-
 func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *model.Messages) error {
 	_, err := r.LoadService(ctx, serviceID)
 	if err != nil {

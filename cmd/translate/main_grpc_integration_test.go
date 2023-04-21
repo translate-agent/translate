@@ -160,8 +160,8 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 	happyRequest := randUploadRequest(t, service.Id)
 
-	invalidArgumentRequest := randUploadRequest(t, service.Id)
-	invalidArgumentRequest.Language = ""
+	invalidArgumentMissingLangRequest := randUploadRequest(t, service.Id)
+	invalidArgumentMissingLangRequest.Language = ""
 
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
@@ -176,8 +176,8 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 			expectedCode: codes.OK,
 		},
 		{
-			name:         "Invalid argument No language",
-			request:      invalidArgumentRequest,
+			name:         "Invalid argument missing language",
+			request:      invalidArgumentMissingLangRequest,
 			expectedCode: codes.InvalidArgument,
 		},
 		{
