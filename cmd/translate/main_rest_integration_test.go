@@ -41,7 +41,11 @@ func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string) {
 	return body, writer.FormDataContentType()
 }
 
-func gRPCUploadFileToRESTReq(ctx context.Context, t *testing.T, req *translatev1.UploadTranslationFileRequest) *http.Request {
+func gRPCUploadFileToRESTReq(
+	ctx context.Context,
+	t *testing.T,
+	req *translatev1.UploadTranslationFileRequest,
+) *http.Request {
 	t.Helper()
 
 	query := url.Values{}
@@ -64,7 +68,11 @@ func gRPCUploadFileToRESTReq(ctx context.Context, t *testing.T, req *translatev1
 	return r
 }
 
-func gRPCDownloadFileToRESTReq(ctx context.Context, t *testing.T, req *translatev1.DownloadTranslationFileRequest) *http.Request {
+func gRPCDownloadFileToRESTReq(
+	ctx context.Context,
+	t *testing.T,
+	req *translatev1.DownloadTranslationFileRequest,
+) *http.Request {
 	t.Helper()
 
 	query := url.Values{}
@@ -218,16 +226,16 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 
 	happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
 
+	happyReqNoMessagesServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
+
+	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
+	// Ensure that the language is not the same as the uploaded one.
+	for happyReqNoMessagesLanguage.Language == uploadRequest.Language {
+		happyReqNoMessagesLanguage.Language = gofakeit.LanguageBCP()
+	}
+
 	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
 	unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
-
-	notFoundServiceIDRequest := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
-
-	notFoundLanguageRequest := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
-	// Ensure that the language is not the same as the uploaded one.
-	for notFoundLanguageRequest.Language == uploadRequest.Language {
-		notFoundLanguageRequest.Language = gofakeit.LanguageBCP()
-	}
 
 	tests := []struct {
 		name         string
@@ -239,20 +247,21 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			request:      gRPCDownloadFileToRESTReq(ctx, t, happyRequest),
 			expectedCode: http.StatusOK,
 		},
+
+		{
+			name:         "Happy path no messages with language",
+			request:      gRPCDownloadFileToRESTReq(ctx, t, happyReqNoMessagesLanguage),
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Happy path no messages with Service ID",
+			request:      gRPCDownloadFileToRESTReq(ctx, t, happyReqNoMessagesServiceID),
+			expectedCode: http.StatusOK,
+		},
 		{
 			name:         "Bad request unspecified schema",
 			request:      gRPCDownloadFileToRESTReq(ctx, t, unspecifiedSchemaRequest),
 			expectedCode: http.StatusBadRequest,
-		},
-		{
-			name:         "Not found Service ID",
-			request:      gRPCDownloadFileToRESTReq(ctx, t, notFoundServiceIDRequest),
-			expectedCode: http.StatusNotFound,
-		},
-		{
-			name:         "Not found language",
-			request:      gRPCDownloadFileToRESTReq(ctx, t, notFoundLanguageRequest),
-			expectedCode: http.StatusNotFound,
 		},
 	}
 	for _, tt := range tests {
