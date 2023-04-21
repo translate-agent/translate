@@ -286,7 +286,7 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 		{
 			name:        "Missing Service ID",
 			params:      missingServiceIDParams,
-			expectedErr: errors.New("'service.id' is required"),
+			expectedErr: &fieldViolationError{field: "service.id"},
 		},
 		{
 			name:        "Invalid Update Mask Path",

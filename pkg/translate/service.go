@@ -151,7 +151,7 @@ func (u *updateServiceParams) validate() error {
 	}
 
 	if u.service.ID == uuid.Nil {
-		return errors.New("'service.id' is required")
+		return &fieldViolationError{field: "service.id", err: errEmptyField}
 	}
 
 	if u.mask != nil {

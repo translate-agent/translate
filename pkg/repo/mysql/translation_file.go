@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
+	"go.expect.digital/translate/pkg/repo"
 	"golang.org/x/text/language"
 )
 
@@ -17,7 +18,7 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 
 	tx, err := r.db.Begin()
 	if err != nil {
-		return fmt.Errorf("repo: begin tx: %w", err)
+		return &repo.DefaultError{Entity: "message", Err: err, Operation: "Start Transaction"}
 	}
 
 	defer tx.Rollback() //nolint:errcheck
@@ -29,7 +30,7 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 		messages.Language.String(),
 	)
 	if err != nil {
-		return fmt.Errorf("repo: insert messages: %w", err)
+		return &repo.DefaultError{Entity: "message", Err: err, Operation: "Insert"}
 	}
 
 	// Insert into message_message table
@@ -44,19 +45,19 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 		fuzzy = VALUES(fuzzy)`,
 	)
 	if err != nil {
-		return fmt.Errorf("repo: prepare insert statement: %w", err)
+		return &repo.DefaultError{Entity: "message_message", Err: err, Operation: "Prepare Statement"}
 	}
 	defer stmt.Close()
 
 	for _, m := range messages.Messages {
 		_, err = stmt.Exec(serviceID.String(), messages.Language.String(), m.ID, m.Message, m.Description, m.Fuzzy)
 		if err != nil {
-			return fmt.Errorf("repo: insert message_message: %w", err)
+			return &repo.DefaultError{Entity: "message_message", Err: err, Operation: "Insert"}
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("repo: commit tx: %w", err)
+		return &repo.DefaultError{Entity: "message_message", Err: err, Operation: "Commit Transaction"}
 	}
 
 	return nil
@@ -73,7 +74,7 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language l
 		language.String(),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("repo: query messages: %w", err)
+		return nil, &repo.DefaultError{Entity: "message_message", Err: err, Operation: "Select"}
 	}
 
 	defer rows.Close()
@@ -83,14 +84,14 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language l
 	for rows.Next() {
 		var m model.Message
 		if err := rows.Scan(&m.ID, &m.Message, &m.Description, &m.Fuzzy); err != nil {
-			return nil, fmt.Errorf("repo: scan message: %w", err)
+			return nil, &repo.DefaultError{Entity: "message_message", Err: err, Operation: "Scan"}
 		}
 
 		messages = append(messages, m)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("repo: scan messages: %w", err)
+		return nil, &repo.DefaultError{Entity: "message_message", Err: err, Operation: "Scan"}
 	}
 
 	return &model.Messages{Language: language, Messages: messages}, nil

@@ -190,11 +190,10 @@ func convertToErrorToStatusErr(convertError *convertError) error {
 		codes.Internal,
 		fmt.Sprintf("Cannot convert to %s schema", convertError.schema),
 		&errdetails.ErrorInfo{
-			Reason: getOriginalErr(convertError.err).Error(),
 			Domain: "convert",
 		})
 	if err != nil {
-		return status.Errorf(codes.Internal, getOriginalErr(convertError.err).Error())
+		return status.Errorf(codes.Internal, "")
 	}
 
 	return st.Err() //nolint:wrapcheck
