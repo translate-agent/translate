@@ -10,11 +10,22 @@ type parser struct {
 	pos    int
 }
 
+func Parse(s string) ([]interface{}, error) {
+	var p parser
+
+	tree, err := p.parse(s)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse: %w", err)
+	}
+
+	return tree, nil
+}
+
 func (p *parser) parse(s string) ([]interface{}, error) {
 	var err error
 
 	if p.tokens, err = Lex(s); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to lex: %w", err)
 	}
 
 	var tree []interface{}
@@ -49,18 +60,6 @@ func (p *parser) parse(s string) ([]interface{}, error) {
 	return tree, nil
 }
 
-func (p *parser) currentToken() Token {
-	return p.tokens[p.pos]
-}
-
-func (p *parser) nextToken() Token {
-	p.pos++
-
-	return p.tokens[p.pos]
-}
-
-func (p *parser) isEOF() bool { return p.tokens[p.pos].Type == TokenTypeEOF }
-
 func (p *parser) parseText() ([]interface{}, error) {
 	if p.currentToken().Type != TokenTypeSeparatorOpen {
 		return nil, errors.New(`text does not start with "{"`)
@@ -74,11 +73,10 @@ func (p *parser) parseText() ([]interface{}, error) {
 		switch token.Type {
 		case TokenTypeText:
 			text = append(text, NodeText{Text: token.Value})
-			// TODO
 		case TokenTypeSeparatorOpen:
 			variable, err := p.parseVariable()
 			if err != nil {
-				return nil, fmt.Errorf("new error: %w", err)
+				return nil, fmt.Errorf("parse variable: %w", err)
 			}
 
 			text = append(text, variable)
@@ -87,6 +85,7 @@ func (p *parser) parseText() ([]interface{}, error) {
 			p.pos++
 
 			return text, nil
+		case TokenTypeUnknown, TokenTypeKeyword, TokenTypeLiteral, TokenTypeFunction, TokenTypeVariable, TokenTypeEOF:
 		}
 	}
 
@@ -120,7 +119,7 @@ func (p *parser) parseMatch() (NodeMatch, error) {
 		case KeywordWhen:
 			variant, err := p.parseVariant()
 			if err != nil {
-				return NodeMatch{}, err
+				return NodeMatch{}, fmt.Errorf("parse variant: %w", err)
 			}
 
 			match.Variants = append(match.Variants, variant)
@@ -154,6 +153,7 @@ func (p *parser) parseExpr() (NodeExpr, error) {
 			p.pos++
 
 			return expr, nil
+		case TokenTypeUnknown, TokenTypeKeyword, TokenTypeSeparatorOpen, TokenTypeLiteral, TokenTypeText, TokenTypeEOF:
 		}
 	}
 
@@ -209,13 +209,14 @@ func (p *parser) parseVariable() (NodeVariable, error) {
 	return variable, nil
 }
 
-func Parse(s string) ([]interface{}, error) {
-	var p parser
-
-	tree, err := p.parse(s)
-	if err != nil {
-		return nil, err
-	}
-
-	return tree, nil
+func (p *parser) currentToken() Token {
+	return p.tokens[p.pos]
 }
+
+func (p *parser) nextToken() Token {
+	p.pos++
+
+	return p.tokens[p.pos]
+}
+
+func (p *parser) isEOF() bool { return p.tokens[p.pos].Type == TokenTypeEOF }

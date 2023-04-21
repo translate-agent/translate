@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLexMessage(t *testing.T) {
+func Test_LexMessage(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -149,7 +149,7 @@ func TestLexMessage(t *testing.T) {
 			expectedErr: fmt.Errorf(`function does not starts with ":"`),
 		},
 		{
-			name:        "message with UTF characters",
+			name:        "invalid message with UTF characters",
 			input:       "{Hello, {$ 日本語}!}",
 			expectedErr: fmt.Errorf(`variable does not starts with "$"`),
 		},

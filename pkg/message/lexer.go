@@ -1,6 +1,8 @@
 package message
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 	"unicode"
 )
@@ -26,12 +28,9 @@ const (
 
 const (
 	KeywordMatch   = "match"
-	KeywordLet     = "let"
 	KeywordWhen    = "when"
 	Dollar         = "$"
 	Colon          = ":"
-	Plus           = '+'
-	Minus          = '-'
 	SeparatorOpen  = '{'
 	SeparatorClose = '}'
 	EOF            = rune(0)
@@ -42,51 +41,10 @@ type lexer struct {
 	pos int
 }
 
-func (l *lexer) current() rune {
-	return l.str[l.pos]
-}
+func Lex(str string) ([]Token, error) {
+	l := lexer{str: []rune(str)}
 
-func (l *lexer) next() rune {
-	l.pos++
-
-	if l.pos == len(l.str) {
-		return EOF
-	}
-
-	return l.str[l.pos]
-}
-
-func (l *lexer) nextNotWhitespace() rune {
-	for {
-		v := l.current()
-
-		if l.isEOF() {
-			return EOF
-		}
-
-		if !l.isWhitespace(v) {
-			return v
-		}
-
-		l.pos++
-	}
-}
-
-func (l *lexer) lookup(i int) rune {
-	return l.str[i]
-}
-
-func (l *lexer) isEOF() bool {
-	return len(l.str) <= l.pos
-}
-
-// isAlpha returns true if v is alphabetic character.
-func (l *lexer) isAlpha(v rune) bool {
-	return ('a' <= v && v <= 'z') || ('A' <= v && v <= 'Z')
-}
-
-func (l *lexer) isWhitespace(v rune) bool {
-	return v == ' ' || v == '\t' || v == '\n'
+	return l.parse()
 }
 
 func (l *lexer) parse() ([]Token, error) {
@@ -106,7 +64,7 @@ func (l *lexer) parse() ([]Token, error) {
 			textToFollow = false
 			text, err := l.parseText()
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("parse text: %w", err)
 			}
 
 			if l.lookup(l.pos) != SeparatorClose {
@@ -122,24 +80,19 @@ func (l *lexer) parse() ([]Token, error) {
 			l.pos++
 			// noop
 		case nextTokenType == "literal":
-			literal, err := l.parseLiteral()
-			if err != nil {
-				return nil, err
-			}
-
-			tokens = append(tokens, literal)
+			tokens = append(tokens, l.parseLiteral())
 			nextTokenType = ""
 		case strings.HasPrefix(s, Dollar):
 			variable, err := l.parseVariable()
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("parse variable: %w", err)
 			}
 
 			tokens = append(tokens, variable)
 		case strings.HasPrefix(s, Colon):
 			function, err := l.parseFunction()
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("parse function: %w", err)
 			}
 
 			tokens = append(tokens, function)
@@ -170,6 +123,10 @@ func (l *lexer) parseFunction() (Token, error) {
 
 	l.pos++
 
+	if l.current() == ' ' {
+		return Token{}, errors.New(`function does not start with ":"`)
+	}
+
 	for {
 		v := l.current()
 
@@ -189,6 +146,10 @@ func (l *lexer) parseText() (Token, error) {
 	text := Token{Type: TokenTypeText}
 
 	for {
+		if l.isEOF() {
+			return Token{}, errors.New(`text does not end with "}"`)
+		}
+
 		v := l.current()
 
 		if v == SeparatorOpen || v == SeparatorClose {
@@ -201,7 +162,7 @@ func (l *lexer) parseText() (Token, error) {
 	}
 }
 
-func (l *lexer) parseLiteral() (Token, error) {
+func (l *lexer) parseLiteral() Token {
 	literal := Token{Type: TokenTypeLiteral}
 
 	for {
@@ -216,10 +177,11 @@ func (l *lexer) parseLiteral() (Token, error) {
 		l.pos++
 	}
 
-	return literal, nil
+	return literal
 }
 
-// parseVariable parses variable name according to https://github.com/unicode-org/message-format-wg/blob/main/spec/syntax.md#names.
+// parseVariable parses variable name according to
+// https://github.com/unicode-org/message-format-wg/blob/main/spec/syntax.md#names.
 // name    = name-start *name-char ; matches XML https://www.w3.org/TR/xml/#NT-Name
 // name-start = ALPHA / "_"
 //
@@ -233,7 +195,12 @@ func (l *lexer) parseLiteral() (Token, error) {
 //	/ %x0300-036F / %x203F-2040
 func (l *lexer) parseVariable() (Token, error) {
 	variable := Token{Type: TokenTypeVariable}
+
 	l.pos++
+
+	if l.current() == ' ' {
+		return Token{}, errors.New(`variable does not start with "$"`)
+	}
 
 	for {
 		v := l.current()
@@ -248,72 +215,18 @@ func (l *lexer) parseVariable() (Token, error) {
 	}
 }
 
-func Lex(str string) ([]Token, error) {
-	l := lexer{str: []rune(str)}
-
-	return l.parse()
+func (l *lexer) current() rune {
+	return l.str[l.pos]
 }
 
-// combineTextTokens combining Text tokens into one sentence.
-// func combineTextTokens(tokens, parsedTokens []Token) ([]Token, error) {
-//	var txt strings.Builder
-//
-//	for i := 0; i < len(tokens); i++ {
-//		if tokens[i].Type == TokenTypeText {
-//			if _, err := txt.WriteString(tokens[i].Value); err != nil {
-//				return []Token{}, errors.New("write Text token")
-//			}
-//
-//			if i+1 < len(tokens) && tokens[i+1].Type != TokenTypeText {
-//				parsedTokens = append(parsedTokens, Token{Type: TokenTypeText, Value: txt.String()})
-//
-//				txt.Reset()
-//			}
-//		} else {
-//			parsedTokens = append(parsedTokens, tokens[i])
-//		}
-//	}
-//
-//	return parsedTokens, nil
-// }
+func (l *lexer) lookup(i int) rune {
+	return l.str[i]
+}
 
-// createTokensFromBuffer breaks the input text into tokens that can be processed separately.
-// func createTokensFromBuffer(buffer []rune, placeholderLevel int) []Token {
-//	var newTokens []Token
-//
-//	re := regexp.MustCompile(`\\[^\S\n]?`)
-//	v := re.ReplaceAllString(strings.TrimSpace(string(buffer)), "")
-//
-//	if v != "" {
-//		switch v {
-//		case KeywordMatch, KeywordLet, KeywordWhen:
-//			newTokens = append(newTokens, Token{Type: TokenTypeKeyword, Value: v})
-//		default:
-//			if placeholderLevel == 0 {
-//				newTokens = append(newTokens, Token{Type: TokenTypeLiteral, Value: v})
-//			} else {
-//				switch buffer[0] {
-//				case Dollar, Plus, Minus:
-//					if placeholderLevel > 0 {
-//						newTokens = append(newTokens,
-//							Token{
-//								Type:  TokenTypeVariable,
-//								Value: strings.ReplaceAll(v, "$", ""),
-//							})
-//					}
-//				case Colon:
-//					if placeholderLevel > 0 {
-//						newTokens = append(newTokens, Token{
-//							Type:  TokenTypeFunction,
-//							Value: strings.ReplaceAll(v, ":", ""),
-//						})
-//					}
-//				default:
-//					newTokens = append(newTokens, Token{Type: TokenTypeText, Value: string(buffer)})
-//				}
-//			}
-//		}
-//	}
-//
-//	return newTokens
-// }
+func (l *lexer) isEOF() bool {
+	return len(l.str) <= l.pos
+}
+
+func (l *lexer) isWhitespace(v rune) bool {
+	return v == ' ' || v == '\t' || v == '\n'
+}
