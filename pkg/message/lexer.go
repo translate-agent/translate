@@ -62,6 +62,7 @@ func (l *lexer) parse() ([]Token, error) {
 		switch {
 		default:
 			textToFollow = false
+
 			text, err := l.parseText()
 			if err != nil {
 				return nil, fmt.Errorf("parse text: %w", err)
