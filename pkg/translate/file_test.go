@@ -18,27 +18,20 @@ func Test_ParseUploadParams(t *testing.T) {
 
 	randReq := func() *translatev1.UploadTranslationFileRequest {
 		return &translatev1.UploadTranslationFileRequest{
-			Language:          gofakeit.LanguageBCP(),
-			Data:              []byte(`{"key":"value"}`),
-			Schema:            translatev1.Schema(gofakeit.IntRange(1, 7)),
-			ServiceId:         gofakeit.UUID(),
-			TranslationFileId: gofakeit.UUID(),
+			Language:  gofakeit.LanguageBCP(),
+			Data:      []byte(`{"key":"value"}`),
+			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
+			ServiceId: gofakeit.UUID(),
 		}
 	}
 
 	happyWithFileIDReq := randReq()
-
-	happyWithoutFileIDReq := randReq()
-	happyWithoutFileIDReq.TranslationFileId = ""
 
 	malformedLangReq := randReq()
 	malformedLangReq.Language += "_FAIL" //nolint:goconst
 
 	malformedServiceIDReq := randReq()
 	malformedServiceIDReq.ServiceId += "_FAIL"
-
-	malformedFileIDReq := randReq()
-	malformedFileIDReq.TranslationFileId += "_FAIL"
 
 	tests := []struct {
 		request     *translatev1.UploadTranslationFileRequest
@@ -51,11 +44,6 @@ func Test_ParseUploadParams(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "Happy Path Without File ID",
-			request:     happyWithoutFileIDReq,
-			expectedErr: nil,
-		},
-		{
 			name:        "Malformed language tag",
 			request:     malformedLangReq,
 			expectedErr: &fieldViolationError{field: "language"},
@@ -65,11 +53,6 @@ func Test_ParseUploadParams(t *testing.T) {
 			name:        "Malformed service ID",
 			request:     malformedServiceIDReq,
 			expectedErr: &fieldViolationError{field: "service_id"},
-		},
-		{
-			name:        "Malformed File ID",
-			request:     malformedFileIDReq,
-			expectedErr: &fieldViolationError{field: "translation_file_id"},
 		},
 	}
 
@@ -96,11 +79,10 @@ func Test_ValidateUploadParams(t *testing.T) {
 
 	randParams := func() *uploadParams {
 		return &uploadParams{
-			languageTag:       language.MustParse(gofakeit.LanguageBCP()),
-			data:              []byte(`{"key":"value"}`),
-			schema:            translatev1.Schema(gofakeit.IntRange(1, 7)),
-			serviceID:         uuid.New(),
-			translationFileID: uuid.New(),
+			languageTag: language.MustParse(gofakeit.LanguageBCP()),
+			data:        []byte(`{"key":"value"}`),
+			schema:      translatev1.Schema(gofakeit.IntRange(1, 7)),
+			serviceID:   uuid.New(),
 		}
 	}
 
@@ -154,7 +136,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := validateUploadTranslationFileRequestParams(tt.params)
+			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
 				assertFieldViolationError(t, tt.expectedErr, err)
@@ -282,7 +264,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := validateDownloadTranslationFileRequestParams(tt.params)
+			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
 				assertFieldViolationError(t, tt.expectedErr, err)

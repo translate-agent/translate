@@ -160,8 +160,8 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 	happyRequest := randUploadRequest(t, service.Id)
 
-	invalidArgumentRequest := randUploadRequest(t, service.Id)
-	invalidArgumentRequest.Language = ""
+	invalidArgumentMissingLangRequest := randUploadRequest(t, service.Id)
+	invalidArgumentMissingLangRequest.Language = ""
 
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
@@ -176,8 +176,8 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 			expectedCode: codes.OK,
 		},
 		{
-			name:         "Invalid argument No language",
-			request:      invalidArgumentRequest,
+			name:         "Invalid argument missing language",
+			request:      invalidArgumentMissingLangRequest,
 			expectedCode: codes.InvalidArgument,
 		},
 		{
@@ -281,16 +281,16 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 
 	happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
 
+	happyReqNoMessagesServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
+
+	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
+	// Ensure that the language is not the same as the uploaded one.
+	for happyReqNoMessagesLanguage.Language == uploadRequest.Language {
+		happyReqNoMessagesLanguage.Language = gofakeit.LanguageBCP()
+	}
+
 	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
 	unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
-
-	notFoundServiceIDRequest := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
-
-	notFoundLanguageRequest := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
-	// Ensure that the language is not the same as the uploaded one.
-	for notFoundLanguageRequest.Language == uploadRequest.Language {
-		notFoundLanguageRequest.Language = gofakeit.LanguageBCP()
-	}
 
 	tests := []struct {
 		request      *translatev1.DownloadTranslationFileRequest
@@ -303,19 +303,19 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 			expectedCode: codes.OK,
 		},
 		{
+			name:         "Happy path no messages with language",
+			request:      happyReqNoMessagesLanguage,
+			expectedCode: codes.OK,
+		},
+		{
+			name:         "Happy path no messages with Service ID",
+			request:      happyReqNoMessagesServiceID,
+			expectedCode: codes.OK,
+		},
+		{
 			name:         "Invalid argument unspecified schema",
 			request:      unspecifiedSchemaRequest,
 			expectedCode: codes.InvalidArgument,
-		},
-		{
-			name:         "Not found Service ID",
-			request:      notFoundServiceIDRequest,
-			expectedCode: codes.NotFound,
-		},
-		{
-			name:         "Not found language",
-			request:      notFoundLanguageRequest,
-			expectedCode: codes.NotFound,
 		},
 	}
 

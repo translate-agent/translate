@@ -32,8 +32,8 @@ func parseGetServiceRequestParams(req *translatev1.GetServiceRequest) (*getServi
 	return &getServiceParams{id: id}, nil
 }
 
-func validateGetServiceRequestParams(params *getServiceParams) error {
-	if params.id == uuid.Nil {
+func (g *getServiceParams) validate() error {
+	if g.id == uuid.Nil {
 		return &fieldViolationError{field: "id", err: errEmptyField}
 	}
 
@@ -49,7 +49,7 @@ func (t *TranslateServiceServer) GetService(
 		return nil, requestErrorToStatusErr(err)
 	}
 
-	if err = validateGetServiceRequestParams(params); err != nil {
+	if err = params.validate(); err != nil {
 		return nil, requestErrorToStatusErr(err)
 	}
 
@@ -94,8 +94,8 @@ func parseCreateServiceParams(req *translatev1.CreateServiceRequest) (*createSer
 	}
 }
 
-func validateCreateServiceParams(params *createServiceParams) error {
-	if params.service == nil {
+func (c *createServiceParams) validate() error {
+	if c.service == nil {
 		return &fieldViolationError{field: "service", err: errEmptyField}
 	}
 
@@ -111,7 +111,7 @@ func (t *TranslateServiceServer) CreateService(
 		return nil, requestErrorToStatusErr(err)
 	}
 
-	if err := validateCreateServiceParams(params); err != nil {
+	if err := params.validate(); err != nil {
 		return nil, requestErrorToStatusErr(err)
 	}
 
@@ -145,13 +145,17 @@ func parseUpdateServiceParams(req *translatev1.UpdateServiceRequest) (*updateSer
 	}
 }
 
-func validateUpdateServiceParams(params *updateServiceParams) error {
-	if params.service == nil {
+func (u *updateServiceParams) validate() error {
+	if u.service == nil {
 		return &fieldViolationError{field: "service", err: errEmptyField}
 	}
 
-	if params.mask != nil {
-		for _, path := range params.mask.Paths {
+	if u.service.ID == uuid.Nil {
+		return errors.New("'service.id' is required")
+	}
+
+	if u.mask != nil {
+		for _, path := range u.mask.Paths {
 			if !slices.Contains(updateMaskAcceptablePaths, path) {
 				return &fieldViolationError{
 					field: "update_mask.paths",
@@ -195,7 +199,7 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, requestErrorToStatusErr(err)
 	}
 
-	if err = validateUpdateServiceParams(params); err != nil {
+	if err = params.validate(); err != nil {
 		return nil, requestErrorToStatusErr(err)
 	}
 
@@ -228,8 +232,8 @@ func parseDeleteServiceRequest(req *translatev1.DeleteServiceRequest) (*deleteSe
 	return &deleteServiceParams{id: id}, nil
 }
 
-func validateDeleteServiceParams(params *deleteServiceParams) error {
-	if params.id == uuid.Nil {
+func (d *deleteServiceParams) validate() error {
+	if d.id == uuid.Nil {
 		return &fieldViolationError{field: "id", err: errEmptyField}
 	}
 
@@ -245,7 +249,7 @@ func (t *TranslateServiceServer) DeleteService(
 		return nil, requestErrorToStatusErr(err)
 	}
 
-	if err := validateDeleteServiceParams(params); err != nil {
+	if err := params.validate(); err != nil {
 		return nil, requestErrorToStatusErr(err)
 	}
 

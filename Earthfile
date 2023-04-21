@@ -4,7 +4,7 @@ ARG --global go_version=1.20.3
 ARG --global golangci_lint_version=1.52.2
 ARG --global bufbuild_version=1.17.0
 ARG --global migrate_version=4.15.2
-ARG --global sqlfluff_version=2.0.5
+ARG --global sqlfluff_version=2.0.7
 
 FROM golang:$go_version-alpine
 

@@ -43,13 +43,13 @@ type ServicesRepo interface {
 	DeleteService(ctx context.Context, serviceID uuid.UUID) error
 }
 
-type TranslationFileRepo interface {
-	// SaveTranslationFile handles both Create and Update
-	SaveTranslationFile(ctx context.Context, serviceID uuid.UUID, translationFile *model.TranslationFile) error
-	LoadTranslationFile(ctx context.Context, serviceID uuid.UUID, language language.Tag) (*model.TranslationFile, error)
+type MessagesRepo interface {
+	// SaveMessages handles both Create and Update
+	SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *model.Messages) error
+	LoadMessages(ctx context.Context, serviceID uuid.UUID, language language.Tag) (*model.Messages, error)
 }
 
 type Repo interface {
 	ServicesRepo
-	TranslationFileRepo
+	MessagesRepo
 }
