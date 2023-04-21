@@ -67,9 +67,10 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language language.Tag) (*model.Messages, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
-		`SELECT id, message, description, fuzzy
-			FROM message_message
-			WHERE message_service_id = UUID_TO_BIN(?) AND message_language = ?`,
+		`SELECT id, message, description, fuzzy 
+	FROM message_message 
+	WHERE message_service_id = UUID_TO_BIN(?) 
+	AND message_language = ?`,
 		serviceID.String(),
 		language.String(),
 	)

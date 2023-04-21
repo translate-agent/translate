@@ -88,7 +88,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	default:
 		return &emptypb.Empty{}, nil
 	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, "file not found")
+		return nil, status.Errorf(codes.NotFound, "service not found")
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "")
 	}
@@ -154,17 +154,13 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 	}
 
 	messages, err := t.repo.LoadMessages(ctx, params.serviceID, params.languageTag)
-
-	switch {
-	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, "file not found")
-	case err != nil:
+	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
 	data, err := MessagesToData(params.schema, *messages)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.Internal, "")
 	}
 
 	return &translatev1.DownloadTranslationFileResponse{Data: data}, nil
