@@ -15,7 +15,7 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 		return fmt.Errorf("repo: load service: %w", err)
 	}
 
-	tx, err := r.db.Begin()
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("repo: begin tx: %w", err)
 	}
@@ -23,7 +23,8 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 	defer tx.Rollback() //nolint:errcheck
 
 	// Insert into messages table
-	_, err = tx.Exec(
+	_, err = tx.ExecContext(
+		ctx,
 		`INSERT IGNORE INTO message (service_id, language) VALUES (UUID_TO_BIN(?), ?)`,
 		serviceID.String(),
 		messages.Language.String(),
@@ -33,7 +34,8 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 	}
 
 	// Insert into message_message table
-	stmt, err := tx.Prepare(
+	stmt, err := tx.PrepareContext(
+		ctx,
 		`INSERT INTO message_message 
 		(message_service_id, message_language, id, message, description, fuzzy) 
 	VALUES 
@@ -49,7 +51,15 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 	defer stmt.Close()
 
 	for _, m := range messages.Messages {
-		_, err = stmt.Exec(serviceID.String(), messages.Language.String(), m.ID, m.Message, m.Description, m.Fuzzy)
+		_, err = stmt.ExecContext(
+			ctx,
+			serviceID.String(),
+			messages.Language.String(),
+			m.ID,
+			m.Message,
+			m.Description,
+			m.Fuzzy,
+		)
 		if err != nil {
 			return fmt.Errorf("repo: insert message_message: %w", err)
 		}
