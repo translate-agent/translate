@@ -1,6 +1,7 @@
 package messageformat
 
 import (
+	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -84,6 +85,31 @@ func Test_lex(t *testing.T) {
 				tokenEOF,
 			},
 		},
+		{
+			name:  "plural message",
+			input: "match {$count :number} when 1 {You have one notification.} when * {You have {$count} notifications.}",
+			expected: []token{
+				mkToken(tokenTypeKeyword, "match"),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeVariable, "count"),
+				mkToken(tokenTypeFunction, "number"),
+				tokenSeparatorClose,
+				mkToken(tokenTypeKeyword, "when"),
+				mkToken(tokenTypeLiteral, "1"),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "You have one notification."),
+				tokenSeparatorClose,
+				mkToken(tokenTypeKeyword, "when"),
+				mkToken(tokenTypeLiteral, "*"),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "You have "),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeVariable, "count"),
+				tokenSeparatorClose,
+				mkToken(tokenTypeText, " notifications."),
+				tokenSeparatorClose,
+			},
+		},
 	} {
 		test := test
 
@@ -100,7 +126,7 @@ func Test_lex(t *testing.T) {
 				v := l.nextToken()
 
 				tokens = append(tokens, v)
-
+				log.Printf("token: %v", v)
 				if v.typ == tokenTypeEOF || v.typ == tokenTypeError {
 					break
 				}
