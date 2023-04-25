@@ -277,7 +277,7 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 		{
 			name:        "Invalid Update Mask Path",
 			params:      invalidUpdateMaskPathParams,
-			expectedErr: errors.New("not a valid service field"),
+			expectedErr: errors.New("not a valid Service field"),
 		},
 	}
 

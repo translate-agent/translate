@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"golang.org/x/exp/slices"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -122,8 +121,6 @@ func (t *TranslateServiceServer) CreateService(
 
 // ---------------------UpdateService-------------------------------
 
-var updateMaskAcceptablePaths = []string{"name"}
-
 type updateServiceParams struct {
 	mask    *fieldmaskpb.FieldMask
 	service *model.Service
@@ -148,10 +145,8 @@ func (u *updateServiceParams) validate() error {
 	}
 
 	if u.mask != nil {
-		for _, path := range u.mask.Paths {
-			if !slices.Contains(updateMaskAcceptablePaths, path) {
-				return fmt.Errorf("'%s' is not a valid service field", path)
-			}
+		if err := validateFieldMask(u.mask, serviceToProto(u.service)); err != nil {
+			return fmt.Errorf("validate field mask: %w", err)
 		}
 	}
 
