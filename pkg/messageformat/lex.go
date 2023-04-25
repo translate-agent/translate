@@ -1,8 +1,11 @@
 package messageformat
 
 import (
+	"fmt"
 	"unicode/utf8"
 )
+
+// TODO(jhorsts): use cursor position by line number and position in a line
 
 const eof = -1
 
@@ -31,14 +34,19 @@ func mkToken(typ tokenType, val string) token {
 	return token{typ: typ, val: val}
 }
 
+func mkTokenErrorf(s string, args ...interface{}) token {
+	return token{typ: tokenTypeError, val: fmt.Sprintf(s, args...)}
+}
+
 func lex(input string) *lexer {
 	return &lexer{input: input}
 }
 
 type lexer struct {
-	input string
-	token token
-	pos   int
+	input      string
+	token      token
+	pos        int
+	insideExpr bool
 }
 
 // next returns the next rune.
@@ -70,7 +78,11 @@ func (l *lexer) peek() rune {
 func (l *lexer) nextToken() token {
 	l.token = mkToken(tokenTypeEOF, "")
 
-	state := lexExpr
+	state := lexOutsideExpr
+
+	if l.insideExpr {
+		state = lexExpr
+	}
 
 	for {
 		state := state(l)
@@ -89,6 +101,10 @@ func (l *lexer) emitToken(t token) stateFn {
 
 type stateFn func(*lexer) stateFn
 
+func lexOutsideExpr(l *lexer) stateFn {
+	return nil
+}
+
 func lexText(l *lexer) stateFn {
 	textToFollow = false
 
@@ -98,7 +114,7 @@ func lexText(l *lexer) stateFn {
 		v := l.next()
 
 		if v == eof {
-			return l.emitToken(mkToken(tokenTypeError, ""))
+			return l.emitToken(mkTokenErrorf("unexpected EOF"))
 		}
 
 		s += string(v)
@@ -135,12 +151,14 @@ func lexExpr(l *lexer) stateFn {
 	case '-':
 		return lexClosingFunction(l)
 	case '{':
+		l.insideExpr = true
 		l.token = mkToken(tokenTypeSeparatorOpen, "{")
 
 		return nil
 	case '}':
 		textToFollow = true
 
+		l.insideExpr = false
 		l.token = mkToken(tokenTypeSeparatorClose, "}")
 
 		return nil
@@ -150,11 +168,12 @@ func lexExpr(l *lexer) stateFn {
 func lexMatch(l *lexer) stateFn {
 	return nil
 }
+
 func lexOpeningFunction(l *lexer) stateFn {
 	first := l.next()
 
 	if !isNameFirstChar(first) {
-		return l.emitToken(mkToken(tokenTypeError, ""))
+		return l.emitToken(mkTokenErrorf(`invalid first character in function name %v at %d`, first, l.pos))
 	}
 
 	s := string(first)
@@ -175,7 +194,7 @@ func lexClosingFunction(l *lexer) stateFn {
 	first := l.next()
 
 	if !isNameFirstChar(first) {
-		return l.emitToken(mkToken(tokenTypeError, ""))
+		return l.emitToken(mkTokenErrorf(`invalid first character "%s" of function at %d`, string(first), l.pos))
 	}
 
 	s := string(first)
@@ -196,7 +215,7 @@ func lexFunction(l *lexer) stateFn {
 	first := l.next()
 
 	if !isNameFirstChar(first) {
-		return l.emitToken(mkToken(tokenTypeError, ""))
+		return l.emitToken(mkTokenErrorf(`invalid first character %s in function at %d`, string(first), l.pos))
 	}
 
 	s := string(first)
@@ -217,7 +236,7 @@ func lexVariable(l *lexer) stateFn {
 	first := l.next()
 
 	if !isNameFirstChar(first) {
-		return l.emitToken(mkToken(tokenTypeError, ""))
+		return l.emitToken(mkTokenErrorf(`invalid first character %s in variable at %d`, string(first), l.pos))
 	}
 
 	s := string(first)
