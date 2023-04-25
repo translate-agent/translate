@@ -9,7 +9,7 @@ import (
 )
 
 // MessagesFromData converts in specific schema serialized data to model.Messages.
-func MessagesFromData(schema translatev1.Schema, data []byte) (model.Messages, error) {
+func MessagesFromData(schema translatev1.Schema, data []byte) (*model.Messages, error) {
 	var from func([]byte) (model.Messages, error)
 
 	switch schema {
@@ -28,14 +28,19 @@ func MessagesFromData(schema translatev1.Schema, data []byte) (model.Messages, e
 	case translatev1.Schema_XLIFF_12:
 		from = convert.FromXliff12
 	case translatev1.Schema_UNSPECIFIED:
-		return model.Messages{}, fmt.Errorf("unspecified schema")
+		return nil, fmt.Errorf("unspecified schema")
 	}
 
-	return from(data)
+	messages, err := from(data)
+	if err != nil {
+		return nil, fmt.Errorf("convert from %s schema: %w", schema, err)
+	}
+
+	return &messages, nil
 }
 
 // MessagesToData converts model.Messages to specific schema serialized data.
-func MessagesToData(schema translatev1.Schema, messages model.Messages) ([]byte, error) {
+func MessagesToData(schema translatev1.Schema, messages *model.Messages) ([]byte, error) {
 	var to func(model.Messages) ([]byte, error)
 
 	switch schema {
@@ -57,5 +62,10 @@ func MessagesToData(schema translatev1.Schema, messages model.Messages) ([]byte,
 		return nil, fmt.Errorf("unspecified schema")
 	}
 
-	return to(messages)
+	data, err := to(*messages)
+	if err != nil {
+		return nil, fmt.Errorf("convert to %s schema: %w", schema, err)
+	}
+
+	return data, nil
 }

@@ -101,7 +101,7 @@ func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.T
 
 	lang := language.MustParse(gofakeit.LanguageBCP())
 
-	messages := model.Messages{
+	messages := &model.Messages{
 		Language: lang,
 		Messages: make([]model.Message, 0, messagesCount),
 	}

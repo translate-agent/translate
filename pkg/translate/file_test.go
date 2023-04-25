@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"golang.org/x/text/language"
 )
@@ -123,11 +124,6 @@ func Test_ValidateUploadParams(t *testing.T) {
 			expectedErr: errors.New("'schema' is required"),
 		},
 		{
-			name:        "Unspecified language",
-			params:      unspecifiedLangReq,
-			expectedErr: errors.New("'language' is required"),
-		},
-		{
 			name:        "Unspecified service ID",
 			params:      unspecifiedServiceIDReq,
 			expectedErr: errors.New("'service_id' is required"),
@@ -146,6 +142,100 @@ func Test_ValidateUploadParams(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
+		})
+	}
+}
+
+func Test_GetLanguage(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		params   *uploadParams
+		messages *model.Messages
+	}
+
+	messagesDefinedParamsUndefined := args{
+		params:   &uploadParams{languageTag: language.Und},
+		messages: &model.Messages{Language: language.MustParse(gofakeit.LanguageBCP())},
+	}
+
+	messagesUndefinedParamsDefined := args{
+		params:   &uploadParams{languageTag: language.MustParse(gofakeit.LanguageBCP())},
+		messages: &model.Messages{Language: language.Und},
+	}
+
+	sameLang := language.MustParse(gofakeit.LanguageBCP())
+	bothDefinedSameLang := args{
+		params:   &uploadParams{languageTag: sameLang},
+		messages: &model.Messages{Language: sameLang},
+	}
+
+	undefinedBoth := args{
+		params:   &uploadParams{languageTag: language.Und},
+		messages: &model.Messages{Language: language.Und},
+	}
+
+	langMismatch := args{
+		params: &uploadParams{languageTag: sameLang},
+		messages: &model.Messages{Language: func(oldLang language.Tag) language.Tag {
+			for {
+				newLang := language.MustParse(gofakeit.LanguageBCP())
+				if newLang != oldLang {
+					return newLang
+				}
+			}
+		}(sameLang)},
+	}
+
+	tests := []struct {
+		expectedErr error
+		args        args
+		expected    language.Tag
+		name        string
+	}{
+		{
+			name:        "Messages language is defined/params undefined",
+			args:        messagesDefinedParamsUndefined,
+			expected:    messagesDefinedParamsUndefined.messages.Language,
+			expectedErr: nil,
+		},
+		{
+			name:        "Messages language is undefined/params defined",
+			args:        messagesUndefinedParamsDefined,
+			expected:    messagesUndefinedParamsDefined.params.languageTag,
+			expectedErr: nil,
+		},
+		{
+			name:        "Both defined, same language",
+			args:        bothDefinedSameLang,
+			expected:    bothDefinedSameLang.messages.Language,
+			expectedErr: nil,
+		},
+		{
+			name:        "Both undefined",
+			args:        undefinedBoth,
+			expectedErr: errors.New("no language is set"),
+		},
+		{
+			name:        "Language mismatch",
+			args:        langMismatch,
+			expectedErr: errors.New("languages are mismatched"),
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			actual, err := getLanguage(tt.args.params, tt.args.messages)
+
+			if tt.expectedErr != nil {
+				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, actual)
 		})
 	}
 }
