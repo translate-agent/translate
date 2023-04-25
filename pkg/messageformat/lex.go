@@ -2,6 +2,7 @@ package messageformat
 
 import (
 	"fmt"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -10,8 +11,6 @@ import (
 const eof = -1
 
 type tokenType int
-
-var textToFollow bool
 
 const (
 	tokenTypeError tokenType = iota
@@ -23,6 +22,13 @@ const (
 	tokenTypeText
 	tokenTypeOpeningFunction
 	tokenTypeClosingFunction
+	tokenTypeKeyword
+	tokenTypeLiteral
+)
+
+const (
+	KeywordMatch = "match"
+	KeywordWhen  = "when"
 )
 
 type token struct {
@@ -43,10 +49,13 @@ func lex(input string) *lexer {
 }
 
 type lexer struct {
-	input      string
-	token      token
-	pos        int
-	insideExpr bool
+	input        string
+	token        token
+	pos          int
+	exprDepth    int
+	insideExpr   bool
+	textToFollow bool
+	whenFound    bool
 }
 
 // next returns the next rune.
@@ -102,13 +111,55 @@ func (l *lexer) emitToken(t token) stateFn {
 type stateFn func(*lexer) stateFn
 
 func lexOutsideExpr(l *lexer) stateFn {
-	return nil
+
+	var s string
+
+	for {
+		v := l.next()
+
+		if v == eof {
+			return nil
+		}
+
+		if v == '{' {
+			l.exprDepth++
+			l.insideExpr = true
+			return l.emitToken(mkToken(tokenTypeSeparatorOpen, "{"))
+		}
+
+		s += string(v)
+
+		if strings.TrimSpace(s) == KeywordMatch {
+			return l.emitToken(mkToken(tokenTypeKeyword, KeywordMatch))
+		}
+		if strings.TrimSpace(s) == KeywordWhen {
+			l.whenFound = true
+			return l.emitToken(mkToken(tokenTypeKeyword, KeywordWhen))
+		}
+		if l.whenFound {
+			l.whenFound = false
+			return lexLiteral(l)
+		}
+	}
+}
+
+func lexLiteral(l *lexer) stateFn {
+	var literal string
+
+	for {
+		v := l.next()
+
+		if l.peek() == '{' {
+			return l.emitToken(mkToken(tokenTypeLiteral, strings.TrimSpace(literal)))
+		}
+		literal += string(v)
+	}
 }
 
 func lexText(l *lexer) stateFn {
-	textToFollow = false
+	l.textToFollow = false
 
-	var s string
+	var text string
 
 	for {
 		v := l.next()
@@ -117,10 +168,10 @@ func lexText(l *lexer) stateFn {
 			return l.emitToken(mkTokenErrorf("unexpected EOF"))
 		}
 
-		s += string(v)
+		text += string(v)
 
 		if l.peek() == '}' || l.peek() == '{' {
-			return l.emitToken(mkToken(tokenTypeText, s))
+			return l.emitToken(mkToken(tokenTypeText, text))
 		}
 	}
 }
@@ -129,12 +180,15 @@ func lexExpr(l *lexer) stateFn {
 	v := l.next()
 
 	if v == eof {
+		if l.exprDepth > 0 {
+			return l.emitToken(mkTokenErrorf("missing closing separator"))
+		}
 		return nil
 	}
 
 	switch v {
 	default:
-		if isSpace(v) && !textToFollow {
+		if isSpace(v) && !l.textToFollow {
 			l.nextToken()
 			return nil
 		} else {
@@ -151,22 +205,23 @@ func lexExpr(l *lexer) stateFn {
 	case '-':
 		return lexClosingFunction(l)
 	case '{':
+		l.exprDepth++
 		l.insideExpr = true
 		l.token = mkToken(tokenTypeSeparatorOpen, "{")
 
 		return nil
 	case '}':
-		textToFollow = true
+		l.exprDepth--
+		l.textToFollow = true
 
-		l.insideExpr = false
+		if l.exprDepth == 0 {
+			l.insideExpr = false
+		}
+
 		l.token = mkToken(tokenTypeSeparatorClose, "}")
 
 		return nil
 	}
-}
-
-func lexMatch(l *lexer) stateFn {
-	return nil
 }
 
 func lexOpeningFunction(l *lexer) stateFn {
@@ -176,17 +231,17 @@ func lexOpeningFunction(l *lexer) stateFn {
 		return l.emitToken(mkTokenErrorf(`invalid first character in function name %v at %d`, first, l.pos))
 	}
 
-	s := string(first)
+	function := string(first)
 
 	for {
 		v := l.next()
 
 		if !isNameChar(v) {
 			l.backup()
-			return l.emitToken(mkToken(tokenTypeOpeningFunction, s))
+			return l.emitToken(mkToken(tokenTypeOpeningFunction, function))
 		}
 
-		s += string(v)
+		function += string(v)
 	}
 }
 
@@ -194,20 +249,20 @@ func lexClosingFunction(l *lexer) stateFn {
 	first := l.next()
 
 	if !isNameFirstChar(first) {
-		return l.emitToken(mkTokenErrorf(`invalid first character "%s" of function at %d`, string(first), l.pos))
+		return l.emitToken(mkTokenErrorf(`invalid first character %s of function at %d`, string(first), l.pos))
 	}
 
-	s := string(first)
+	function := string(first)
 
 	for {
 		v := l.next()
 
 		if !isNameChar(v) {
 			l.backup()
-			return l.emitToken(mkToken(tokenTypeClosingFunction, s))
+			return l.emitToken(mkToken(tokenTypeClosingFunction, function))
 		}
 
-		s += string(v)
+		function += string(v)
 	}
 }
 
@@ -218,17 +273,17 @@ func lexFunction(l *lexer) stateFn {
 		return l.emitToken(mkTokenErrorf(`invalid first character %s in function at %d`, string(first), l.pos))
 	}
 
-	s := string(first)
+	function := string(first)
 
 	for {
 		v := l.next()
 
 		if !isNameChar(v) {
 			l.backup()
-			return l.emitToken(mkToken(tokenTypeFunction, s))
+			return l.emitToken(mkToken(tokenTypeFunction, function))
 		}
 
-		s += string(v)
+		function += string(v)
 	}
 }
 
@@ -239,17 +294,17 @@ func lexVariable(l *lexer) stateFn {
 		return l.emitToken(mkTokenErrorf(`invalid first character %s in variable at %d`, string(first), l.pos))
 	}
 
-	s := string(first)
+	variable := string(first)
 
 	for {
 		v := l.next()
 
 		if !isNameChar(v) {
 			l.backup()
-			return l.emitToken(mkToken(tokenTypeVariable, s))
+			return l.emitToken(mkToken(tokenTypeVariable, variable))
 		}
 
-		s += string(v)
+		variable += string(v)
 	}
 }
 

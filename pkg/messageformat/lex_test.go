@@ -1,7 +1,6 @@
 package messageformat
 
 import (
-	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,6 +18,7 @@ func Test_lex(t *testing.T) {
 	for _, test := range []struct {
 		name, input string
 		expected    []token
+		expectedErr error
 	}{
 		{
 			name:     "empty",
@@ -73,14 +73,16 @@ func Test_lex(t *testing.T) {
 		},
 		{
 			name:  "expr with variable and function and text",
-			input: "{+button}Submit{-button}",
+			input: "{{+button}Submit{-button}}",
 			expected: []token{
+				tokenSeparatorOpen,
 				tokenSeparatorOpen,
 				mkToken(tokenTypeOpeningFunction, "button"),
 				tokenSeparatorClose,
 				mkToken(tokenTypeText, "Submit"),
 				tokenSeparatorOpen,
 				mkToken(tokenTypeClosingFunction, "button"),
+				tokenSeparatorClose,
 				tokenSeparatorClose,
 				tokenEOF,
 			},
@@ -108,6 +110,109 @@ func Test_lex(t *testing.T) {
 				tokenSeparatorClose,
 				mkToken(tokenTypeText, " notifications."),
 				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name:  "plural message",
+			input: "match {$count :number} when 0 {No notifications} when 1 {You have one notification.} when * {You have {$count} notifications.}",
+			expected: []token{
+				mkToken(tokenTypeKeyword, "match"),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeVariable, "count"),
+				mkToken(tokenTypeFunction, "number"),
+				tokenSeparatorClose,
+				mkToken(tokenTypeKeyword, "when"),
+				mkToken(tokenTypeLiteral, "0"),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "No notifications"),
+				tokenSeparatorClose,
+				mkToken(tokenTypeKeyword, "when"),
+				mkToken(tokenTypeLiteral, "1"),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "You have one notification."),
+				tokenSeparatorClose,
+				mkToken(tokenTypeKeyword, "when"),
+				mkToken(tokenTypeLiteral, "*"),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "You have "),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeVariable, "count"),
+				tokenSeparatorClose,
+				mkToken(tokenTypeText, " notifications."),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name:  "invalid expr",
+			input: "{$count :number",
+			expected: []token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeVariable, "count"),
+				mkToken(tokenTypeFunction, "number"),
+				mkTokenErrorf("unexpected EOF"),
+			},
+		},
+		{
+			name:  "missing closing separator",
+			input: "match {$count :number} when 1 {You have one notification. when * {You have {$count} notifications.}",
+			expected: []token{
+				mkToken(tokenTypeKeyword, "match"),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeVariable, "count"),
+				mkToken(tokenTypeFunction, "number"),
+				tokenSeparatorClose,
+				mkToken(tokenTypeKeyword, "when"),
+				mkToken(tokenTypeLiteral, "1"),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "You have one notification. when * "),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "You have "),
+				tokenSeparatorOpen,
+				mkToken(tokenTypeVariable, "count"),
+				tokenSeparatorClose,
+				mkToken(tokenTypeText, " notifications."),
+				tokenSeparatorClose,
+				mkTokenErrorf("missing closing separator"),
+			},
+		},
+		{
+			name:  "invalid variable",
+			input: "{$ count :number}",
+			expected: []token{
+				tokenSeparatorOpen,
+				mkTokenErrorf(`invalid first character %s in variable at %d`, " ", 3),
+			},
+		},
+		{
+			name:  "invalid function",
+			input: "{$count : number}",
+			expected: []token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeVariable, "count"),
+				mkTokenErrorf(`invalid first character %s in function at %d`, " ", 10),
+			},
+		},
+		{
+			name:  "invalid opening function",
+			input: "{{+ button}}",
+			expected: []token{
+				tokenSeparatorOpen,
+				tokenSeparatorOpen,
+				mkTokenErrorf(`invalid first character in function name %v at %d`, 32, 4),
+			},
+		},
+		{
+			name:  "invalid closing function",
+			input: "{{+button}{-- button}}",
+			expected: []token{
+				tokenSeparatorOpen,
+				tokenSeparatorOpen,
+				mkToken(tokenTypeOpeningFunction, "button"),
+				tokenSeparatorClose,
+				tokenSeparatorOpen,
+				mkTokenErrorf(`invalid first character %v of function at %d`, "-", 13),
 			},
 		},
 	} {
@@ -126,7 +231,6 @@ func Test_lex(t *testing.T) {
 				v := l.nextToken()
 
 				tokens = append(tokens, v)
-				log.Printf("token: %v", v)
 				if v.typ == tokenTypeEOF || v.typ == tokenTypeError {
 					break
 				}
