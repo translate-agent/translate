@@ -103,7 +103,16 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 
 	// Requests
 
+	// PUT /v1/services/{service_id}/files/{language}
 	happyRequest := randUploadRequest(t, service.Id)
+
+	// PUT /v1/services/{service_id}/files
+	randData, _ := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
+	happyRequestNoLang := &translatev1.UploadTranslationFileRequest{
+		ServiceId: service.Id,
+		Data:      randData,
+		Schema:    translatev1.Schema_JSON_NG_LOCALIZE,
+	}
 
 	invalidArgumentMissingServiceRequest := randUploadRequest(t, service.Id)
 	invalidArgumentMissingServiceRequest.ServiceId = ""
@@ -118,6 +127,11 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 		{
 			name:         "Happy Path",
 			request:      gRPCUploadFileToRESTReq(ctx, t, happyRequest),
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Happy Path no language in path",
+			request:      gRPCUploadFileToRESTReq(ctx, t, happyRequestNoLang),
 			expectedCode: http.StatusOK,
 		},
 		{
