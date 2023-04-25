@@ -109,7 +109,11 @@ service TranslateService {
   }
 
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {put: "/v1/services/{service_id}/files/{language}"};
+    option (google.api.http) = {
+      put: "/v1/services/{service_id}/files/{language}"
+      additional_bindings [
+        {put: "/v1/services/{service_id}/files"}]
+    };
   }
   rpc DownloadTranslationFile(DownloadTranslationFileRequest) returns (DownloadTranslationFileResponse) {
     option (google.api.http) = {get: "/v1/services/{service_id}/files/{language}"};
