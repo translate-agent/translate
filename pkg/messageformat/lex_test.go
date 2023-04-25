@@ -18,7 +18,6 @@ func Test_lex(t *testing.T) {
 	for _, test := range []struct {
 		name, input string
 		expected    []token
-		expectedErr error
 	}{
 		{
 			name:     "empty",
@@ -88,7 +87,7 @@ func Test_lex(t *testing.T) {
 			},
 		},
 		{
-			name:  "plural message",
+			name:  "plural text",
 			input: "match {$count :number} when 1 {You have one notification.} when * {You have {$count} notifications.}",
 			expected: []token{
 				mkToken(tokenTypeKeyword, "match"),
@@ -113,8 +112,15 @@ func Test_lex(t *testing.T) {
 				tokenEOF,
 			},
 		},
+
+		/*
+			Tree{
+				RootNode: Node{
+					keywords:
+			}
+		*/
 		{
-			name:  "plural message",
+			name:  "plural text",
 			input: "match {$count :number} when 0 {No notifications} when 1 {You have one notification.} when * {You have {$count} notifications.}",
 			expected: []token{
 				mkToken(tokenTypeKeyword, "match"),
