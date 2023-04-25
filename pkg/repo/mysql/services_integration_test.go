@@ -16,9 +16,12 @@ import (
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/tracer"
+	"go.opentelemetry.io/otel"
 )
 
 var repository *Repo
+
+const name = "translate.repo.mysql.integration_test"
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
@@ -28,7 +31,7 @@ func TestMain(m *testing.M) {
 
 	viper.AutomaticEnv()
 
-	tp, err := tracer.TracerProvider()
+	tp, err := tracer.TracerProvider(ctx)
 	if err != nil {
 		log.Panicf("set tracer provider: %v", err)
 	}
@@ -59,7 +62,8 @@ func randService() *model.Service {
 func Test_SaveService(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	tests := []struct {
 		service *model.Service
@@ -78,6 +82,9 @@ func Test_SaveService(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
+			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+			defer span.End()
 
 			err := repository.SaveService(ctx, tt.service)
 			if !assert.NoError(t, err) {
@@ -98,7 +105,8 @@ func Test_SaveService(t *testing.T) {
 func Test_UpdateService(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	expectedService := randService()
 
@@ -127,7 +135,8 @@ func Test_UpdateService(t *testing.T) {
 func Test_LoadService(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	service := randService()
 
@@ -159,6 +168,9 @@ func Test_LoadService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+			defer span.End()
+
 			actual, err := repository.LoadService(ctx, tt.serviceID)
 
 			if tt.expectedErr != nil {
@@ -178,7 +190,8 @@ func Test_LoadService(t *testing.T) {
 func Test_LoadServices(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	expectedServices := make([]model.Service, 3)
 
@@ -208,7 +221,8 @@ func Test_LoadServices(t *testing.T) {
 func Test_DeleteService(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	service := randService()
 
@@ -237,6 +251,9 @@ func Test_DeleteService(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
+			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+			defer span.End()
 
 			err := repository.DeleteService(ctx, tt.serviceID)
 			if tt.expectedErr != nil {

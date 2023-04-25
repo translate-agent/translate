@@ -20,6 +20,7 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/translate"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
 	"golang.org/x/text/language"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
@@ -34,6 +35,8 @@ var (
 
 	client translatev1.TranslateServiceClient
 )
+
+const name = "translate.server.integration_test"
 
 func mustGetFreePort() string {
 	// Listen on port 0 to have the operating system allocate an available port.
@@ -152,7 +155,8 @@ func prepareService(ctx context.Context, t *testing.T) *translatev1.Service {
 func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	service := prepareService(ctx, t)
 
@@ -192,6 +196,9 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+			defer span.End()
+
 			_, err := client.UploadTranslationFile(ctx, tt.request)
 
 			actualCode := status.Code(err)
@@ -203,7 +210,8 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 func Test_UploadTranslationFileDifferentLanguages_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	service := prepareService(ctx, t)
 
@@ -218,14 +226,14 @@ func Test_UploadTranslationFileDifferentLanguages_gRPC(t *testing.T) {
 		actualCode := status.Code(err)
 
 		require.Equal(t, expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", expectedCode, actualCode, err)
-
 	}
 }
 
 func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	// Prepare
 
@@ -266,7 +274,8 @@ func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslatio
 func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	// Prepare
 
@@ -324,6 +333,9 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+			defer span.End()
+
 			_, err := client.DownloadTranslationFile(ctx, tt.request)
 
 			actualCode := status.Code(err)
@@ -343,6 +355,9 @@ func randService() *translatev1.Service {
 
 func Test_CreateService_gRPC(t *testing.T) {
 	t.Parallel()
+
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	serviceWithID := randService()
 
@@ -379,7 +394,10 @@ func Test_CreateService_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := client.CreateService(context.Background(), tt.request)
+			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+			defer span.End()
+
+			_, err := client.CreateService(ctx, tt.request)
 
 			actualCode := status.Code(err)
 
@@ -391,7 +409,8 @@ func Test_CreateService_gRPC(t *testing.T) {
 func Test_UpdateService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	test := []struct {
 		request      *translatev1.UpdateServiceRequest
@@ -433,6 +452,9 @@ func Test_UpdateService_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+			defer span.End()
+
 			_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: tt.request.Service})
 			require.NoError(t, err, "Prepare test service")
 
@@ -448,7 +470,8 @@ func Test_UpdateService_gRPC(t *testing.T) {
 func Test_GetService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	service := randService()
 
@@ -477,6 +500,9 @@ func Test_GetService_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+			defer span.End()
+
 			_, err := client.GetService(ctx, tt.request)
 
 			actualCode := status.Code(err)
@@ -488,7 +514,8 @@ func Test_GetService_gRPC(t *testing.T) {
 func Test_DeleteService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
 
 	service := randService()
 
@@ -517,6 +544,9 @@ func Test_DeleteService_gRPC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+			defer span.End()
+
 			_, err := client.DeleteService(ctx, tt.request)
 
 			actualCode := status.Code(err)
@@ -528,7 +558,10 @@ func Test_DeleteService_gRPC(t *testing.T) {
 func Test_ListServices_gRPC(t *testing.T) {
 	t.Parallel()
 
-	_, err := client.ListServices(context.Background(), &translatev1.ListServicesRequest{})
+	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
+	defer span.End()
+
+	_, err := client.ListServices(ctx, &translatev1.ListServicesRequest{})
 
 	expectedCode := codes.OK
 	actualCode := status.Code(err)
