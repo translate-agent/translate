@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/translate"
 )
 
 // TODO Currently, we manually create requests for the REST API.
@@ -104,8 +105,8 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 
 	happyRequest := randUploadRequest(t, service.Id)
 
-	missingLanguageRequest := randUploadRequest(t, service.Id)
-	missingLanguageRequest.Language = ""
+	invalidArgumentMissingServiceRequest := randUploadRequest(t, service.Id)
+	invalidArgumentMissingServiceRequest.ServiceId = ""
 
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
@@ -120,8 +121,8 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "Bad request missing language",
-			request:      gRPCUploadFileToRESTReq(ctx, t, missingLanguageRequest),
+			name:         "Bad request missing service_id",
+			request:      gRPCUploadFileToRESTReq(ctx, t, invalidArgumentMissingServiceRequest),
 			expectedCode: http.StatusBadRequest,
 		},
 		{
@@ -159,7 +160,8 @@ func Test_UploadTranslationFileDifferentLanguages_REST(t *testing.T) {
 	uploadRequest := randUploadRequest(t, service.Id)
 
 	for i := 0; i < 3; i++ {
-		uploadRequest.Language = gofakeit.LanguageBCP()
+		newData, newLang := randUploadData(t, uploadRequest.Schema)
+		uploadRequest.Language, uploadRequest.Data = newLang.String(), newData
 
 		req := gRPCUploadFileToRESTReq(ctx, t, uploadRequest)
 
@@ -192,7 +194,17 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	require.NoError(t, err, "create test translation file")
 
 	// Change messages and upload again with the same language and serviceID
-	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
+
+	messages, err := translate.MessagesFromData(uploadReq.Schema, uploadReq.Data)
+	require.NoError(t, err, "convert serialized data to messages")
+
+	for i := range messages.Messages {
+		messages.Messages[i].Description = gofakeit.SentenceSimple()
+		messages.Messages[i].Message = gofakeit.SentenceSimple()
+	}
+
+	uploadReq.Data, err = translate.MessagesToData(uploadReq.Schema, messages)
+	require.NoError(t, err, "convert rand messages to serialized data")
 
 	req := gRPCUploadFileToRESTReq(ctx, t, uploadReq)
 

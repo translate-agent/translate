@@ -160,8 +160,8 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 	happyRequest := randUploadRequest(t, service.Id)
 
-	invalidArgumentMissingLangRequest := randUploadRequest(t, service.Id)
-	invalidArgumentMissingLangRequest.Language = ""
+	invalidArgumentMissingServiceRequest := randUploadRequest(t, service.Id)
+	invalidArgumentMissingServiceRequest.ServiceId = ""
 
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
@@ -176,8 +176,8 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 			expectedCode: codes.OK,
 		},
 		{
-			name:         "Invalid argument missing language",
-			request:      invalidArgumentMissingLangRequest,
+			name:         "Invalid argument missing service_id",
+			request:      invalidArgumentMissingServiceRequest,
 			expectedCode: codes.InvalidArgument,
 		},
 		{
@@ -210,7 +210,8 @@ func Test_UploadTranslationFileDifferentLanguages_gRPC(t *testing.T) {
 	uploadRequest := randUploadRequest(t, service.Id)
 
 	for i := 0; i < 3; i++ {
-		uploadRequest.Language = gofakeit.LanguageBCP()
+		newData, newLang := randUploadData(t, uploadRequest.Schema)
+		uploadRequest.Language, uploadRequest.Data = newLang.String(), newData
 
 		_, err := client.UploadTranslationFile(ctx, uploadRequest)
 
@@ -240,7 +241,16 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 
 	// Change messages and upload again with the same language and serviceID
 
-	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
+	messages, err := translate.MessagesFromData(uploadReq.Schema, uploadReq.Data)
+	require.NoError(t, err, "convert serialized data to messages")
+
+	for i := range messages.Messages {
+		messages.Messages[i].Description = gofakeit.SentenceSimple()
+		messages.Messages[i].Message = gofakeit.SentenceSimple()
+	}
+
+	uploadReq.Data, err = translate.MessagesToData(uploadReq.Schema, messages)
+	require.NoError(t, err, "convert rand messages to serialized data")
 
 	_, err = client.UploadTranslationFile(ctx, uploadReq)
 
