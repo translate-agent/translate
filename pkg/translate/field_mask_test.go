@@ -6,7 +6,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -73,7 +72,7 @@ func Test_ValidateFieldMask(t *testing.T) {
 		{
 			name:        "Random Field Mask Path",
 			args:        randomFieldMaskPathMessage,
-			expectedErr: errors.New("not a valid"),
+			expectedErr: errors.New("invalid path"),
 		},
 	}
 	for _, tt := range tests {
@@ -88,47 +87,6 @@ func Test_ValidateFieldMask(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
-		})
-	}
-}
-
-func Test_GetFieldNames(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name     string
-		protoMsg proto.Message
-		expected []string
-	}{
-		{
-			name:     "Service",
-			protoMsg: &translatev1.Service{},
-			expected: []string{"id", "name"},
-		},
-		{
-			name:     "Message",
-			protoMsg: &translatev1.Message{},
-			expected: []string{"id", "message", "description", "fuzzy"},
-		},
-		{
-			name:     "Messages",
-			protoMsg: &translatev1.Messages{},
-			expected: []string{"language", "messages"},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			actualFieldNames := getFieldNames(tt.protoMsg.ProtoReflect().Descriptor())
-
-			require.Len(t, actualFieldNames, len(tt.expected))
-
-			for _, expected := range tt.expected {
-				require.Contains(t, actualFieldNames, expected)
-			}
 		})
 	}
 }
