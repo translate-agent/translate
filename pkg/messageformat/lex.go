@@ -31,17 +31,17 @@ const (
 	KeywordWhen  = "when"
 )
 
-type token struct {
+type Token struct {
 	val string
 	typ tokenType
 }
 
-func mkToken(typ tokenType, val string) token {
-	return token{typ: typ, val: val}
+func mkToken(typ tokenType, val string) Token {
+	return Token{typ: typ, val: val}
 }
 
-func mkTokenErrorf(s string, args ...interface{}) token {
-	return token{typ: tokenTypeError, val: fmt.Sprintf(s, args...)}
+func mkTokenErrorf(s string, args ...interface{}) Token {
+	return Token{typ: tokenTypeError, val: fmt.Sprintf(s, args...)}
 }
 
 func lex(input string) *lexer {
@@ -50,7 +50,7 @@ func lex(input string) *lexer {
 
 type lexer struct {
 	input        string
-	token        token
+	token        Token
 	pos          int
 	exprDepth    int
 	insideExpr   bool
@@ -84,7 +84,7 @@ func (l *lexer) peek() rune {
 	return r
 }
 
-func (l *lexer) nextToken() token {
+func (l *lexer) nextToken() Token {
 	l.token = mkToken(tokenTypeEOF, "")
 
 	state := lexOutsideExpr
@@ -102,7 +102,7 @@ func (l *lexer) nextToken() token {
 	}
 }
 
-func (l *lexer) emitToken(t token) stateFn {
+func (l *lexer) emitToken(t Token) stateFn {
 	l.token = t
 
 	return nil
@@ -111,8 +111,7 @@ func (l *lexer) emitToken(t token) stateFn {
 type stateFn func(*lexer) stateFn
 
 func lexOutsideExpr(l *lexer) stateFn {
-
-	var s string
+	var expr string
 
 	for {
 		v := l.next()
@@ -124,18 +123,21 @@ func lexOutsideExpr(l *lexer) stateFn {
 		if v == '{' {
 			l.exprDepth++
 			l.insideExpr = true
+
 			return l.emitToken(mkToken(tokenTypeSeparatorOpen, "{"))
 		}
 
-		s += string(v)
+		expr += string(v)
 
-		if strings.TrimSpace(s) == KeywordMatch {
+		if strings.TrimSpace(expr) == KeywordMatch {
 			return l.emitToken(mkToken(tokenTypeKeyword, KeywordMatch))
 		}
-		if strings.TrimSpace(s) == KeywordWhen {
+
+		if strings.TrimSpace(expr) == KeywordWhen {
 			l.whenFound = true
 			return l.emitToken(mkToken(tokenTypeKeyword, KeywordWhen))
 		}
+
 		if l.whenFound {
 			l.whenFound = false
 			return lexLiteral(l)
@@ -152,6 +154,7 @@ func lexLiteral(l *lexer) stateFn {
 		if l.peek() == '{' {
 			return l.emitToken(mkToken(tokenTypeLiteral, strings.TrimSpace(literal)))
 		}
+
 		literal += string(v)
 	}
 }
@@ -183,6 +186,7 @@ func lexExpr(l *lexer) stateFn {
 		if l.exprDepth > 0 {
 			return l.emitToken(mkTokenErrorf("missing closing separator"))
 		}
+
 		return nil
 	}
 

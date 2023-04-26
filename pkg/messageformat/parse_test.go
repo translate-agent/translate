@@ -1,8 +1,11 @@
 package messageformat
 
 import (
-	"github.com/stretchr/testify/assert"
+	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_Parse(t *testing.T) {
@@ -10,32 +13,109 @@ func Test_Parse(t *testing.T) {
 
 	for _, test := range []struct {
 		name, input string
+		expectedErr error
 		expected    []interface{}
 	}{
 		{
 			name:     "empty",
 			input:    "",
-			expected: []interface{}{},
+			expected: []interface{}(nil),
 		},
 		{
-			name:     "empty",
+			name:     "empty expr",
 			input:    "{}",
-			expected: []interface{}{},
+			expected: []interface{}(nil),
 		},
 		{
 			name:     "expr with text",
 			input:    "{Hello, World!}",
-			expected: []interface{}{},
+			expected: []interface{}{NodeText{Text: "Hello, World!"}},
 		},
 		{
-			name:     "expr with variable",
-			input:    "{$count}",
-			expected: []interface{}{NodeVariable{Name: "count"}},
+			name:  "match",
+			input: "match {$count} when * {Hello, world!}",
+			expected: []interface{}{
+				NodeMatch{
+					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}}},
+					Variants: []NodeVariant{
+						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, world!"}}},
+					},
+				},
+			},
 		},
 		{
-			name:     "expr with function",
-			input:    "{:rand}",
-			expected: []interface{}{NodeFunction{Name: "rand"}},
+			name:  "match with function",
+			input: "match {$count :number} when * {Hello, world!}",
+			expected: []interface{}{
+				NodeMatch{
+					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
+					Variants: []NodeVariant{
+						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, world!"}}},
+					},
+				},
+			},
+		},
+		{
+			name:  "match with multiple variants",
+			input: "match {$count :number} when 1 {Hello, friend!} when * {Hello, friends!} ",
+			expected: []interface{}{
+				NodeMatch{
+					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
+					Variants: []NodeVariant{
+						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Hello, friend!"}}},
+						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, friends!"}}},
+					},
+				},
+			},
+		},
+		{
+			name:  "match with plurals",
+			input: "match {$count :number} when 1 {Buy one apple!} when * {Buy {$count} apples!} ",
+			expected: []interface{}{
+				NodeMatch{
+					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
+					Variants: []NodeVariant{
+						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Buy one apple!"}}},
+						{Keys: []string{"*"}, Message: []interface{}{
+							NodeText{Text: "Buy "},
+							NodeVariable{Name: "count"},
+							NodeText{Text: " apples!"},
+						}},
+					},
+				},
+			},
+		},
+
+		{
+			name: "match with two variables in variant",
+			input: "match {$count :number} " +
+				"when 0 {No apples!} " +
+				"when 1 {Buy {$count}{$counts} apple!} " +
+				"when * {Buy {$count} apples 2!} ",
+			expected: []interface{}{
+				NodeMatch{
+					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
+					Variants: []NodeVariant{
+						{Keys: []string{"0"}, Message: []interface{}{NodeText{Text: "No apples!"}}},
+						{Keys: []string{"1"}, Message: []interface{}{
+							NodeText{Text: "Buy "},
+							NodeVariable{Name: "count"},
+							NodeVariable{Name: "counts"},
+							NodeText{Text: " apple!"},
+						}},
+						{Keys: []string{"*"}, Message: []interface{}{
+							NodeText{Text: "Buy "},
+							NodeVariable{Name: "count"},
+							NodeText{Text: " apples 2!"},
+						}},
+					},
+				},
+			},
+		},
+		{
+			name:        "invalid expr",
+			input:       "match $count :number} ",
+			expectedErr: fmt.Errorf("expression does not start with \"{\""),
 		},
 	} {
 		test := test
@@ -43,8 +123,18 @@ func Test_Parse(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			l, _ := Parse(test.input)
+			l, err := Parse(test.input)
 
+			fmt.Println(test.expected)
+			fmt.Println(l)
+			fmt.Println(test.expectedErr)
+
+			if test.expectedErr != nil {
+				assert.Errorf(t, err, test.expectedErr.Error())
+				return
+			}
+
+			require.NoError(t, err)
 			assert.Equal(t, test.expected, l)
 		})
 	}

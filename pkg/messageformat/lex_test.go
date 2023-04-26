@@ -17,37 +17,37 @@ func Test_lex(t *testing.T) {
 
 	for _, test := range []struct {
 		name, input string
-		expected    []token
+		expected    []Token
 	}{
 		{
 			name:     "empty",
 			input:    "",
-			expected: []token{tokenEOF},
+			expected: []Token{tokenEOF},
 		},
 		{
 			name:     "empty expr",
 			input:    "{}",
-			expected: []token{tokenSeparatorOpen, tokenSeparatorClose, tokenEOF},
+			expected: []Token{tokenSeparatorOpen, tokenSeparatorClose, tokenEOF},
 		},
 		{
 			name:     "expr with text",
 			input:    "{Hello, World!}",
-			expected: []token{tokenSeparatorOpen, mkToken(tokenTypeText, "Hello, World!"), tokenSeparatorClose, tokenEOF},
+			expected: []Token{tokenSeparatorOpen, mkToken(tokenTypeText, "Hello, World!"), tokenSeparatorClose, tokenEOF},
 		},
 		{
 			name:     "expr with variable",
 			input:    "{$count}",
-			expected: []token{tokenSeparatorOpen, mkToken(tokenTypeVariable, "count"), tokenSeparatorClose, tokenEOF},
+			expected: []Token{tokenSeparatorOpen, mkToken(tokenTypeVariable, "count"), tokenSeparatorClose, tokenEOF},
 		},
 		{
 			name:     "expr with function",
 			input:    "{:rand}",
-			expected: []token{tokenSeparatorOpen, mkToken(tokenTypeFunction, "rand"), tokenSeparatorClose, tokenEOF},
+			expected: []Token{tokenSeparatorOpen, mkToken(tokenTypeFunction, "rand"), tokenSeparatorClose, tokenEOF},
 		},
 		{
 			name:  "expr with variable and function",
 			input: "{$guest :person}",
-			expected: []token{
+			expected: []Token{
 				tokenSeparatorOpen,
 				mkToken(tokenTypeVariable, "guest"),
 				mkToken(tokenTypeFunction, "person"),
@@ -58,7 +58,7 @@ func Test_lex(t *testing.T) {
 		{
 			name:  "expr with variable and function and text",
 			input: "{Hello, {$guest :person} is here}",
-			expected: []token{
+			expected: []Token{
 				tokenSeparatorOpen,
 				mkToken(tokenTypeText, "Hello, "),
 				tokenSeparatorOpen,
@@ -73,7 +73,7 @@ func Test_lex(t *testing.T) {
 		{
 			name:  "expr with variable and function and text",
 			input: "{{+button}Submit{-button}}",
-			expected: []token{
+			expected: []Token{
 				tokenSeparatorOpen,
 				tokenSeparatorOpen,
 				mkToken(tokenTypeOpeningFunction, "button"),
@@ -89,7 +89,7 @@ func Test_lex(t *testing.T) {
 		{
 			name:  "plural text",
 			input: "match {$count :number} when 1 {You have one notification.} when * {You have {$count} notifications.}",
-			expected: []token{
+			expected: []Token{
 				mkToken(tokenTypeKeyword, "match"),
 				tokenSeparatorOpen,
 				mkToken(tokenTypeVariable, "count"),
@@ -120,9 +120,11 @@ func Test_lex(t *testing.T) {
 			}
 		*/
 		{
-			name:  "plural text",
-			input: "match {$count :number} when 0 {No notifications} when 1 {You have one notification.} when * {You have {$count} notifications.}",
-			expected: []token{
+			name: "plural text",
+			input: "match {$count :number} when 0 {No notifications}" +
+				" when 1 {You have one notification.} " +
+				"when * {You have {$count} notifications.}",
+			expected: []Token{
 				mkToken(tokenTypeKeyword, "match"),
 				tokenSeparatorOpen,
 				mkToken(tokenTypeVariable, "count"),
@@ -153,7 +155,7 @@ func Test_lex(t *testing.T) {
 		{
 			name:  "invalid expr",
 			input: "{$count :number",
-			expected: []token{
+			expected: []Token{
 				tokenSeparatorOpen,
 				mkToken(tokenTypeVariable, "count"),
 				mkToken(tokenTypeFunction, "number"),
@@ -163,7 +165,7 @@ func Test_lex(t *testing.T) {
 		{
 			name:  "missing closing separator",
 			input: "match {$count :number} when 1 {You have one notification. when * {You have {$count} notifications.}",
-			expected: []token{
+			expected: []Token{
 				mkToken(tokenTypeKeyword, "match"),
 				tokenSeparatorOpen,
 				mkToken(tokenTypeVariable, "count"),
@@ -186,7 +188,7 @@ func Test_lex(t *testing.T) {
 		{
 			name:  "invalid variable",
 			input: "{$ count :number}",
-			expected: []token{
+			expected: []Token{
 				tokenSeparatorOpen,
 				mkTokenErrorf(`invalid first character %s in variable at %d`, " ", 3),
 			},
@@ -194,7 +196,7 @@ func Test_lex(t *testing.T) {
 		{
 			name:  "invalid function",
 			input: "{$count : number}",
-			expected: []token{
+			expected: []Token{
 				tokenSeparatorOpen,
 				mkToken(tokenTypeVariable, "count"),
 				mkTokenErrorf(`invalid first character %s in function at %d`, " ", 10),
@@ -203,7 +205,7 @@ func Test_lex(t *testing.T) {
 		{
 			name:  "invalid opening function",
 			input: "{{+ button}}",
-			expected: []token{
+			expected: []Token{
 				tokenSeparatorOpen,
 				tokenSeparatorOpen,
 				mkTokenErrorf(`invalid first character in function name %v at %d`, 32, 4),
@@ -212,7 +214,7 @@ func Test_lex(t *testing.T) {
 		{
 			name:  "invalid closing function",
 			input: "{{+button}{-- button}}",
-			expected: []token{
+			expected: []Token{
 				tokenSeparatorOpen,
 				tokenSeparatorOpen,
 				mkToken(tokenTypeOpeningFunction, "button"),
@@ -231,7 +233,7 @@ func Test_lex(t *testing.T) {
 
 			// collect tokens
 
-			var tokens []token
+			var tokens []Token
 
 			for {
 				v := l.nextToken()
