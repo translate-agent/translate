@@ -44,20 +44,20 @@ func parseUploadTranslationFileRequestParams(req *translatev1.UploadTranslationF
 
 func (u *uploadParams) validate() error {
 	if len(u.data) == 0 {
-		return fmt.Errorf("'data' is required")
+		return errors.New("'data' is required")
 	}
 
 	// Enforce that schema is present. (Temporal solution)
 	if u.schema == translatev1.Schema_UNSPECIFIED {
-		return fmt.Errorf("'schema' is required")
+		return errors.New("'schema' is required")
 	}
 
 	if u.serviceID == uuid.Nil {
-		return fmt.Errorf("'service_id' is required")
+		return errors.New("'service_id' is required")
 	}
 
 	if u.languageTag == language.Und {
-		return fmt.Errorf("'language' is required")
+		return errors.New("'language' is required")
 	}
 
 	return nil
@@ -126,15 +126,15 @@ func parseDownloadTranslationFileRequestParams(
 func (d *downloadParams) validate() error {
 	// Enforce that schema is present.
 	if d.schema == translatev1.Schema_UNSPECIFIED {
-		return fmt.Errorf("'schema' is required")
+		return errors.New("'schema' is required")
 	}
 
 	if d.serviceID == uuid.Nil {
-		return fmt.Errorf("'service_id' is required")
+		return errors.New("'service_id' is required")
 	}
 
 	if d.languageTag == language.Und {
-		return fmt.Errorf("'language' is required")
+		return errors.New("'language' is required")
 	}
 
 	return nil
