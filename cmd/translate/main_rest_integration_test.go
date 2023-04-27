@@ -27,9 +27,9 @@ import (
 func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string) {
 	t.Helper()
 
-	body := &bytes.Buffer{}
+	var body bytes.Buffer
 
-	writer := multipart.NewWriter(body)
+	writer := multipart.NewWriter(&body)
 	defer writer.Close()
 
 	part, err := writer.CreateFormFile("file", "test.json")
@@ -38,7 +38,7 @@ func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string) {
 	_, err = part.Write(text)
 	require.NoError(t, err, "write to part")
 
-	return body, writer.FormDataContentType()
+	return &body, writer.FormDataContentType()
 }
 
 func gRPCUploadFileToRESTReq(
