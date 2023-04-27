@@ -143,7 +143,7 @@ func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTransl
 	}
 }
 
-func prepareService(ctx context.Context, t *testing.T) *translatev1.Service {
+func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 	t.Helper()
 
 	service := randService()
@@ -159,7 +159,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 	ctx := context.Background()
 
-	service := prepareService(ctx, t)
+	service := createService(ctx, t)
 
 	// Requests
 
@@ -210,7 +210,7 @@ func Test_UploadTranslationFileDifferentLanguages_gRPC(t *testing.T) {
 
 	ctx := context.Background()
 
-	service := prepareService(ctx, t)
+	service := createService(ctx, t)
 
 	uploadRequest := randUploadRequest(t, service.Id)
 
@@ -234,7 +234,7 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 
 	// Prepare
 
-	service := prepareService(ctx, t)
+	service := createService(ctx, t)
 
 	// Upload initial
 
@@ -279,7 +279,7 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 
 	// Prepare
 
-	service := prepareService(ctx, t)
+	service := createService(ctx, t)
 
 	uploadRequest := randUploadRequest(t, service.Id)
 

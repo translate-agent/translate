@@ -98,7 +98,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 
 	// Prepare
 
-	service := prepareService(ctx, t)
+	service := createService(ctx, t)
 
 	// Requests
 
@@ -154,7 +154,7 @@ func Test_UploadTranslationFileDifferentLanguages_REST(t *testing.T) {
 
 	ctx := context.Background()
 
-	service := prepareService(ctx, t)
+	service := createService(ctx, t)
 
 	uploadRequest := randUploadRequest(t, service.Id)
 
@@ -183,7 +183,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 
 	// Prepare
 
-	service := prepareService(ctx, t)
+	service := createService(ctx, t)
 
 	// Upload initial
 	uploadReq := randUploadRequest(t, service.Id)
@@ -215,7 +215,7 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 
 	// Prepare
 
-	service := prepareService(ctx, t)
+	service := createService(ctx, t)
 
 	uploadRequest := randUploadRequest(t, service.Id)
 
