@@ -12,8 +12,6 @@ import (
 // If fieldMask is nil, all fields are updated.
 //
 // `protoName` tags are used to match fields from the fieldMask to fields in the model.
-//
-// It returns dst with the updates applied.
 func updateModelFromFieldMask[T any](fieldMask *fieldmaskpb.FieldMask, dst, src *T) *T {
 	// If fieldMask is nil, update all fields
 	if fieldMask == nil {

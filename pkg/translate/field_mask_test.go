@@ -40,7 +40,7 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 	// It should be wrapped in a function that accepts source and destination structs,
 	// Then function will be pure and will not have side effects.
 	// e.g.
-	updateModel := func(m *fieldmaskpb.FieldMask, v1, v2 s) *s {
+	updateSFromFieldMask := func(m *fieldmaskpb.FieldMask, v1, v2 s) *s {
 		return updateModelFromFieldMask(m, &v1, &v2)
 	}
 
@@ -147,7 +147,6 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 			name: "Try to Update C.E struct.string no protoName",
 			mask: &fieldmaskpb.FieldMask{Paths: []string{"C.E"}},
 			assertFunc: func(t *testing.T, dst, src, result s) {
-				require.Equal(t, dst.C.E, result.C.E)
 				assert.Equal(t, dst, result)
 			},
 		},
@@ -160,7 +159,7 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 			},
 		},
 		{
-			// Update nothing
+			// No Paths in FieldMask. Updates nothing.
 			name: "Update Nothing",
 			mask: &fieldmaskpb.FieldMask{},
 			assertFunc: func(t *testing.T, dst, src, result s) {
@@ -174,7 +173,7 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := updateModel(tt.mask, dst, src)
+			result := updateSFromFieldMask(tt.mask, dst, src)
 			tt.assertFunc(t, dst, src, *result)
 		})
 	}
