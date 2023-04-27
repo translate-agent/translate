@@ -9,6 +9,10 @@ import (
 )
 
 // updateModelFromFieldMask updates the dst with the values from src based on the fieldMask.
+// If fieldMask is nil, all fields are updated.
+//
+// `protoName` tags are used to match fields from the fieldMask to fields in the model.
+//
 // It returns a new *T value that is a copy of dst with the updates applied.
 func updateModelFromFieldMask[T any](fieldMask *fieldmaskpb.FieldMask, dst, src *T) *T {
 	// Create a new value that is a copy of targetModel
@@ -31,7 +35,7 @@ func updateModelFromFieldMask[T any](fieldMask *fieldmaskpb.FieldMask, dst, src 
 	return result.Addr().Interface().(*T)
 }
 
-// updateField updates the dst Value with the values from src, based on the fields slice.
+// updateField updates the dst value with the values from src, based on the fields slice.
 func updateField(fields []string, dst, src reflect.Value) {
 	if len(fields) == 0 {
 		return
@@ -52,7 +56,7 @@ func updateField(fields []string, dst, src reflect.Value) {
 
 		case dst.Field(i).Kind() == reflect.Slice:
 			//nolint:lll
-			// If the field is a slice, append new values from updateValue to existing slice in targetValue
+			// If the field is a slice, append new values from src to existing slice in dst
 			// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
 			oldSlice := dst.Field(i)
 			newSlice := src.Field(i)
@@ -60,14 +64,13 @@ func updateField(fields []string, dst, src reflect.Value) {
 			dst.Field(i).Set(resultSlice)
 
 		default:
-			// For all other field kinds, set value of field in targetValue to value of corresponding field in updateValue
+			// For all other field kinds, set value of field in dst to value of corresponding field in src
 			dst.Field(i).Set(src.Field(i))
 		}
 	}
 }
 
 // updateServiceFromFieldMask updates the dstService with the values from srcService based on the fieldMask.
-// It returns a new *model.Service value that is a copy of dstService with the updates applied.
 func updateServiceFromFieldMask(
 	fieldMask *fieldmaskpb.FieldMask,
 	dstService *model.Service,
