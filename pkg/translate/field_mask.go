@@ -15,17 +15,17 @@ import (
 //
 // It returns a new *T value that is a copy of dst with the updates applied.
 func updateModelFromFieldMask[T any](fieldMask *fieldmaskpb.FieldMask, dst, src *T) *T {
-	// Create a new value that is a copy of targetModel
-	v := reflect.ValueOf(dst).Elem()
-	result := reflect.New(v.Type()).Elem()
-	result.Set(v)
-
 	// If fieldMask is nil, update all fields
 	if fieldMask == nil {
 		// Avoid returning a pointer to src.
 		s := *src
 		return &s
 	}
+
+	// Create a new value that is a copy of targetModel
+	v := reflect.ValueOf(dst).Elem()
+	result := reflect.New(v.Type()).Elem()
+	result.Set(v)
 
 	for _, path := range fieldMask.GetPaths() {
 		fields := strings.Split(path, ".")
