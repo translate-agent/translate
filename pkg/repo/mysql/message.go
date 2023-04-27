@@ -37,9 +37,9 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 	stmt, err := tx.PrepareContext(
 		ctx,
 		`INSERT INTO message_message
-	(message_service_id, message_language, id, message, description, fuzzy)
+	(id, message_service_id, message_language, message_id, message, description, fuzzy)
 VALUES
-	(UUID_TO_BIN(?), ?, ?, ?, ?, ?)
+	(UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?)
 ON DUPLICATE KEY UPDATE
 	message = VALUES(message),
 	description = VALUES(description),
@@ -53,6 +53,7 @@ ON DUPLICATE KEY UPDATE
 	for _, m := range messages.Messages {
 		_, err = stmt.ExecContext(
 			ctx,
+			uuid.New().String(),
 			serviceID.String(),
 			messages.Language.String(),
 			m.ID,
@@ -75,7 +76,7 @@ ON DUPLICATE KEY UPDATE
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language language.Tag) (*model.Messages, error) {
 	rows, err := r.db.QueryContext(
 		ctx,
-		`SELECT id, message, description, fuzzy
+		`SELECT message_id, message, description, fuzzy
 FROM message_message
 WHERE message_service_id = UUID_TO_BIN(?)
 AND message_language = ?`,
