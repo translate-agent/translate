@@ -298,68 +298,6 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 	}
 }
 
-func Test_UpdateServiceFromParams(t *testing.T) {
-	t.Parallel()
-
-	originalService1 := randService()
-	originalService2 := randService()
-	originalService3 := randService()
-
-	// For now, we only support updating the name, as that is the only field that is updatable.
-
-	randParams := func(originalId uuid.UUID) *updateServiceParams {
-		return &updateServiceParams{
-			mask:    &fieldmaskpb.FieldMask{Paths: []string{"name"}},
-			service: &model.Service{ID: originalId, Name: gofakeit.Name()},
-		}
-	}
-
-	updateNameField := randParams(originalService1.ID)
-
-	updateAllFields := randParams(originalService2.ID)
-	updateAllFields.mask = nil
-
-	nothingToUpdate := randParams(originalService3.ID)
-	nothingToUpdate.mask = &fieldmaskpb.FieldMask{Paths: []string{"random_path"}}
-
-	tests := []struct {
-		params          *updateServiceParams
-		originalService *model.Service
-		expectedService *model.Service
-		name            string
-	}{
-		{
-			name:            "Update Name Field",
-			params:          updateNameField,
-			originalService: originalService1,
-			expectedService: &model.Service{ID: originalService1.ID, Name: updateNameField.service.Name},
-		},
-		{
-			name:            "Update All Fields",
-			params:          updateAllFields,
-			originalService: originalService2,
-			expectedService: &model.Service{ID: originalService2.ID, Name: updateAllFields.service.Name},
-		},
-		{
-			name:            "Nothing To Update",
-			params:          nothingToUpdate,
-			originalService: originalService3,
-			expectedService: originalService3,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			actualService := updateServiceFromParams(tt.originalService, tt.params)
-
-			assert.Equal(t, tt.expectedService, actualService)
-		})
-	}
-}
-
 // ----------------------DeleteService Parse Params------------------------------
 
 func Test_ParseDeleteServiceParams(t *testing.T) {

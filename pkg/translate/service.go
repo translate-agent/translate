@@ -158,28 +158,6 @@ func (u *updateServiceParams) validate() error {
 	return nil
 }
 
-// updateServiceFromParams updates the service resource with the new values from the request.
-func updateServiceFromParams(service *model.Service, reqParams *updateServiceParams) *model.Service {
-	// Replace service resource with the new one from params (PUT)
-	if reqParams.mask == nil {
-		return &model.Service{ID: service.ID, Name: reqParams.service.Name}
-	}
-
-	updatedService := *service
-
-	// Replace service resource's fields with the new ones from request (PATCH)
-	for _, path := range reqParams.mask.Paths {
-		switch path {
-		default:
-			// noop
-		case "name":
-			updatedService.Name = reqParams.service.Name
-		}
-	}
-
-	return &updatedService
-}
-
 func (t *TranslateServiceServer) UpdateService(
 	ctx context.Context,
 	req *translatev1.UpdateServiceRequest,
@@ -202,7 +180,7 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	updatedService := updateServiceFromParams(oldService, params)
+	updatedService := updateServiceFromFieldMask(params.mask, oldService, params.service)
 
 	if err := t.repo.SaveService(ctx, updatedService); err != nil {
 		return nil, status.Errorf(codes.Internal, "")
