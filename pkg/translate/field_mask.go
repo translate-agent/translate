@@ -8,8 +8,8 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
-// updateModelFromFieldMask updates the targetModel with the values from updateModel based on the fieldMask.
-// It returns a new *T value that is a copy of targetModel with the updates applied.
+// updateModelFromFieldMask updates the dst with the values from src based on the fieldMask.
+// It returns a new *T value that is a copy of dst with the updates applied.
 func updateModelFromFieldMask[T any](fieldMask *fieldmaskpb.FieldMask, dst, src *T) *T {
 	// Create a new value that is a copy of targetModel
 	v := reflect.ValueOf(dst).Elem()
@@ -18,7 +18,9 @@ func updateModelFromFieldMask[T any](fieldMask *fieldmaskpb.FieldMask, dst, src 
 
 	// If fieldMask is nil, update all fields
 	if fieldMask == nil {
-		return src
+		// Avoid returning a pointer to src.
+		s := *src
+		return &s
 	}
 
 	for _, path := range fieldMask.GetPaths() {
@@ -29,7 +31,7 @@ func updateModelFromFieldMask[T any](fieldMask *fieldmaskpb.FieldMask, dst, src 
 	return result.Addr().Interface().(*T)
 }
 
-// updateField updates the targetValue with the values from updateValue based on the fields slice.
+// updateField updates the dst Value with the values from src, based on the fields slice.
 func updateField(fields []string, dst, src reflect.Value) {
 	if len(fields) == 0 {
 		return
@@ -64,8 +66,8 @@ func updateField(fields []string, dst, src reflect.Value) {
 	}
 }
 
-// updateServiceFromFieldMask updates the targetService with the values from updateService based on the fieldMask.
-// It returns a new *model.Service value that is a copy of targetService with the updates applied.
+// updateServiceFromFieldMask updates the dstService with the values from srcService based on the fieldMask.
+// It returns a new *model.Service value that is a copy of dstService with the updates applied.
 func updateServiceFromFieldMask(
 	fieldMask *fieldmaskpb.FieldMask,
 	dstService *model.Service,

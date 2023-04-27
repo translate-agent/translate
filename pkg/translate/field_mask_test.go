@@ -31,9 +31,10 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 	}
 
 	// Generate random source and destination structs
-	src, dst := &s{}, &s{}
-	require.NoError(t, gofakeit.Struct(src))
-	require.NoError(t, gofakeit.Struct(dst))
+	var src, dst s
+
+	require.NoError(t, gofakeit.Struct(&src))
+	require.NoError(t, gofakeit.Struct(&dst))
 
 	tests := []struct {
 		mask       *fieldmaskpb.FieldMask
@@ -150,6 +151,14 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 				assert.Equal(t, src, result)
 			},
 		},
+		{
+			// Update nothing
+			name: "Update Nothing",
+			mask: &fieldmaskpb.FieldMask{},
+			assertFunc: func(t *testing.T, dst, src, result *s) {
+				assert.Equal(t, dst, result)
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -157,8 +166,8 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := updateModelFromFieldMask(tt.mask, dst, src)
-			tt.assertFunc(t, dst, src, result)
+			result := updateModelFromFieldMask(tt.mask, &dst, &src)
+			tt.assertFunc(t, &dst, &src, result)
 		})
 	}
 }
@@ -167,35 +176,35 @@ func Test_UpdateServiceFromFieldMask(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		assertFunc func(t *testing.T, targetService, sourceService, updatedService *model.Service)
+		assertFunc func(t *testing.T, dstService, srcService, result *model.Service)
 		fieldMask  *fieldmaskpb.FieldMask
 		name       string
 	}{
 		{
 			name:      "Update Name",
 			fieldMask: &fieldmaskpb.FieldMask{Paths: []string{"name"}},
-			assertFunc: func(t *testing.T, targetService, sourceService, updatedService *model.Service) {
+			assertFunc: func(t *testing.T, dstService, srcService, result *model.Service) {
 				// Same ID updated name
-				require.Equal(t, targetService.ID, updatedService.ID)
-				assert.Equal(t, sourceService.Name, updatedService.Name)
+				require.Equal(t, dstService.ID, result.ID)
+				assert.Equal(t, srcService.Name, result.Name)
 			},
 		},
 		{
 			name:      "Update All",
 			fieldMask: nil,
-			assertFunc: func(t *testing.T, targetService, sourceService, updatedService *model.Service) {
+			assertFunc: func(t *testing.T, dstService, srcService, result *model.Service) {
 				// Same ID updated name, as ID cannot be updated, and service has only two fields.
-				require.Equal(t, targetService.ID, updatedService.ID)
-				assert.Equal(t, sourceService.Name, updatedService.Name)
+				require.Equal(t, dstService.ID, result.ID)
+				assert.Equal(t, srcService.Name, result.Name)
 			},
 		},
 		{
 			name:      "Nothing to Update",
 			fieldMask: &fieldmaskpb.FieldMask{},
-			assertFunc: func(t *testing.T, targetService, sourceService, updatedService *model.Service) {
+			assertFunc: func(t *testing.T, dstService, srcService, result *model.Service) {
 				// Same ID and name, as nothing was updated
-				require.Equal(t, targetService.ID, updatedService.ID)
-				assert.Equal(t, targetService.Name, updatedService.Name)
+				require.Equal(t, dstService.ID, result.ID)
+				assert.Equal(t, dstService.Name, result.Name)
 			},
 		},
 	}
@@ -205,12 +214,12 @@ func Test_UpdateServiceFromFieldMask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			targetService := &model.Service{ID: uuid.New(), Name: gofakeit.FirstName()}
-			sourceService := &model.Service{ID: uuid.New(), Name: gofakeit.FirstName()}
+			dstService := &model.Service{ID: uuid.New(), Name: gofakeit.FirstName()}
+			srcService := &model.Service{ID: uuid.New(), Name: gofakeit.FirstName()}
 
-			updatedService := updateServiceFromFieldMask(tt.fieldMask, targetService, sourceService)
+			result := updateServiceFromFieldMask(tt.fieldMask, dstService, srcService)
 
-			tt.assertFunc(t, targetService, sourceService, updatedService)
+			tt.assertFunc(t, dstService, srcService, result)
 		})
 	}
 }
