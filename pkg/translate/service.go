@@ -132,7 +132,15 @@ func parseUpdateServiceParams(req *translatev1.UpdateServiceRequest) (*updateSer
 		return nil, fmt.Errorf("parse service: %w", err)
 	}
 
-	return &updateServiceParams{mask: req.GetUpdateMask(), service: service}, nil
+	mask := req.GetUpdateMask()
+	// Normalize sorts paths, removes duplicates, and removes sub-paths when possible.
+	// e.g. if a field mask contains the paths foo.bar and foo,
+	// the path foo.bar is redundant because it is already covered by the path foo
+	if mask != nil {
+		mask.Normalize()
+	}
+
+	return &updateServiceParams{mask: mask, service: service}, nil
 }
 
 func (u *updateServiceParams) validate() error {
