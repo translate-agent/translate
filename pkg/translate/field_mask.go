@@ -13,26 +13,19 @@ import (
 //
 // `protoName` tags are used to match fields from the fieldMask to fields in the model.
 //
-// It returns a new *T value that is a copy of dst with the updates applied.
+// It returns dst with the updates applied.
 func updateModelFromFieldMask[T any](fieldMask *fieldmaskpb.FieldMask, dst, src *T) *T {
 	// If fieldMask is nil, update all fields
 	if fieldMask == nil {
-		// Avoid returning a pointer to src.
-		s := *src
-		return &s
+		return src
 	}
-
-	// Create a new value that is a copy of targetModel
-	v := reflect.ValueOf(dst).Elem()
-	result := reflect.New(v.Type()).Elem()
-	result.Set(v)
 
 	for _, path := range fieldMask.GetPaths() {
 		fields := strings.Split(path, ".")
-		updateField(fields, result, reflect.ValueOf(src).Elem())
+		updateField(fields, reflect.ValueOf(dst).Elem(), reflect.ValueOf(src).Elem())
 	}
 
-	return result.Addr().Interface().(*T)
+	return dst
 }
 
 // updateField updates the dst value with the values from src, based on the fields slice.
@@ -73,11 +66,11 @@ func updateField(fields []string, dst, src reflect.Value) {
 // updateServiceFromFieldMask updates the dstService with the values from srcService based on the fieldMask.
 func updateServiceFromFieldMask(
 	fieldMask *fieldmaskpb.FieldMask,
-	dstService *model.Service,
-	srcService *model.Service,
+	dstService model.Service,
+	srcService model.Service,
 ) *model.Service {
 	// Set the ID of the srcService to the ID of the dstService, to prevent the ID from being updated
 	srcService.ID = dstService.ID
 
-	return updateModelFromFieldMask(fieldMask, dstService, srcService)
+	return updateModelFromFieldMask(fieldMask, &dstService, &srcService)
 }

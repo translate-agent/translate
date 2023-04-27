@@ -180,7 +180,7 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	updatedService := updateServiceFromFieldMask(params.mask, oldService, params.service)
+	updatedService := updateServiceFromFieldMask(params.mask, *oldService, *params.service)
 
 	if err := t.repo.SaveService(ctx, updatedService); err != nil {
 		return nil, status.Errorf(codes.Internal, "")
