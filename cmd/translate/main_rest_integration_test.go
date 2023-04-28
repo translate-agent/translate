@@ -28,9 +28,9 @@ import (
 func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string) {
 	t.Helper()
 
-	body := &bytes.Buffer{}
+	var body bytes.Buffer
 
-	writer := multipart.NewWriter(body)
+	writer := multipart.NewWriter(&body)
 	defer writer.Close()
 
 	part, err := writer.CreateFormFile("file", "test.json")
@@ -39,7 +39,7 @@ func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string) {
 	_, err = part.Write(text)
 	require.NoError(t, err, "write to part")
 
-	return body, writer.FormDataContentType()
+	return &body, writer.FormDataContentType()
 }
 
 func gRPCUploadFileToRESTReq(
@@ -99,7 +99,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 
 	// Prepare
 
-	service := prepareService(ctx, t)
+	service := createService(ctx, t)
 
 	// Requests
 
@@ -169,7 +169,7 @@ func Test_UploadTranslationFileDifferentLanguages_REST(t *testing.T) {
 
 	ctx := context.Background()
 
-	service := prepareService(ctx, t)
+	service := createService(ctx, t)
 
 	uploadRequest := randUploadRequest(t, service.Id)
 
@@ -199,7 +199,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 
 	// Prepare
 
-	service := prepareService(ctx, t)
+	service := createService(ctx, t)
 
 	// Upload initial
 	uploadReq := randUploadRequest(t, service.Id)
@@ -241,7 +241,7 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 
 	// Prepare
 
-	service := prepareService(ctx, t)
+	service := createService(ctx, t)
 
 	uploadRequest := randUploadRequest(t, service.Id)
 
