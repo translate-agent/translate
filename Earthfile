@@ -11,7 +11,7 @@ FROM golang:$go_version-alpine
 deps:
   WORKDIR /translate
   COPY go.mod go.sum .
-  RUN go mod download
+  RUN --mount=type=cache,target=/go/pkg/mod go mod download
   SAVE ARTIFACT go.mod AS LOCAL go.mod
   SAVE ARTIFACT go.sum AS LOCAL go.sum
 
@@ -44,6 +44,7 @@ proto:
   ' gen/proto/go/translate/v1/translate.pb.gw.go
 
   RUN rm gen/proto/go/translate/v1/translate.pb.gw.go.bak
+  SAVE ARTIFACT . proto
   SAVE ARTIFACT gen/proto/go/translate/v1 translate/v1 AS LOCAL pkg/pb/translate/v1
 
 # -----------------------Linting-----------------------
@@ -63,12 +64,9 @@ lint-go:
 
 lint-proto:
   FROM bufbuild/buf:$bufbuild_version
-  ENV BUF_CACHE_DIR=/.cache/buf_cache
-  COPY --dir proto .
   WORKDIR proto
-  RUN \
-    --mount=type=cache,target=$BUF_CACHE_DIR \
-      buf mod update && buf lint
+  COPY +proto/proto .
+  RUN buf lint
 
 lint:
   BUILD +lint-go
