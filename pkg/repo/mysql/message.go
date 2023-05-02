@@ -2,6 +2,8 @@ package mysql
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -22,10 +24,31 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 
 	defer tx.Rollback() //nolint:errcheck
 
-	// Insert into messages table
+	// Check if message already exist
+	var messageID uuid.UUID
+
+	row := tx.QueryRowContext(
+		ctx,
+		`SELECT id FROM message WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
+		serviceID.String(),
+		messages.Language.String(),
+	)
+
+	err = row.Scan(&messageID)
+
+	// If message does not exist, generate a new UUID for it
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		messageID = uuid.New()
+	case err != nil:
+		return fmt.Errorf("repo: scan message: %w", err)
+	}
+
+	// Insert into message, ignore if already exists
 	_, err = tx.ExecContext(
 		ctx,
-		`INSERT IGNORE INTO message (service_id, language) VALUES (UUID_TO_BIN(?), ?)`,
+		`INSERT IGNORE INTO message (id, service_id, language) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`,
+		messageID.String(),
 		serviceID.String(),
 		messages.Language.String(),
 	)
@@ -33,13 +56,15 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 		return fmt.Errorf("repo: insert messages: %w", err)
 	}
 
-	// Insert into message_message table
+	// Insert into message_message table,
+	// on duplicate message_message.id and message_message.message_id,
+	// update message's message, description and fuzzy values.
 	stmt, err := tx.PrepareContext(
 		ctx,
 		`INSERT INTO message_message
-	(id, message_service_id, message_language, message_id, message, description, fuzzy)
+	(message_id, message_service_id, id, message, description, fuzzy)
 VALUES
-	(UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?)
+	(UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?)
 ON DUPLICATE KEY UPDATE
 	message = VALUES(message),
 	description = VALUES(description),
@@ -53,9 +78,8 @@ ON DUPLICATE KEY UPDATE
 	for _, m := range messages.Messages {
 		_, err = stmt.ExecContext(
 			ctx,
-			uuid.New().String(),
+			messageID.String(),
 			serviceID.String(),
-			messages.Language.String(),
 			m.ID,
 			m.Message,
 			m.Description,
@@ -74,14 +98,34 @@ ON DUPLICATE KEY UPDATE
 }
 
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language language.Tag) (*model.Messages, error) {
-	rows, err := r.db.QueryContext(
+	var (
+		messages  = &model.Messages{Language: language}
+		messageID uuid.UUID
+	)
+
+	// Check if message with service_id and language exists
+	row := r.db.QueryRowContext(
 		ctx,
-		`SELECT message_id, message, description, fuzzy
-FROM message_message
-WHERE message_service_id = UUID_TO_BIN(?)
-AND message_language = ?`,
+		`SELECT id FROM message WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
 		serviceID.String(),
 		language.String(),
+	)
+
+	// If message does not exist, return empty messages
+	switch err := row.Scan(&messageID); {
+	case errors.Is(err, sql.ErrNoRows):
+		return messages, nil
+	case err != nil:
+		return nil, fmt.Errorf("repo: scan message: %w", err)
+	}
+
+	// Load messages
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT id, message, description, fuzzy
+FROM message_message
+WHERE message_id = UUID_TO_BIN(?)`,
+		messageID.String(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("repo: query messages: %w", err)
@@ -89,20 +133,18 @@ AND message_language = ?`,
 
 	defer rows.Close()
 
-	var messages []model.Message
-
 	for rows.Next() {
 		var m model.Message
 		if err := rows.Scan(&m.ID, &m.Message, &m.Description, &m.Fuzzy); err != nil {
 			return nil, fmt.Errorf("repo: scan message: %w", err)
 		}
 
-		messages = append(messages, m)
+		messages.Messages = append(messages.Messages, m)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("repo: scan messages: %w", err)
 	}
 
-	return &model.Messages{Language: language, Messages: messages}, nil
+	return messages, nil
 }
