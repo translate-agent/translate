@@ -116,3 +116,23 @@ test-integration:
 test:
   BUILD +test-unit
   BUILD +test-integration
+
+# -----------------------Building-----------------------
+
+build-go:
+  COPY +go/translate translate
+  WORKDIR translate
+  RUN CGO_ENABLED=0 go build -o translate cmd/translate/main.go
+  SAVE ARTIFACT translate
+
+image-translate:
+  FROM +build-go
+  ARG  --required registry
+  ARG tag=latest
+  ENTRYPOINT ["./translate"]
+  SAVE IMAGE --push $registry/translate:$tag
+
+image-translate-all-platforms:
+  ARG tag=latest
+  ARG  --required registry
+  BUILD --platform=linux/amd64 --platform=linux/arm/v7 --platform=linux/arm64 +image-translate --tag=$tag --registry=$registry
