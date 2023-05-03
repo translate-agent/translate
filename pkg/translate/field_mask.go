@@ -28,38 +28,42 @@ func updateModelFromFieldMask[T any](fieldMask *fieldmaskpb.FieldMask, dst, src 
 
 // updateField updates the dst value with the values from src, based on the fields slice.
 func updateField(fields []string, dst, src reflect.Value) {
-	if len(fields) == 0 {
-		return
-	}
+	field := fields[0]
 
 	for i := 0; i < dst.NumField(); i++ {
 		tag := dst.Type().Field(i).Tag.Get("protoName")
-		field := fields[0]
 
 		if field != tag {
 			continue
 		}
 
-		switch {
-		case dst.Field(i).Kind() == reflect.Struct && len(fields) > 1:
-			// If the field is a struct, call updateField recursively to update nested fields
-			updateField(fields[1:], dst.Field(i), src.Field(i))
+		dstField, srcField := dst.Field(i), src.Field(i)
 
-		case dst.Field(i).Kind() == reflect.Slice:
+		switch dst.Field(i).Kind() { //nolint:exhaustive
+		case reflect.Struct:
+			// If the field is a struct, and fields contains any sub-fields of a struct, recursively update the struct
+			// If fields contains only 1 element, that means that the struct itself should be updated
+			if len(fields) > 1 {
+				updateField(fields[1:], dstField, srcField)
+			} else {
+				dstField.Set(srcField)
+			}
+
+		case reflect.Slice:
 			//nolint:lll
 			// If the field is a slice, append new values from src to existing slice in dst
 			// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
-			dst.Field(i).Set(reflect.AppendSlice(dst.Field(i), src.Field(i)))
+			dstField.Set(reflect.AppendSlice(dstField, srcField))
 
-		case dst.Field(i).Kind() == reflect.Map:
+		case reflect.Map:
 			// Same rule for maps as for slices
-			for _, key := range src.Field(i).MapKeys() {
-				dst.Field(i).SetMapIndex(key, src.Field(i).MapIndex(key))
+			for _, key := range srcField.MapKeys() {
+				dstField.SetMapIndex(key, srcField.MapIndex(key))
 			}
 
 		default:
 			// For all other field kinds, set value of field in dst to value of corresponding field in src
-			dst.Field(i).Set(src.Field(i))
+			dstField.Set(srcField)
 		}
 	}
 }
