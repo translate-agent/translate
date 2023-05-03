@@ -18,6 +18,6 @@ CREATE TABLE message_message (
   description TEXT,
   fuzzy TINYINT(1),
 
-  UNIQUE ((MD5(id)), message_id),
+  UNIQUE ((SHA1(id)), message_id),
   FOREIGN KEY (message_id) REFERENCES message (id)
 );
