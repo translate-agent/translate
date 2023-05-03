@@ -117,20 +117,27 @@ test:
 
 # -----------------------Building-----------------------
 
-build-go:
+build:
   COPY +go/translate translate
   WORKDIR translate
-  RUN CGO_ENABLED=0 go build -o translate cmd/translate/main.go
-  SAVE ARTIFACT translate
+  RUN \
+  --mount=type=cache,target=/go/pkg/mod \
+  --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 go build -o translate cmd/translate/main.go
+  SAVE ARTIFACT translate bin/translate
 
-image-translate:
-  FROM +build-go
-  ARG  --required registry
+image:
+  ARG --required registry
   ARG tag=latest
-  ENTRYPOINT ["./translate"]
+  FROM alpine
+  COPY +build/bin/translate /translate
+  ENTRYPOINT ["/translate"]
   SAVE IMAGE --push $registry/translate:$tag
 
-image-translate-all-platforms:
-  ARG tag=latest
-  ARG  --required registry
-  BUILD --platform=linux/amd64 --platform=linux/arm/v7 --platform=linux/arm64 +image-translate --tag=$tag --registry=$registry
+image-multiplatform:
+  ARG --required registry
+  BUILD \
+  --platform=linux/amd64 \
+  --platform=linux/arm/v7 \
+  --platform=linux/arm64 \
+  +image --registry=$registry \
