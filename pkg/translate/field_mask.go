@@ -49,10 +49,13 @@ func updateField(fields []string, dst, src reflect.Value) {
 			//nolint:lll
 			// If the field is a slice, append new values from src to existing slice in dst
 			// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
-			oldSlice := dst.Field(i)
-			newSlice := src.Field(i)
-			resultSlice := reflect.AppendSlice(oldSlice, newSlice)
-			dst.Field(i).Set(resultSlice)
+			dst.Field(i).Set(reflect.AppendSlice(dst.Field(i), src.Field(i)))
+
+		case dst.Field(i).Kind() == reflect.Map:
+			// Same rule for maps as for slices
+			for _, key := range src.Field(i).MapKeys() {
+				dst.Field(i).SetMapIndex(key, src.Field(i).MapIndex(key))
+			}
 
 		default:
 			// For all other field kinds, set value of field in dst to value of corresponding field in src

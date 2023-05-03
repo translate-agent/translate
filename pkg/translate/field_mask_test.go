@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
+	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
@@ -28,6 +29,9 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 				I string `protoName:"I"`
 			} `protoName:"H"`
 		} `protoName:"C"`
+		J struct {
+			K map[string]string `protoName:"K"`
+		} `protoName:"J"`
 	}
 
 	// Generate random source and destination structs
@@ -139,6 +143,22 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 				require.ElementsMatch(t, merged, result.C.H)
 
 				result.C.H = dst.C.H
+				assert.Equal(t, dst, result)
+			},
+		},
+		{
+			// Update map of strings in a nested field of struct. (Merge two maps)
+			name: "Update J.K struct.map[string]string",
+			mask: &fieldmaskpb.FieldMask{Paths: []string{"J.K"}},
+			assertFunc: func(t *testing.T, dst, src, result s) {
+				// Merge maps
+				merged := make(map[string]string, len(dst.J.K)+len(src.J.K))
+				maps.Copy(merged, dst.J.K)
+				maps.Copy(merged, src.J.K)
+
+				require.Equal(t, merged, result.J.K)
+
+				result.J.K = dst.J.K
 				assert.Equal(t, dst, result)
 			},
 		},
