@@ -165,6 +165,13 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 	happyRequest := randUploadRequest(t, service.Id)
 
+	randData, _ := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
+	happyRequestNoLangInReq := &translatev1.UploadTranslationFileRequest{
+		ServiceId: service.Id,
+		Data:      randData,
+		Schema:    translatev1.Schema_JSON_NG_LOCALIZE,
+	}
+
 	invalidArgumentMissingServiceRequest := randUploadRequest(t, service.Id)
 	invalidArgumentMissingServiceRequest.ServiceId = ""
 
@@ -178,6 +185,11 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		{
 			name:         "Happy path",
 			request:      happyRequest,
+			expectedCode: codes.OK,
+		},
+		{
+			name:         "Happy path no language in request",
+			request:      happyRequestNoLangInReq,
 			expectedCode: codes.OK,
 		},
 		{
