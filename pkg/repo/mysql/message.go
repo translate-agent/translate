@@ -100,7 +100,7 @@ ON DUPLICATE KEY UPDATE
 }
 
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language language.Tag) (*model.Messages, error) {
-	messages := &model.Messages{Language: language} // messageID uuid.UUID
+	messages := &model.Messages{Language: language}
 
 	rows, err := r.db.QueryContext(
 		ctx,
