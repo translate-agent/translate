@@ -4,21 +4,20 @@ CREATE TABLE service (
 );
 
 CREATE TABLE message (
+  id BINARY(16) PRIMARY KEY,
   service_id BINARY(16) NOT NULL,
-  language VARCHAR(20),
-  FOREIGN KEY (service_id) REFERENCES service (id),
-  PRIMARY KEY (service_id, language)
+  language VARCHAR(20) NOT NULL,
+
+  FOREIGN KEY (service_id) REFERENCES service (id)
 );
 
 CREATE TABLE message_message (
-  message_service_id BINARY(16) NOT NULL,
-  message_language VARCHAR(20) NOT NULL,
-  id TEXT,
+  message_id BINARY(16) NOT NULL,
+  id TEXT NOT NULL,
   message TEXT NOT NULL,
-  description TEXT NOT NULL,
-  fuzzy TINYINT(1) NOT NULL,
-  FOREIGN KEY (message_service_id, message_language) REFERENCES message (
-    service_id, language
-  ),
-  PRIMARY KEY (message_language, id (100))
+  description TEXT,
+  fuzzy TINYINT(1),
+
+  UNIQUE ((SHA1(id)), message_id),
+  FOREIGN KEY (message_id) REFERENCES message (id)
 );
