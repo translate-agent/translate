@@ -62,6 +62,11 @@ func MessagesToData(schema translatev1.Schema, messages *model.Messages) ([]byte
 		return nil, fmt.Errorf("unspecified schema")
 	}
 
+	// Prevent nil pointer dereference.
+	if messages == nil {
+		messages = &model.Messages{}
+	}
+
 	data, err := to(*messages)
 	if err != nil {
 		return nil, fmt.Errorf("convert to %s schema: %w", schema, err)
