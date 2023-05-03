@@ -32,6 +32,7 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		J struct {
 			K map[string]string `protoName:"K"`
 		} `protoName:"J"`
+		L *string `protoName:"L"`
 	}
 
 	// Generate random source and destination structs
@@ -167,6 +168,17 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 			name: "Try to Update C.E struct.string no protoName",
 			mask: &fieldmaskpb.FieldMask{Paths: []string{"C.E"}},
 			assertFunc: func(t *testing.T, dst, src, result s) {
+				assert.Equal(t, dst, result)
+			},
+		},
+		{
+			// Update top level pointer to string
+			name: "Update L *string",
+			mask: &fieldmaskpb.FieldMask{Paths: []string{"L"}},
+			assertFunc: func(t *testing.T, dst, src, result s) {
+				require.Equal(t, src.L, result.L)
+
+				result.L = dst.L
 				assert.Equal(t, dst, result)
 			},
 		},
