@@ -19,7 +19,7 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("repo: begin tx: %w", err)
+		return fmt.Errorf("repo: begin tx to save messages: %w", err)
 	}
 
 	defer tx.Rollback() //nolint:errcheck
@@ -90,7 +90,7 @@ ON DUPLICATE KEY UPDATE
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("repo: commit tx: %w", err)
+		return fmt.Errorf("repo: commit tx to save messages: %w", err)
 	}
 
 	return nil
