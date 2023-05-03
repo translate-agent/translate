@@ -34,26 +34,29 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 		messages.Language.String(),
 	)
 
-	err = row.Scan(&messageID)
+	// Check if message already exists, if not, create a new one
+	switch err = row.Scan(&messageID); {
+	// Message already exists
+	default:
+		// noop
 
-	// If message does not exist, generate a new UUID for it
-	switch {
+	// Message does not exist
 	case errors.Is(err, sql.ErrNoRows):
 		messageID = uuid.New()
+
+		if _, err = tx.ExecContext(
+			ctx,
+			`INSERT INTO message (id, service_id, language) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`,
+			messageID,
+			serviceID,
+			messages.Language.String(),
+		); err != nil {
+			return fmt.Errorf("repo: insert message: %w", err)
+		}
+
+	// Error scanning row
 	case err != nil:
 		return fmt.Errorf("repo: scan message: %w", err)
-	}
-
-	// Insert into message, ignore if already exists
-	_, err = tx.ExecContext(
-		ctx,
-		`INSERT IGNORE INTO message (id, service_id, language) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`,
-		messageID,
-		serviceID,
-		messages.Language.String(),
-	)
-	if err != nil {
-		return fmt.Errorf("repo: insert messages: %w", err)
 	}
 
 	// Insert into message_message table,
