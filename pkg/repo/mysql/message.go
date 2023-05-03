@@ -100,34 +100,16 @@ ON DUPLICATE KEY UPDATE
 }
 
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language language.Tag) (*model.Messages, error) {
-	var (
-		messages  = &model.Messages{Language: language}
-		messageID uuid.UUID
-	)
+	messages := &model.Messages{Language: language} // messageID uuid.UUID
 
-	// Check if message with service_id and language exists
-	row := r.db.QueryRowContext(
-		ctx,
-		`SELECT id FROM message WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
-		serviceID,
-		language.String(),
-	)
-
-	// If message does not exist, return empty messages
-	switch err := row.Scan(&messageID); {
-	case errors.Is(err, sql.ErrNoRows):
-		return messages, nil
-	case err != nil:
-		return nil, fmt.Errorf("repo: scan message: %w", err)
-	}
-
-	// Load messages
 	rows, err := r.db.QueryContext(
 		ctx,
-		`SELECT id, message, description, fuzzy
-FROM message_message
-WHERE message_id = UUID_TO_BIN(?)`,
-		messageID,
+		`SELECT mm.id, mm.message, mm.description, mm.fuzzy
+FROM message_message mm
+JOIN message m ON m.id = mm.message_id
+WHERE m.service_id = UUID_TO_BIN(?) AND m.language = ?`,
+		serviceID,
+		language.String(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("repo: query messages: %w", err)
