@@ -46,6 +46,20 @@ proto:
   RUN rm gen/proto/go/translate/v1/translate.pb.gw.go.bak
   SAVE ARTIFACT gen/proto/go/translate/v1 translate/v1 AS LOCAL pkg/pb/translate/v1
 
+# migrate runs DDL migration scripts against the given database.
+migrate:
+  FROM migrate/migrate:v$migrate_version
+  ARG --required db # supported databases: mysql
+  ARG --required db_user
+  ARG --required db_host
+  ARG --required db_port
+  ARG --required db_schema
+  ARG cmd=up
+  WORKDIR /migrations
+  COPY migrate/$db/* /migrations
+  RUN --push --secret=db_password \
+    if [[ $db = "mysql"]]; then migrate -path=. -database "$db://$db_user:$db_password@tcp($db_host:$db_port)/$db_schema" $cmd; fi
+
 # -----------------------Linting-----------------------
 
 lint-migrate:
