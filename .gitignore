@@ -9,9 +9,13 @@
 *.dylib
 
 !.env.test
-.env
 
 translate.yaml
+
+# earthly
+.arg
+.env
+.secret
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
