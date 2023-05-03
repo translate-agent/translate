@@ -74,7 +74,7 @@ ON DUPLICATE KEY UPDATE
 	fuzzy = VALUES(fuzzy)`,
 	)
 	if err != nil {
-		return fmt.Errorf("repo: prepare insert statement: %w", err)
+		return fmt.Errorf("repo: prepare stmt to insert message_message: %w", err)
 	}
 	defer stmt.Close()
 
