@@ -2,6 +2,8 @@ package mysql
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -23,40 +25,64 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 
 	defer tx.Rollback() //nolint:errcheck
 
-	// Insert into messages table
-	_, err = tx.ExecContext(
+	// Check if message already exist
+	var messageID uuid.UUID
+
+	row := tx.QueryRowContext(
 		ctx,
-		`INSERT IGNORE INTO message (service_id, language) VALUES (UUID_TO_BIN(?), ?)`,
-		serviceID.String(),
+		`SELECT id FROM message WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
+		serviceID,
 		messages.Language.String(),
 	)
-	if err != nil {
-		return &repo.DefaultError{Entity: "message", Err: err, Operation: "Insert"}
+
+	// Check if message already exists, if not, create a new one
+	switch err = row.Scan(&messageID); {
+	// Message already exists
+	default:
+		// noop
+
+	// Message does not exist
+	case errors.Is(err, sql.ErrNoRows):
+		messageID = uuid.New()
+
+		if _, err = tx.ExecContext(
+			ctx,
+			`INSERT INTO message (id, service_id, language) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`,
+			messageID,
+			serviceID,
+			messages.Language.String(),
+		); err != nil {
+			return fmt.Errorf("repo: insert message: %w", err)
+		}
+
+	// Error scanning row
+	case err != nil:
+		return fmt.Errorf("repo: scan message: %w", err)
 	}
 
-	// Insert into message_message table
+	// Insert into message_message table,
+	// on duplicate message_message.id and message_message.message_id,
+	// update message's message, description and fuzzy values.
 	stmt, err := tx.PrepareContext(
 		ctx,
 		`INSERT INTO message_message
-	(id, message_service_id, message_language, message_id, message, description, fuzzy)
+	(message_id, id, message, description, fuzzy)
 VALUES
-	(UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?, ?)
+	(UUID_TO_BIN(?), ?, ?, ?, ?)
 ON DUPLICATE KEY UPDATE
 	message = VALUES(message),
 	description = VALUES(description),
 	fuzzy = VALUES(fuzzy)`,
 	)
 	if err != nil {
-		return &repo.DefaultError{Entity: "message_message", Err: err, Operation: "Prepare Statement"}
+		return fmt.Errorf("repo: prepare stmt to insert message_message: %w", err)
 	}
 	defer stmt.Close()
 
 	for _, m := range messages.Messages {
 		_, err = stmt.ExecContext(
 			ctx,
-			uuid.New().String(),
-			serviceID.String(),
-			messages.Language.String(),
+			messageID,
 			m.ID,
 			m.Message,
 			m.Description,
@@ -68,20 +94,22 @@ ON DUPLICATE KEY UPDATE
 	}
 
 	if err := tx.Commit(); err != nil {
-		return &repo.DefaultError{Entity: "message_message", Err: err, Operation: "Commit Transaction"}
+		return fmt.Errorf("repo: commit tx to save messages: %w", err)
 	}
 
 	return nil
 }
 
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language language.Tag) (*model.Messages, error) {
+	messages := &model.Messages{Language: language}
+
 	rows, err := r.db.QueryContext(
 		ctx,
-		`SELECT message_id, message, description, fuzzy
-FROM message_message
-WHERE message_service_id = UUID_TO_BIN(?)
-AND message_language = ?`,
-		serviceID.String(),
+		`SELECT mm.id, mm.message, mm.description, mm.fuzzy
+FROM message_message mm
+JOIN message m ON m.id = mm.message_id
+WHERE m.service_id = UUID_TO_BIN(?) AND m.language = ?`,
+		serviceID,
 		language.String(),
 	)
 	if err != nil {
@@ -90,20 +118,18 @@ AND message_language = ?`,
 
 	defer rows.Close()
 
-	var messages []model.Message
-
 	for rows.Next() {
 		var m model.Message
 		if err := rows.Scan(&m.ID, &m.Message, &m.Description, &m.Fuzzy); err != nil {
 			return nil, &repo.DefaultError{Entity: "message_message", Err: err, Operation: "Scan"}
 		}
 
-		messages = append(messages, m)
+		messages.Messages = append(messages.Messages, m)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, &repo.DefaultError{Entity: "message_message", Err: err, Operation: "Scan"}
 	}
 
-	return &model.Messages{Language: language, Messages: messages}, nil
+	return messages, nil
 }

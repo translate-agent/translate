@@ -200,6 +200,10 @@ func Test_LoadMessages(t *testing.T) {
 
 	missingServiceID := uuid.New()
 	missingLang := language.MustParse(gofakeit.LanguageBCP())
+	// Make sure we don't use the same language as the message, since that would return not nil Messages.Messages.
+	for missingLang == messages.Language {
+		missingLang = language.MustParse(gofakeit.LanguageBCP())
+	}
 
 	tests := []struct {
 		expected  *model.Messages
