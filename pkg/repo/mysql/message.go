@@ -30,7 +30,7 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 	row := tx.QueryRowContext(
 		ctx,
 		`SELECT id FROM message WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
-		serviceID.String(),
+		serviceID,
 		messages.Language.String(),
 	)
 
@@ -48,8 +48,8 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 	_, err = tx.ExecContext(
 		ctx,
 		`INSERT IGNORE INTO message (id, service_id, language) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`,
-		messageID.String(),
-		serviceID.String(),
+		messageID,
+		serviceID,
 		messages.Language.String(),
 	)
 	if err != nil {
@@ -78,7 +78,7 @@ ON DUPLICATE KEY UPDATE
 	for _, m := range messages.Messages {
 		_, err = stmt.ExecContext(
 			ctx,
-			messageID.String(),
+			messageID,
 			m.ID,
 			m.Message,
 			m.Description,
@@ -106,7 +106,7 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language l
 	row := r.db.QueryRowContext(
 		ctx,
 		`SELECT id FROM message WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
-		serviceID.String(),
+		serviceID,
 		language.String(),
 	)
 
@@ -124,7 +124,7 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language l
 		`SELECT id, message, description, fuzzy
 FROM message_message
 WHERE message_id = UUID_TO_BIN(?)`,
-		messageID.String(),
+		messageID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("repo: query messages: %w", err)
