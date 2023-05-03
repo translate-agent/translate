@@ -28,6 +28,10 @@ func updateModelFromFieldMask[T any](fieldMask *fieldmaskpb.FieldMask, dst, src 
 
 // updateField updates the dst value with the values from src, based on the fields slice.
 func updateField(fields []string, dst, src reflect.Value) {
+	if len(fields) == 0 {
+		return
+	}
+
 	field := fields[0]
 
 	for i := 0; i < dst.NumField(); i++ {
