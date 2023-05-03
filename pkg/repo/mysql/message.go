@@ -62,9 +62,9 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 	stmt, err := tx.PrepareContext(
 		ctx,
 		`INSERT INTO message_message
-	(message_id, message_service_id, id, message, description, fuzzy)
+	(message_id, id, message, description, fuzzy)
 VALUES
-	(UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?, ?, ?)
+	(UUID_TO_BIN(?), ?, ?, ?, ?)
 ON DUPLICATE KEY UPDATE
 	message = VALUES(message),
 	description = VALUES(description),
@@ -79,7 +79,6 @@ ON DUPLICATE KEY UPDATE
 		_, err = stmt.ExecContext(
 			ctx,
 			messageID.String(),
-			serviceID.String(),
 			m.ID,
 			m.Message,
 			m.Description,

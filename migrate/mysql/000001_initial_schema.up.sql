@@ -13,7 +13,6 @@ CREATE TABLE message (
 
 CREATE TABLE message_message (
   message_id BINARY(16) NOT NULL,
-  message_service_id BINARY(16) NOT NULL,
   id TEXT NOT NULL,
   message TEXT NOT NULL,
   description TEXT,
