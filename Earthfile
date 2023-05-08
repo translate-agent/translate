@@ -134,9 +134,8 @@ test:
 # -----------------------Building-----------------------
 
 build:
-  ARG GOARCH=arm64
+  ARG GOARCH=$USERARCH
   ENV CGO_ENABLED=0 
-  ENV GOARCH=$GOARCH
   COPY --platform=linux/$USERARCH +go/translate translate
   WORKDIR translate
   RUN \
@@ -158,6 +157,5 @@ image-multiplatform:
   ARG --required registry
   BUILD \
   --platform=linux/amd64 \
-  --platform=linux/arm/v7 \
   --platform=linux/arm64 \
   +image --registry=$registry \
