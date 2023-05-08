@@ -125,10 +125,6 @@ func Test_Parse(t *testing.T) {
 
 			l, err := Parse(test.input)
 
-			fmt.Println(test.expected)
-			fmt.Println(l)
-			fmt.Println(test.expectedErr)
-
 			if test.expectedErr != nil {
 				assert.Errorf(t, err, test.expectedErr.Error())
 				return
