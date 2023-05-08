@@ -129,7 +129,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 
 	randReq := func() *translatev1.UpdateServiceRequest {
 		return &translatev1.UpdateServiceRequest{
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: gofakeit.NiceColors()},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"name"}},
 			Service:    serviceToProto(randService()),
 		}
 	}
@@ -147,6 +147,9 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 
 	malformedIDReq := randReq()
 	malformedIDReq.Service.Id += "_FAIL"
+
+	invalidUpdateMaskPathParams := randReq()
+	invalidUpdateMaskPathParams.UpdateMask.Paths = gofakeit.NiceColors()
 
 	tests := []struct {
 		expected    *updateServiceParams
@@ -203,6 +206,11 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			request:     malformedIDReq,
 			expectedErr: errors.New("invalid UUID length"),
 		},
+		{
+			name:        "Invalid Update Mask Path",
+			request:     invalidUpdateMaskPathParams,
+			expectedErr: errors.New("invalid path"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -246,9 +254,6 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 	missingServiceIDParams := randParams()
 	missingServiceIDParams.service.ID = uuid.Nil
 
-	invalidUpdateMaskPathParams := randParams()
-	invalidUpdateMaskPathParams.mask.Paths = gofakeit.NiceColors()
-
 	tests := []struct {
 		params      *updateServiceParams
 		expectedErr error
@@ -273,11 +278,6 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 			name:        "Missing Service ID",
 			params:      missingServiceIDParams,
 			expectedErr: errors.New("'service.id' is required"),
-		},
-		{
-			name:        "Invalid Update Mask Path",
-			params:      invalidUpdateMaskPathParams,
-			expectedErr: errors.New("invalid path"),
 		},
 	}
 

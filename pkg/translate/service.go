@@ -127,20 +127,32 @@ type updateServiceParams struct {
 }
 
 func parseUpdateServiceParams(req *translatev1.UpdateServiceRequest) (*updateServiceParams, error) {
-	service, err := serviceFromProto(req.GetService())
+	var (
+		params updateServiceParams
+		err    error
+	)
+
+	params.service, err = serviceFromProto(req.GetService())
 	if err != nil {
 		return nil, fmt.Errorf("parse service: %w", err)
 	}
 
-	mask := req.GetUpdateMask()
+	reqMask := req.GetUpdateMask()
+	if reqMask == nil {
+		return &params, nil
+	}
+
+	params.mask, err = fieldmaskpb.New(req.Service, reqMask.Paths...)
+	if err != nil {
+		return nil, fmt.Errorf("parse field mask: %w", err)
+	}
+
 	// Normalize sorts paths, removes duplicates, and removes sub-paths when possible.
 	// e.g. if a field mask contains the paths foo.bar and foo,
 	// the path foo.bar is redundant because it is already covered by the path foo
-	if mask != nil {
-		mask.Normalize()
-	}
+	params.mask.Normalize()
 
-	return &updateServiceParams{mask: mask, service: service}, nil
+	return &params, nil
 }
 
 func (u *updateServiceParams) validate() error {
@@ -150,12 +162,6 @@ func (u *updateServiceParams) validate() error {
 
 	if u.service.ID == uuid.Nil {
 		return errors.New("'service.id' is required")
-	}
-
-	if u.mask != nil {
-		if err := validateFieldMask(u.mask, serviceToProto(u.service)); err != nil {
-			return fmt.Errorf("validate field mask: %w", err)
-		}
 	}
 
 	return nil
