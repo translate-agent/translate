@@ -30,7 +30,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 	happyReqWithoutID.Id = ""
 
 	malformedIDReq := randReq()
-	malformedIDReq.Id += "_FAIL" //nolint:goconst
+	malformedIDReq.Id += "_FAIL"
 
 	tests := []struct {
 		expected    *getServiceParams
