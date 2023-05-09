@@ -1,6 +1,7 @@
 package pot
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -111,7 +112,7 @@ func TokensToPo(tokens []Token) (Po, error) {
 	}
 
 	if len(messages) == 0 {
-		return Po{}, fmt.Errorf("invalid po file: no messages found")
+		return Po{}, errors.New("invalid po file: no messages found")
 	}
 
 	return Po{
@@ -129,12 +130,12 @@ func parsePluralForms(s string) (pluralForm, error) {
 
 	parts := strings.Split(s, "; ")
 	if len(parts) != pfArgCount {
-		return pf, fmt.Errorf("invalid plural forms format")
+		return pf, errors.New("invalid plural forms format")
 	}
 
 	nPluralsParts := strings.Split(strings.TrimSpace(parts[0]), "=")
 	if len(nPluralsParts) != pfArgCount {
-		return pf, fmt.Errorf("invalid nplurals part")
+		return pf, errors.New("invalid nplurals part")
 	}
 
 	pf.NPlurals, err = strconv.Atoi(nPluralsParts[1])

@@ -18,7 +18,7 @@ func Test_ToPot(t *testing.T) {
 		expected []byte
 	}{
 		{
-			name: "When all values are provided",
+			name: "all values are provided",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -51,7 +51,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "When description is multiline",
+			name: "description is multiline",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -85,7 +85,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "When msgid is multiline",
+			name: "msgid is multiline",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -120,7 +120,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "When msgid is multiline but with single line",
+			name: "msgid is multiline but with single line",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -153,7 +153,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "When msgstr is multiline",
+			name: "msgstr is multiline",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -186,7 +186,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "When msgstr value is qouted",
+			name: "msgstr value is qouted",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -219,7 +219,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "When msgid value is qouted",
+			name: "msgid value is qouted",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -252,7 +252,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "When fuzzy values are mixed",
+			name: "fuzzy values are mixed",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -284,7 +284,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "When msgstr value is plural",
+			name: "msgstr value is plural",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -310,7 +310,75 @@ msgstr[1] "Il y a %d pommes."
 `),
 		},
 		{
-			name: "When msgstr value is plural and multiline",
+			name: "message in single form",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "There is apple.",
+						Message:     "{Il y a pomme.}",
+						Description: "apple counts",
+						Fuzzy:       true,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: en\n"
+#. apple counts
+#, fuzzy
+msgid "There is apple."
+msgstr "Il y a pomme."
+`),
+		},
+		{
+			name: "message in single form and have multiline",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "There is apple.",
+						Message:     "{Il y \na pomme.}",
+						Description: "apple counts",
+						Fuzzy:       true,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: en\n"
+#. apple counts
+#, fuzzy
+msgid "There is apple."
+msgstr ""
+"Il y \n"
+"a pomme.\n"
+`),
+		},
+		{
+			name: "message in single form with quoted message",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "There is apple.",
+						Message:     "{Il y a \"pomme\".}",
+						Description: "apple counts",
+						Fuzzy:       true,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: en\n"
+#. apple counts
+#, fuzzy
+msgid "There is apple."
+msgstr "Il y a \"pomme\"."
+`),
+		},
+		{
+			name: "msgstr value is plural and multiline",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -338,7 +406,7 @@ msgstr[1] "Il y a %d pommes."
 `),
 		},
 		{
-			name: "When msgstr value is plural and double multiline",
+			name: "msgstr value is plural and have double multiline",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -374,7 +442,7 @@ msgstr[1] ""
 `),
 		},
 		{
-			name: "When fuzzy values are missing",
+			name: "fuzzy values are missing",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -395,7 +463,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "When description value is missing",
+			name: "description value is missing",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -417,7 +485,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "When description and fuzzy values are missing",
+			name: "description and fuzzy values are missing",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{

@@ -3,9 +3,11 @@ package convert
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"regexp"
 	"strings"
+
+	"go.expect.digital/translate/pkg/messageformat"
 
 	"go.expect.digital/translate/pkg/pot"
 
@@ -57,7 +59,7 @@ func FromPot(b []byte) (model.Messages, error) {
 
 		switch {
 		case po.Header.PluralForms.NPlurals > pluralCountLimit:
-			return model.Messages{}, fmt.Errorf("plural forms with more than 2 forms are not implemented yet")
+			return model.Messages{}, errors.New("plural forms with more than 2 forms are not implemented yet")
 		case po.Header.PluralForms.NPlurals > 1:
 			message.Message = convertToFormatMessage(node.MsgStr)
 		default:
@@ -94,7 +96,27 @@ func writeToPoTag(b *bytes.Buffer, tag poTag, str string) error {
 }
 
 func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
-	lines, err := getPoTagLines(str, tag)
+	var text strings.Builder
+
+	nodes, err := messageformat.Parse(str)
+	if err != nil {
+		return fmt.Errorf("parse message: %w", err)
+	}
+
+	for _, node := range nodes {
+		nodeTxt, ok := node.(messageformat.NodeText)
+		if !ok {
+			return errors.New("convert node to messageformat.NodeText")
+		}
+
+		text.WriteString(nodeTxt.Text)
+	}
+
+	if text.String() == "" {
+		text.WriteString(str)
+	}
+
+	lines, err := getPoTagLines(text.String(), tag)
 	if err != nil {
 		return fmt.Errorf("get po tag lines: %w", err)
 	}
@@ -119,31 +141,63 @@ func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
 }
 
 func writePluralForms(b *bytes.Buffer, tag poTag, str string) error {
-	pluralForms, err := extractPluralForms(str)
+	nodes, err := messageformat.Parse(str)
 	if err != nil {
-		return fmt.Errorf("extract plural forms: %w", err)
+		return fmt.Errorf("parse message: %w", err)
 	}
 
-	for i := range pluralForms {
-		pluralLines, err := getPoTagLines(pluralForms[i], tag)
+	for _, node := range nodes {
+		nodeMatch, ok := node.(messageformat.NodeMatch)
+		if !ok {
+			return errors.New("convert node to messageformat.NodeMatch")
+		}
+
+		if err = writeVariants(b, tag, nodeMatch); err != nil {
+			return fmt.Errorf("write variants: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func writeVariants(b *bytes.Buffer, tag poTag, nodeMatch messageformat.NodeMatch) error {
+	for i, variant := range nodeMatch.Variants {
+		if _, err := fmt.Fprintf(b, "msgstr[%d] ", i); err != nil {
+			return fmt.Errorf("write plural msgstr: %w", err)
+		}
+
+		var txt strings.Builder
+
+		for _, msg := range variant.Message {
+			switch node := msg.(type) {
+			case messageformat.NodeText:
+				txt.WriteString(node.Text)
+			case messageformat.NodeVariable:
+				txt.WriteString("%d")
+			default:
+				return errors.New("unknown node type")
+			}
+		}
+
+		lines, err := getPoTagLines(txt.String(), tag)
 		if err != nil {
 			return fmt.Errorf("get po tag lines: %w", err)
 		}
 
-		if len(pluralLines) == 1 {
-			if _, err = fmt.Fprintf(b, "msgstr[%d] \"%s\"\n", i, pluralLines[0]); err != nil {
+		if len(lines) == 1 {
+			if _, err = fmt.Fprintf(b, "\"%s\"\n", lines[0]); err != nil {
 				return fmt.Errorf("write %s: %w", tag, err)
 			}
 
 			continue
 		}
 
-		if _, err = fmt.Fprintf(b, "msgstr[%d] \"\"\n", i); err != nil {
+		if _, err = fmt.Fprintf(b, "\"\"\n"); err != nil {
 			return fmt.Errorf("write %s: %w", tag, err)
 		}
 
-		if err = writeMultiline(b, tag, pluralLines); err != nil {
-			return fmt.Errorf("write plural multiline: %w", err)
+		if err = writeMultiline(b, tag, lines); err != nil {
+			return fmt.Errorf("write multiline: %w", err)
 		}
 	}
 
@@ -180,31 +234,6 @@ func getPoTagLines(str string, tag poTag) ([]string, error) {
 	}
 
 	return lines, nil
-}
-
-func extractPluralForms(plural string) ([]string, error) {
-	if plural == "" {
-		return nil, fmt.Errorf("plural is empty")
-	}
-
-	plural = strings.ReplaceAll(plural, "{$count}", "%d")
-	// Use regular expressions to extract the plural forms from the plural finds string in {}
-	re := regexp.MustCompile(`when [\d*]+ \{([^}]+)\}`)
-	matches := re.FindAllStringSubmatch(plural, -1)
-
-	if len(matches) == 0 {
-		return nil, fmt.Errorf("no plural forms found in plural")
-	}
-
-	// Create a slice of strings to hold the extracted plural forms
-	pluralForms := make([]string, 0, len(matches))
-
-	// Loop through the matches and extract the plural form from each one
-	for _, match := range matches {
-		pluralForms = append(pluralForms, match[1])
-	}
-
-	return pluralForms, nil
 }
 
 func convertToFormatMessage(plurals []string) string {

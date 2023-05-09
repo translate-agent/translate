@@ -2,6 +2,7 @@ package pot
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -119,7 +120,7 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 	case strings.HasPrefix(line, `"`):
 		return parseMultilineToken(line, tokens)
 	default:
-		return nil, fmt.Errorf("incorrect format of po tags")
+		return nil, errors.New("incorrect format of po tags")
 	}
 }
 
@@ -170,7 +171,7 @@ func parseCommentToken(line string, tokenType tokenType) (*Token, error) {
 
 func parseMsgString(line string) (string, error) {
 	if !hasValidPrefix(line) {
-		return "", fmt.Errorf("incorrect format of po tags")
+		return "", errors.New("incorrect format of po tags")
 	}
 
 	subStrN := 2
