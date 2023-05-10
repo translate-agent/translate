@@ -4,19 +4,33 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/exp/maps"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
+
+func mergeSlices[T ~[]E, E any](a, b T) T {
+	merged := make(T, len(a)+len(b))
+	copy(merged, a)
+	copy(merged[len(a):], b)
+
+	return merged
+}
+
+func mergeMaps[T ~map[K]V, K comparable, V any](a, b T) T {
+	merged := make(T, len(a)+len(b))
+	maps.Copy(merged, a)
+	maps.Copy(merged, b)
+
+	return merged
+}
 
 func Test_UpdateModelFromFieldMask(t *testing.T) {
 	t.Parallel()
 
 	//nolint: govet
-	type s struct {
+	type nestedStruct struct {
 		A int    `protoName:"A"`
 		B string `protoName:"B"`
 		C struct {
@@ -36,29 +50,29 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 	}
 
 	// Generate random source and destination structs
-	var src, dst s
+	var src, dst nestedStruct
 
 	require.NoError(t, gofakeit.Struct(&src))
 	require.NoError(t, gofakeit.Struct(&dst))
 
-	// In real life updateModelFromFieldMask is not supposed to be called directly.
+	// updateModelFromFieldMask is not supposed to be called directly.
 	// It should be wrapped in a function that accepts source and destination structs,
 	// Then function will be pure and will not have side effects.
 	// e.g.
-	updateSFromFieldMask := func(m *fieldmaskpb.FieldMask, v1, v2 s) *s {
+	updateNestedStructFromFieldMask := func(m model.Mask, v1, v2 nestedStruct) *nestedStruct {
 		return updateModelFromFieldMask(m, &v1, &v2)
 	}
 
 	tests := []struct {
-		mask       *fieldmaskpb.FieldMask
-		assertFunc func(t *testing.T, dst, src, result s)
+		assertFunc func(t *testing.T, dst, src, result nestedStruct)
 		name       string
+		mask       model.Mask
 	}{
 		{
 			// Update one top-level field
 			name: "Update A int",
-			mask: &fieldmaskpb.FieldMask{Paths: []string{"A"}},
-			assertFunc: func(t *testing.T, dst, src, result s) {
+			mask: []string{"A"},
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
 				// Check if field is updated
 				require.Equal(t, src.A, result.A)
 
@@ -70,8 +84,8 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		{
 			// Update two top-level fields
 			name: "Update A and B int and string",
-			mask: &fieldmaskpb.FieldMask{Paths: []string{"A", "B"}},
-			assertFunc: func(t *testing.T, dst, src, result s) {
+			mask: []string{"A", "B"},
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
 				require.Equal(t, src.A, result.A)
 
 				result.A, result.B = dst.A, dst.B
@@ -81,8 +95,8 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		{
 			// Update whole top-level struct
 			name: "Update C struct",
-			mask: &fieldmaskpb.FieldMask{Paths: []string{"C"}},
-			assertFunc: func(t *testing.T, dst, src, result s) {
+			mask: []string{"C"},
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
 				require.Equal(t, src.C, result.C)
 
 				result.C = dst.C
@@ -92,8 +106,8 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		{
 			// Update top-level field of a nested struct
 			name: "Update C.D struct.float",
-			mask: &fieldmaskpb.FieldMask{Paths: []string{"C.D"}},
-			assertFunc: func(t *testing.T, dst, src, result s) {
+			mask: []string{"C.D"},
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
 				require.Equal(t, src.C.D, result.C.D)
 
 				result.C.D = dst.C.D
@@ -103,8 +117,8 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		{
 			// Update a whole nested struct
 			name: "Update C.F struct.struct",
-			mask: &fieldmaskpb.FieldMask{Paths: []string{"C.F"}},
-			assertFunc: func(t *testing.T, dst, src, result s) {
+			mask: []string{"C.F"},
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
 				require.Equal(t, src.C.F, result.C.F)
 
 				result.C.F = dst.C.F
@@ -114,13 +128,9 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		{
 			// Update slice of strings in a double nested struct (merge two slices)
 			name: "Update C.F.G struct.struct.[]string",
-			mask: &fieldmaskpb.FieldMask{Paths: []string{"C.F.G"}},
-			assertFunc: func(t *testing.T, dst, src, result s) {
-				// Merge slices
-				la := len(dst.C.F.G)
-				merged := make([]string, la+len(src.C.F.G))
-				copy(merged, dst.C.F.G)
-				copy(merged[la:], src.C.F.G)
+			mask: []string{"C.F.G"},
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
+				merged := mergeSlices(dst.C.F.G, src.C.F.G)
 
 				require.ElementsMatch(t, merged, result.C.F.G)
 
@@ -131,15 +141,9 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		{
 			// Update slice of custom structs in a nested struct. (Merge two slices)
 			name: "Update C.H struct.struct.[]struct",
-			mask: &fieldmaskpb.FieldMask{Paths: []string{"C.H"}},
-			assertFunc: func(t *testing.T, dst, src, result s) {
-				// Merge slices
-				la := len(dst.C.H)
-				merged := make([]struct {
-					I string `protoName:"I"`
-				}, la+len(src.C.H))
-				copy(merged, dst.C.H)
-				copy(merged[la:], src.C.H)
+			mask: []string{"C.H"},
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
+				merged := mergeSlices(dst.C.H, src.C.H)
 
 				require.ElementsMatch(t, merged, result.C.H)
 
@@ -150,12 +154,9 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		{
 			// Update map of strings in a nested field of struct. (Merge two maps)
 			name: "Update J.K struct.map[string]string",
-			mask: &fieldmaskpb.FieldMask{Paths: []string{"J.K"}},
-			assertFunc: func(t *testing.T, dst, src, result s) {
-				// Merge maps
-				merged := make(map[string]string, len(dst.J.K)+len(src.J.K))
-				maps.Copy(merged, dst.J.K)
-				maps.Copy(merged, src.J.K)
+			mask: []string{"J.K"},
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
+				merged := mergeMaps(dst.J.K, src.J.K)
 
 				require.Equal(t, merged, result.J.K)
 
@@ -166,16 +167,16 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		{
 			// Try to update nested struct field with no protoName. (Nothing updates)
 			name: "Try to Update C.E struct.string no protoName",
-			mask: &fieldmaskpb.FieldMask{Paths: []string{"C.E"}},
-			assertFunc: func(t *testing.T, dst, src, result s) {
+			mask: []string{"C.E"},
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
 				assert.Equal(t, dst, result)
 			},
 		},
 		{
 			// Update top level pointer to string
 			name: "Update L *string",
-			mask: &fieldmaskpb.FieldMask{Paths: []string{"L"}},
-			assertFunc: func(t *testing.T, dst, src, result s) {
+			mask: []string{"L"},
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
 				require.Equal(t, src.L, result.L)
 
 				result.L = dst.L
@@ -186,15 +187,23 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 			// Update all fields
 			name: "Update All",
 			mask: nil,
-			assertFunc: func(t *testing.T, dst, src, result s) {
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
 				assert.Equal(t, src, result)
 			},
 		},
 		{
 			// No Paths in FieldMask. Updates nothing.
-			name: "Update Nothing",
-			mask: &fieldmaskpb.FieldMask{},
-			assertFunc: func(t *testing.T, dst, src, result s) {
+			name: "Update Nothing Empty Paths",
+			mask: model.Mask{},
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
+				assert.Equal(t, dst, result)
+			},
+		},
+		{
+			// Random path in FieldMask. Updates nothing.
+			name: "Update Nothing Random Path",
+			mask: model.Mask{"random_path"},
+			assertFunc: func(t *testing.T, dst, src, result nestedStruct) {
 				assert.Equal(t, dst, result)
 			},
 		},
@@ -205,7 +214,7 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := updateSFromFieldMask(tt.mask, dst, src)
+			result := updateNestedStructFromFieldMask(tt.mask, dst, src)
 			tt.assertFunc(t, dst, src, *result)
 		})
 	}
@@ -214,14 +223,20 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 func Test_UpdateServiceFromFieldMask(t *testing.T) {
 	t.Parallel()
 
+	// Generate random source and destination structs
+	var dstService, srcService model.Service
+
+	require.NoError(t, gofakeit.Struct(&srcService))
+	require.NoError(t, gofakeit.Struct(&dstService))
+
 	tests := []struct {
 		assertFunc func(t *testing.T, dstService, srcService, result model.Service)
-		fieldMask  *fieldmaskpb.FieldMask
 		name       string
+		fieldMask  model.Mask
 	}{
 		{
 			name:      "Update Name",
-			fieldMask: &fieldmaskpb.FieldMask{Paths: []string{"name"}},
+			fieldMask: []string{"name"},
 			assertFunc: func(t *testing.T, dstService, srcService, result model.Service) {
 				// Same ID updated name
 				require.Equal(t, dstService.ID, result.ID)
@@ -238,12 +253,19 @@ func Test_UpdateServiceFromFieldMask(t *testing.T) {
 			},
 		},
 		{
-			name:      "Nothing to Update",
-			fieldMask: &fieldmaskpb.FieldMask{},
+			name:      "Nothing to Update Empty Paths",
+			fieldMask: model.Mask{},
 			assertFunc: func(t *testing.T, dstService, srcService, result model.Service) {
 				// Same ID and name, as nothing was updated
-				require.Equal(t, dstService.ID, result.ID)
-				assert.Equal(t, dstService.Name, result.Name)
+				assert.Equal(t, dstService, result)
+			},
+		},
+		{
+			name:      "Nothing to Update Random Path",
+			fieldMask: model.Mask{"random_path"},
+			assertFunc: func(t *testing.T, dstService, srcService, result model.Service) {
+				// Same ID and name, as nothing was updated
+				assert.Equal(t, dstService, result)
 			},
 		},
 	}
@@ -253,11 +275,7 @@ func Test_UpdateServiceFromFieldMask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			dstService := model.Service{ID: uuid.New(), Name: gofakeit.FirstName()}
-			srcService := model.Service{ID: uuid.New(), Name: gofakeit.FirstName()}
-
 			result := updateServiceFromFieldMask(tt.fieldMask, dstService, srcService)
-
 			tt.assertFunc(t, dstService, srcService, *result)
 		})
 	}
