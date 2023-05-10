@@ -122,7 +122,7 @@ func (t *TranslateServiceServer) CreateService(
 
 type updateServiceParams struct {
 	service *model.Service
-	mask    model.FieldMask
+	mask    model.Mask
 }
 
 func parseUpdateServiceParams(req *translatev1.UpdateServiceRequest) (*updateServiceParams, error) {

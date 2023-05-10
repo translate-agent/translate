@@ -9,7 +9,7 @@ import (
 )
 
 // parseFieldMask parses and normalizes a field mask from a proto message and a list of paths.
-func parseFieldMask(message proto.Message, paths []string) (model.FieldMask, error) {
+func parseFieldMask(message proto.Message, paths []string) (model.Mask, error) {
 	parsedMask, err := fieldmaskpb.New(message, paths...)
 	if err != nil {
 		return nil, fmt.Errorf("new fieldmaskpb: %w", err)
