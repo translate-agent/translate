@@ -2,16 +2,14 @@ package convert
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"go.expect.digital/translate/pkg/messageformat"
-
-	"go.expect.digital/translate/pkg/pot"
-
 	"go.expect.digital/translate/pkg/model"
+	"go.expect.digital/translate/pkg/pot"
 )
 
 type poTag string
@@ -55,19 +53,21 @@ func FromPot(b []byte) (model.Messages, error) {
 	messages := make([]model.Message, 0, len(po.Messages))
 
 	for _, node := range po.Messages {
-		message := model.Message{ID: node.MsgId, PluralID: node.MsgIdPlural}
+		message := model.Message{
+			ID:          node.MsgId,
+			PluralID:    node.MsgIdPlural,
+			Description: strings.Join(node.ExtractedComment, "\n "),
+			Fuzzy:       strings.Contains(node.Flag, "fuzzy"),
+		}
 
 		switch {
 		case po.Header.PluralForms.NPlurals > pluralCountLimit:
 			return model.Messages{}, errors.New("plural forms with more than 2 forms are not implemented yet")
-		case po.Header.PluralForms.NPlurals > 1:
+		case po.Header.PluralForms.NPlurals == pluralCountLimit:
 			message.Message = convertToFormatMessage(node.MsgStr)
 		default:
 			message.Message = node.MsgStr[0]
 		}
-
-		message.Description = strings.Join(node.ExtractedComment, "\n ")
-		message.Fuzzy = strings.Contains(node.Flag, "fuzzy")
 
 		messages = append(messages, message)
 	}
@@ -79,13 +79,9 @@ func FromPot(b []byte) (model.Messages, error) {
 }
 
 func writeToPoTag(b *bytes.Buffer, tag poTag, str string) error {
-	var write func(*bytes.Buffer, poTag, string) error
-
-	switch tag { //nolint:exhaustive
-	case MsgStrPlural:
-		write = writePluralForms
-	default:
-		write = writeDefault
+	write := writeDefault
+	if tag == MsgStrPlural {
+		write = writePlural
 	}
 
 	if err := write(b, tag, str); err != nil {
@@ -116,10 +112,7 @@ func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
 		text.WriteString(str)
 	}
 
-	lines, err := getPoTagLines(text.String(), tag)
-	if err != nil {
-		return fmt.Errorf("get po tag lines: %w", err)
-	}
+	lines := getPoTagLines(text.String())
 
 	if len(lines) == 1 {
 		if _, err = fmt.Fprintf(b, "%s \"%s\"\n", tag, lines[0]); err != nil {
@@ -140,7 +133,7 @@ func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
 	return nil
 }
 
-func writePluralForms(b *bytes.Buffer, tag poTag, str string) error {
+func writePlural(b *bytes.Buffer, tag poTag, str string) error {
 	nodes, err := messageformat.Parse(str)
 	if err != nil {
 		return fmt.Errorf("parse message: %w", err)
@@ -179,24 +172,21 @@ func writeVariants(b *bytes.Buffer, tag poTag, nodeMatch messageformat.NodeMatch
 			}
 		}
 
-		lines, err := getPoTagLines(txt.String(), tag)
-		if err != nil {
-			return fmt.Errorf("get po tag lines: %w", err)
-		}
+		lines := getPoTagLines(txt.String())
 
 		if len(lines) == 1 {
-			if _, err = fmt.Fprintf(b, "\"%s\"\n", lines[0]); err != nil {
+			if _, err := fmt.Fprintf(b, "\"%s\"\n", lines[0]); err != nil {
 				return fmt.Errorf("write %s: %w", tag, err)
 			}
 
 			continue
 		}
 
-		if _, err = fmt.Fprintf(b, "\"\"\n"); err != nil {
+		if _, err := fmt.Fprintf(b, "\"\"\n"); err != nil {
 			return fmt.Errorf("write %s: %w", tag, err)
 		}
 
-		if err = writeMultiline(b, tag, lines); err != nil {
+		if err := writeMultiline(b, tag, lines); err != nil {
 			return fmt.Errorf("write multiline: %w", err)
 		}
 	}
@@ -218,14 +208,11 @@ func writeMultiline(b *bytes.Buffer, tag poTag, lines []string) error {
 	return nil
 }
 
-func getPoTagLines(str string, tag poTag) ([]string, error) {
-	encodedStr, err := json.Marshal(str) // use JSON encoding to escape special characters
-	if err != nil {
-		return nil, fmt.Errorf("marshal %s: %w", tag, err)
-	}
+func getPoTagLines(str string) []string {
+	encodedStr := strconv.Quote(str)
 
 	encodedStr = encodedStr[1 : len(encodedStr)-1] // trim quotes
-	lines := strings.Split(string(encodedStr), "\\n")
+	lines := strings.Split(encodedStr, "\\n")
 
 	// Remove the empty string element. The line is empty when splitting by "\\n" and "\n" is the last character in str.
 	if lines[len(lines)-1] == "" {
@@ -233,7 +220,7 @@ func getPoTagLines(str string, tag poTag) ([]string, error) {
 		lines[len(lines)-1] += "\\n" // add the "\n" back to the last line
 	}
 
-	return lines, nil
+	return lines
 }
 
 func convertToFormatMessage(plurals []string) string {
@@ -297,18 +284,18 @@ func writeTags(b *bytes.Buffer, message model.Message) error {
 		return fmt.Errorf("format msgid: %w", err)
 	}
 
-	switch message.PluralID != "" {
-	case true:
+	// singular
+	if message.PluralID == "" {
+		if err := writeToPoTag(b, MsgStr, message.Message); err != nil {
+			return fmt.Errorf("format msgstr: %w", err)
+		}
+	} else {
+		// plural
 		if err := writeToPoTag(b, PluralId, message.PluralID); err != nil {
 			return fmt.Errorf("format msgid_plural: %w", err)
 		}
-
 		if err := writeToPoTag(b, MsgStrPlural, message.Message); err != nil {
 			return fmt.Errorf("format msgstr[]: %w", err)
-		}
-	default:
-		if err := writeToPoTag(b, MsgStr, message.Message); err != nil {
-			return fmt.Errorf("format msgstr: %w", err)
 		}
 	}
 

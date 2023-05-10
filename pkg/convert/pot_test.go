@@ -51,7 +51,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "description is multiline",
+			name: "multiline description",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -85,7 +85,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "msgid is multiline",
+			name: "multiline msgid",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -120,7 +120,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "msgid is multiline but with single line",
+			name: "single msgid with newline",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -153,7 +153,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "msgstr is multiline",
+			name: "multiline msgstr",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -186,7 +186,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "msgstr value is qouted",
+			name: "qouted msgstr",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -219,7 +219,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "msgid value is qouted",
+			name: "qouted msgid",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -252,7 +252,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "fuzzy values are mixed",
+			name: "mixed fuzzy values",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -284,7 +284,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "msgstr value is plural",
+			name: "plural msgstr",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -310,7 +310,7 @@ msgstr[1] "Il y a %d pommes."
 `),
 		},
 		{
-			name: "message in single form",
+			name: "single message",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -332,7 +332,7 @@ msgstr "Il y a pomme."
 `),
 		},
 		{
-			name: "message in single form and have multiline",
+			name: "single message with new line",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -356,7 +356,7 @@ msgstr ""
 `),
 		},
 		{
-			name: "message in single form with quoted message",
+			name: "single message with quoted message",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -378,7 +378,7 @@ msgstr "Il y a \"pomme\"."
 `),
 		},
 		{
-			name: "msgstr value is plural and multiline",
+			name: "plural msgstr with new line",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -406,7 +406,7 @@ msgstr[1] "Il y a %d pommes."
 `),
 		},
 		{
-			name: "msgstr value is plural and have double multiline",
+			name: "plural msgstr with new lines",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -442,7 +442,7 @@ msgstr[1] ""
 `),
 		},
 		{
-			name: "fuzzy values are missing",
+			name: "missing fuzzy values",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -463,7 +463,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "description value is missing",
+			name: "missing description",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -485,7 +485,7 @@ msgstr "Au revoir!"
 `),
 		},
 		{
-			name: "description and fuzzy values are missing",
+			name: "missing description and fuzzy",
 			input: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -529,7 +529,7 @@ func TestFromPot(t *testing.T) {
 		input       []byte
 	}{
 		{
-			name: "Valid input",
+			name: "valid input",
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
@@ -561,7 +561,7 @@ func TestFromPot(t *testing.T) {
 			},
 		},
 		{
-			name: "Multiline description",
+			name: "multiline description",
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
@@ -596,7 +596,7 @@ func TestFromPot(t *testing.T) {
 			},
 		},
 		{
-			name: "When msgid value is multiline",
+			name: "multiline msgid",
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
@@ -620,7 +620,7 @@ func TestFromPot(t *testing.T) {
 			},
 		},
 		{
-			name: "when msgstr is plural",
+			name: "plural msgstr",
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
@@ -648,7 +648,7 @@ when * {Il y a {$count} pommes.}
 			},
 		},
 		{
-			name: "when msgstr is plural and multiline",
+			name: "plural msgstr with new line",
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
@@ -677,7 +677,7 @@ when * {Il y a {$count} pommes.}
 			},
 		},
 		{
-			name: "when msgid_plural and msgid values are multiline",
+			name: "multiline msgid_plural and msgid",
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
@@ -705,7 +705,7 @@ when * {Il y a {$count} pommes.}
 			},
 		},
 		{
-			name: "Invalid input",
+			name: "invalid input",
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
