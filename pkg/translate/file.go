@@ -65,19 +65,22 @@ func (u *uploadParams) validate() error {
 func getLanguage(reqParams *uploadParams, messages *model.Messages) (language.Tag, error) {
 	und := language.Und
 
-	// Both messages and params have undefined language
+	// Scenario 1: Both messages and params have undefined language
 	if reqParams.languageTag == und && messages.Language == und {
 		return und, errors.New("no language is set")
 	}
-	// The languages in messages and params are different
+	// Scenario 2: The languages in messages and params are different
 	if reqParams.languageTag != und && messages.Language != und && messages.Language != reqParams.languageTag {
 		return und, errors.New("languages are mismatched")
 	}
-	// The language in messages is undefined but the language in params is defined
+	// Scenario 3: The language in messages is undefined but the language in params is defined
 	if messages.Language == und {
 		return reqParams.languageTag, nil
 	}
 
+	// Scenario 4 and 5:
+	// The language in messages is defined but the language in params is undefined
+	// The languages in messages and params are the same
 	return messages.Language, nil
 }
 
