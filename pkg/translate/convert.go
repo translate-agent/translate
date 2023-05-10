@@ -1,6 +1,7 @@
 package translate
 
 import (
+	"errors"
 	"fmt"
 
 	"go.expect.digital/translate/pkg/convert"
@@ -28,7 +29,7 @@ func MessagesFromData(schema translatev1.Schema, data []byte) (*model.Messages, 
 	case translatev1.Schema_XLIFF_12:
 		from = convert.FromXliff12
 	case translatev1.Schema_UNSPECIFIED:
-		return nil, fmt.Errorf("unspecified schema")
+		return nil, errors.New("unspecified schema")
 	}
 
 	messages, err := from(data)

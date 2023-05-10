@@ -67,11 +67,11 @@ func getLanguage(reqParams *uploadParams, messages *model.Messages) (language.Ta
 
 	// Both messages and params have undefined language
 	if reqParams.languageTag == und && messages.Language == und {
-		return und, fmt.Errorf("no language is set")
+		return und, errors.New("no language is set")
 	}
 	// The languages in messages and params are different
 	if reqParams.languageTag != und && messages.Language != und && messages.Language != reqParams.languageTag {
-		return und, fmt.Errorf("languages are mismatched")
+		return und, errors.New("languages are mismatched")
 	}
 	// The language in messages is undefined but the language in params is defined
 	if messages.Language == und {
