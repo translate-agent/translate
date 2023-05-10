@@ -161,7 +161,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:    "Happy Path",
 			request: happyReq,
 			expected: &updateServiceParams{
-				mask: happyReq.UpdateMask,
+				mask: happyReq.UpdateMask.Paths,
 				service: &model.Service{
 					ID:   uuid.MustParse(happyReq.Service.Id),
 					Name: happyReq.Service.Name,
@@ -173,7 +173,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:    "Happy Path Without Service ID",
 			request: happyReqWithoutServiceID,
 			expected: &updateServiceParams{
-				mask: happyReqWithoutServiceID.UpdateMask,
+				mask: happyReqWithoutServiceID.UpdateMask.Paths,
 				service: &model.Service{
 					ID:   uuid.Nil,
 					Name: happyReqWithoutServiceID.Service.Name,
@@ -186,7 +186,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:    "Happy Path Without Service",
 			request: happyReqWithoutService,
 			expected: &updateServiceParams{
-				mask:    happyReqWithoutService.UpdateMask,
+				mask:    happyReqWithoutService.UpdateMask.Paths,
 				service: nil,
 			},
 		},
@@ -237,7 +237,7 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 
 	randParams := func() *updateServiceParams {
 		return &updateServiceParams{
-			mask:    &fieldmaskpb.FieldMask{Paths: []string{"name"}},
+			mask:    []string{"name"},
 			service: randService(),
 		}
 	}
@@ -309,7 +309,7 @@ func Test_UpdateServiceFromParams(t *testing.T) {
 
 	randParams := func(originalId uuid.UUID) *updateServiceParams {
 		return &updateServiceParams{
-			mask:    &fieldmaskpb.FieldMask{Paths: []string{"name"}},
+			mask:    []string{"name"},
 			service: &model.Service{ID: originalId, Name: gofakeit.Name()},
 		}
 	}
@@ -320,7 +320,7 @@ func Test_UpdateServiceFromParams(t *testing.T) {
 	updateAllFields.mask = nil
 
 	nothingToUpdate := randParams(originalService3.ID)
-	nothingToUpdate.mask = &fieldmaskpb.FieldMask{Paths: []string{"random_path"}}
+	nothingToUpdate.mask = []string{"random_path"}
 
 	tests := []struct {
 		params          *updateServiceParams

@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
@@ -122,35 +121,32 @@ func (t *TranslateServiceServer) CreateService(
 // ---------------------UpdateService-------------------------------
 
 type updateServiceParams struct {
-	mask    *fieldmaskpb.FieldMask
 	service *model.Service
+	mask    model.FieldMask
 }
 
 func parseUpdateServiceParams(req *translatev1.UpdateServiceRequest) (*updateServiceParams, error) {
 	var (
 		params updateServiceParams
 		err    error
+
+		reqService    = req.GetService()
+		reqUpdateMask = req.GetUpdateMask()
 	)
 
-	params.service, err = serviceFromProto(req.GetService())
+	// Parse service
+	params.service, err = serviceFromProto(reqService)
 	if err != nil {
 		return nil, fmt.Errorf("parse service: %w", err)
 	}
 
-	reqMask := req.GetUpdateMask()
-	if reqMask == nil {
-		return &params, nil
+	// Parse field mask (if any)
+	if reqUpdateMask != nil {
+		params.mask, err = parseFieldMask(reqService, reqUpdateMask.Paths)
+		if err != nil {
+			return nil, fmt.Errorf("parse field mask: %w", err)
+		}
 	}
-
-	params.mask, err = fieldmaskpb.New(req.Service, reqMask.Paths...)
-	if err != nil {
-		return nil, fmt.Errorf("parse field mask: %w", err)
-	}
-
-	// Normalize sorts paths, removes duplicates, and removes sub-paths when possible.
-	// e.g. if a field mask contains the paths foo.bar and foo,
-	// the path foo.bar is redundant because it is already covered by the path foo
-	params.mask.Normalize()
 
 	return &params, nil
 }
@@ -177,7 +173,7 @@ func updateServiceFromParams(service *model.Service, reqParams *updateServicePar
 	updatedService := *service
 
 	// Replace service resource's fields with the new ones from request (PATCH)
-	for _, path := range reqParams.mask.Paths {
+	for _, path := range reqParams.mask {
 		switch path {
 		default:
 			// noop
