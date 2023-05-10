@@ -1,13 +1,17 @@
 package translate
 
 import (
+	"math/rand"
+	"reflect"
 	"testing"
 	"testing/quick"
 
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
+	"golang.org/x/text/language"
 )
 
 func Test_TransformUUID(t *testing.T) {
@@ -36,6 +40,25 @@ func Test_TransformUUID(t *testing.T) {
 
 		assert.Equal(t, expectedID, restoredID)
 	})
+}
+
+func Test_TransformLangTag(t *testing.T) {
+	t.Parallel()
+
+	conf := &quick.Config{
+		MaxCount: 1000,
+		Values: func(values []reflect.Value, _ *rand.Rand) {
+			values[0] = reflect.ValueOf(language.MustParse(gofakeit.LanguageBCP()))
+		},
+	}
+
+	f := func(expectedLangTag language.Tag) bool {
+		restoredLangTag, err := langTagFromProto(langTagToProto(expectedLangTag))
+
+		return assert.NoError(t, err) && assert.Equal(t, expectedLangTag, restoredLangTag)
+	}
+
+	assert.NoError(t, quick.Check(f, conf))
 }
 
 func Test_TransformService(t *testing.T) {

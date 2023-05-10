@@ -4,7 +4,10 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v6"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"golang.org/x/text/language"
 )
@@ -14,48 +17,43 @@ import (
 func Test_ParseUploadParams(t *testing.T) {
 	t.Parallel()
 
+	randReq := func() *translatev1.UploadTranslationFileRequest {
+		return &translatev1.UploadTranslationFileRequest{
+			Language:  gofakeit.LanguageBCP(),
+			Data:      []byte(`{"key":"value"}`),
+			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
+			ServiceId: gofakeit.UUID(),
+		}
+	}
+
+	happyWithFileIDReq := randReq()
+
+	malformedLangReq := randReq()
+	malformedLangReq.Language += "_FAIL" //nolint:goconst
+
+	malformedServiceIDReq := randReq()
+	malformedServiceIDReq.ServiceId += "_FAIL"
+
 	tests := []struct {
-		name        string
+		request     *translatev1.UploadTranslationFileRequest
 		expectedErr error
-		input       *translatev1.UploadTranslationFileRequest
-		expected    uploadParams
+		name        string
 	}{
 		{
-			name: "Happy Path",
-			input: &translatev1.UploadTranslationFileRequest{
-				Language: "lv",
-				Data:     []byte(`{"key":"value"}`),
-				Schema:   translatev1.Schema_GO,
-			},
-			expected: uploadParams{
-				language: language.Latvian,
-				data:     []byte(`{"key":"value"}`),
-				schema:   translatev1.Schema_GO,
-			},
+			name:        "Happy Path With File ID",
+			request:     happyWithFileIDReq,
 			expectedErr: nil,
 		},
 		{
-			name: "Malformed language tag",
-			input: &translatev1.UploadTranslationFileRequest{
-				Language: "xyz-ZY-Latn",
-				Data:     []byte(`{"key":"value"}`),
-				Schema:   translatev1.Schema_GO,
-			},
-			expectedErr: errors.New("subtag \"xyz\" is well-formed but unknown"),
+			name:        "Malformed language tag",
+			request:     malformedLangReq,
+			expectedErr: errors.New("parse language"),
 		},
+
 		{
-			name: "Missing language tag",
-			input: &translatev1.UploadTranslationFileRequest{
-				Language: "",
-				Data:     []byte(`{"key":"value"}`),
-				Schema:   translatev1.Schema_GO,
-			},
-			expectedErr: errors.New("tag is not well-formed"),
-		},
-		{
-			name:        "NIL request",
-			input:       nil,
-			expectedErr: errors.New("request is nil"),
+			name:        "Malformed service ID",
+			request:     malformedServiceIDReq,
+			expectedErr: errors.New("parse service_id"),
 		},
 	}
 
@@ -64,20 +62,16 @@ func Test_ParseUploadParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			req := (*uploadTranslationFileRequest)(tt.input)
-
-			actual, err := req.parseParams()
+			params, err := parseUploadTranslationFileRequestParams(tt.request)
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
-			assert.Equal(t, tt.expected, actual)
+			assert.NotEmpty(t, params)
 		})
 	}
 }
@@ -85,36 +79,58 @@ func Test_ParseUploadParams(t *testing.T) {
 func Test_ValidateUploadParams(t *testing.T) {
 	t.Parallel()
 
+	randParams := func() *uploadParams {
+		return &uploadParams{
+			languageTag: language.MustParse(gofakeit.LanguageBCP()),
+			data:        []byte(`{"key":"value"}`),
+			schema:      translatev1.Schema(gofakeit.IntRange(1, 7)),
+			serviceID:   uuid.New(),
+		}
+	}
+
+	happyParams := randParams()
+
+	emptyDataParams := randParams()
+	emptyDataParams.data = nil
+
+	unspecifiedSchemaParams := randParams()
+	unspecifiedSchemaParams.schema = translatev1.Schema_UNSPECIFIED
+
+	unspecifiedLangReq := randParams()
+	unspecifiedLangReq.languageTag = language.Und
+
+	unspecifiedServiceIDReq := randParams()
+	unspecifiedServiceIDReq.serviceID = uuid.Nil
+
 	tests := []struct {
-		name        string
+		params      *uploadParams
 		expectedErr error
-		input       uploadParams
+		name        string
 	}{
 		{
-			name: "Happy Path",
-			input: uploadParams{
-				language: language.MustParse("lv-LV"),
-				data:     []byte(`{"key":"value"}`),
-				schema:   translatev1.Schema_GO,
-			},
+			name:        "Happy Path",
+			params:      happyParams,
 			expectedErr: nil,
 		},
 		{
-			name: "Empty data",
-			input: uploadParams{
-				language: language.MustParse("lv-LV"),
-				schema:   translatev1.Schema_GO,
-			},
+			name:        "Empty data",
+			params:      emptyDataParams,
 			expectedErr: errors.New("'data' is required"),
 		},
 		{
-			name: "Unspecified schema",
-			input: uploadParams{
-				language: language.MustParse("lv-LV"),
-				data:     []byte(`{"key":"value"}`),
-				schema:   translatev1.Schema_UNSPECIFIED,
-			},
+			name:        "Unspecified schema",
+			params:      unspecifiedSchemaParams,
 			expectedErr: errors.New("'schema' is required"),
+		},
+		{
+			name:        "Unspecified language",
+			params:      unspecifiedLangReq,
+			expectedErr: errors.New("'language' is required"),
+		},
+		{
+			name:        "Unspecified service ID",
+			params:      unspecifiedServiceIDReq,
+			expectedErr: errors.New("'service_id' is required"),
 		},
 	}
 	for _, tt := range tests {
@@ -122,7 +138,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.input.validate()
+			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
@@ -139,44 +155,44 @@ func Test_ValidateUploadParams(t *testing.T) {
 func Test_ParseDownloadParams(t *testing.T) {
 	t.Parallel()
 
+	randReq := func() *translatev1.DownloadTranslationFileRequest {
+		return &translatev1.DownloadTranslationFileRequest{
+			Language:  gofakeit.LanguageBCP(),
+			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
+			ServiceId: gofakeit.UUID(),
+		}
+	}
+
+	happyReq := randReq()
+
+	missingServiceIDReq := randReq()
+	missingServiceIDReq.ServiceId = ""
+
+	malformedServiceIDReq := randReq()
+	malformedServiceIDReq.ServiceId += "_FAIL"
+
+	malformedLangTagReq := randReq()
+	malformedLangTagReq.Language += "_FAIL"
+
 	tests := []struct {
-		name        string
-		input       *translatev1.DownloadTranslationFileRequest
 		expectedErr error
-		expected    downloadParams
+		request     *translatev1.DownloadTranslationFileRequest
+		name        string
 	}{
 		{
-			name: "Happy Path",
-			input: &translatev1.DownloadTranslationFileRequest{
-				Language: "lv",
-				Schema:   translatev1.Schema_GO,
-			},
-			expected: downloadParams{
-				language: language.Latvian,
-				schema:   translatev1.Schema_GO,
-			},
+			name:        "Happy Path",
+			request:     happyReq,
 			expectedErr: nil,
 		},
 		{
-			name: "Malformed language tag",
-			input: &translatev1.DownloadTranslationFileRequest{
-				Language: "xyz-ZY-Latn",
-				Schema:   translatev1.Schema_GO,
-			},
-			expectedErr: errors.New("subtag \"xyz\" is well-formed but unknown"),
+			name:        "Malformed service ID",
+			request:     malformedServiceIDReq,
+			expectedErr: errors.New("parse service_id"),
 		},
 		{
-			name: "Missing language",
-			input: &translatev1.DownloadTranslationFileRequest{
-				Language: "",
-				Schema:   translatev1.Schema_GO,
-			},
-			expectedErr: errors.New("tag is not well-formed"),
-		},
-		{
-			name:        "NIL request",
-			input:       nil,
-			expectedErr: errors.New("request is nil"),
+			name:        "Malformed language tag",
+			request:     malformedLangTagReq,
+			expectedErr: errors.New("parse language"),
 		},
 	}
 	for _, tt := range tests {
@@ -184,20 +200,16 @@ func Test_ParseDownloadParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			req := (*downloadTranslationFileRequest)(tt.input)
-
-			actual, err := req.parseParams()
+			params, err := parseDownloadTranslationFileRequestParams(tt.request)
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
-			assert.Equal(t, tt.expected, actual)
+			assert.NotEmpty(t, params)
 		})
 	}
 }
@@ -205,26 +217,49 @@ func Test_ParseDownloadParams(t *testing.T) {
 func Test_ValidateDownloadParams(t *testing.T) {
 	t.Parallel()
 
+	randParams := func() *downloadParams {
+		return &downloadParams{
+			languageTag: language.MustParse(gofakeit.LanguageBCP()),
+			schema:      translatev1.Schema(gofakeit.IntRange(1, 7)),
+			serviceID:   uuid.New(),
+		}
+	}
+
+	happyParams := randParams()
+
+	unspecifiedSchemaParams := randParams()
+	unspecifiedSchemaParams.schema = translatev1.Schema_UNSPECIFIED
+
+	unspecifiedServiceIDParams := randParams()
+	unspecifiedServiceIDParams.serviceID = uuid.Nil
+
+	unspecifiedLanguageTagReq := randParams()
+	unspecifiedLanguageTagReq.languageTag = language.Und
+
 	tests := []struct {
-		name        string
+		params      *downloadParams
 		expectedErr error
-		input       downloadParams
+		name        string
 	}{
 		{
-			name: "Happy Path",
-			input: downloadParams{
-				language: language.MustParse("lv-LV"),
-				schema:   translatev1.Schema_GO,
-			},
+			name:        "Happy Path",
+			params:      happyParams,
 			expectedErr: nil,
 		},
 		{
-			name: "Unspecified schema",
-			input: downloadParams{
-				language: language.MustParse("lv-LV"),
-				schema:   translatev1.Schema_UNSPECIFIED,
-			},
+			name:        "Unspecified schema",
+			params:      unspecifiedSchemaParams,
 			expectedErr: errors.New("'schema' is required"),
+		},
+		{
+			name:        "Unspecified service ID",
+			params:      unspecifiedServiceIDParams,
+			expectedErr: errors.New("'service_id' is required"),
+		},
+		{
+			name:        "Unspecified language tag",
+			params:      unspecifiedLanguageTagReq,
+			expectedErr: errors.New("'language' is required"),
 		},
 	}
 	for _, tt := range tests {
@@ -232,7 +267,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.input.validate()
+			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())

@@ -30,7 +30,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 	happyReqWithoutID.Id = ""
 
 	malformedIDReq := randReq()
-	malformedIDReq.Id += "_FAIL" //nolint:goconst
+	malformedIDReq.Id += "_FAIL"
 
 	tests := []struct {
 		expected    *getServiceParams
@@ -129,7 +129,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 
 	randReq := func() *translatev1.UpdateServiceRequest {
 		return &translatev1.UpdateServiceRequest{
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: gofakeit.NiceColors()},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"name"}},
 			Service:    serviceToProto(randService()),
 		}
 	}
@@ -148,6 +148,9 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 	malformedIDReq := randReq()
 	malformedIDReq.Service.Id += "_FAIL"
 
+	invalidUpdateMaskPathParams := randReq()
+	invalidUpdateMaskPathParams.UpdateMask.Paths = gofakeit.NiceColors()
+
 	tests := []struct {
 		expected    *updateServiceParams
 		expectedErr error
@@ -158,7 +161,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:    "Happy Path",
 			request: happyReq,
 			expected: &updateServiceParams{
-				mask: happyReq.UpdateMask,
+				mask: happyReq.UpdateMask.Paths,
 				service: &model.Service{
 					ID:   uuid.MustParse(happyReq.Service.Id),
 					Name: happyReq.Service.Name,
@@ -170,7 +173,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:    "Happy Path Without Service ID",
 			request: happyReqWithoutServiceID,
 			expected: &updateServiceParams{
-				mask: happyReqWithoutServiceID.UpdateMask,
+				mask: happyReqWithoutServiceID.UpdateMask.Paths,
 				service: &model.Service{
 					ID:   uuid.Nil,
 					Name: happyReqWithoutServiceID.Service.Name,
@@ -183,7 +186,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:    "Happy Path Without Service",
 			request: happyReqWithoutService,
 			expected: &updateServiceParams{
-				mask:    happyReqWithoutService.UpdateMask,
+				mask:    happyReqWithoutService.UpdateMask.Paths,
 				service: nil,
 			},
 		},
@@ -202,6 +205,11 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:        "Malformed Service ID",
 			request:     malformedIDReq,
 			expectedErr: errors.New("invalid UUID length"),
+		},
+		{
+			name:        "Invalid Update Mask Path",
+			request:     invalidUpdateMaskPathParams,
+			expectedErr: errors.New("invalid path"),
 		},
 	}
 
@@ -229,7 +237,7 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 
 	randParams := func() *updateServiceParams {
 		return &updateServiceParams{
-			mask:    &fieldmaskpb.FieldMask{Paths: []string{"name"}},
+			mask:    []string{"name"},
 			service: randService(),
 		}
 	}
@@ -245,9 +253,6 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 	// when updating a service, the service.ID is required and validation fails without it.
 	missingServiceIDParams := randParams()
 	missingServiceIDParams.service.ID = uuid.Nil
-
-	invalidUpdateMaskPathParams := randParams()
-	invalidUpdateMaskPathParams.mask.Paths = gofakeit.NiceColors()
 
 	tests := []struct {
 		params      *updateServiceParams
@@ -273,11 +278,6 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 			name:        "Missing Service ID",
 			params:      missingServiceIDParams,
 			expectedErr: errors.New("'service.id' is required"),
-		},
-		{
-			name:        "Invalid Update Mask Path",
-			params:      invalidUpdateMaskPathParams,
-			expectedErr: errors.New("not a valid service field"),
 		},
 	}
 
