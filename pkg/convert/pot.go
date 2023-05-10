@@ -38,7 +38,7 @@ func ToPot(m model.Messages) ([]byte, error) {
 }
 
 func FromPot(b []byte) (model.Messages, error) {
-	pluralCountLimit := 2
+	const pluralCountLimit = 2
 
 	tokens, err := pot.Lex(bytes.NewReader(b))
 	if err != nil {
