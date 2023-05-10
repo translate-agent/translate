@@ -9,6 +9,7 @@ type Messages struct {
 
 type Message struct {
 	ID          string
+	PluralID    string
 	Message     string
 	Description string
 	Fuzzy       bool
