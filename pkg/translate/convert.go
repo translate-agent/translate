@@ -9,6 +9,8 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
+var errUnspecifiedSchema = errors.New("unspecified schema")
+
 // MessagesFromData converts in specific schema serialized data to model.Messages.
 func MessagesFromData(schema translatev1.Schema, data []byte) (*model.Messages, error) {
 	var from func([]byte) (model.Messages, error)
@@ -29,7 +31,7 @@ func MessagesFromData(schema translatev1.Schema, data []byte) (*model.Messages, 
 	case translatev1.Schema_XLIFF_12:
 		from = convert.FromXliff12
 	case translatev1.Schema_UNSPECIFIED:
-		return nil, errors.New("unspecified schema")
+		return nil, errUnspecifiedSchema
 	}
 
 	messages, err := from(data)
@@ -60,7 +62,7 @@ func MessagesToData(schema translatev1.Schema, messages *model.Messages) ([]byte
 	case translatev1.Schema_XLIFF_12:
 		to = convert.ToXliff12
 	case translatev1.Schema_UNSPECIFIED:
-		return nil, fmt.Errorf("unspecified schema")
+		return nil, errUnspecifiedSchema
 	}
 
 	// Prevent nil pointer dereference.
