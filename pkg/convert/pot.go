@@ -96,7 +96,7 @@ func writeToPoTag(b *bytes.Buffer, tag poTag, str string) error {
 }
 
 func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
-	text := ""
+	var text strings.Builder
 
 	nodes, err := messageformat.Parse(str)
 	if err != nil {
@@ -109,14 +109,14 @@ func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
 			return errors.New("convert node to messageformat.NodeText")
 		}
 
-		text += (nodeTxt.Text)
+		text.WriteString(nodeTxt.Text)
 	}
 
-	if text == "" {
-		text = str
+	if text.String() == "" {
+		text.WriteString(str)
 	}
 
-	lines := getPoTagLines(text)
+	lines := getPoTagLines(text.String())
 
 	if len(lines) == 1 {
 		if _, err = fmt.Fprintf(b, "%s \"%s\"\n", tag, lines[0]); err != nil {
