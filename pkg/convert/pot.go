@@ -53,10 +53,6 @@ func FromPot(b []byte) (model.Messages, error) {
 	messages := make([]model.Message, 0, len(po.Messages))
 
 	for _, node := range po.Messages {
-		if len(node.MsgStr) == 1 && node.MsgStr[0] == "\n" {
-			node.MsgStr[0] = "" // Remove the single newline element
-		}
-
 		message := model.Message{
 			ID:          node.MsgId,
 			PluralID:    node.MsgIdPlural,
@@ -96,7 +92,7 @@ func writeToPoTag(b *bytes.Buffer, tag poTag, str string) error {
 }
 
 func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
-	text := ""
+	var text strings.Builder
 
 	nodes, err := messageformat.Parse(str)
 	if err != nil {
@@ -109,14 +105,14 @@ func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
 			return errors.New("convert node to messageformat.NodeText")
 		}
 
-		text += (nodeTxt.Text)
+		text.WriteString(nodeTxt.Text)
 	}
 
-	if text == "" {
-		text = str
+	if text.String() == "" {
+		text.WriteString(str)
 	}
 
-	lines := getPoTagLines(text)
+	lines := getPoTagLines(text.String())
 
 	if len(lines) == 1 {
 		if _, err = fmt.Fprintf(b, "%s \"%s\"\n", tag, lines[0]); err != nil {
@@ -221,10 +217,6 @@ func getPoTagLines(str string) []string {
 	// Remove the empty string element. The line is empty when splitting by "\\n" and "\n" is the last character in str.
 	if lines[len(lines)-1] == "" {
 		lines = lines[:len(lines)-1]
-		if len(lines) == 0 {
-			lines = append(lines, "")
-		}
-
 		lines[len(lines)-1] += "\\n" // add the "\n" back to the last line
 	}
 
