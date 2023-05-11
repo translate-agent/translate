@@ -2,6 +2,7 @@ package pot
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -52,6 +53,9 @@ var validPrefixes = []string{
 	"#| msgctxt ",
 	"#| msgid_plural ",
 	"#| msgid ",
+	"\"Language",
+	"\"Plural-Forms",
+	"\"Translator",
 }
 
 func Lex(r io.Reader) ([]Token, error) {
@@ -83,11 +87,11 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 	}
 
 	switch {
-	case strings.HasPrefix(line, "# Language:"):
+	case strings.HasPrefix(line, "\"Language:"):
 		return parseToken(line, HeaderLanguage)
-	case strings.HasPrefix(line, "# Plural-Forms:"):
+	case strings.HasPrefix(line, "\"Plural-Forms:"):
 		return parseToken(line, HeaderPluralForms)
-	case strings.HasPrefix(line, "# Translator:"):
+	case strings.HasPrefix(line, "\"Translator:"):
 		return parseToken(line, HeaderTranslator)
 	case strings.HasPrefix(line, "msgctxt"):
 		return parseToken(line, MsgCtxt)
@@ -116,7 +120,7 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 	case strings.HasPrefix(line, `"`):
 		return parseMultilineToken(line, tokens)
 	default:
-		return nil, fmt.Errorf("incorrect format of po tags")
+		return nil, errors.New("incorrect format of po tags")
 	}
 }
 
@@ -167,7 +171,7 @@ func parseCommentToken(line string, tokenType tokenType) (*Token, error) {
 
 func parseMsgString(line string) (string, error) {
 	if !hasValidPrefix(line) {
-		return "", fmt.Errorf("incorrect format of po tags")
+		return "", errors.New("incorrect format of po tags")
 	}
 
 	subStrN := 2
@@ -176,6 +180,9 @@ func parseMsgString(line string) (string, error) {
 	if strings.HasPrefix(tokenValue, `"`) && strings.HasSuffix(tokenValue, `"`) {
 		// Remove the quotes and any escaped quotes
 		tokenValue = strings.ReplaceAll(tokenValue[1:len(tokenValue)-1], `\"`, `"`)
+	} else if strings.HasSuffix(tokenValue, "\\n\"") {
+		tokenValue = strings.ReplaceAll(tokenValue[:len(tokenValue)-2], "\\", ``)
+		tokenValue = strings.TrimSpace(tokenValue)
 	}
 
 	return tokenValue, nil

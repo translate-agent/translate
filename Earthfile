@@ -1,24 +1,26 @@
 VERSION 0.7
 
+ARG --global USERARCH
+
 ARG --global go_version=1.20.4
 ARG --global golangci_lint_version=1.52.2
-ARG --global bufbuild_version=1.17.0
+ARG --global bufbuild_version=1.18.0
 ARG --global migrate_version=4.15.2
-ARG --global sqlfluff_version=2.0.7
+ARG --global sqlfluff_version=2.1.0
 
-FROM golang:$go_version-alpine
+FROM --platform=linux/$USERARCH golang:$go_version-alpine
 
 deps:
   WORKDIR /translate
   COPY go.mod go.sum .
-  RUN go mod download
+  RUN --mount=type=cache,target=/go/pkg/mod go mod download
   SAVE ARTIFACT go.mod AS LOCAL go.mod
   SAVE ARTIFACT go.sum AS LOCAL go.sum
 
 go:
   FROM +deps
   COPY --dir cmd pkg .
-  COPY +proto/translate/v1/* pkg/pb/translate/v1
+  COPY --platform=linux/$USERARCH +proto/translate/v1/* pkg/pb/translate/v1
   SAVE ARTIFACT /translate 
 
 proto:
@@ -44,6 +46,7 @@ proto:
   ' gen/proto/go/translate/v1/translate.pb.gw.go
 
   RUN rm gen/proto/go/translate/v1/translate.pb.gw.go.bak
+  SAVE ARTIFACT . proto
   SAVE ARTIFACT gen/proto/go/translate/v1 translate/v1 AS LOCAL pkg/pb/translate/v1
 
 # migrate runs DDL migration scripts against the given database.
@@ -58,7 +61,7 @@ migrate:
   WORKDIR /migrations
   COPY migrate/$db/* /migrations
   RUN --push --secret=db_password \
-    if [[ $db = "mysql"]]; then migrate -path=. -database "$db://$db_user:$db_password@tcp($db_host:$db_port)/$db_schema" $cmd; fi
+    if [[ $db = "mysql" ]]; then yes | migrate -path=. -database "$db://$db_user:$db_password@tcp($db_host:$db_port)/$db_schema" $cmd; fi
 
 # -----------------------Linting-----------------------
 
@@ -77,12 +80,9 @@ lint-go:
 
 lint-proto:
   FROM bufbuild/buf:$bufbuild_version
-  ENV BUF_CACHE_DIR=/.cache/buf_cache
-  COPY --dir proto .
   WORKDIR proto
-  RUN \
-    --mount=type=cache,target=$BUF_CACHE_DIR \
-      buf mod update && buf lint
+  COPY +proto/proto .
+  RUN buf lint
 
 lint:
   BUILD +lint-go
@@ -130,3 +130,32 @@ test-integration:
 test:
   BUILD +test-unit
   BUILD +test-integration
+
+# -----------------------Building-----------------------
+
+build:
+  ARG GOARCH=$USERARCH
+  ENV CGO_ENABLED=0 
+  COPY --platform=linux/$USERARCH +go/translate translate
+  WORKDIR translate
+  RUN \
+  --mount=type=cache,target=/go/pkg/mod \
+  --mount=type=cache,target=/root/.cache/go-build \
+    go build -o translate cmd/translate/main.go
+  SAVE ARTIFACT translate bin/translate
+
+image:
+  ARG TARGETARCH
+  ARG --required registry
+  ARG tag=latest
+  FROM alpine
+  COPY --platform=linux/$USERARCH (+build/bin/translate --GOARCH=$TARGETARCH) /translate
+  ENTRYPOINT ["/translate"]
+  SAVE IMAGE --push $registry/translate:$tag
+
+image-multiplatform:
+  ARG --required registry
+  BUILD \
+  --platform=linux/amd64 \
+  --platform=linux/arm64 \
+  +image --registry=$registry \

@@ -20,6 +20,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
@@ -90,6 +91,11 @@ var rootCmd = &cobra.Command{
 		}
 
 		translatev1.RegisterTranslateServiceServer(grpcServer, translate.NewTranslateServiceServer(repository))
+
+		// gRPC Server Reflection provides information about publicly-accessible gRPC services on a server,
+		// and assists clients at runtime to construct RPC requests and responses without precompiled service information.
+		// https://github.com/grpc/grpc-go/blob/master/Documentation/server-reflection-tutorial.md
+		reflection.Register(grpcServer)
 
 		err = translatev1.RegisterTranslateServiceHandlerFromEndpoint(
 			ctx,
