@@ -751,8 +751,8 @@ func Test_TransformMessage(t *testing.T) {
 
 	for i := 0; i < n; i++ {
 		msg.Messages = append(msg.Messages, model.Message{
-			ID:          "gofakeit.SentenceSimple()",
-			Description: "gofakeit.SentenceSimple()",
+			ID:          gofakeit.SentenceSimple(),
+			Description: gofakeit.SentenceSimple(),
 		},
 		)
 	}
