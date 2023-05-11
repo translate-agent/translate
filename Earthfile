@@ -61,7 +61,7 @@ migrate:
   WORKDIR /migrations
   COPY migrate/$db/* /migrations
   RUN --push --secret=db_password \
-    if [[ $db = "mysql"]]; then migrate -path=. -database "$db://$db_user:$db_password@tcp($db_host:$db_port)/$db_schema" $cmd; fi
+    if [[ $db = "mysql" ]]; then yes | migrate -path=. -database "$db://$db_user:$db_password@tcp($db_host:$db_port)/$db_schema" $cmd; fi
 
 # -----------------------Linting-----------------------
 
