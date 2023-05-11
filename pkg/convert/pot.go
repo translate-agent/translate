@@ -53,10 +53,6 @@ func FromPot(b []byte) (model.Messages, error) {
 	messages := make([]model.Message, 0, len(po.Messages))
 
 	for _, node := range po.Messages {
-		if len(node.MsgStr) == 1 && node.MsgStr[0] == "\n" {
-			node.MsgStr[0] = "" // Remove the single newline element
-		}
-
 		message := model.Message{
 			ID:          node.MsgId,
 			PluralID:    node.MsgIdPlural,
@@ -220,12 +216,12 @@ func getPoTagLines(str string) []string {
 
 	// Remove the empty string element. The line is empty when splitting by "\\n" and "\n" is the last character in str.
 	if lines[len(lines)-1] == "" {
-		lines = lines[:len(lines)-1]
-		if len(lines) == 0 {
-			lines = append(lines, "")
+		if len(lines) == 1 {
+			return lines
+		} else {
+			lines = lines[:len(lines)-1]
+			lines[len(lines)-1] += "\\n" // add the "\n" back to the last line
 		}
-
-		lines[len(lines)-1] += "\\n" // add the "\n" back to the last line
 	}
 
 	return lines
