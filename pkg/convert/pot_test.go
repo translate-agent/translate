@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v6"
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
@@ -732,4 +735,33 @@ when * {Il y a {$count} pommes.}
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func Test_TransformMessage(t *testing.T) {
+	t.Parallel()
+
+	n := gofakeit.IntRange(1, 3)
+
+	lang := language.MustParse(gofakeit.LanguageBCP())
+
+	msg := model.Messages{
+		Language: lang,
+		Messages: make([]model.Message, 0, n),
+	}
+
+	for i := 0; i < n; i++ {
+		msg.Messages = append(msg.Messages, model.Message{
+			ID:          "gofakeit.SentenceSimple()",
+			Description: "gofakeit.SentenceSimple()",
+		},
+		)
+	}
+
+	msgPot, err := ToPot(msg)
+	require.NoError(t, err)
+
+	restoredMsg, err := FromPot(msgPot)
+	require.NoError(t, err)
+
+	assert.Equal(t, msg, restoredMsg)
 }
