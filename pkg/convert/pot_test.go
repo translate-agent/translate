@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v6"
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
@@ -561,6 +564,98 @@ func TestFromPot(t *testing.T) {
 			},
 		},
 		{
+			name: "fuzzy param before empty id",
+			input: []byte(`#, fuzzy
+							msgid ""
+							msgstr ""
+							"Language: en\n"
+							#. a greeting
+							msgid "Hello"
+							msgstr "Hello, world!"
+
+							#. a farewell
+							msgid "Goodbye"
+							msgstr "Goodbye, world!"
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello",
+						Message:     "Hello, world!",
+						Description: "a greeting",
+						Fuzzy:       true,
+					},
+					{
+						ID:          "Goodbye",
+						Message:     "Goodbye, world!",
+						Description: "a farewell",
+						Fuzzy:       false,
+					},
+				},
+			},
+		},
+		{
+			name: "msgid and msgstr empty headers",
+			input: []byte(`#, fuzzy
+							"Language: en\n"
+							#. a greeting
+							msgid "Hello"
+							msgstr "Hello, world!"
+
+							#. a farewell
+							msgid "Goodbye"
+							msgstr "Goodbye, world!"
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello",
+						Message:     "Hello, world!",
+						Description: "a greeting",
+						Fuzzy:       true,
+					},
+					{
+						ID:          "Goodbye",
+						Message:     "Goodbye, world!",
+						Description: "a farewell",
+						Fuzzy:       false,
+					},
+				},
+			},
+		},
+		{
+			name: "if empty msgstr missing",
+			input: []byte(`msgid ""
+							"Language: en\n"
+							#. a greeting
+							msgid "Hello"
+							msgstr "Hello, world!"
+
+							#. a farewell
+							msgid "Goodbye"
+							msgstr "Goodbye, world!"
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello",
+						Message:     "Hello, world!",
+						Description: "a greeting",
+						Fuzzy:       false,
+					},
+					{
+						ID:          "Goodbye",
+						Message:     "Goodbye, world!",
+						Description: "a farewell",
+						Fuzzy:       false,
+					},
+				},
+			},
+		},
+		{
 			name: "multiline description",
 			input: []byte(`msgid ""
 							msgstr ""
@@ -714,6 +809,20 @@ when * {Il y a {$count} pommes.}
 			`),
 			expectedErr: fmt.Errorf("convert tokens to pot.Po: invalid po file: no messages found"),
 		},
+		{
+			name: "msgid before empty msgstr is missing",
+			input: []byte(`msgstr ""
+							"Language: en\n"
+							#. a greeting
+							msgid "Hello"
+							msgstr "Hello, world!"
+
+							#. a farewell
+							msgid "Goodbye"
+							msgstr "Goodbye, world!"
+			`),
+			expectedErr: fmt.Errorf("convert tokens to pot.Po: get previous token: no previous token"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -732,4 +841,33 @@ when * {Il y a {$count} pommes.}
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func Test_TransformMessage(t *testing.T) {
+	t.Parallel()
+
+	n := gofakeit.IntRange(1, 5)
+
+	lang := language.MustParse(gofakeit.LanguageBCP())
+
+	msg := model.Messages{
+		Language: lang,
+		Messages: make([]model.Message, 0, n),
+	}
+
+	for i := 0; i < n; i++ {
+		msg.Messages = append(msg.Messages, model.Message{
+			ID:          gofakeit.SentenceSimple(),
+			Description: gofakeit.SentenceSimple(),
+		},
+		)
+	}
+
+	msgPot, err := ToPot(msg)
+	require.NoError(t, err)
+
+	restoredMsg, err := FromPot(msgPot)
+	require.NoError(t, err)
+
+	assert.Equal(t, msg, restoredMsg)
 }
