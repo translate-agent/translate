@@ -133,26 +133,29 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			expectedCode: http.StatusNotFound,
 		},
 	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+	t.Run("sub_tests", func(t *testing.T) {
+		for _, tt := range tests {
+			tt := tt
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, tt.request))
-			require.NoError(t, err, "do request")
+				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+				defer span.End()
 
-			defer resp.Body.Close()
+				resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, tt.request))
+				require.NoError(t, err, "do request")
 
-			// Read the response to give error message on failure
-			respBody, _ := ioutil.ReadAll(resp.Body)
+				defer resp.Body.Close()
 
-			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", string(respBody))
-		})
-	}
+				// Read the response to give error message on failure
+				respBody, _ := ioutil.ReadAll(resp.Body)
+
+				actualCode := resp.StatusCode
+				assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", string(respBody))
+			})
+		}
+	})
 }
 
 func Test_UploadTranslationFileDifferentLanguages_REST(t *testing.T) {
@@ -269,24 +272,27 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			expectedCode: http.StatusBadRequest,
 		},
 	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+	t.Run("sub_tests", func(t *testing.T) {
+		for _, tt := range tests {
+			tt := tt
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			resp, err := otelhttp.DefaultClient.Do(gRPCDownloadFileToRESTReq(ctx, t, tt.request))
-			require.NoError(t, err, "do request")
+				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+				defer span.End()
 
-			defer resp.Body.Close()
-			respBody, _ := ioutil.ReadAll(resp.Body)
+				resp, err := otelhttp.DefaultClient.Do(gRPCDownloadFileToRESTReq(ctx, t, tt.request))
+				require.NoError(t, err, "do request")
 
-			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", string(respBody))
-		})
-	}
+				defer resp.Body.Close()
+				respBody, _ := ioutil.ReadAll(resp.Body)
+
+				actualCode := resp.StatusCode
+				assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", string(respBody))
+			})
+		}
+	})
 }
 
 // ------------------Service------------------
@@ -328,36 +334,38 @@ func Test_CreateService_REST(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	t.Run("sub_tests", func(t *testing.T) {
+		for _, tt := range tests {
+			tt := tt
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+				defer span.End()
 
-			body, err := json.Marshal(tt.service)
-			require.NoError(t, err, "marshal service")
+				body, err := json.Marshal(tt.service)
+				require.NoError(t, err, "marshal service")
 
-			u := url.URL{
-				Scheme: "http",
-				Host:   host + ":" + port,
-				Path:   "v1/services",
-			}
+				u := url.URL{
+					Scheme: "http",
+					Host:   host + ":" + port,
+					Path:   "v1/services",
+				}
 
-			req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(body))
-			require.NoError(t, err, "create request")
+				req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(body))
+				require.NoError(t, err, "create request")
 
-			resp, err := otelhttp.DefaultClient.Do(req)
-			require.NoError(t, err, "do request")
+				resp, err := otelhttp.DefaultClient.Do(req)
+				require.NoError(t, err, "do request")
 
-			defer resp.Body.Close()
+				defer resp.Body.Close()
 
-			actualCode := resp.StatusCode
+				actualCode := resp.StatusCode
 
-			assert.Equal(t, int(tt.expectedCode), actualCode)
-		})
-	}
+				assert.Equal(t, int(tt.expectedCode), actualCode)
+			})
+		}
+	})
 }
 
 type restUpdateBody struct {
@@ -470,32 +478,34 @@ func Test_GetService_REST(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	t.Run("sub_tests", func(t *testing.T) {
+		for _, tt := range tests {
+			tt := tt
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+				defer span.End()
 
-			u := url.URL{
-				Scheme: "http",
-				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.service.Id,
-			}
+				u := url.URL{
+					Scheme: "http",
+					Host:   host + ":" + port,
+					Path:   "v1/services/" + tt.service.Id,
+				}
 
-			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
-			require.NoError(t, err, "create request")
+				req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+				require.NoError(t, err, "create request")
 
-			resp, err := otelhttp.DefaultClient.Do(req)
-			require.NoError(t, err, "do request")
+				resp, err := otelhttp.DefaultClient.Do(req)
+				require.NoError(t, err, "do request")
 
-			defer resp.Body.Close()
+				defer resp.Body.Close()
 
-			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode)
-		})
-	}
+				actualCode := resp.StatusCode
+				assert.Equal(t, int(tt.expectedCode), actualCode)
+			})
+		}
+	})
 }
 
 // DELETE.
@@ -528,32 +538,34 @@ func Test_DeleteService_REST(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	t.Run("sub_tests", func(t *testing.T) {
+		for _, tt := range tests {
+			tt := tt
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+				defer span.End()
 
-			u := url.URL{
-				Scheme: "http",
-				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.service.Id,
-			}
+				u := url.URL{
+					Scheme: "http",
+					Host:   host + ":" + port,
+					Path:   "v1/services/" + tt.service.Id,
+				}
 
-			req, err := http.NewRequestWithContext(ctx, "DELETE", u.String(), nil)
-			require.NoError(t, err, "create request")
+				req, err := http.NewRequestWithContext(ctx, "DELETE", u.String(), nil)
+				require.NoError(t, err, "create request")
 
-			resp, err := otelhttp.DefaultClient.Do(req)
-			require.NoError(t, err, "do request")
+				resp, err := otelhttp.DefaultClient.Do(req)
+				require.NoError(t, err, "do request")
 
-			defer resp.Body.Close()
+				defer resp.Body.Close()
 
-			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode)
-		})
-	}
+				actualCode := resp.StatusCode
+				assert.Equal(t, int(tt.expectedCode), actualCode)
+			})
+		}
+	})
 }
 
 // GET (list).

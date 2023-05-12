@@ -196,20 +196,26 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	// NOTE: Wrap in t.Run to ensure that the sub-tests are finished before main test finishes.
+	// Without wrapping in t.Run, the parent test function returns before the sub-tests are finished,
+	// resulting in parent span to close before sub-spans are finished.
+	// https://pkg.go.dev/testing#hdr-sub_tests_and_Sub_benchmarks
+	t.Run("sub_tests", func(t *testing.T) {
+		for _, tt := range tests {
+			tt := tt
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+				defer span.End()
 
-			_, err := client.UploadTranslationFile(ctx, tt.request)
+				_, err := client.UploadTranslationFile(ctx, tt.request)
 
-			actualCode := status.Code(err)
-			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
-		})
-	}
+				actualCode := status.Code(err)
+				assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
+			})
+		}
+	})
 }
 
 func Test_UploadTranslationFileDifferentLanguages_gRPC(t *testing.T) {
@@ -337,20 +343,22 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	t.Run("sub_tests", func(t *testing.T) {
+		for _, tt := range tests {
+			tt := tt
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+				defer span.End()
 
-			_, err := client.DownloadTranslationFile(ctx, tt.request)
+				_, err := client.DownloadTranslationFile(ctx, tt.request)
 
-			actualCode := status.Code(err)
-			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
-		})
-	}
+				actualCode := status.Code(err)
+				assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
+			})
+		}
+	})
 }
 
 // ------------------Service------------------
@@ -398,21 +406,23 @@ func Test_CreateService_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	t.Run("sub_tests", func(t *testing.T) {
+		for _, tt := range tests {
+			tt := tt
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+				defer span.End()
 
-			_, err := client.CreateService(ctx, tt.request)
+				_, err := client.CreateService(ctx, tt.request)
 
-			actualCode := status.Code(err)
+				actualCode := status.Code(err)
 
-			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
-		})
-	}
+				assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+			})
+		}
+	})
 }
 
 func Test_UpdateService_gRPC(t *testing.T) {
@@ -456,24 +466,26 @@ func Test_UpdateService_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range test {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	t.Run("sub_tests", func(t *testing.T) {
+		for _, tt := range test {
+			tt := tt
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+				defer span.End()
 
-			_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: tt.request.Service})
-			require.NoError(t, err, "Prepare test service")
+				_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: tt.request.Service})
+				require.NoError(t, err, "Prepare test service")
 
-			_, err = client.UpdateService(ctx, tt.request)
+				_, err = client.UpdateService(ctx, tt.request)
 
-			actualCode := status.Code(err)
+				actualCode := status.Code(err)
 
-			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
-		})
-	}
+				assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+			})
+		}
+	})
 }
 
 func Test_GetService_gRPC(t *testing.T) {
@@ -504,20 +516,22 @@ func Test_GetService_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	t.Run("sub_tests", func(t *testing.T) {
+		for _, tt := range tests {
+			tt := tt
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+				defer span.End()
 
-			_, err := client.GetService(ctx, tt.request)
+				_, err := client.GetService(ctx, tt.request)
 
-			actualCode := status.Code(err)
-			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
-		})
-	}
+				actualCode := status.Code(err)
+				assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+			})
+		}
+	})
 }
 
 func Test_DeleteService_gRPC(t *testing.T) {
@@ -548,20 +562,22 @@ func Test_DeleteService_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	t.Run("sub_tests", func(t *testing.T) {
+		for _, tt := range tests {
+			tt := tt
+			t.Run(tt.name, func(t *testing.T) {
+				t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
+				defer span.End()
 
-			_, err := client.DeleteService(ctx, tt.request)
+				_, err := client.DeleteService(ctx, tt.request)
 
-			actualCode := status.Code(err)
-			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
-		})
-	}
+				actualCode := status.Code(err)
+				assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+			})
+		}
+	})
 }
 
 func Test_ListServices_gRPC(t *testing.T) {
