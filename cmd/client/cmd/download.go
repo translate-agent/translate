@@ -15,10 +15,10 @@ import (
 
 // file formats.
 const (
-	arb  = ".arb"
-	json = ".json"
-	pot  = ".po"
-	xlf  = ".xlf"
+	arb  = "arb"
+	json = "json"
+	pot  = "po"
+	xlf  = "xlf"
 )
 
 func newDownloadCmd() *cobra.Command {
@@ -75,13 +75,13 @@ func newDownloadCmd() *cobra.Command {
 			case translatev1.Schema_UNSPECIFIED:
 				return errors.New("download file: unspecified file schema")
 			case translatev1.Schema_ARB:
-				fileName += arb
+				fileName += "." + arb
 			case translatev1.Schema_JSON_NG_LOCALIZE, translatev1.Schema_JSON_NGX_TRANSLATE, translatev1.Schema_GO:
-				fileName += json
+				fileName += "." + json
 			case translatev1.Schema_POT:
-				fileName += pot
+				fileName += "." + pot
 			case translatev1.Schema_XLIFF_12, translatev1.Schema_XLIFF_2:
-				fileName += xlf
+				fileName += "." + xlf
 			}
 
 			if err = os.WriteFile(filepath.Join(path, fileName), res.Data, 0644); err != nil { //nolint:gomnd,gofumpt,gosec
