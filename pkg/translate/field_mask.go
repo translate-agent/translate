@@ -42,14 +42,14 @@ func updateModelFromFieldMask[T any](dst, src *T, mask model.Mask) *T {
 
 	for _, path := range mask {
 		fields := strings.Split(path, ".")
-		updateField(fields, reflect.ValueOf(dst).Elem(), reflect.ValueOf(src).Elem())
+		updateField(reflect.ValueOf(dst).Elem(), reflect.ValueOf(src).Elem(), fields)
 	}
 
 	return dst
 }
 
 // updateField updates the dst value with the values from src, based on the fields slice.
-func updateField(fields []string, dst, src reflect.Value) {
+func updateField(dst, src reflect.Value, fields []string) {
 	if len(fields) == 0 {
 		return
 	}
@@ -70,7 +70,7 @@ func updateField(fields []string, dst, src reflect.Value) {
 			// If the field is a struct, and fields contains any sub-fields of a struct, recursively update the struct
 			// If fields contains only 1 element, that means that the struct itself should be updated
 			if len(fields) > 1 {
-				updateField(fields[1:], dstField, srcField)
+				updateField(dstField, srcField, fields[1:])
 			} else {
 				dstField.Set(srcField)
 			}
