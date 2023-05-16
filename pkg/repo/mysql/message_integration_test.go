@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
-	"go.opentelemetry.io/otel"
 	"golang.org/x/text/language"
 )
 
@@ -55,38 +54,48 @@ func requireEqualMessages(t *testing.T, expected, actual *model.Messages) {
 func Test_SaveMessages(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
-	service := prepareService(ctx, t)
-
-	tests := []struct {
+	type test struct {
 		name        string
 		serviceID   uuid.UUID
 		messages    *model.Messages
 		expectedErr error
-	}{
-		{
-			name:        "Happy path",
-			serviceID:   service.ID,
-			messages:    randMessages(),
-			expectedErr: nil,
-		},
-		{
-			name:        "Missing service",
-			serviceID:   uuid.New(),
-			messages:    randMessages(),
-			expectedErr: repo.ErrNotFound,
-		},
 	}
+
+	var tests []test
+
+	// Prepare
+	t.Run("Prepare Tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
+
+		service := prepareService(prepareCtx, t)
+
+		tests = []test{
+			{
+				name:        "Happy path",
+				serviceID:   service.ID,
+				messages:    randMessages(),
+				expectedErr: nil,
+			},
+			{
+				name:        "Missing service",
+				serviceID:   uuid.New(),
+				messages:    randMessages(),
+				expectedErr: repo.ErrNotFound,
+			},
+		}
+	})
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+			ctx, spanEnd := trace(ctx, t)
+			defer spanEnd()
 
 			err := repository.SaveMessages(ctx, tt.serviceID, tt.messages)
 
@@ -111,135 +120,172 @@ func Test_SaveMessages(t *testing.T) {
 func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
-	service := prepareService(ctx, t)
+	var (
+		service  *model.Service
+		messages []*model.Messages
+	)
 
-	count := gofakeit.IntRange(3, 5)
-	messages := make([]*model.Messages, 0, count)
+	// Prepare
+	t.Run("Prepare Tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-	languagesUsed := make(map[language.Tag]bool, count)
+		service = prepareService(prepareCtx, t)
 
-	// Create messages with different languages
-	for i := 0; i < count; i++ {
-		msg := randMessages()
+		count := gofakeit.IntRange(3, 5)
+		messages = make([]*model.Messages, 0, count)
 
-		// Make sure we don't use the same language twice.
-		for languagesUsed[msg.Language] {
-			msg = randMessages()
+		languagesUsed := make(map[language.Tag]bool, count)
+
+		// Create messages with different languages
+		for i := 0; i < count; i++ {
+			msg := randMessages()
+
+			// Make sure we don't use the same language twice.
+			for languagesUsed[msg.Language] {
+				msg = randMessages()
+			}
+
+			languagesUsed[msg.Language] = true
+			messages = append(messages, msg)
+		}
+	})
+
+	t.Run("Upload", func(t *testing.T) {
+		ctx, spanEnd := trace(ctx, t)
+		defer spanEnd()
+
+		// Save messages
+		for _, m := range messages {
+			err := repository.SaveMessages(ctx, service.ID, m)
+			require.NoError(t, err, "Save messages")
 		}
 
-		languagesUsed[msg.Language] = true
-		messages = append(messages, msg)
-	}
+		// Assure that all messages are saved
+		for _, m := range messages {
+			actualMessages, err := repository.LoadMessages(ctx, service.ID, m.Language)
+			require.NoError(t, err, "Load saved messages")
 
-	// Save messages
-	for _, m := range messages {
-		err := repository.SaveMessages(ctx, service.ID, m)
-		require.NoError(t, err, "Save messages")
-	}
-
-	// Assure that all messages are saved
-	for _, m := range messages {
-		actualMessages, err := repository.LoadMessages(ctx, service.ID, m.Language)
-		require.NoError(t, err, "Load saved messages")
-
-		requireEqualMessages(t, m, actualMessages)
-	}
+			requireEqualMessages(t, m, actualMessages)
+		}
+	})
 }
 
 func Test_SaveMessagesUpdate(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
+
+	var (
+		expectedMessages *model.Messages
+		service          *model.Service
+	)
 
 	// Prepare
+	t.Run("Prepare Tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-	service := prepareService(ctx, t)
+		service = prepareService(prepareCtx, t)
 
-	expectedMessages := randMessages()
+		expectedMessages = randMessages()
 
-	err := repository.SaveMessages(ctx, service.ID, expectedMessages)
-	require.NoError(t, err, "Save messages")
+		err := repository.SaveMessages(prepareCtx, service.ID, expectedMessages)
+		require.NoError(t, err, "Save messages")
+	})
 
-	// Actual Test
+	t.Run("Update", func(t *testing.T) {
+		ctx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-	// Update Message, Description and Fuzzy values, while keeping the ID
-	for i := range expectedMessages.Messages {
-		expectedMessages.Messages[i].Message = gofakeit.SentenceSimple()
-		expectedMessages.Messages[i].Description = gofakeit.SentenceSimple()
-		expectedMessages.Messages[i].Fuzzy = gofakeit.Bool()
+		// Update Message, Description and Fuzzy values, while keeping the ID
+		for i := range expectedMessages.Messages {
+			expectedMessages.Messages[i].Message = gofakeit.SentenceSimple()
+			expectedMessages.Messages[i].Description = gofakeit.SentenceSimple()
+			expectedMessages.Messages[i].Fuzzy = gofakeit.Bool()
+		}
 
-	}
+		// Save updated messages
 
-	// Save updated messages
+		err := repository.SaveMessages(ctx, service.ID, expectedMessages)
+		require.NoError(t, err, "Update messages")
 
-	err = repository.SaveMessages(ctx, service.ID, expectedMessages)
-	require.NoError(t, err, "Update messages")
+		// Assure that messages are updated
 
-	// Assure that messages are updated
+		actualMessages, err := repository.LoadMessages(ctx, service.ID, expectedMessages.Language)
+		require.NoError(t, err, "Load updated messages")
 
-	actualMessages, err := repository.LoadMessages(ctx, service.ID, expectedMessages.Language)
-	require.NoError(t, err, "Load updated messages")
-
-	requireEqualMessages(t, expectedMessages, actualMessages)
+		requireEqualMessages(t, expectedMessages, actualMessages)
+	})
 }
 
 func Test_LoadMessages(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
-	service := prepareService(ctx, t)
-
-	messages := randMessages()
-
-	err := repository.SaveMessages(ctx, service.ID, messages)
-	require.NoError(t, err, "Prepare test messages")
-
-	missingServiceID := uuid.New()
-	missingLang := language.MustParse(gofakeit.LanguageBCP())
-	// Make sure we don't use the same language as the message, since that would return not nil Messages.Messages.
-	for missingLang == messages.Language {
-		missingLang = language.MustParse(gofakeit.LanguageBCP())
-	}
-
-	tests := []struct {
+	type test struct {
 		expected  *model.Messages
 		name      string
 		serviceID uuid.UUID
 		language  language.Tag
-	}{
-		{
-			name:      "Happy Path",
-			expected:  messages,
-			serviceID: service.ID,
-			language:  messages.Language,
-		},
-		{
-			name:      "No messages with service",
-			serviceID: missingServiceID,
-			language:  messages.Language,
-			expected:  &model.Messages{Language: messages.Language, Messages: nil},
-		},
-		{
-			name:      "No messages with language",
-			serviceID: service.ID,
-			language:  missingLang,
-			expected:  &model.Messages{Language: missingLang, Messages: nil},
-		},
 	}
+
+	var tests []test
+
+	// Prepare
+	t.Run("Prepare Tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
+
+		service := prepareService(prepareCtx, t)
+
+		messages := randMessages()
+
+		err := repository.SaveMessages(prepareCtx, service.ID, messages)
+		require.NoError(t, err, "Prepare test messages")
+
+		missingServiceID := uuid.New()
+		missingLang := language.MustParse(gofakeit.LanguageBCP())
+		// Make sure we don't use the same language as the message, since that would return not nil Messages.Messages.
+		for missingLang == messages.Language {
+			missingLang = language.MustParse(gofakeit.LanguageBCP())
+		}
+
+		tests = []test{
+			{
+				name:      "Happy Path",
+				expected:  messages,
+				serviceID: service.ID,
+				language:  messages.Language,
+			},
+			{
+				name:      "No messages with service",
+				serviceID: missingServiceID,
+				language:  messages.Language,
+				expected:  &model.Messages{Language: messages.Language, Messages: nil},
+			},
+			{
+				name:      "No messages with language",
+				serviceID: service.ID,
+				language:  missingLang,
+				expected:  &model.Messages{Language: missingLang, Messages: nil},
+			},
+		}
+	})
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+			ctx, spanEnd := trace(ctx, t)
+			defer spanEnd()
 
 			actualMessages, err := repository.LoadMessages(ctx, tt.serviceID, tt.language)
 			require.NoError(t, err, "Load messages")

@@ -13,15 +13,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/tracer"
-	"go.opentelemetry.io/otel"
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-var repository *Repo
+var (
+	repository *Repo
+	testTracer oteltrace.Tracer
+)
 
-const name = "translate.repo.mysql.integration_test"
+const tracerName = "go.expect.digital/translate/pkg/repo/mysql"
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
@@ -35,6 +40,8 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Panicf("set tracer provider: %v", err)
 	}
+
+	testTracer = tp.Tracer(tracerName)
 
 	repository, err = NewRepo(WithDefaultDB(ctx))
 	if err != nil {
@@ -52,6 +59,10 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func trace(ctx context.Context, t *testing.T) (context.Context, func()) {
+	return testutil.Trace(ctx, t, testTracer)
+}
+
 func randService() *model.Service {
 	return &model.Service{
 		Name: gofakeit.FirstName(),
@@ -62,8 +73,8 @@ func randService() *model.Service {
 func Test_SaveService(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
 	tests := []struct {
 		service *model.Service
@@ -83,8 +94,8 @@ func Test_SaveService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+			ctx, spanEnd := trace(ctx, t)
+			defer spanEnd()
 
 			err := repository.SaveService(ctx, tt.service)
 			if !assert.NoError(t, err) {
@@ -105,71 +116,93 @@ func Test_SaveService(t *testing.T) {
 func Test_UpdateService(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
 	expectedService := randService()
 
-	err := repository.SaveService(ctx, expectedService)
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
+	// Prepare
+	t.Run("Prepare Tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-	// update service fields and save
-	expectedService.Name = gofakeit.FirstName()
+		err := repository.SaveService(prepareCtx, expectedService)
+		if !assert.NoError(t, err, "Prepare test data") {
+			return
+		}
+	})
 
-	err = repository.SaveService(ctx, expectedService)
-	if !assert.NoError(t, err) {
-		return
-	}
+	t.Run("Update", func(t *testing.T) {
+		ctx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-	// check if really updated
-	actualService, err := repository.LoadService(ctx, expectedService.ID)
-	if !assert.NoError(t, err) {
-		return
-	}
+		// update service fields and save
+		expectedService.Name = gofakeit.FirstName()
 
-	assert.Equal(t, expectedService, actualService)
+		err := repository.SaveService(ctx, expectedService)
+		if !assert.NoError(t, err) {
+			return
+		}
+
+		// check if really updated
+		actualService, err := repository.LoadService(ctx, expectedService.ID)
+		if !assert.NoError(t, err) {
+			return
+		}
+
+		assert.Equal(t, expectedService, actualService)
+	})
 }
 
 func Test_LoadService(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
-	service := randService()
-
-	err := repository.SaveService(ctx, service)
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
-
-	tests := []struct {
+	type test struct {
 		expected    *model.Service
 		expectedErr error
 		name        string
 		serviceID   uuid.UUID
-	}{
-		{
-			name:        "All OK",
-			serviceID:   service.ID,
-			expected:    service,
-			expectedErr: nil,
-		},
-		{
-			name:        "Nonexistent",
-			serviceID:   uuid.New(),
-			expectedErr: repo.ErrNotFound,
-		},
 	}
+
+	var tests []test
+
+	// Prepare
+	t.Run("Prepare Tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
+
+		service := randService()
+
+		err := repository.SaveService(prepareCtx, service)
+		if !assert.NoError(t, err, "Prepare test data") {
+			return
+		}
+
+		tests = []test{
+			{
+				name:        "All OK",
+				serviceID:   service.ID,
+				expected:    service,
+				expectedErr: nil,
+			},
+			{
+				name:        "Not Found",
+				serviceID:   uuid.New(),
+				expectedErr: repo.ErrNotFound,
+			},
+		}
+	})
+
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+			ctx, spanEnd := trace(ctx, t)
+			defer spanEnd()
 
 			actual, err := repository.LoadService(ctx, tt.serviceID)
 
@@ -190,70 +223,96 @@ func Test_LoadService(t *testing.T) {
 func Test_LoadServices(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
-	expectedServices := make([]model.Service, 3)
+	var expectedServices []model.Service
 
-	for i := 0; i < 3; i++ {
-		service := randService()
+	// Prepare
+	t.Run("Prepare Tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-		err := repository.SaveService(ctx, service)
-		if !assert.NoError(t, err, "Prepare test data") {
+		expectedServices = make([]model.Service, 3)
+
+		for i := 0; i < 3; i++ {
+			service := randService()
+
+			err := repository.SaveService(prepareCtx, service)
+			if !assert.NoError(t, err, "Prepare test data") {
+				return
+			}
+
+			expectedServices[i] = *service
+		}
+	})
+
+	t.Run("Load", func(t *testing.T) {
+		ctx, spanEnd := trace(ctx, t)
+		defer spanEnd()
+
+		actual, err := repository.LoadServices(ctx)
+		if !assert.NoError(t, err) {
 			return
 		}
 
-		expectedServices[i] = *service
-	}
+		require.GreaterOrEqual(t, len(actual), len(expectedServices))
 
-	actual, err := repository.LoadServices(ctx)
-	if !assert.NoError(t, err) {
-		return
-	}
-
-	for _, expected := range expectedServices {
-		if !assert.Contains(t, actual, expected) {
-			return
+		for _, expected := range expectedServices {
+			if !assert.Contains(t, actual, expected) {
+				return
+			}
 		}
-	}
+	})
 }
 
 func Test_DeleteService(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
-	service := randService()
-
-	err := repository.SaveService(ctx, service)
-	if !assert.NoError(t, err, "Prepare test data") {
-		return
-	}
-
-	tests := []struct {
+	type test struct {
 		expectedErr error
 		name        string
 		serviceID   uuid.UUID
-	}{
-		{
-			name:        "All OK",
-			serviceID:   service.ID,
-			expectedErr: nil,
-		},
-		{
-			name:        "Nonexistent",
-			serviceID:   uuid.New(),
-			expectedErr: repo.ErrNotFound,
-		},
 	}
+
+	var tests []test
+
+	// Prepare
+	t.Run("Prepare Tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
+
+		service := randService()
+
+		err := repository.SaveService(prepareCtx, service)
+		if !assert.NoError(t, err, "Prepare test data") {
+			return
+		}
+
+		tests = []test{
+			{
+				name:        "All OK",
+				serviceID:   service.ID,
+				expectedErr: nil,
+			},
+			{
+				name:        "Nonexistent",
+				serviceID:   uuid.New(),
+				expectedErr: repo.ErrNotFound,
+			},
+		}
+	})
+
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-			defer span.End()
+			ctx, spanEnd := trace(ctx, t)
+			defer spanEnd()
 
 			err := repository.DeleteService(ctx, tt.serviceID)
 			if tt.expectedErr != nil {
