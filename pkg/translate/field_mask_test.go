@@ -59,8 +59,8 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 	// It should be wrapped in a function that accepts source and destination structs,
 	// Then function will be pure and will not have side effects.
 	// e.g.
-	updateNestedStructFromFieldMask := func(m model.Mask, v1, v2 nestedStruct) *nestedStruct {
-		return updateModelFromFieldMask(m, &v1, &v2)
+	updateNestedStructFromFieldMask := func(v1, v2 nestedStruct, m model.Mask) *nestedStruct {
+		return updateModelFromFieldMask(&v1, &v2, m)
 	}
 
 	tests := []struct {
@@ -214,7 +214,7 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := updateNestedStructFromFieldMask(tt.mask, dst, src)
+			result := updateNestedStructFromFieldMask(dst, src, tt.mask)
 			tt.assertFunc(t, dst, src, *result)
 		})
 	}
@@ -275,7 +275,7 @@ func Test_UpdateServiceFromFieldMask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := updateServiceFromFieldMask(tt.fieldMask, dstService, srcService)
+			result := updateServiceFromFieldMask(dstService, srcService, tt.fieldMask)
 			tt.assertFunc(t, dstService, srcService, *result)
 		})
 	}
