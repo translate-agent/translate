@@ -18,9 +18,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/tracer"
 	"go.expect.digital/translate/pkg/translate"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"go.opentelemetry.io/otel"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"golang.org/x/text/language"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc"
@@ -33,10 +35,11 @@ var (
 	host string
 	port string
 
-	client translatev1.TranslateServiceClient
+	client     translatev1.TranslateServiceClient
+	testTracer oteltrace.Tracer
 )
 
-const name = "translate.server.integration_test"
+const tracerName = "go.expect.digital/translate/cmd/translate"
 
 func mustGetFreePort() string {
 	// Listen on port 0 to have the operating system allocate an available port.
@@ -53,6 +56,8 @@ func mustGetFreePort() string {
 }
 
 func TestMain(m *testing.M) {
+	ctx := context.Background()
+
 	host = "localhost"
 	port = mustGetFreePort()
 
@@ -75,12 +80,20 @@ func TestMain(m *testing.M) {
 		grpc.WithBlock(),
 	}
 	// Wait for the server to start and establish a connection.
-	conn, err := grpc.DialContext(context.Background(), host+":"+port, grpcOpts...)
+	conn, err := grpc.DialContext(ctx, host+":"+port, grpcOpts...)
 	if err != nil {
 		log.Panicf("create connection: %v", err)
 	}
 
 	client = translatev1.NewTranslateServiceClient(conn)
+
+	tp, err := tracer.TracerProvider(ctx)
+	if err != nil {
+		log.Panicf("set tracer provider: %v", err)
+	}
+
+	testTracer = tp.Tracer(tracerName)
+
 	// Run the tests.
 	code := m.Run()
 	// Send soft kill (termination) signal to process.
@@ -90,9 +103,15 @@ func TestMain(m *testing.M) {
 	}
 	// Wait for main() to finish cleanup.
 	wg.Wait()
+	// Close the connection and tracer.
 	conn.Close()
+	tp.Shutdown(ctx)
 
 	os.Exit(code)
+}
+
+func trace(ctx context.Context, t *testing.T) (context.Context, func()) {
+	return testutil.Trace(ctx, t, testTracer)
 }
 
 // -------------Translation File-------------.
@@ -146,6 +165,7 @@ func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTransl
 	}
 }
 
+// createService creates a random service, and calls the CreateService RPC.
 func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 	t.Helper()
 
@@ -160,113 +180,106 @@ func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	// Using t.Cleanup instead of defer to ensure that the sub-tests are finished before closing parent span.
+	t.Cleanup(spanEnd)
 
-	service := createService(ctx, t)
-
-	// Requests
-
-	happyRequest := randUploadRequest(t, service.Id)
-
-	invalidArgumentMissingLangRequest := randUploadRequest(t, service.Id)
-	invalidArgumentMissingLangRequest.Language = ""
-
-	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
-
-	tests := []struct {
+	type test struct {
 		request      *translatev1.UploadTranslationFileRequest
 		name         string
 		expectedCode codes.Code
-	}{
-		{
-			name:         "Happy path",
-			request:      happyRequest,
-			expectedCode: codes.OK,
-		},
-		{
-			name:         "Invalid argument missing language",
-			request:      invalidArgumentMissingLangRequest,
-			expectedCode: codes.InvalidArgument,
-		},
-		{
-			name:         "Not found service ID",
-			request:      notFoundServiceIDRequest,
-			expectedCode: codes.NotFound,
-		},
 	}
 
-	// NOTE: Wrap in t.Run to ensure that the sub-tests are finished before main test finishes.
-	// Without wrapping in t.Run, the parent test function returns before the sub-tests are finished,
-	// resulting in parent span to close before sub-spans are finished.
-	// https://pkg.go.dev/testing#hdr-sub_tests_and_Sub_benchmarks
-	t.Run("sub_tests", func(t *testing.T) {
-		for _, tt := range tests {
-			tt := tt
-			t.Run(tt.name, func(t *testing.T) {
-				t.Parallel()
+	var tests []test
 
-				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-				defer span.End()
+	// Prepare
+	t.Run("Prepare tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-				_, err := client.UploadTranslationFile(ctx, tt.request)
+		service := createService(prepareCtx, t)
 
-				actualCode := status.Code(err)
-				assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
-			})
+		// Requests
+
+		happyRequest := randUploadRequest(t, service.Id)
+
+		invalidArgumentMissingLangRequest := randUploadRequest(t, service.Id)
+		invalidArgumentMissingLangRequest.Language = ""
+
+		notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
+
+		tests = []test{
+			{
+				name:         "Happy path",
+				request:      happyRequest,
+				expectedCode: codes.OK,
+			},
+			{
+				name:         "Invalid argument missing language",
+				request:      invalidArgumentMissingLangRequest,
+				expectedCode: codes.InvalidArgument,
+			},
+			{
+				name:         "Not found service ID",
+				request:      notFoundServiceIDRequest,
+				expectedCode: codes.NotFound,
+			},
 		}
 	})
-}
 
-func Test_UploadTranslationFileDifferentLanguages_gRPC(t *testing.T) {
-	t.Parallel()
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+			ctx, spanEnd := trace(ctx, t)
+			defer spanEnd()
 
-	service := createService(ctx, t)
+			_, err := client.UploadTranslationFile(ctx, tt.request)
 
-	uploadRequest := randUploadRequest(t, service.Id)
-
-	for i := 0; i < 3; i++ {
-		uploadRequest.Language = gofakeit.LanguageBCP()
-
-		_, err := client.UploadTranslationFile(ctx, uploadRequest)
-
-		expectedCode := codes.OK
-		actualCode := status.Code(err)
-
-		require.Equal(t, expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", expectedCode, actualCode, err)
+			actualCode := status.Code(err)
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
+		})
 	}
 }
 
 func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
+
+	var uploadReq *translatev1.UploadTranslationFileRequest
 
 	// Prepare
+	t.Run("Prepare test", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-	service := createService(ctx, t)
+		service := createService(prepareCtx, t)
 
-	// Upload initial
+		// Upload initial
 
-	uploadReq := randUploadRequest(t, service.Id)
+		uploadReq = randUploadRequest(t, service.Id)
 
-	_, err := client.UploadTranslationFile(ctx, uploadReq)
-	require.NoError(t, err, "create test translation file")
+		_, err := client.UploadTranslationFile(prepareCtx, uploadReq)
+		require.NoError(t, err, "create test translation file")
+	})
 
-	// Change messages and upload again with the same language and serviceID
+	t.Run("Update File", func(t *testing.T) {
+		ctx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
+		// Change messages and upload again with the same language and serviceID
+		uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
 
-	_, err = client.UploadTranslationFile(ctx, uploadReq)
+		_, err := client.UploadTranslationFile(ctx, uploadReq)
 
-	expectedCode := codes.OK
-	actualCode := status.Code(err)
+		expectedCode := codes.OK
+		actualCode := status.Code(err)
 
-	assert.Equal(t, expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", expectedCode, actualCode, err)
+		assert.Equal(t, expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", expectedCode, actualCode, err)
+	})
 }
 
 func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslationFileRequest {
@@ -289,76 +302,82 @@ func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslatio
 func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
-	// Prepare
-
-	service := createService(ctx, t)
-
-	uploadRequest := randUploadRequest(t, service.Id)
-
-	_, err := client.UploadTranslationFile(ctx, uploadRequest)
-	require.NoError(t, err, "create test translation file")
-
-	// Requests
-
-	happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
-
-	happyReqNoMessagesServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
-
-	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
-	// Ensure that the language is not the same as the uploaded one.
-	for happyReqNoMessagesLanguage.Language == uploadRequest.Language {
-		happyReqNoMessagesLanguage.Language = gofakeit.LanguageBCP()
-	}
-
-	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
-	unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
-
-	tests := []struct {
+	type test struct {
 		request      *translatev1.DownloadTranslationFileRequest
 		name         string
 		expectedCode codes.Code
-	}{
-		{
-			name:         "Happy path",
-			request:      happyRequest,
-			expectedCode: codes.OK,
-		},
-		{
-			name:         "Happy path no messages with language",
-			request:      happyReqNoMessagesLanguage,
-			expectedCode: codes.OK,
-		},
-		{
-			name:         "Happy path no messages with Service ID",
-			request:      happyReqNoMessagesServiceID,
-			expectedCode: codes.OK,
-		},
-		{
-			name:         "Invalid argument unspecified schema",
-			request:      unspecifiedSchemaRequest,
-			expectedCode: codes.InvalidArgument,
-		},
 	}
 
-	t.Run("sub_tests", func(t *testing.T) {
-		for _, tt := range tests {
-			tt := tt
-			t.Run(tt.name, func(t *testing.T) {
-				t.Parallel()
+	var tests []test
 
-				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-				defer span.End()
+	// Prepare
+	t.Run("Prepare tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-				_, err := client.DownloadTranslationFile(ctx, tt.request)
+		service := createService(prepareCtx, t)
 
-				actualCode := status.Code(err)
-				assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
-			})
+		uploadRequest := randUploadRequest(t, service.Id)
+
+		_, err := client.UploadTranslationFile(prepareCtx, uploadRequest)
+		require.NoError(t, err, "create test translation file")
+
+		// Requests
+
+		happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+
+		happyReqNoMessagesServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
+
+		happyReqNoMessagesLanguage := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
+		// Ensure that the language is not the same as the uploaded one.
+		for happyReqNoMessagesLanguage.Language == uploadRequest.Language {
+			happyReqNoMessagesLanguage.Language = gofakeit.LanguageBCP()
+		}
+
+		unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+		unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
+
+		tests = []test{
+			{
+				name:         "Happy path",
+				request:      happyRequest,
+				expectedCode: codes.OK,
+			},
+			{
+				name:         "Happy path no messages with language",
+				request:      happyReqNoMessagesLanguage,
+				expectedCode: codes.OK,
+			},
+			{
+				name:         "Happy path no messages with Service ID",
+				request:      happyReqNoMessagesServiceID,
+				expectedCode: codes.OK,
+			},
+			{
+				name:         "Invalid argument unspecified schema",
+				request:      unspecifiedSchemaRequest,
+				expectedCode: codes.InvalidArgument,
+			},
 		}
 	})
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx, spanEnd := trace(ctx, t)
+			defer spanEnd()
+
+			_, err := client.DownloadTranslationFile(ctx, tt.request)
+
+			actualCode := status.Code(err)
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
+		})
+	}
 }
 
 // ------------------Service------------------
@@ -373,218 +392,254 @@ func randService() *translatev1.Service {
 func Test_CreateService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
-	serviceWithID := randService()
-
-	serviceWithoutID := randService()
-	serviceWithoutID.Id = ""
-
-	serviceMalformedID := randService()
-	serviceMalformedID.Id += "_FAIL"
-
-	tests := []struct {
+	type test struct {
 		request      *translatev1.CreateServiceRequest
 		name         string
 		expectedCode codes.Code
-	}{
-		{
-			name:         "Happy path With ID",
-			request:      &translatev1.CreateServiceRequest{Service: serviceWithID},
-			expectedCode: codes.OK,
-		},
-		{
-			name:         "Happy path Without ID",
-			request:      &translatev1.CreateServiceRequest{Service: serviceWithoutID},
-			expectedCode: codes.OK,
-		},
-		{
-			name:         "Invalid argument malformed ID",
-			request:      &translatev1.CreateServiceRequest{Service: serviceMalformedID},
-			expectedCode: codes.InvalidArgument,
-		},
 	}
 
-	t.Run("sub_tests", func(t *testing.T) {
-		for _, tt := range tests {
-			tt := tt
-			t.Run(tt.name, func(t *testing.T) {
-				t.Parallel()
+	var tests []test
 
-				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-				defer span.End()
+	// Prepare
+	t.Run("Prepare tests", func(t *testing.T) {
+		_, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-				_, err := client.CreateService(ctx, tt.request)
+		serviceWithID := randService()
 
-				actualCode := status.Code(err)
+		serviceWithoutID := randService()
+		serviceWithoutID.Id = ""
 
-				assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
-			})
+		serviceMalformedID := randService()
+		serviceMalformedID.Id += "_FAIL"
+
+		tests = []test{
+			{
+				name:         "Happy path With ID",
+				request:      &translatev1.CreateServiceRequest{Service: serviceWithID},
+				expectedCode: codes.OK,
+			},
+			{
+				name:         "Happy path Without ID",
+				request:      &translatev1.CreateServiceRequest{Service: serviceWithoutID},
+				expectedCode: codes.OK,
+			},
+			{
+				name:         "Invalid argument malformed ID",
+				request:      &translatev1.CreateServiceRequest{Service: serviceMalformedID},
+				expectedCode: codes.InvalidArgument,
+			},
 		}
 	})
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx, spanEnd := trace(ctx, t)
+			defer spanEnd()
+
+			_, err := client.CreateService(ctx, tt.request)
+
+			actualCode := status.Code(err)
+
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+		})
+	}
 }
 
 func Test_UpdateService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
-	test := []struct {
-		request      *translatev1.UpdateServiceRequest
-		name         string
-		expectedCode codes.Code
-	}{
-		{
-			name:         "Happy path all fields",
-			expectedCode: codes.OK,
-			request: &translatev1.UpdateServiceRequest{
-				Service:    randService(),
-				UpdateMask: nil,
-			},
-		},
-		{
-			name:         "Happy path one field",
-			expectedCode: codes.OK,
-			request: &translatev1.UpdateServiceRequest{
-				Service: randService(),
-				UpdateMask: &field_mask.FieldMask{
-					Paths: []string{"name"},
-				},
-			},
-		},
-		{
-			name:         "Invalid field in update mask",
-			expectedCode: codes.InvalidArgument,
-			request: &translatev1.UpdateServiceRequest{
-				Service: randService(),
-				UpdateMask: &field_mask.FieldMask{
-					Paths: []string{"invalid_field"},
-				},
-			},
-		},
+	type test struct {
+		request         *translatev1.UpdateServiceRequest
+		serviceToUpdate *translatev1.Service
+		name            string
+		expectedCode    codes.Code
 	}
 
-	t.Run("sub_tests", func(t *testing.T) {
-		for _, tt := range test {
-			tt := tt
-			t.Run(tt.name, func(t *testing.T) {
-				t.Parallel()
+	var tests []test
 
-				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-				defer span.End()
+	// Prepare
+	t.Run("Prepare tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-				_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: tt.request.Service})
-				require.NoError(t, err, "Prepare test service")
-
-				_, err = client.UpdateService(ctx, tt.request)
-
-				actualCode := status.Code(err)
-
-				assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
-			})
+		tests = []test{
+			{
+				name:            "Happy path all fields",
+				expectedCode:    codes.OK,
+				serviceToUpdate: createService(prepareCtx, t),
+				request: &translatev1.UpdateServiceRequest{
+					Service:    randService(),
+					UpdateMask: nil,
+				},
+			},
+			{
+				name:            "Happy path one field",
+				expectedCode:    codes.OK,
+				serviceToUpdate: createService(prepareCtx, t),
+				request: &translatev1.UpdateServiceRequest{
+					Service: randService(),
+					UpdateMask: &field_mask.FieldMask{
+						Paths: []string{"name"},
+					},
+				},
+			},
+			{
+				name:            "Invalid field in update mask",
+				expectedCode:    codes.InvalidArgument,
+				serviceToUpdate: createService(prepareCtx, t),
+				request: &translatev1.UpdateServiceRequest{
+					Service: randService(),
+					UpdateMask: &field_mask.FieldMask{
+						Paths: []string{"invalid_field"},
+					},
+				},
+			},
 		}
 	})
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx, spanEnd := trace(ctx, t)
+			defer spanEnd()
+
+			// Change the ID to the one of the service that was created in the prepare step.
+			tt.request.Service.Id = tt.serviceToUpdate.Id
+
+			_, err := client.UpdateService(ctx, tt.request)
+
+			actualCode := status.Code(err)
+
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+		})
+	}
 }
 
 func Test_GetService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
-	service := randService()
-
-	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	require.NoError(t, err, "Prepare test service")
-
-	tests := []struct {
+	type test struct {
 		request      *translatev1.GetServiceRequest
 		name         string
 		expectedCode codes.Code
-	}{
-		{
-			name:         "Happy Path",
-			request:      &translatev1.GetServiceRequest{Id: service.Id},
-			expectedCode: codes.OK,
-		},
-		{
-			name:         "Not found",
-			request:      &translatev1.GetServiceRequest{Id: gofakeit.UUID()},
-			expectedCode: codes.NotFound,
-		},
 	}
 
-	t.Run("sub_tests", func(t *testing.T) {
-		for _, tt := range tests {
-			tt := tt
-			t.Run(tt.name, func(t *testing.T) {
-				t.Parallel()
+	var tests []test
 
-				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-				defer span.End()
+	// Prepare
+	t.Run("Prepare tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-				_, err := client.GetService(ctx, tt.request)
+		service := randService()
 
-				actualCode := status.Code(err)
-				assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
-			})
+		_, err := client.CreateService(prepareCtx, &translatev1.CreateServiceRequest{Service: service})
+		require.NoError(t, err, "Prepare test service")
+
+		tests = []test{
+			{
+				name:         "Happy Path",
+				request:      &translatev1.GetServiceRequest{Id: service.Id},
+				expectedCode: codes.OK,
+			},
+			{
+				name:         "Not found",
+				request:      &translatev1.GetServiceRequest{Id: gofakeit.UUID()},
+				expectedCode: codes.NotFound,
+			},
 		}
 	})
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx, spanEnd := trace(ctx, t)
+			defer spanEnd()
+
+			_, err := client.GetService(ctx, tt.request)
+
+			actualCode := status.Code(err)
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+		})
+	}
 }
 
 func Test_DeleteService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
-	service := randService()
-
-	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	require.NoError(t, err, "Prepare test service")
-
-	tests := []struct {
+	type test struct {
 		request      *translatev1.DeleteServiceRequest
 		name         string
 		expectedCode codes.Code
-	}{
-		{
-			request:      &translatev1.DeleteServiceRequest{Id: service.Id},
-			name:         "Happy Path",
-			expectedCode: codes.OK,
-		},
-		{
-			request:      &translatev1.DeleteServiceRequest{Id: gofakeit.UUID()},
-			name:         "Not found",
-			expectedCode: codes.NotFound,
-		},
 	}
 
-	t.Run("sub_tests", func(t *testing.T) {
-		for _, tt := range tests {
-			tt := tt
-			t.Run(tt.name, func(t *testing.T) {
-				t.Parallel()
+	var tests []test
 
-				ctx, span := otel.Tracer(name).Start(ctx, tt.name)
-				defer span.End()
+	// Prepare
+	t.Run("Prepare tests", func(t *testing.T) {
+		prepareCtx, spanEnd := trace(ctx, t)
+		defer spanEnd()
 
-				_, err := client.DeleteService(ctx, tt.request)
+		service := randService()
 
-				actualCode := status.Code(err)
-				assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
-			})
+		_, err := client.CreateService(prepareCtx, &translatev1.CreateServiceRequest{Service: service})
+		require.NoError(t, err, "Prepare test service")
+
+		tests = []test{
+			{
+				request:      &translatev1.DeleteServiceRequest{Id: service.Id},
+				name:         "Happy Path",
+				expectedCode: codes.OK,
+			},
+			{
+				request:      &translatev1.DeleteServiceRequest{Id: gofakeit.UUID()},
+				name:         "Not found",
+				expectedCode: codes.NotFound,
+			},
 		}
 	})
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx, spanEnd := trace(ctx, t)
+			defer spanEnd()
+
+			_, err := client.DeleteService(ctx, tt.request)
+
+			actualCode := status.Code(err)
+			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+		})
+	}
 }
 
 func Test_ListServices_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, span := otel.Tracer(name).Start(context.Background(), t.Name())
-	defer span.End()
+	ctx, spanEnd := trace(context.Background(), t)
+	t.Cleanup(spanEnd)
 
 	_, err := client.ListServices(ctx, &translatev1.ListServicesRequest{})
 
