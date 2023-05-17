@@ -25,31 +25,31 @@ func parseFieldMask(message proto.Message, paths []string) (model.Mask, error) {
 	return parsedMask.Paths, nil
 }
 
-// updateModelFromFieldMask updates the dst with the values from src based on the fieldMask.
+// updateModelFromFieldMask updates the dst with the values from src based on the mask.
 //
 // Following scenarios are possible:
-//   - fieldMask is nil: All fields are updated.
-//   - fieldMask is not nil, but has no paths: No fields are updated.
-//   - fieldMask contains paths, that does not exist in the model: The paths are ignored.
-//   - fieldMask contains paths, that exist in model: Only those fields are updated.
+//   - mask is nil: All fields are updated.
+//   - mask is not nil, but has no paths: No fields are updated.
+//   - mask contains paths, that does not exist in the model: The paths are ignored.
+//   - mask contains paths, that exist in model: Only those fields are updated.
 //
 // `protoName` tags are used to match fields from the fieldMask to fields in the model.
-func updateModelFromFieldMask[T any](dst, src *T, mask model.Mask) *T {
-	// If fieldMask is nil, update all fields
+func updateModelFromFieldMask[T any](src, dst *T, mask model.Mask) *T {
+	// If mask is nil, update all fields
 	if mask == nil {
 		return src
 	}
 
 	for _, path := range mask {
 		fields := strings.Split(path, ".")
-		updateField(reflect.ValueOf(dst).Elem(), reflect.ValueOf(src).Elem(), fields)
+		updateField(reflect.ValueOf(src).Elem(), reflect.ValueOf(dst).Elem(), fields)
 	}
 
 	return dst
 }
 
 // updateField updates the dst value with the values from src, based on the fields slice.
-func updateField(dst, src reflect.Value, fields []string) {
+func updateField(src, dst reflect.Value, fields []string) {
 	if len(fields) == 0 {
 		return
 	}
@@ -63,14 +63,14 @@ func updateField(dst, src reflect.Value, fields []string) {
 			continue
 		}
 
-		dstField, srcField := dst.Field(i), src.Field(i)
+		srcField, dstField := src.Field(i), dst.Field(i)
 
 		switch dst.Field(i).Kind() { //nolint:exhaustive
 		case reflect.Struct:
 			// If the field is a struct, and fields contains any sub-fields of a struct, recursively update the struct
 			// If fields contains only 1 element, that means that the struct itself should be updated
 			if len(fields) > 1 {
-				updateField(dstField, srcField, fields[1:])
+				updateField(srcField, dstField, fields[1:])
 			} else {
 				dstField.Set(srcField)
 			}
@@ -96,12 +96,12 @@ func updateField(dst, src reflect.Value, fields []string) {
 
 // updateServiceFromFieldMask updates the dstService with the values from srcService based on the fieldMask.
 func updateServiceFromFieldMask(
-	dstService model.Service,
 	srcService model.Service,
+	dstService model.Service,
 	mask model.Mask,
 ) *model.Service {
-	// Set the ID of the srcService to the ID of the dstService, to prevent the ID from being updated
+	// Set the ID of the srcService to the ID of the dstService, to prevent the ID from being updated, when mask is nil.
 	srcService.ID = dstService.ID
 
-	return updateModelFromFieldMask(&dstService, &srcService, mask)
+	return updateModelFromFieldMask(&srcService, &dstService, mask)
 }
