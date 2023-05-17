@@ -119,20 +119,18 @@ func Test_UpdateService(t *testing.T) {
 	ctx, spanEnd := trace(context.Background(), t)
 	t.Cleanup(spanEnd)
 
+	// Prepare
 	expectedService := randService()
 
-	// Prepare
-	t.Run("Prepare Tests", func(t *testing.T) {
-		prepareCtx, spanEnd := trace(ctx, t)
-		defer spanEnd()
+	err := repository.SaveService(ctx, expectedService)
+	if !assert.NoError(t, err, "Prepare test data") {
+		return
+	}
 
-		err := repository.SaveService(prepareCtx, expectedService)
-		if !assert.NoError(t, err, "Prepare test data") {
-			return
-		}
-	})
-
+	// Actual Test
 	t.Run("Update", func(t *testing.T) {
+		t.Parallel()
+
 		ctx, spanEnd := trace(ctx, t)
 		defer spanEnd()
 
@@ -160,41 +158,32 @@ func Test_LoadService(t *testing.T) {
 	ctx, spanEnd := trace(context.Background(), t)
 	t.Cleanup(spanEnd)
 
-	type test struct {
+	// Prepare
+	service := randService()
+
+	err := repository.SaveService(ctx, service)
+	if !assert.NoError(t, err, "Prepare test data") {
+		return
+	}
+
+	tests := []struct {
 		expected    *model.Service
 		expectedErr error
 		name        string
 		serviceID   uuid.UUID
+	}{
+		{
+			name:        "All OK",
+			serviceID:   service.ID,
+			expected:    service,
+			expectedErr: nil,
+		},
+		{
+			name:        "Not Found",
+			serviceID:   uuid.New(),
+			expectedErr: repo.ErrNotFound,
+		},
 	}
-
-	var tests []test
-
-	// Prepare
-	t.Run("Prepare Tests", func(t *testing.T) {
-		prepareCtx, spanEnd := trace(ctx, t)
-		defer spanEnd()
-
-		service := randService()
-
-		err := repository.SaveService(prepareCtx, service)
-		if !assert.NoError(t, err, "Prepare test data") {
-			return
-		}
-
-		tests = []test{
-			{
-				name:        "All OK",
-				serviceID:   service.ID,
-				expected:    service,
-				expectedErr: nil,
-			},
-			{
-				name:        "Not Found",
-				serviceID:   uuid.New(),
-				expectedErr: repo.ErrNotFound,
-			},
-		}
-	})
 
 	for _, tt := range tests {
 		tt := tt
@@ -226,28 +215,23 @@ func Test_LoadServices(t *testing.T) {
 	ctx, spanEnd := trace(context.Background(), t)
 	t.Cleanup(spanEnd)
 
-	var expectedServices []model.Service
-
 	// Prepare
-	t.Run("Prepare Tests", func(t *testing.T) {
-		prepareCtx, spanEnd := trace(ctx, t)
-		defer spanEnd()
+	expectedServices := make([]model.Service, 3)
 
-		expectedServices = make([]model.Service, 3)
+	for i := 0; i < 3; i++ {
+		service := randService()
 
-		for i := 0; i < 3; i++ {
-			service := randService()
-
-			err := repository.SaveService(prepareCtx, service)
-			if !assert.NoError(t, err, "Prepare test data") {
-				return
-			}
-
-			expectedServices[i] = *service
+		err := repository.SaveService(ctx, service)
+		if !assert.NoError(t, err, "Prepare test data") {
+			return
 		}
-	})
+
+		expectedServices[i] = *service
+	}
 
 	t.Run("Load", func(t *testing.T) {
+		t.Parallel()
+
 		ctx, spanEnd := trace(ctx, t)
 		defer spanEnd()
 
@@ -272,39 +256,30 @@ func Test_DeleteService(t *testing.T) {
 	ctx, spanEnd := trace(context.Background(), t)
 	t.Cleanup(spanEnd)
 
-	type test struct {
+	// Prepare
+	service := randService()
+
+	err := repository.SaveService(ctx, service)
+	if !assert.NoError(t, err, "Prepare test data") {
+		return
+	}
+
+	tests := []struct {
 		expectedErr error
 		name        string
 		serviceID   uuid.UUID
+	}{
+		{
+			name:        "All OK",
+			serviceID:   service.ID,
+			expectedErr: nil,
+		},
+		{
+			name:        "Nonexistent",
+			serviceID:   uuid.New(),
+			expectedErr: repo.ErrNotFound,
+		},
 	}
-
-	var tests []test
-
-	// Prepare
-	t.Run("Prepare Tests", func(t *testing.T) {
-		prepareCtx, spanEnd := trace(ctx, t)
-		defer spanEnd()
-
-		service := randService()
-
-		err := repository.SaveService(prepareCtx, service)
-		if !assert.NoError(t, err, "Prepare test data") {
-			return
-		}
-
-		tests = []test{
-			{
-				name:        "All OK",
-				serviceID:   service.ID,
-				expectedErr: nil,
-			},
-			{
-				name:        "Nonexistent",
-				serviceID:   uuid.New(),
-				expectedErr: repo.ErrNotFound,
-			},
-		}
-	})
 
 	for _, tt := range tests {
 		tt := tt
