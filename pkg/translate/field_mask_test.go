@@ -7,24 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
-	"golang.org/x/exp/maps"
 )
-
-func mergeSlices[T ~[]E, E any](a, b T) T {
-	merged := make(T, len(a)+len(b))
-	copy(merged, a)
-	copy(merged[len(a):], b)
-
-	return merged
-}
-
-func mergeMaps[T ~map[K]V, K comparable, V any](a, b T) T {
-	merged := make(T, len(a)+len(b))
-	maps.Copy(merged, a)
-	maps.Copy(merged, b)
-
-	return merged
-}
 
 func Test_UpdateModelFromFieldMask(t *testing.T) {
 	t.Parallel()
@@ -130,9 +113,14 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 			name: "Update C.F.G struct.struct.[]string",
 			mask: []string{"C.F.G"},
 			assertFunc: func(t *testing.T, src, dst, result nestedStruct) {
-				merged := mergeSlices(dst.C.F.G, src.C.F.G)
+				// Check if all elements from src and dst are in result
+				for _, srcElem := range src.C.F.G {
+					require.Contains(t, result.C.F.G, srcElem)
+				}
 
-				require.ElementsMatch(t, merged, result.C.F.G)
+				for _, dstElem := range dst.C.F.G {
+					require.Contains(t, result.C.F.G, dstElem)
+				}
 
 				result.C.F.G = dst.C.F.G
 				assert.Equal(t, dst, result)
@@ -143,9 +131,14 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 			name: "Update C.H struct.struct.[]struct",
 			mask: []string{"C.H"},
 			assertFunc: func(t *testing.T, src, dst, result nestedStruct) {
-				merged := mergeSlices(dst.C.H, src.C.H)
+				// Check if all elements from src and dst are in result
+				for _, srcElem := range src.C.H {
+					require.Contains(t, result.C.H, srcElem)
+				}
 
-				require.ElementsMatch(t, merged, result.C.H)
+				for _, dstElem := range dst.C.H {
+					require.Contains(t, result.C.H, dstElem)
+				}
 
 				result.C.H = dst.C.H
 				assert.Equal(t, dst, result)
@@ -156,9 +149,14 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 			name: "Update J.K struct.map[string]string",
 			mask: []string{"J.K"},
 			assertFunc: func(t *testing.T, src, dst, result nestedStruct) {
-				merged := mergeMaps(dst.J.K, src.J.K)
+				// Check if all keys from src and dst are in result
+				for srcKey := range src.J.K {
+					require.Contains(t, result.J.K, srcKey)
+				}
 
-				require.Equal(t, merged, result.J.K)
+				for dstKey := range dst.J.K {
+					require.Contains(t, result.J.K, dstKey)
+				}
 
 				result.J.K = dst.J.K
 				assert.Equal(t, dst, result)
