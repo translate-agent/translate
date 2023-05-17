@@ -9,7 +9,7 @@ import (
 	"go.expect.digital/translate/pkg/model"
 )
 
-func Test_UpdateModelFromFieldMask(t *testing.T) {
+func Test_UpdateNestedStructFromMask(t *testing.T) {
 	t.Parallel()
 
 	//nolint: govet
@@ -218,7 +218,7 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 	}
 }
 
-func Test_UpdateServiceFromFieldMask(t *testing.T) {
+func Test_UpdateServiceFromMask(t *testing.T) {
 	t.Parallel()
 
 	// Generate random source and destination structs
