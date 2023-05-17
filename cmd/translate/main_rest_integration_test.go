@@ -98,48 +98,39 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	ctx, spanEnd := trace(context.Background(), t)
 	t.Cleanup(spanEnd)
 
-	type test struct {
+	// Prepare
+	service := createService(ctx, t)
+
+	// Requests
+
+	happyRequest := randUploadRequest(t, service.Id)
+
+	missingLanguageRequest := randUploadRequest(t, service.Id)
+	missingLanguageRequest.Language = ""
+
+	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
+
+	tests := []struct {
 		name         string
 		request      *translatev1.UploadTranslationFileRequest
 		expectedCode uint
+	}{
+		{
+			name:         "Happy Path",
+			request:      happyRequest,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Bad request missing language",
+			request:      missingLanguageRequest,
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "Not found service ID",
+			request:      notFoundServiceIDRequest,
+			expectedCode: http.StatusNotFound,
+		},
 	}
-
-	var tests []test
-
-	// Prepare
-	t.Run("Prepare tests", func(t *testing.T) {
-		prepareCtx, spanEnd := trace(ctx, t)
-		defer spanEnd()
-
-		service := createService(prepareCtx, t)
-
-		// Requests
-
-		happyRequest := randUploadRequest(t, service.Id)
-
-		missingLanguageRequest := randUploadRequest(t, service.Id)
-		missingLanguageRequest.Language = ""
-
-		notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
-
-		tests = []test{
-			{
-				name:         "Happy Path",
-				request:      happyRequest,
-				expectedCode: http.StatusOK,
-			},
-			{
-				name:         "Bad request missing language",
-				request:      missingLanguageRequest,
-				expectedCode: http.StatusBadRequest,
-			},
-			{
-				name:         "Not found service ID",
-				request:      notFoundServiceIDRequest,
-				expectedCode: http.StatusNotFound,
-			},
-		}
-	})
 
 	for _, tt := range tests {
 		tt := tt
@@ -169,23 +160,18 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	ctx, spanEnd := trace(context.Background(), t)
 	t.Cleanup(spanEnd)
 
-	var uploadReq *translatev1.UploadTranslationFileRequest
-
 	// Prepare
-	t.Run("Prepare tests", func(t *testing.T) {
-		prepareCtx, spanEnd := trace(ctx, t)
-		defer spanEnd()
+	service := createService(ctx, t)
 
-		service := createService(prepareCtx, t)
+	// Upload initial
+	uploadReq := randUploadRequest(t, service.Id)
 
-		// Upload initial
-		uploadReq = randUploadRequest(t, service.Id)
-
-		_, err := client.UploadTranslationFile(prepareCtx, uploadReq)
-		require.NoError(t, err, "create test translation file")
-	})
+	_, err := client.UploadTranslationFile(ctx, uploadReq)
+	require.NoError(t, err, "create test translation file")
 
 	t.Run("Update file", func(t *testing.T) {
+		t.Parallel()
+
 		ctx, spanEnd := trace(ctx, t)
 		defer spanEnd()
 
@@ -211,65 +197,56 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 	ctx, spanEnd := trace(context.Background(), t)
 	t.Cleanup(spanEnd)
 
-	type test struct {
+	// Prepare
+	service := createService(ctx, t)
+
+	uploadRequest := randUploadRequest(t, service.Id)
+
+	_, err := client.UploadTranslationFile(ctx, uploadRequest)
+	require.NoError(t, err, "create test translation file")
+
+	// Requests
+
+	happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+
+	happyReqNoMessagesServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
+
+	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
+	// Ensure that the language is not the same as the uploaded one.
+	for happyReqNoMessagesLanguage.Language == uploadRequest.Language {
+		happyReqNoMessagesLanguage.Language = gofakeit.LanguageBCP()
+	}
+
+	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+	unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
+
+	tests := []struct {
 		name         string
 		request      *translatev1.DownloadTranslationFileRequest
 		expectedCode uint
+	}{
+		{
+			name:         "Happy path",
+			request:      happyRequest,
+			expectedCode: http.StatusOK,
+		},
+
+		{
+			name:         "Happy path no messages with language",
+			request:      happyReqNoMessagesLanguage,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Happy path no messages with Service ID",
+			request:      happyReqNoMessagesServiceID,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Bad request unspecified schema",
+			request:      unspecifiedSchemaRequest,
+			expectedCode: http.StatusBadRequest,
+		},
 	}
-
-	var tests []test
-
-	// Prepare
-	t.Run("Prepare tests", func(t *testing.T) {
-		prepareCtx, spanEnd := trace(ctx, t)
-		defer spanEnd()
-
-		service := createService(prepareCtx, t)
-
-		uploadRequest := randUploadRequest(t, service.Id)
-
-		_, err := client.UploadTranslationFile(prepareCtx, uploadRequest)
-		require.NoError(t, err, "create test translation file")
-
-		// Requests
-
-		happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
-
-		happyReqNoMessagesServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
-
-		happyReqNoMessagesLanguage := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
-		// Ensure that the language is not the same as the uploaded one.
-		for happyReqNoMessagesLanguage.Language == uploadRequest.Language {
-			happyReqNoMessagesLanguage.Language = gofakeit.LanguageBCP()
-		}
-
-		unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
-		unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
-
-		tests = []test{
-			{
-				name:         "Happy path",
-				request:      happyRequest,
-				expectedCode: http.StatusOK,
-			},
-
-			{
-				name:         "Happy path no messages with language",
-				request:      happyReqNoMessagesLanguage,
-				expectedCode: http.StatusOK,
-			},
-			{
-				name:         "Happy path no messages with Service ID",
-				request:      happyReqNoMessagesServiceID,
-				expectedCode: http.StatusOK,
-			},
-			{
-				name:         "Bad request unspecified schema",
-				request:      unspecifiedSchemaRequest,
-				expectedCode: http.StatusBadRequest,
-			},
-		}
-	})
 
 	for _, tt := range tests {
 		tt := tt
@@ -300,45 +277,36 @@ func Test_CreateService_REST(t *testing.T) {
 	ctx, spanEnd := trace(context.Background(), t)
 	t.Cleanup(spanEnd)
 
-	type test struct {
+	// Prepare
+	serviceWithID := randService()
+
+	serviceWithoutID := randService()
+	serviceWithoutID.Id = ""
+
+	serviceMalformedID := randService()
+	serviceMalformedID.Id += "_FAIL"
+
+	tests := []struct {
 		name         string
 		service      *translatev1.Service
 		expectedCode uint
+	}{
+		{
+			name:         "Happy path With ID",
+			service:      serviceWithID,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Happy path Without ID",
+			service:      serviceWithoutID,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Invalid argument malformed ID",
+			service:      serviceMalformedID,
+			expectedCode: http.StatusBadRequest,
+		},
 	}
-
-	var tests []test
-
-	// Prepare
-	t.Run("Prepare tests", func(t *testing.T) {
-		_, spanEnd := trace(ctx, t)
-		defer spanEnd()
-
-		serviceWithID := randService()
-
-		serviceWithoutID := randService()
-		serviceWithoutID.Id = ""
-
-		serviceMalformedID := randService()
-		serviceMalformedID.Id += "_FAIL"
-
-		tests = []test{
-			{
-				name:         "Happy path With ID",
-				service:      serviceWithID,
-				expectedCode: http.StatusOK,
-			},
-			{
-				name:         "Happy path Without ID",
-				service:      serviceWithoutID,
-				expectedCode: http.StatusOK,
-			},
-			{
-				name:         "Invalid argument malformed ID",
-				service:      serviceMalformedID,
-				expectedCode: http.StatusBadRequest,
-			},
-		}
-	})
 
 	for _, tt := range tests {
 		tt := tt
@@ -383,35 +351,27 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 	ctx, spanEnd := trace(context.Background(), t)
 	t.Cleanup(spanEnd)
 
-	var (
-		putBodyBytes []byte
-		u            url.URL
-	)
-
 	// Prepare
-	t.Run("Prepare tests", func(t *testing.T) {
-		prepareCtx, spanEnd := trace(ctx, t)
-		defer spanEnd()
+	service := randService()
 
-		service := randService()
+	// Using gRPC client to create service
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "prepare test service")
 
-		// Using gRPC client to create service
-		_, err := client.CreateService(prepareCtx, &translatev1.CreateServiceRequest{Service: service})
-		require.NoError(t, err, "prepare test service")
+	putBody := restUpdateBody{Name: gofakeit.FirstName()}
 
-		putBody := restUpdateBody{Name: gofakeit.FirstName()}
+	putBodyBytes, err := json.Marshal(putBody)
+	require.NoError(t, err, "marshal put body")
 
-		putBodyBytes, err = json.Marshal(putBody)
-		require.NoError(t, err, "marshal put body")
+	u := url.URL{
+		Scheme: "http",
+		Host:   host + ":" + port,
+		Path:   "v1/services/" + service.Id,
+	}
 
-		u = url.URL{
-			Scheme: "http",
-			Host:   host + ":" + port,
-			Path:   "v1/services/" + service.Id,
-		}
-	})
+	t.Run("Update", func(t *testing.T) {
+		t.Parallel()
 
-	t.Run("Update all fields", func(t *testing.T) {
 		ctx, spanEnd := trace(ctx, t)
 		defer spanEnd()
 
@@ -437,35 +397,27 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 	ctx, spanEnd := trace(context.Background(), t)
 	t.Cleanup(spanEnd)
 
-	var (
-		patchBodyBytes []byte
-		u              url.URL
-	)
-
 	// Prepare
-	t.Run("Prepare tests", func(t *testing.T) {
-		prepareCtx, spanEnd := trace(ctx, t)
-		defer spanEnd()
+	service := randService()
 
-		service := randService()
+	// Using gRPC client to create service
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "Prepare test service")
 
-		// Using gRPC client to create service
-		_, err := client.CreateService(prepareCtx, &translatev1.CreateServiceRequest{Service: service})
-		require.NoError(t, err, "Prepare test service")
+	patchBody := restUpdateBody{Name: gofakeit.FirstName()}
 
-		patchBody := restUpdateBody{Name: gofakeit.FirstName()}
+	patchBodyBytes, err := json.Marshal(patchBody)
+	require.NoError(t, err, "marshal patch body")
 
-		patchBodyBytes, err = json.Marshal(patchBody)
-		require.NoError(t, err, "marshal patch body")
-
-		u = url.URL{
-			Scheme: "http",
-			Host:   host + ":" + port,
-			Path:   "v1/services/" + service.Id,
-		}
-	})
+	u := url.URL{
+		Scheme: "http",
+		Host:   host + ":" + port,
+		Path:   "v1/services/" + service.Id,
+	}
 
 	t.Run("Update name field", func(t *testing.T) {
+		t.Parallel()
+
 		ctx, spanEnd := trace(ctx, t)
 		defer spanEnd()
 
@@ -491,38 +443,29 @@ func Test_GetService_REST(t *testing.T) {
 	ctx, spanEnd := trace(context.Background(), t)
 	t.Cleanup(spanEnd)
 
-	type test struct {
+	// Prepare
+	service := randService()
+
+	// Using gRPC client to create service
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "Prepare test service")
+
+	tests := []struct {
 		name         string
 		service      *translatev1.Service
 		expectedCode uint
+	}{
+		{
+			service:      service,
+			name:         "Happy Path",
+			expectedCode: http.StatusOK,
+		},
+		{
+			service:      randService(),
+			name:         "Not Found",
+			expectedCode: http.StatusNotFound,
+		},
 	}
-
-	var tests []test
-
-	// Prepare
-	t.Run("Prepare tests", func(t *testing.T) {
-		prepareCtx, spanEnd := trace(ctx, t)
-		defer spanEnd()
-
-		service := randService()
-
-		// Using gRPC client to create service
-		_, err := client.CreateService(prepareCtx, &translatev1.CreateServiceRequest{Service: service})
-		require.NoError(t, err, "Prepare test service")
-
-		tests = []test{
-			{
-				service:      service,
-				name:         "Happy Path",
-				expectedCode: http.StatusOK,
-			},
-			{
-				service:      randService(),
-				name:         "Not Found",
-				expectedCode: http.StatusNotFound,
-			},
-		}
-	})
 
 	for _, tt := range tests {
 		tt := tt
@@ -559,38 +502,29 @@ func Test_DeleteService_REST(t *testing.T) {
 	ctx, spanEnd := trace(context.Background(), t)
 	t.Cleanup(spanEnd)
 
-	type test struct {
+	// Prepare
+	service := randService()
+
+	// Using gRPC client to create service
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "Prepare test service")
+
+	tests := []struct {
 		name         string
 		service      *translatev1.Service
 		expectedCode uint
+	}{
+		{
+			service:      service,
+			name:         "Happy Path",
+			expectedCode: http.StatusOK,
+		},
+		{
+			service:      randService(),
+			name:         "Not Found",
+			expectedCode: http.StatusNotFound,
+		},
 	}
-
-	var tests []test
-
-	// Prepare
-	t.Run("Prepare tests", func(t *testing.T) {
-		prepareCtx, spanEnd := trace(ctx, t)
-		defer spanEnd()
-
-		service := randService()
-
-		// Using gRPC client to create service
-		_, err := client.CreateService(prepareCtx, &translatev1.CreateServiceRequest{Service: service})
-		require.NoError(t, err, "Prepare test service")
-
-		tests = []test{
-			{
-				service:      service,
-				name:         "Happy Path",
-				expectedCode: http.StatusOK,
-			},
-			{
-				service:      randService(),
-				name:         "Not Found",
-				expectedCode: http.StatusNotFound,
-			},
-		}
-	})
 
 	for _, tt := range tests {
 		tt := tt
