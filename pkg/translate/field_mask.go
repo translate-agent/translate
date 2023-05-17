@@ -25,7 +25,7 @@ func parseFieldMask(message proto.Message, paths []string) (model.Mask, error) {
 	return parsedMask.Paths, nil
 }
 
-// updateModelFromFieldMask updates the dst with the values from src based on the mask.
+// updateFromMask updates the dst with the values from src based on the mask.
 //
 // Following scenarios are possible:
 //   - mask is nil: All fields are updated.
@@ -34,7 +34,7 @@ func parseFieldMask(message proto.Message, paths []string) (model.Mask, error) {
 //   - mask contains paths, that exist in model: Only those fields are updated.
 //
 // `protoName` tags are used to match fields from the fieldMask to fields in the model.
-func updateModelFromFieldMask[T any](src, dst *T, mask model.Mask) *T {
+func updateFromMask[T any](src, dst *T, mask model.Mask) *T {
 	// If mask is nil, update all fields
 	if mask == nil {
 		return src
@@ -94,8 +94,8 @@ func updateField(src, dst reflect.Value, fields []string) {
 	}
 }
 
-// updateServiceFromFieldMask updates the dstService with the values from srcService based on the fieldMask.
-func updateServiceFromFieldMask(
+// updateServiceFromMask updates the dstService with the values from srcService based on the fieldMask.
+func updateServiceFromMask(
 	srcService model.Service,
 	dstService model.Service,
 	mask model.Mask,
@@ -103,5 +103,5 @@ func updateServiceFromFieldMask(
 	// Set the ID of the srcService to the ID of the dstService, to prevent the ID from being updated, when mask is nil.
 	srcService.ID = dstService.ID
 
-	return updateModelFromFieldMask(&srcService, &dstService, mask)
+	return updateFromMask(&srcService, &dstService, mask)
 }

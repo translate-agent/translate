@@ -55,12 +55,12 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 	require.NoError(t, gofakeit.Struct(&src))
 	require.NoError(t, gofakeit.Struct(&dst))
 
-	// updateModelFromFieldMask is not supposed to be called directly.
+	// updateFromMask is not supposed to be called directly.
 	// It should be wrapped in a function that accepts source and destination structs,
 	// Then function will be pure and will not have side effects.
 	// e.g.
-	updateNestedStructFromFieldMask := func(src, dst nestedStruct, m model.Mask) *nestedStruct {
-		return updateModelFromFieldMask(&src, &dst, m)
+	updateNestedStructFromMask := func(src, dst nestedStruct, m model.Mask) *nestedStruct {
+		return updateFromMask(&src, &dst, m)
 	}
 
 	tests := []struct {
@@ -214,7 +214,7 @@ func Test_UpdateModelFromFieldMask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := updateNestedStructFromFieldMask(src, dst, tt.mask)
+			result := updateNestedStructFromMask(src, dst, tt.mask)
 			tt.assertFunc(t, src, dst, *result)
 		})
 	}
@@ -275,7 +275,7 @@ func Test_UpdateServiceFromFieldMask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := updateServiceFromFieldMask(srcService, dstService, tt.fieldMask)
+			result := updateServiceFromMask(srcService, dstService, tt.fieldMask)
 			tt.assertFunc(t, srcService, dstService, *result)
 		})
 	}
