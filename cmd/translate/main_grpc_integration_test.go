@@ -29,8 +29,7 @@ import (
 )
 
 var (
-	host string
-	port string
+	addr, host, port string
 
 	client translatev1.TranslateServiceClient
 )
@@ -52,6 +51,7 @@ func mustGetFreePort() string {
 func TestMain(m *testing.M) {
 	host = "localhost"
 	port = mustGetFreePort()
+	addr = fmt.Sprintf("%s:%s", host, port)
 
 	viper.Set("service.port", port)
 	viper.Set("service.host", host)

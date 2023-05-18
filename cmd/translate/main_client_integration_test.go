@@ -5,7 +5,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,7 +20,7 @@ func Test_ListServices(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "ls",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 		})
 
@@ -32,7 +31,7 @@ func Test_ListServices(t *testing.T) {
 	t.Run("error, no transport security set", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "ls",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 		})
 
 		assert.ErrorContains(t, err, "no transport security set")
@@ -42,37 +41,23 @@ func Test_ListServices(t *testing.T) {
 
 func Test_TranslationFileUpload(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
-		service, err := client.CreateService(context.Background(),
-			&translatev1.CreateServiceRequest{Service: randService()})
-
-		require.NoError(t, err)
+		service := createService(context.Background(), t)
 		require.NotNil(t, service)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
 		require.NoError(t, err)
 
-		_, err = file.Write([]byte(`
-		{
-			"language":"lv-lv",
-			"messages":[
-				 {
-					"id":"1",
-					"meaning":"When you greet someone",
-					"message":"hello",
-					"translation":"čau",
-					"fuzzy":false
-				 }
-			]
-	 }`))
+		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
+		_, err = file.Write(data)
 		require.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
-			"-l", "lv-lv",
+			"-l", lang.String(),
 			"-f", file.Name(),
 			"-s", "json_ng_localize",
 			"-u", service.Id,
@@ -100,7 +85,7 @@ func Test_TranslationFileUpload(t *testing.T) {
 
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
 			"-l", "xyz-ZY-Latn",
@@ -116,7 +101,7 @@ func Test_TranslationFileUpload(t *testing.T) {
 	t.Run("error, path parameter 'schema' unrecognized", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
 			"-l", "xyz-ZY-Latn",
@@ -126,14 +111,31 @@ func Test_TranslationFileUpload(t *testing.T) {
 		})
 
 		assert.ErrorContains(t, err,
-			"must be one of \"json_ng_localize\", \"json_ngx_translate\", \"go\", \"arb\", \"pot\", \"xliff_12\", \"xliff_2\"")
+			"must be one of: json_ng_localize, json_ngx_translate, go, arb, pot, xliff_12, xliff_2")
+		assert.Nil(t, res)
+	})
+
+	t.Run("error, path parameter 'schema' unspecified", func(t *testing.T) {
+		res, err := cmd.ExecuteWithParams([]string{
+			"service", "upload",
+			"-a", addr,
+			"-i", "true",
+
+			"-l", "xyz-ZY-Latn",
+			"-f", "test.json",
+			"-s", "unspecified",
+			"-u", gofakeit.UUID(),
+		})
+
+		assert.ErrorContains(t, err,
+			"must be one of: json_ng_localize, json_ngx_translate, go, arb, pot, xliff_12, xliff_2")
 		assert.Nil(t, res)
 	})
 
 	t.Run("error, path parameter 'schema' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
 			"-l", "xyz-ZY-Latn",
@@ -148,7 +150,7 @@ func Test_TranslationFileUpload(t *testing.T) {
 	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
 			"-f", "test.json",
@@ -163,7 +165,7 @@ func Test_TranslationFileUpload(t *testing.T) {
 	t.Run("error, path parameter 'path' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
 			"-l", "xyz-ZY-Latn",
@@ -178,7 +180,7 @@ func Test_TranslationFileUpload(t *testing.T) {
 	t.Run("error, path parameter 'serviceID' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
 			"-f", "test.json",
@@ -193,10 +195,7 @@ func Test_TranslationFileUpload(t *testing.T) {
 
 func Test_TranslationFileDownload(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
-		service, err := client.CreateService(context.Background(),
-			&translatev1.CreateServiceRequest{Service: randService()})
-
-		require.NoError(t, err)
+		service := createService(context.Background(), t)
 		require.NotNil(t, service)
 
 		tempDir := t.TempDir()
@@ -204,28 +203,17 @@ func Test_TranslationFileDownload(t *testing.T) {
 		file, err := os.CreateTemp(tempDir, "test")
 		require.NoError(t, err)
 
-		_, err = file.Write([]byte(`
-		{
-			"language":"lv-lv",
-			"messages":[
-				 {
-					"id":"1",
-					"meaning":"When you greet someone",
-					"message":"hello",
-					"translation":"čau",
-					"fuzzy":false
-				 }
-			]
-	 }`))
+		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
+		_, err = file.Write(data)
 		require.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "upload",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
-			"-l", "lv-lv",
+			"-l", lang.String(),
 			"-f", file.Name(),
 			"-s", "json_ng_localize",
 			"-u", service.Id,
@@ -236,10 +224,10 @@ func Test_TranslationFileDownload(t *testing.T) {
 
 		res, err = cmd.ExecuteWithParams([]string{
 			"service", "download",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
-			"-l", "lv-lv",
+			"-l", lang.String(),
 			"-s", "xliff_12",
 			"-u", service.Id,
 			"-p", tempDir,
@@ -248,14 +236,14 @@ func Test_TranslationFileDownload(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "File downloaded successfully.\n", string(res))
 
-		_, err = os.Stat(filepath.Join(tempDir, service.Id+".xlf"))
+		_, err = os.Stat(filepath.Join(tempDir, service.Id+"_"+lang.String()+".xlf"))
 		assert.NoError(t, err)
 	})
 
 	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "download",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
 			"-s", "xliff_12",
@@ -270,7 +258,7 @@ func Test_TranslationFileDownload(t *testing.T) {
 	t.Run("error, path parameter 'schema' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "download",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
 			"-l", "lv-lv",
@@ -285,7 +273,7 @@ func Test_TranslationFileDownload(t *testing.T) {
 	t.Run("error, path parameter 'serviceID' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "download",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
 			"-l", "lv-lv",
@@ -300,7 +288,7 @@ func Test_TranslationFileDownload(t *testing.T) {
 	t.Run("error, path parameter 'path' missing", func(t *testing.T) {
 		res, err := cmd.ExecuteWithParams([]string{
 			"service", "download",
-			"-a", fmt.Sprintf("%s:%s", host, port),
+			"-a", addr,
 			"-i", "true",
 
 			"-l", "lv-lv",

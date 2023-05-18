@@ -69,7 +69,7 @@ func newDownloadCmd() *cobra.Command {
 				return fmt.Errorf("download file: send GRPC request: %w", err)
 			}
 
-			fileName := serviceID
+			fileName := serviceID + "_" + language
 
 			switch translateSchema {
 			case translatev1.Schema_UNSPECIFIED:
@@ -99,7 +99,7 @@ func newDownloadCmd() *cobra.Command {
 	downloadFlags := downloadCmd.Flags()
 	downloadFlags.StringP("serviceID", "u", "", "service UUID")
 	downloadFlags.StringP("path", "p", "", "download folder path")
-	downloadFlags.StringP("language", "l", "", "translation language")
+	downloadFlags.StringP("language", "l", "", "translation language in BCP47 format")
 	downloadFlags.VarP(&schemaFlag, "schema", "s",
 		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)
 

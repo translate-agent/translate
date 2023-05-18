@@ -92,14 +92,19 @@ func (s schema) String() string {
 
 // Set must have pointer receiver so it doesn't change the value of a copy.
 func (s *schema) Set(v string) error {
-	switch v {
-	case "json_ng_localize", "json_ngx_translate", "go", "arb", "pot", "xliff_12", "xliff_2":
+	v = strings.ToUpper(v)
+
+	if sv, ok := translatev1.Schema_value[v]; ok && sv != 0 {
 		*s = schema(v)
 		return nil
-	default:
-		return errors.New(
-			`must be one of "json_ng_localize", "json_ngx_translate", "go", "arb", "pot", "xliff_12", "xliff_2"`)
 	}
+
+	validSchemas := make([]string, len(translatev1.Schema_name))
+	for schemaValue, schemaName := range translatev1.Schema_name {
+		validSchemas[schemaValue] = strings.ToLower(schemaName)
+	}
+
+	return fmt.Errorf("invalid schema value: must be one of: %s", strings.Join(validSchemas[1:], ", "))
 }
 
 // Type is only used in help text.
@@ -108,8 +113,8 @@ func (s schema) Type() string {
 }
 
 func (s schema) ToTranslateSchema() (translatev1.Schema, error) {
-	if schemaNum, ok := translatev1.Schema_value[strings.ToUpper(s.String())]; ok {
-		return translatev1.Schema(schemaNum), nil
+	if v, ok := translatev1.Schema_value[s.String()]; ok {
+		return translatev1.Schema(v), nil
 	}
 
 	return translatev1.Schema_UNSPECIFIED, errors.New("schema doesn't match translate schema patterns")
