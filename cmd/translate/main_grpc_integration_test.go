@@ -146,15 +146,6 @@ func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTransl
 	t.Helper()
 
 	schema := translatev1.Schema(gofakeit.IntRange(1, 7))
-
-	// HACK: POT conversion is currently ignored
-	// due to a panic that occurs when converting
-	// from model.Messages to POT serialized data and back to model.Messages.
-	// Fixed in https://github.com/translate-agent/translate/pull/45
-	for schema == translatev1.Schema_POT {
-		schema = translatev1.Schema(gofakeit.IntRange(1, 7))
-	}
-
 	data, lang := randUploadData(t, schema)
 
 	return &translatev1.UploadTranslationFileRequest{
@@ -269,19 +260,10 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 }
 
 func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslationFileRequest {
-	schema := translatev1.Schema(gofakeit.IntRange(1, 7))
-	// HACK: POT conversion is currently ignored
-	// due to a panic that occurs when converting
-	// from model.Messages to POT serialized data and back to model.Messages.
-	// Fixed in https://github.com/translate-agent/translate/pull/45
-	for schema == translatev1.Schema_POT {
-		schema = translatev1.Schema(gofakeit.IntRange(1, 7))
-	}
-
 	return &translatev1.DownloadTranslationFileRequest{
 		ServiceId: serviceID,
 		Language:  lang,
-		Schema:    schema,
+		Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
 	}
 }
 
