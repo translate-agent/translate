@@ -216,8 +216,12 @@ func getPoTagLines(str string) []string {
 
 	// Remove the empty string element. The line is empty when splitting by "\\n" and "\n" is the last character in str.
 	if lines[len(lines)-1] == "" {
-		lines = lines[:len(lines)-1]
-		lines[len(lines)-1] += "\\n" // add the "\n" back to the last line
+		if len(lines) == 1 {
+			return lines
+		} else {
+			lines = lines[:len(lines)-1]
+			lines[len(lines)-1] += "\\n" // add the "\n" back to the last line
+		}
 	}
 
 	return lines

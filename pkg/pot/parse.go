@@ -39,15 +39,30 @@ type Po struct {
 	Messages []messageNode
 }
 
+func previousToken(tokens []Token, index int) (Token, error) {
+	if index == 0 {
+		return Token{}, errors.New("no previous token")
+	}
+
+	return tokens[index-1], nil
+}
+
 func TokensToPo(tokens []Token) (Po, error) {
 	var messages []messageNode
 
 	currentMessage := messageNode{}
 	header := headerNode{}
 
-	for _, token := range tokens {
-		if token.Value == "" {
-			continue
+	for i, token := range tokens {
+		if token.Value == "" && token.Type == MsgStr {
+			prevToken, err := previousToken(tokens, i)
+			if err != nil {
+				return Po{}, fmt.Errorf("get previous token: %w", err)
+			}
+			// Skip an empty default msgstr in the header if it exists
+			if prevToken.Type == MsgId && prevToken.Value == "" {
+				continue
+			}
 		}
 
 		replacer := strings.NewReplacer("\\n ", "\n", "\\n", "\n")
