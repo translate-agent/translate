@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -28,6 +29,10 @@ func Trace(ctx context.Context, t *testing.T, tracer trace.Tracer) (context.Cont
 		// If the test failed, set the span status to Error
 		if t.Failed() {
 			span.SetStatus(codes.Error, "")
+			// Additional attribute, to be able to filter on failed tests.
+			// When filtering on just error=true, all failed requests are shown, not just the failed tests.
+			// e.g. when testing Bad Request, the request will fail, but the test will pass.
+			span.SetAttributes(attribute.Bool("test.failed", true))
 		}
 	}
 
