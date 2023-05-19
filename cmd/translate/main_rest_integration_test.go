@@ -169,7 +169,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
 	require.NoError(t, err, "create test translation file")
 
-	t.Run("Update file", func(t *testing.T) {
+	t.Run("Update", func(t *testing.T) {
 		t.Parallel()
 
 		ctx, spanEnd := trace(ctx, t)
@@ -415,7 +415,7 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 		Path:   "v1/services/" + service.Id,
 	}
 
-	t.Run("Update name field", func(t *testing.T) {
+	t.Run("Update", func(t *testing.T) {
 		t.Parallel()
 
 		ctx, spanEnd := trace(ctx, t)

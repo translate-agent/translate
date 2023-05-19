@@ -135,7 +135,7 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 		messages = append(messages, msg)
 	}
 
-	t.Run("Upload", func(t *testing.T) {
+	t.Run("Save", func(t *testing.T) {
 		t.Parallel()
 
 		ctx, spanEnd := trace(ctx, t)
