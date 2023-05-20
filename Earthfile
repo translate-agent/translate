@@ -4,7 +4,7 @@ ARG --global USERARCH
 
 ARG --global go_version=1.20.4
 ARG --global golangci_lint_version=1.52.2
-ARG --global bufbuild_version=1.18.0
+ARG --global bufbuild_version=1.19.0
 ARG --global migrate_version=4.15.2
 ARG --global sqlfluff_version=2.1.0
 
