@@ -7,7 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -110,9 +110,9 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
 	tests := []struct {
-		name         string
 		request      *translatev1.UploadTranslationFileRequest
-		expectedCode uint
+		name         string
+		expectedCode int
 	}{
 		{
 			name:         "Happy Path",
@@ -140,9 +140,9 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			defer resp.Body.Close()
 
 			// Read the response to give error message on failure
-			respBody, _ := ioutil.ReadAll(resp.Body)
+			respBody, _ := io.ReadAll(resp.Body)
 
-			assert.Equal(t, int(tt.expectedCode), resp.StatusCode, "body: %s", string(respBody))
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "body: %s", string(respBody))
 		})
 	}
 }
@@ -168,7 +168,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	require.NoError(t, err, "do request")
 
 	defer resp.Body.Close()
-	respBody, _ := ioutil.ReadAll(resp.Body)
+	respBody, _ := io.ReadAll(resp.Body)
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode, "body: %s", string(respBody))
 }
@@ -202,8 +202,8 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 	unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
 
 	tests := []struct {
-		name         string
 		request      *translatev1.DownloadTranslationFileRequest
+		name         string
 		expectedCode int
 	}{
 		{
@@ -236,10 +236,10 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			require.NoError(t, err, "do request")
 
 			defer resp.Body.Close()
-			respBody, _ := ioutil.ReadAll(resp.Body)
+			respBody, _ := io.ReadAll(resp.Body)
 
 			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", string(respBody))
+			assert.Equal(t, tt.expectedCode, actualCode, "body: %s", string(respBody))
 		})
 	}
 }
@@ -262,9 +262,9 @@ func Test_CreateService_REST(t *testing.T) {
 	serviceMalformedID.Id += "_FAIL"
 
 	tests := []struct {
-		name         string
 		service      *translatev1.Service
-		expectedCode uint
+		name         string
+		expectedCode int
 	}{
 		{
 			name:         "Happy path With ID",
@@ -303,7 +303,7 @@ func Test_CreateService_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, int(tt.expectedCode), resp.StatusCode)
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
 		})
 	}
 }
@@ -402,8 +402,8 @@ func Test_GetService_REST(t *testing.T) {
 	require.NoError(t, err, "Prepare test service")
 
 	tests := []struct {
-		name         string
 		service      *translatev1.Service
+		name         string
 		expectedCode uint
 	}{
 		{
@@ -455,8 +455,8 @@ func Test_DeleteService_REST(t *testing.T) {
 	require.NoError(t, err, "Prepare test service")
 
 	tests := []struct {
-		name         string
 		service      *translatev1.Service
+		name         string
 		expectedCode int
 	}{
 		{

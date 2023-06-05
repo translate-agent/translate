@@ -54,16 +54,16 @@ func requireEqualMessages(t *testing.T, expected, actual *model.Messages) {
 func Test_SaveMessages(t *testing.T) {
 	t.Parallel()
 
-	ctx := startSpan(context.Background(), t)
+	testCtx := startSpan(context.Background(), t)
 
 	// Prepare
-	service := prepareService(ctx, t)
+	service := prepareService(testCtx, t)
 
 	tests := []struct {
-		name        string
-		serviceID   uuid.UUID
 		messages    *model.Messages
 		expectedErr error
+		name        string
+		serviceID   uuid.UUID
 	}{
 		{
 			name:        "Happy path",
@@ -84,7 +84,7 @@ func Test_SaveMessages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := startSpan(ctx, t)
+			ctx := startSpan(testCtx, t)
 
 			err := repository.SaveMessages(ctx, tt.serviceID, tt.messages)
 
@@ -102,7 +102,6 @@ func Test_SaveMessages(t *testing.T) {
 
 			requireEqualMessages(t, tt.messages, actualMessages)
 		})
-
 	}
 }
 
@@ -129,28 +128,23 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 		}
 
 		languagesUsed[msg.Language] = true
+
 		messages = append(messages, msg)
 	}
 
-	t.Run("Save", func(t *testing.T) {
-		t.Parallel()
+	// Save messages
+	for _, m := range messages {
+		err := repository.SaveMessages(ctx, service.ID, m)
+		require.NoError(t, err, "Save messages")
+	}
 
-		ctx := startSpan(ctx, t)
+	// Assure that all messages are saved
+	for _, m := range messages {
+		actualMessages, err := repository.LoadMessages(ctx, service.ID, m.Language)
+		require.NoError(t, err, "Load saved messages")
 
-		// Save messages
-		for _, m := range messages {
-			err := repository.SaveMessages(ctx, service.ID, m)
-			require.NoError(t, err, "Save messages")
-		}
-
-		// Assure that all messages are saved
-		for _, m := range messages {
-			actualMessages, err := repository.LoadMessages(ctx, service.ID, m.Language)
-			require.NoError(t, err, "Load saved messages")
-
-			requireEqualMessages(t, m, actualMessages)
-		}
-	})
+		requireEqualMessages(t, m, actualMessages)
+	}
 }
 
 func Test_SaveMessagesUpdate(t *testing.T) {
@@ -165,42 +159,36 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 	err := repository.SaveMessages(ctx, service.ID, expectedMessages)
 	require.NoError(t, err, "Save messages")
 
-	t.Run("Update", func(t *testing.T) {
-		t.Parallel()
+	// Update Message, Description and Fuzzy values, while keeping the ID
+	for i := range expectedMessages.Messages {
+		expectedMessages.Messages[i].Message = gofakeit.SentenceSimple()
+		expectedMessages.Messages[i].Description = gofakeit.SentenceSimple()
+		expectedMessages.Messages[i].Fuzzy = gofakeit.Bool()
+	}
 
-		ctx := startSpan(ctx, t)
+	// Save updated messages
 
-		// Update Message, Description and Fuzzy values, while keeping the ID
-		for i := range expectedMessages.Messages {
-			expectedMessages.Messages[i].Message = gofakeit.SentenceSimple()
-			expectedMessages.Messages[i].Description = gofakeit.SentenceSimple()
-			expectedMessages.Messages[i].Fuzzy = gofakeit.Bool()
-		}
+	err = repository.SaveMessages(ctx, service.ID, expectedMessages)
+	require.NoError(t, err, "Update messages")
 
-		// Save updated messages
+	// Assure that messages are updated
 
-		err := repository.SaveMessages(ctx, service.ID, expectedMessages)
-		require.NoError(t, err, "Update messages")
+	actualMessages, err := repository.LoadMessages(ctx, service.ID, expectedMessages.Language)
+	require.NoError(t, err, "Load updated messages")
 
-		// Assure that messages are updated
-
-		actualMessages, err := repository.LoadMessages(ctx, service.ID, expectedMessages.Language)
-		require.NoError(t, err, "Load updated messages")
-
-		requireEqualMessages(t, expectedMessages, actualMessages)
-	})
+	requireEqualMessages(t, expectedMessages, actualMessages)
 }
 
 func Test_LoadMessages(t *testing.T) {
 	t.Parallel()
 
-	ctx := startSpan(context.Background(), t)
+	testCtx := startSpan(context.Background(), t)
 
 	// Prepare
-	service := prepareService(ctx, t)
+	service := prepareService(testCtx, t)
 	messages := randMessages()
 
-	err := repository.SaveMessages(ctx, service.ID, messages)
+	err := repository.SaveMessages(testCtx, service.ID, messages)
 	require.NoError(t, err, "Prepare test messages")
 
 	missingServiceID := uuid.New()
@@ -212,9 +200,9 @@ func Test_LoadMessages(t *testing.T) {
 
 	tests := []struct {
 		expected  *model.Messages
+		language  language.Tag
 		name      string
 		serviceID uuid.UUID
-		language  language.Tag
 	}{
 		{
 			name:      "Happy Path",
@@ -241,7 +229,7 @@ func Test_LoadMessages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := startSpan(ctx, t)
+			ctx := startSpan(testCtx, t)
 
 			actualMessages, err := repository.LoadMessages(ctx, tt.serviceID, tt.language)
 			require.NoError(t, err, "Load messages")

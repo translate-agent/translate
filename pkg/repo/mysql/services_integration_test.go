@@ -73,7 +73,7 @@ func randService() *model.Service {
 func Test_SaveService(t *testing.T) {
 	t.Parallel()
 
-	ctx := startSpan(context.Background(), t)
+	testCtx := startSpan(context.Background(), t)
 
 	tests := []struct {
 		service *model.Service
@@ -93,7 +93,7 @@ func Test_SaveService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := startSpan(ctx, t)
+			ctx := startSpan(testCtx, t)
 
 			err := repository.SaveService(ctx, tt.service)
 			if !assert.NoError(t, err) {
@@ -125,38 +125,33 @@ func Test_UpdateService(t *testing.T) {
 	}
 
 	// Actual Test
-	t.Run("Update", func(t *testing.T) {
-		t.Parallel()
 
-		ctx := startSpan(ctx, t)
+	// update service fields and save
+	expectedService.Name = gofakeit.FirstName()
 
-		// update service fields and save
-		expectedService.Name = gofakeit.FirstName()
+	err = repository.SaveService(ctx, expectedService)
+	if !assert.NoError(t, err) {
+		return
+	}
 
-		err := repository.SaveService(ctx, expectedService)
-		if !assert.NoError(t, err) {
-			return
-		}
+	// check if really updated
+	actualService, err := repository.LoadService(ctx, expectedService.ID)
+	if !assert.NoError(t, err) {
+		return
+	}
 
-		// check if really updated
-		actualService, err := repository.LoadService(ctx, expectedService.ID)
-		if !assert.NoError(t, err) {
-			return
-		}
-
-		assert.Equal(t, expectedService, actualService)
-	})
+	assert.Equal(t, expectedService, actualService)
 }
 
 func Test_LoadService(t *testing.T) {
 	t.Parallel()
 
-	ctx := startSpan(context.Background(), t)
+	testCtx := startSpan(context.Background(), t)
 
 	// Prepare
 	service := randService()
 
-	err := repository.SaveService(ctx, service)
+	err := repository.SaveService(testCtx, service)
 	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
@@ -185,7 +180,7 @@ func Test_LoadService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := startSpan(ctx, t)
+			ctx := startSpan(testCtx, t)
 
 			actual, err := repository.LoadService(ctx, tt.serviceID)
 
@@ -222,35 +217,29 @@ func Test_LoadServices(t *testing.T) {
 		expectedServices[i] = *service
 	}
 
-	t.Run("Load", func(t *testing.T) {
-		t.Parallel()
+	actual, err := repository.LoadServices(ctx)
+	if !assert.NoError(t, err) {
+		return
+	}
 
-		ctx := startSpan(ctx, t)
+	require.GreaterOrEqual(t, len(actual), len(expectedServices))
 
-		actual, err := repository.LoadServices(ctx)
-		if !assert.NoError(t, err) {
+	for _, expected := range expectedServices {
+		if !assert.Contains(t, actual, expected) {
 			return
 		}
-
-		require.GreaterOrEqual(t, len(actual), len(expectedServices))
-
-		for _, expected := range expectedServices {
-			if !assert.Contains(t, actual, expected) {
-				return
-			}
-		}
-	})
+	}
 }
 
 func Test_DeleteService(t *testing.T) {
 	t.Parallel()
 
-	ctx := startSpan(context.Background(), t)
+	testCtx := startSpan(context.Background(), t)
 
 	// Prepare
 	service := randService()
 
-	err := repository.SaveService(ctx, service)
+	err := repository.SaveService(testCtx, service)
 	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
@@ -277,7 +266,7 @@ func Test_DeleteService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := startSpan(ctx, t)
+			ctx := startSpan(testCtx, t)
 
 			err := repository.DeleteService(ctx, tt.serviceID)
 			if tt.expectedErr != nil {

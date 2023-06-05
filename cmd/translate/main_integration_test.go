@@ -31,6 +31,10 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	os.Exit(testMain(m))
+}
+
+func testMain(m *testing.M) (code int) {
 	ctx := context.Background()
 
 	tp, err := tracer.TracerProvider(ctx)
@@ -73,7 +77,7 @@ func TestMain(m *testing.M) {
 	client = translatev1.NewTranslateServiceClient(conn)
 
 	// Run the tests.
-	code := m.Run()
+	code = m.Run()
 	// Send soft kill (termination) signal to process.
 	err = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 	if err != nil {
@@ -89,7 +93,7 @@ func TestMain(m *testing.M) {
 
 	tp.ForceFlush(ctx)
 
-	os.Exit(code)
+	return code
 }
 
 func mustGetFreePort() string {
