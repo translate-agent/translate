@@ -2,39 +2,28 @@ package testutil
 
 import (
 	"context"
-	"strings"
 	"testing"
 
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
 // Trace starts a new span using the provided Tracer.
-// The span name is derived from the provided testing.T object.
-func Trace(ctx context.Context, t *testing.T, tracer trace.Tracer) (context.Context, func()) {
-	// Split test name into sub-tests names.
-	testNameParts := strings.Split(t.Name(), "/")
+// The span name is derived from the provided testing.T.
+func Trace(ctx context.Context, t *testing.T, tracer trace.Tracer) context.Context {
+	var span trace.Span
 
-	spanName := testNameParts[0]
-	// If the test name contains sub-tests, use the sub-test name as span name.
-	if len(testNameParts) > 1 {
-		spanName = testNameParts[len(testNameParts)-1]
-	}
+	ctx, span = tracer.Start(ctx, t.Name())
 
-	newCtx, span := tracer.Start(ctx, spanName)
-	spanEnd := func() {
-		defer span.End()
-
-		// If the test failed, set the span status to Error
+	t.Cleanup(func() {
 		if t.Failed() {
 			span.SetStatus(codes.Error, "")
-			// Additional attribute, to be able to filter on failed tests.
-			// When filtering on just error=true, all failed requests are shown, not just the failed tests.
-			// e.g. when testing Bad Request, the request will fail, but the test will pass.
-			span.SetAttributes(attribute.Bool("test.failed", true))
+		} else {
+			span.SetStatus(codes.Ok, "")
 		}
-	}
 
-	return newCtx, spanEnd
+		span.End()
+	})
+
+	return ctx
 }

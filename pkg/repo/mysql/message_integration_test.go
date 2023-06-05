@@ -54,8 +54,7 @@ func requireEqualMessages(t *testing.T, expected, actual *model.Messages) {
 func Test_SaveMessages(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := startSpan(context.Background(), t)
 
 	// Prepare
 	service := prepareService(ctx, t)
@@ -85,8 +84,7 @@ func Test_SaveMessages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, spanEnd := trace(ctx, t)
-			defer spanEnd()
+			ctx := startSpan(ctx, t)
 
 			err := repository.SaveMessages(ctx, tt.serviceID, tt.messages)
 
@@ -111,8 +109,7 @@ func Test_SaveMessages(t *testing.T) {
 func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := startSpan(context.Background(), t)
 
 	// Prepare
 	service := prepareService(ctx, t)
@@ -138,8 +135,7 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 	t.Run("Save", func(t *testing.T) {
 		t.Parallel()
 
-		ctx, spanEnd := trace(ctx, t)
-		defer spanEnd()
+		ctx := startSpan(ctx, t)
 
 		// Save messages
 		for _, m := range messages {
@@ -160,8 +156,7 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 func Test_SaveMessagesUpdate(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := startSpan(context.Background(), t)
 
 	// Prepare
 	service := prepareService(ctx, t)
@@ -173,8 +168,7 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 	t.Run("Update", func(t *testing.T) {
 		t.Parallel()
 
-		ctx, spanEnd := trace(ctx, t)
-		defer spanEnd()
+		ctx := startSpan(ctx, t)
 
 		// Update Message, Description and Fuzzy values, while keeping the ID
 		for i := range expectedMessages.Messages {
@@ -200,8 +194,7 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 func Test_LoadMessages(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := startSpan(context.Background(), t)
 
 	// Prepare
 	service := prepareService(ctx, t)
@@ -248,8 +241,7 @@ func Test_LoadMessages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, spanEnd := trace(ctx, t)
-			defer spanEnd()
+			ctx := startSpan(ctx, t)
 
 			actualMessages, err := repository.LoadMessages(ctx, tt.serviceID, tt.language)
 			require.NoError(t, err, "Load messages")

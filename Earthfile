@@ -63,6 +63,10 @@ migrate:
   RUN --push --secret=db_password \
     if [[ $db = "mysql" ]]; then yes | migrate -path=. -database "$db://$db_user:$db_password@tcp($db_host:$db_port)/$db_schema" $cmd; fi
 
+check:
+  BUILD +lint
+  BUILD +test
+
 # -----------------------Linting-----------------------
 
 lint-migrate:
@@ -158,4 +162,4 @@ image-multiplatform:
   BUILD \
   --platform=linux/amd64 \
   --platform=linux/arm64 \
-  +image --registry=$registry \
+  +image --registry=$registry

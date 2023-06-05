@@ -4,115 +4,19 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"net"
-	"os"
-	"sync"
-	"syscall"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/testutil"
-	"go.expect.digital/translate/pkg/tracer"
 	"go.expect.digital/translate/pkg/translate"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	oteltrace "go.opentelemetry.io/otel/trace"
 	"golang.org/x/text/language"
 	"google.golang.org/genproto/protobuf/field_mask"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
-
-var (
-	host string
-	port string
-
-	client     translatev1.TranslateServiceClient
-	testTracer oteltrace.Tracer
-)
-
-const tracerName = "go.expect.digital/translate/cmd/translate"
-
-func mustGetFreePort() string {
-	// Listen on port 0 to have the operating system allocate an available port.
-	l, err := net.Listen("tcp", host+":0")
-	if err != nil {
-		log.Panicf("get free port: %v", err)
-	}
-	defer l.Close()
-
-	// Get the port number from the address that the Listener is listening on.
-	addr := l.Addr().(*net.TCPAddr)
-
-	return fmt.Sprint(addr.Port)
-}
-
-func TestMain(m *testing.M) {
-	ctx := context.Background()
-
-	host = "localhost"
-	port = mustGetFreePort()
-
-	viper.Set("service.port", port)
-	viper.Set("service.host", host)
-
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-		main()
-	}()
-
-	grpcOpts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
-		grpc.WithBlock(),
-	}
-	// Wait for the server to start and establish a connection.
-	conn, err := grpc.DialContext(ctx, host+":"+port, grpcOpts...)
-	if err != nil {
-		log.Panicf("create connection: %v", err)
-	}
-
-	client = translatev1.NewTranslateServiceClient(conn)
-
-	tp, err := tracer.TracerProvider(ctx)
-	if err != nil {
-		log.Panicf("set tracer provider: %v", err)
-	}
-
-	testTracer = tp.Tracer(tracerName)
-
-	// Run the tests.
-	code := m.Run()
-	// Send soft kill (termination) signal to process.
-	err = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
-	if err != nil {
-		log.Panicf("send termination signal: %v", err)
-	}
-	// Wait for main() to finish cleanup.
-	wg.Wait()
-	// Close the connection and tracer.
-	conn.Close()
-	tp.Shutdown(ctx)
-
-	os.Exit(code)
-}
-
-func trace(ctx context.Context, t *testing.T) (context.Context, func()) {
-	return testutil.Trace(ctx, t, testTracer)
-}
 
 // -------------Translation File-------------.
 
@@ -120,20 +24,15 @@ func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.T
 	t.Helper()
 
 	n := gofakeit.IntRange(1, 5)
-
 	lang := language.MustParse(gofakeit.LanguageBCP())
-
 	messages := model.Messages{
 		Language: lang,
 		Messages: make([]model.Message, 0, n),
 	}
 
 	for i := 0; i < n; i++ {
-		messages.Messages = append(messages.Messages, model.Message{
-			ID:          gofakeit.SentenceSimple(),
-			Description: gofakeit.SentenceSimple(),
-		},
-		)
+		message := model.Message{ID: gofakeit.SentenceSimple(), Description: gofakeit.SentenceSimple()}
+		messages.Messages = append(messages.Messages, message)
 	}
 
 	data, err := translate.MessagesToData(schema, messages)
@@ -160,6 +59,9 @@ func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTransl
 func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 	t.Helper()
 
+	ctx, span := testTracer.Start(ctx, "test: create service")
+	defer span.End()
+
 	service := randService()
 
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
@@ -171,9 +73,7 @@ func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	// Using t.Cleanup instead of defer to ensure that the sub-tests are finished before closing parent span.
-	t.Cleanup(spanEnd)
+	ctx := trace(context.Background(), t)
 
 	// Prepare
 	service := createService(ctx, t)
@@ -211,12 +111,8 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 
-			ctx, spanEnd := trace(ctx, t)
-			defer spanEnd()
-
+		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.UploadTranslationFile(ctx, tt.request)
 
 			actualCode := status.Code(err)
@@ -228,8 +124,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := trace(context.Background(), t)
 
 	// Prepare
 	service := createService(ctx, t)
@@ -241,22 +136,12 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
 	require.NoError(t, err, "create test translation file")
 
-	t.Run("Update File", func(t *testing.T) {
-		t.Parallel()
+	// Change messages and upload again with the same language and serviceID
+	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
 
-		ctx, spanEnd := trace(ctx, t)
-		defer spanEnd()
+	_, err = client.UploadTranslationFile(ctx, uploadReq)
 
-		// Change messages and upload again with the same language and serviceID
-		uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
-
-		_, err := client.UploadTranslationFile(ctx, uploadReq)
-
-		expectedCode := codes.OK
-		actualCode := status.Code(err)
-
-		assert.Equal(t, expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", expectedCode, actualCode, err)
-	})
+	assert.Equal(t, codes.OK, status.Code(err))
 }
 
 func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslationFileRequest {
@@ -270,8 +155,7 @@ func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslatio
 func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := trace(context.Background(), t)
 
 	// Prepare
 	service := createService(ctx, t)
@@ -325,16 +209,10 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			ctx, spanEnd := trace(ctx, t)
-			defer spanEnd()
-
+		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.DownloadTranslationFile(ctx, tt.request)
 
-			actualCode := status.Code(err)
-			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
+			assert.Equal(t, tt.expectedCode, status.Code(err))
 		})
 	}
 }
@@ -351,8 +229,7 @@ func randService() *translatev1.Service {
 func Test_CreateService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := trace(context.Background(), t)
 
 	// Prepare
 	serviceWithID := randService()
@@ -387,17 +264,10 @@ func Test_CreateService_gRPC(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			ctx, spanEnd := trace(ctx, t)
-			defer spanEnd()
-
+		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.CreateService(ctx, tt.request)
 
-			actualCode := status.Code(err)
-
-			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+			assert.Equal(t, tt.expectedCode, status.Code(err))
 		})
 	}
 }
@@ -405,8 +275,7 @@ func Test_CreateService_gRPC(t *testing.T) {
 func Test_UpdateService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := trace(context.Background(), t)
 
 	// Prepare
 	tests := []struct {
@@ -450,20 +319,13 @@ func Test_UpdateService_gRPC(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			ctx, spanEnd := trace(ctx, t)
-			defer spanEnd()
-
+		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
 			// Change the ID to the one of the service that was created in the prepare step.
 			tt.request.Service.Id = tt.serviceToUpdate.Id
 
 			_, err := client.UpdateService(ctx, tt.request)
 
-			actualCode := status.Code(err)
-
-			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+			assert.Equal(t, tt.expectedCode, status.Code(err))
 		})
 	}
 }
@@ -471,8 +333,7 @@ func Test_UpdateService_gRPC(t *testing.T) {
 func Test_GetService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := trace(context.Background(), t)
 
 	// Prepare
 	service := randService()
@@ -499,16 +360,10 @@ func Test_GetService_gRPC(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			ctx, spanEnd := trace(ctx, t)
-			defer spanEnd()
-
+		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.GetService(ctx, tt.request)
 
-			actualCode := status.Code(err)
-			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+			assert.Equal(t, tt.expectedCode, status.Code(err))
 		})
 	}
 }
@@ -516,8 +371,7 @@ func Test_GetService_gRPC(t *testing.T) {
 func Test_DeleteService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := trace(context.Background(), t)
 
 	// Prepare
 	service := randService()
@@ -544,16 +398,10 @@ func Test_DeleteService_gRPC(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			ctx, spanEnd := trace(ctx, t)
-			defer spanEnd()
-
+		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.DeleteService(ctx, tt.request)
 
-			actualCode := status.Code(err)
-			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s", tt.expectedCode, actualCode)
+			assert.Equal(t, tt.expectedCode, status.Code(err))
 		})
 	}
 }
@@ -561,13 +409,9 @@ func Test_DeleteService_gRPC(t *testing.T) {
 func Test_ListServices_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := trace(context.Background(), t)
 
 	_, err := client.ListServices(ctx, &translatev1.ListServicesRequest{})
 
-	expectedCode := codes.OK
-	actualCode := status.Code(err)
-
-	assert.Equal(t, expectedCode, actualCode, "want codes.%s got codes.%s", expectedCode, actualCode)
+	assert.Equal(t, codes.OK, status.Code(err))
 }

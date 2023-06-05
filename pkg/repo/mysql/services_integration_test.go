@@ -59,7 +59,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func trace(ctx context.Context, t *testing.T) (context.Context, func()) {
+func startSpan(ctx context.Context, t *testing.T) context.Context {
 	return testutil.Trace(ctx, t, testTracer)
 }
 
@@ -73,8 +73,7 @@ func randService() *model.Service {
 func Test_SaveService(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := startSpan(context.Background(), t)
 
 	tests := []struct {
 		service *model.Service
@@ -94,8 +93,7 @@ func Test_SaveService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, spanEnd := trace(ctx, t)
-			defer spanEnd()
+			ctx := startSpan(ctx, t)
 
 			err := repository.SaveService(ctx, tt.service)
 			if !assert.NoError(t, err) {
@@ -116,8 +114,7 @@ func Test_SaveService(t *testing.T) {
 func Test_UpdateService(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := startSpan(context.Background(), t)
 
 	// Prepare
 	expectedService := randService()
@@ -131,8 +128,7 @@ func Test_UpdateService(t *testing.T) {
 	t.Run("Update", func(t *testing.T) {
 		t.Parallel()
 
-		ctx, spanEnd := trace(ctx, t)
-		defer spanEnd()
+		ctx := startSpan(ctx, t)
 
 		// update service fields and save
 		expectedService.Name = gofakeit.FirstName()
@@ -155,8 +151,7 @@ func Test_UpdateService(t *testing.T) {
 func Test_LoadService(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := startSpan(context.Background(), t)
 
 	// Prepare
 	service := randService()
@@ -190,8 +185,7 @@ func Test_LoadService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, spanEnd := trace(ctx, t)
-			defer spanEnd()
+			ctx := startSpan(ctx, t)
 
 			actual, err := repository.LoadService(ctx, tt.serviceID)
 
@@ -212,8 +206,7 @@ func Test_LoadService(t *testing.T) {
 func Test_LoadServices(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := startSpan(context.Background(), t)
 
 	// Prepare
 	expectedServices := make([]model.Service, 3)
@@ -232,8 +225,7 @@ func Test_LoadServices(t *testing.T) {
 	t.Run("Load", func(t *testing.T) {
 		t.Parallel()
 
-		ctx, spanEnd := trace(ctx, t)
-		defer spanEnd()
+		ctx := startSpan(ctx, t)
 
 		actual, err := repository.LoadServices(ctx)
 		if !assert.NoError(t, err) {
@@ -253,8 +245,7 @@ func Test_LoadServices(t *testing.T) {
 func Test_DeleteService(t *testing.T) {
 	t.Parallel()
 
-	ctx, spanEnd := trace(context.Background(), t)
-	t.Cleanup(spanEnd)
+	ctx := startSpan(context.Background(), t)
 
 	// Prepare
 	service := randService()
@@ -286,8 +277,7 @@ func Test_DeleteService(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, spanEnd := trace(ctx, t)
-			defer spanEnd()
+			ctx := startSpan(ctx, t)
 
 			err := repository.DeleteService(ctx, tt.serviceID)
 			if tt.expectedErr != nil {
