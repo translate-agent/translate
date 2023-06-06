@@ -29,6 +29,7 @@ func init() {
 	testTracer = tp.Tracer("go.expect.digital/translate-agent/translate")
 }
 
+// Tracer returns test tracer.
 func Tracer() trace.Tracer { return testTracer }
 
 // Trace starts a new root span using the provided Tracer.
@@ -51,9 +52,10 @@ func Trace(t *testing.T) (context.Context, SubtestFn) {
 	return ctx, Subtest(ctx, t)
 }
 
+// SubtestFn is a function that runs parallel subtest with a trace instrumentation.
 type SubtestFn = func(name string, f func(context.Context, *testing.T))
 
-// Subtest returns a function that runs parallel subtest with a trace instrumentation.
+// Subtest returns SubtestFn that runs parallel subtest with a trace instrumentation.
 func Subtest(ctx context.Context, t *testing.T) SubtestFn {
 	return func(name string, f func(ctx context.Context, t *testing.T)) {
 		t.Run(name, func(t *testing.T) {
