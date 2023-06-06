@@ -4,7 +4,7 @@ ARG --global USERARCH
 
 ARG --global go_version=1.20.4
 ARG --global golangci_lint_version=1.52.2
-ARG --global bufbuild_version=1.18.0
+ARG --global bufbuild_version=1.19.0
 ARG --global migrate_version=4.15.2
 ARG --global sqlfluff_version=2.1.0
 
@@ -63,6 +63,10 @@ migrate:
   RUN --push --secret=db_password \
     if [[ $db = "mysql" ]]; then yes | migrate -path=. -database "$db://$db_user:$db_password@tcp($db_host:$db_port)/$db_schema" $cmd; fi
 
+check:
+  BUILD +lint
+  BUILD +test
+
 # -----------------------Linting-----------------------
 
 lint-migrate:
@@ -93,7 +97,7 @@ lint:
 
 test-unit:
   FROM +go
-  RUN go test ./... --count 1
+  RUN go test ./...
 
 test-integration:
   FROM earthly/dind:alpine
@@ -158,4 +162,4 @@ image-multiplatform:
   BUILD \
   --platform=linux/amd64 \
   --platform=linux/arm64 \
-  +image --registry=$registry \
+  +image --registry=$registry

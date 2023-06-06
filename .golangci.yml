@@ -1,4 +1,6 @@
 run:
+  build-tags:
+    - integration
   timeout: 2m
   skip-dirs:
     - pkg/server
