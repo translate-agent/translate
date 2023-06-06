@@ -19,6 +19,7 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"golang.org/x/text/language"
 )
 
 // TODO Currently, we manually create requests for the REST API.
@@ -107,10 +108,9 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	happyRequest := randUploadRequest(t, service.Id)
 
 	// PUT /v1/services/{service_id}/files
-	randData, _ := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 	happyRequestNoLang := &translatev1.UploadTranslationFileRequest{
 		ServiceId: service.Id,
-		Data:      randData,
+		Data:      randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, testutil.RandLang()), // NG Localize has language in the file.
 		Schema:    translatev1.Schema_JSON_NG_LOCALIZE,
 	}
 
@@ -131,7 +131,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 		},
 		{
 			name:         "Happy Path no language in path",
-			request:      gRPCUploadFileToRESTReq(ctx, t, happyRequestNoLang),
+			request:      happyRequestNoLang,
 			expectedCode: http.StatusOK,
 		},
 		{
@@ -177,11 +177,11 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	require.NoError(t, err, "create test translation file")
 
 	// Change messages and upload again with the same language and serviceID
-	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
+	uploadReq.Data = randUploadData(t, uploadReq.Schema, language.MustParse(uploadReq.Language))
 
 	req := gRPCUploadFileToRESTReq(ctx, t, uploadReq)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := otelhttp.DefaultClient.Do(req)
 	require.NoError(t, err, "do request")
 
 	defer resp.Body.Close()

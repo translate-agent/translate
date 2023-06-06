@@ -21,12 +21,11 @@ import (
 
 // -------------Translation File-------------.
 
-func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.Tag) {
+func randUploadData(t *testing.T, schema translatev1.Schema, lang language.Tag) []byte {
 	t.Helper()
 
 	n := gofakeit.IntRange(1, 5)
-	lang := language.MustParse(gofakeit.LanguageBCP())
-	messages := model.Messages{
+	messages := &model.Messages{
 		Language: lang,
 		Messages: make([]model.Message, 0, n),
 	}
@@ -39,14 +38,16 @@ func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.T
 	data, err := translate.MessagesToData(schema, messages)
 	require.NoError(t, err, "convert rand messages to serialized data")
 
-	return data, lang
+	return data
 }
 
 func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTranslationFileRequest {
 	t.Helper()
 
 	schema := translatev1.Schema(gofakeit.IntRange(1, 7))
-	data, lang := randUploadData(t, schema)
+	lang := testutil.RandLang()
+
+	data := randUploadData(t, schema, lang)
 
 	return &translatev1.UploadTranslationFileRequest{
 		ServiceId: serviceID,
@@ -83,10 +84,9 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 	happyRequest := randUploadRequest(t, service.Id)
 
-	randData, _ := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 	happyRequestNoLangInReq := &translatev1.UploadTranslationFileRequest{
 		ServiceId: service.Id,
-		Data:      randData,
+		Data:      randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, testutil.RandLang()), // NG Localize has language in the file.
 		Schema:    translatev1.Schema_JSON_NG_LOCALIZE,
 	}
 
@@ -149,7 +149,7 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 	require.NoError(t, err, "create test translation file")
 
 	// Change messages and upload again with the same language and serviceID
-	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
+	uploadReq.Data = randUploadData(t, uploadReq.Schema, language.MustParse(uploadReq.Language))
 
 	_, err = client.UploadTranslationFile(ctx, uploadReq)
 
