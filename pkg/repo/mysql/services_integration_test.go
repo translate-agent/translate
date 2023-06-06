@@ -4,50 +4,16 @@ package mysql
 
 import (
 	"context"
-	"log"
-	"os"
-	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
-	"go.expect.digital/translate/pkg/tracer"
+	"go.expect.digital/translate/pkg/testutil"
 )
-
-var repository *Repo
-
-func TestMain(m *testing.M) {
-	ctx := context.Background()
-
-	viper.SetEnvPrefix("translate")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	viper.AutomaticEnv()
-
-	tp, err := tracer.TracerProvider()
-	if err != nil {
-		log.Panicf("set tracer provider: %v", err)
-	}
-
-	repository, err = NewRepo(WithDefaultDB(ctx))
-	if err != nil {
-		log.Panicf("create new repo: %v", err)
-	}
-
-	code := m.Run()
-
-	repository.db.Close()
-
-	if err := tp.Shutdown(ctx); err != nil {
-		log.Panicf("tp shutdown: %v", err)
-	}
-
-	os.Exit(code)
-}
 
 func randService() *model.Service {
 	return &model.Service{
@@ -59,7 +25,7 @@ func randService() *model.Service {
 func Test_SaveService(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	_, subtest := testutil.Trace(t)
 
 	tests := []struct {
 		service *model.Service
@@ -76,9 +42,7 @@ func Test_SaveService(t *testing.T) {
 	}
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			err := repository.SaveService(ctx, tt.service)
 			if !assert.NoError(t, err) {
 				return
@@ -98,14 +62,17 @@ func Test_SaveService(t *testing.T) {
 func Test_UpdateService(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, _ := testutil.Trace(t)
 
+	// Prepare
 	expectedService := randService()
 
 	err := repository.SaveService(ctx, expectedService)
 	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
+
+	// Actual Test
 
 	// update service fields and save
 	expectedService.Name = gofakeit.FirstName()
@@ -127,11 +94,12 @@ func Test_UpdateService(t *testing.T) {
 func Test_LoadService(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	testCtx, subtest := testutil.Trace(t)
 
+	// Prepare
 	service := randService()
 
-	err := repository.SaveService(ctx, service)
+	err := repository.SaveService(testCtx, service)
 	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
@@ -149,16 +117,15 @@ func Test_LoadService(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "Nonexistent",
+			name:        "Not Found",
 			serviceID:   uuid.New(),
 			expectedErr: repo.ErrNotFound,
 		},
 	}
+
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			actual, err := repository.LoadService(ctx, tt.serviceID)
 
 			if tt.expectedErr != nil {
@@ -178,8 +145,9 @@ func Test_LoadService(t *testing.T) {
 func Test_LoadServices(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, _ := testutil.Trace(t)
 
+	// Prepare
 	expectedServices := make([]model.Service, 3)
 
 	for i := 0; i < 3; i++ {
@@ -198,6 +166,8 @@ func Test_LoadServices(t *testing.T) {
 		return
 	}
 
+	require.GreaterOrEqual(t, len(actual), len(expectedServices))
+
 	for _, expected := range expectedServices {
 		if !assert.Contains(t, actual, expected) {
 			return
@@ -208,11 +178,12 @@ func Test_LoadServices(t *testing.T) {
 func Test_DeleteService(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	testCtx, subtest := testutil.Trace(t)
 
+	// Prepare
 	service := randService()
 
-	err := repository.SaveService(ctx, service)
+	err := repository.SaveService(testCtx, service)
 	if !assert.NoError(t, err, "Prepare test data") {
 		return
 	}
@@ -233,11 +204,10 @@ func Test_DeleteService(t *testing.T) {
 			expectedErr: repo.ErrNotFound,
 		},
 	}
+
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			err := repository.DeleteService(ctx, tt.serviceID)
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())

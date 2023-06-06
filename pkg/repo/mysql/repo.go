@@ -34,7 +34,7 @@ func WithDefaultDB(ctx context.Context) Option {
 
 		r.db, err = NewDB(ctx, conf)
 		if err != nil {
-			return fmt.Errorf("create new db from conf: %w", err)
+			return fmt.Errorf("connect to DB from default conf: %w", err)
 		}
 
 		return nil

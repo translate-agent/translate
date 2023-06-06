@@ -6,15 +6,12 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"golang.org/x/exp/slices"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
-
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // ------------------------GetService-------------------------------
@@ -122,20 +119,35 @@ func (t *TranslateServiceServer) CreateService(
 
 // ---------------------UpdateService-------------------------------
 
-var updateMaskAcceptablePaths = []string{"name"}
-
 type updateServiceParams struct {
-	mask    *fieldmaskpb.FieldMask
 	service *model.Service
+	mask    model.Mask
 }
 
 func parseUpdateServiceParams(req *translatev1.UpdateServiceRequest) (*updateServiceParams, error) {
-	service, err := serviceFromProto(req.GetService())
+	var (
+		params updateServiceParams
+		err    error
+
+		reqService    = req.GetService()
+		reqUpdateMask = req.GetUpdateMask()
+	)
+
+	// Parse service
+	params.service, err = serviceFromProto(reqService)
 	if err != nil {
 		return nil, fmt.Errorf("parse service: %w", err)
 	}
 
-	return &updateServiceParams{mask: req.GetUpdateMask(), service: service}, nil
+	// Parse field mask (if any)
+	if reqUpdateMask != nil {
+		params.mask, err = parseFieldMask(reqService, reqUpdateMask.Paths)
+		if err != nil {
+			return nil, fmt.Errorf("parse field mask: %w", err)
+		}
+	}
+
+	return &params, nil
 }
 
 func (u *updateServiceParams) validate() error {
@@ -145,14 +157,6 @@ func (u *updateServiceParams) validate() error {
 
 	if u.service.ID == uuid.Nil {
 		return errors.New("'service.id' is required")
-	}
-
-	if u.mask != nil {
-		for _, path := range u.mask.Paths {
-			if !slices.Contains(updateMaskAcceptablePaths, path) {
-				return fmt.Errorf("'%s' is not a valid service field", path)
-			}
-		}
 	}
 
 	return nil
@@ -168,7 +172,7 @@ func updateServiceFromParams(service *model.Service, reqParams *updateServicePar
 	updatedService := *service
 
 	// Replace service resource's fields with the new ones from request (PATCH)
-	for _, path := range reqParams.mask.Paths {
+	for _, path := range reqParams.mask {
 		switch path {
 		default:
 			// noop
