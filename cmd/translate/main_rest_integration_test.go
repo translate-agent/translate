@@ -111,7 +111,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	happyRequestNoLang := &translatev1.UploadTranslationFileRequest{
 		ServiceId: service.Id,
 		// NG Localize has language in the file.
-		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, testutil.RandLang()),
+		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, randLang()),
 		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
 	}
 

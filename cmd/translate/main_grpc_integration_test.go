@@ -21,12 +21,17 @@ import (
 
 // -------------Translation File-------------.
 
+// TODO random model.Messages (and other model and proto structs/types) are used in multiple test files
+// Move rand data generation to separate pkg testutil/rand to avoid repetition ?
+// e.g. testutil/rand/proto.go, testutil/rand/model.go
+
+func randLang() language.Tag {
+	return language.MustParse(gofakeit.LanguageBCP())
+}
+
 func randUploadData(t *testing.T, schema translatev1.Schema, lang language.Tag) []byte {
 	t.Helper()
 
-	// TODO random model.Messages (and other model and proto structs/types) are used in multiple test files
-	// Move rand data generation to separate pkg testutil/rand to avoid repetition ?
-	// e.g. testutil/rand/proto.go, testutil/rand/model.go
 	n := gofakeit.IntRange(1, 5)
 	messages := &model.Messages{
 		Language: lang,
@@ -48,7 +53,7 @@ func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTransl
 	t.Helper()
 
 	schema := translatev1.Schema(gofakeit.IntRange(1, 7))
-	lang := testutil.RandLang()
+	lang := randLang()
 
 	data := randUploadData(t, schema, lang)
 
@@ -90,7 +95,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	happyRequestNoLangInReq := &translatev1.UploadTranslationFileRequest{
 		ServiceId: service.Id,
 		// NG Localize has language in the file.
-		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, testutil.RandLang()),
+		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, randLang()),
 		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
 	}
 
