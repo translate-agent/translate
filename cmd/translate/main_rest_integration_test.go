@@ -239,8 +239,7 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			defer resp.Body.Close()
 			respBody, _ := io.ReadAll(resp.Body)
 
-			actualCode := resp.StatusCode
-			assert.Equal(t, tt.expectedCode, actualCode, "body: %s", string(respBody))
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "body: %s", string(respBody))
 		})
 	}
 }
@@ -345,10 +344,7 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 
 	defer resp.Body.Close()
 
-	actualCode := resp.StatusCode
-	expectedCode := http.StatusOK
-
-	assert.Equal(t, expectedCode, actualCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 // PATCH.
@@ -383,10 +379,7 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 
 	defer resp.Body.Close()
 
-	actualCode := resp.StatusCode
-	expectedCode := http.StatusOK
-
-	assert.Equal(t, expectedCode, actualCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 // GET.
@@ -405,7 +398,7 @@ func Test_GetService_REST(t *testing.T) {
 	tests := []struct {
 		service      *translatev1.Service
 		name         string
-		expectedCode uint
+		expectedCode int
 	}{
 		{
 			service:      service,
@@ -436,8 +429,7 @@ func Test_GetService_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode)
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
 		})
 	}
 }

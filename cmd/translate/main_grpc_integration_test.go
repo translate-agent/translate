@@ -116,8 +116,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.UploadTranslationFile(ctx, tt.request)
 
-			actualCode := status.Code(err)
-			assert.Equal(t, tt.expectedCode, actualCode, "want codes.%s got codes.%s\nerr: %s", tt.expectedCode, actualCode, err)
+			assert.Equal(t, tt.expectedCode, status.Code(err))
 		})
 	}
 }
