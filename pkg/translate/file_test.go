@@ -154,6 +154,19 @@ func Test_GetLanguage(t *testing.T) {
 		messages *model.Messages
 	}
 
+	// helper for langMismatch sub-test
+	getDifferentLanguages := func(lang language.Tag) (language.Tag, language.Tag) {
+		lang2 := language.MustParse(gofakeit.LanguageBCP())
+
+		for lang == lang2 {
+			lang2 = language.MustParse(gofakeit.LanguageBCP())
+		}
+
+		return lang, lang2
+	}
+
+	// Tests
+
 	messagesDefinedParamsUndefined := args{
 		params:   &uploadParams{languageTag: language.Und},
 		messages: &model.Messages{Language: language.MustParse(gofakeit.LanguageBCP())},
@@ -175,16 +188,10 @@ func Test_GetLanguage(t *testing.T) {
 		messages: &model.Messages{Language: language.Und},
 	}
 
+	lang1, lang2 := getDifferentLanguages(language.MustParse(gofakeit.LanguageBCP()))
 	langMismatch := args{
-		params: &uploadParams{languageTag: sameLang},
-		messages: &model.Messages{Language: func(oldLang language.Tag) language.Tag {
-			for {
-				newLang := language.MustParse(gofakeit.LanguageBCP())
-				if newLang != oldLang {
-					return newLang
-				}
-			}
-		}(sameLang)},
+		params:   &uploadParams{languageTag: lang1},
+		messages: &model.Messages{Language: lang2},
 	}
 
 	tests := []struct {

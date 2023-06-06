@@ -180,9 +180,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	// Change messages and upload again with the same language and serviceID
 	uploadReq.Data = randUploadData(t, uploadReq.Schema, language.MustParse(uploadReq.Language))
 
-	req := gRPCUploadFileToRESTReq(ctx, t, uploadReq)
-
-	resp, err := otelhttp.DefaultClient.Do(req)
+	resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, uploadReq))
 	require.NoError(t, err, "do request")
 
 	defer resp.Body.Close()
