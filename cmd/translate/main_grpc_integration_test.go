@@ -24,6 +24,9 @@ import (
 func randUploadData(t *testing.T, schema translatev1.Schema, lang language.Tag) []byte {
 	t.Helper()
 
+	// TODO random model.Messages (and other model and proto structs/types) are used in multiple test files
+	// Move rand data generation to separate pkg testutil/rand to avoid repetition ?
+	// e.g. testutil/rand/proto.go, testutil/rand/model.go
 	n := gofakeit.IntRange(1, 5)
 	messages := &model.Messages{
 		Language: lang,
@@ -86,8 +89,9 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 	happyRequestNoLangInReq := &translatev1.UploadTranslationFileRequest{
 		ServiceId: service.Id,
-		Data:      randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, testutil.RandLang()), // NG Localize has language in the file.
-		Schema:    translatev1.Schema_JSON_NG_LOCALIZE,
+		// NG Localize has language in the file.
+		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, testutil.RandLang()),
+		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
 	}
 
 	invalidArgumentMissingServiceRequest := randUploadRequest(t, service.Id)

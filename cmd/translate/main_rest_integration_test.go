@@ -110,8 +110,9 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	// PUT /v1/services/{service_id}/files
 	happyRequestNoLang := &translatev1.UploadTranslationFileRequest{
 		ServiceId: service.Id,
-		Data:      randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, testutil.RandLang()), // NG Localize has language in the file.
-		Schema:    translatev1.Schema_JSON_NG_LOCALIZE,
+		// NG Localize has language in the file.
+		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, testutil.RandLang()),
+		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
 	}
 
 	invalidArgumentMissingServiceRequest := randUploadRequest(t, service.Id)
