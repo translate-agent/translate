@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+package translate.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+enum Schema {
+  UNSPECIFIED = 0;
+  JSON_NG_LOCALIZE = 1;
+  JSON_NGX_TRANSLATE = 2;
+  GO = 3;
+  ARB = 4;
+  POT = 5;
+  XLIFF_12 = 6;
+  XLIFF_2 = 7;
+}
+
+message Message {
+  string id = 1;
+  string message = 2;
+  string description = 3;
+  bool fuzzy = 4;
+}
+
+message Messages {
+  string language = 1;
+  repeated Message messages = 2;
+}
+
+message Service {
+  string id = 1;
+  string name = 2;
+}
+
+// --------------Translate File requests/responses-------------------
+
+message UploadTranslationFileRequest {
+  string language = 1;
+  bytes data = 2;
+  Schema schema = 3;
+  string service_id = 4;
+}
+
+message DownloadTranslationFileRequest {
+  string language = 1;
+  Schema schema = 2;
+  string service_id = 3;
+}
+
+message DownloadTranslationFileResponse {
+  bytes data = 1;
+}
+
+// -----------------Service requests/responses-----------------------
+
+message GetServiceRequest {
+  string id = 1;
+}
+
+message ListServicesRequest {}
+
+message ListServicesResponse {
+  repeated Service services = 1;
+}
+
+message CreateServiceRequest {
+  Service service = 1;
+}
+
+message UpdateServiceRequest {
+  Service service = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteServiceRequest {
+  string id = 1;
+}
+
+service TranslateService {
+  rpc GetService(GetServiceRequest) returns (Service) {
+    option (google.api.http) = {get: "/v1/services/{id}"};
+  }
+  rpc ListServices(ListServicesRequest) returns (ListServicesResponse) {
+    option (google.api.http) = {get: "/v1/services"};
+  }
+  rpc CreateService(CreateServiceRequest) returns (Service) {
+    option (google.api.http) = {
+      post: "/v1/services"
+      body: "service"
+    };
+  }
+  rpc UpdateService(UpdateServiceRequest) returns (Service) {
+    option (google.api.http) = {
+      put: "/v1/services/{service.id}"
+      body: "service"
+      additional_bindings [
+        {
+          patch: "/v1/services/{service.id}"
+          body: "service"
+        }
+      ]
+    };
+  }
+
+  rpc DeleteService(DeleteServiceRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/v1/services/{id}"};
+  }
+
+  rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {put: "/v1/services/{service_id}/files/{language}"};
+  }
+  rpc DownloadTranslationFile(DownloadTranslationFileRequest) returns (DownloadTranslationFileResponse) {
+    option (google.api.http) = {get: "/v1/services/{service_id}/files/{language}"};
+  }
+}

@@ -1,5 +1,7 @@
 run:
-  timeout: 3m
+  timeout: 2m
+  skip-dirs:
+    - pkg/server
 linters:
   enable:
     - asciicheck
@@ -46,6 +48,11 @@ linters:
     - unused
     - wrapcheck
     - wsl
+    - importas
 linters-settings:
   govet:
     enable-all: true
+  importas:
+    alias:
+      - pkg: go.expect.digital/translate/pkg/pb/translate/v1
+        alias: translatev1

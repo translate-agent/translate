@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "emeraldwalk.runonsave",
+    "mikestead.dotenv",
+    "bufbuild.vscode-buf",
+    "earthly.earthfile-syntax-highlighting",
+    "dorzey.vscode-sqlfluff"
+  ]
+}
