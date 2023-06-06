@@ -21,9 +21,11 @@ func Test_TokensToPo(t *testing.T) {
 		{
 			name: "When all possible token values are provided",
 			input: []Token{
-				{Value: "Language: en-US", Type: HeaderLanguage},
-				{Value: "Translator: John Doe", Type: HeaderTranslator},
-				{Value: "Plural-Forms: nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
+				{Value: "", Type: MsgId},
+				{Value: "", Type: MsgStr},
+				{Value: "en-US", Type: HeaderLanguage},
+				{Value: "John Doe", Type: HeaderTranslator},
+				{Value: "nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
 				{Value: "translator comment", Type: TranslatorComment},
 				{Value: "translator comment2", Type: TranslatorComment},
 				{Value: "extracted comment", Type: ExtractedComment},
@@ -44,7 +46,7 @@ func Test_TokensToPo(t *testing.T) {
 			expected: Po{
 				Header: headerNode{
 					Language:    language.Make("en-US"),
-					Translator:  "Translator: John Doe",
+					Translator:  "John Doe",
 					PluralForms: pluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
 				},
 				Messages: []messageNode{
@@ -71,16 +73,16 @@ func Test_TokensToPo(t *testing.T) {
 		{
 			name: "When msgid and msgstr token values are provided",
 			input: []Token{
-				{Value: "Language: en-US", Type: HeaderLanguage},
-				{Value: "Translator: John Doe", Type: HeaderTranslator},
-				{Value: "Plural-Forms: nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
+				{Value: "en-US", Type: HeaderLanguage},
+				{Value: "John Doe", Type: HeaderTranslator},
+				{Value: "nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
 				{Value: "message id", Type: MsgId},
 				{Value: "message", Type: MsgStr},
 			},
 			expected: Po{
 				Header: headerNode{
 					Language:    language.Make("en-US"),
-					Translator:  "Translator: John Doe",
+					Translator:  "John Doe",
 					PluralForms: pluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
 				},
 				Messages: []messageNode{
@@ -94,9 +96,9 @@ func Test_TokensToPo(t *testing.T) {
 		{
 			name: "When plural msgid and plural msgstr token values are provided",
 			input: []Token{
-				{Value: "Language: en-US", Type: HeaderLanguage},
-				{Value: "Translator: John Doe", Type: HeaderTranslator},
-				{Value: "Plural-Forms: nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
+				{Value: "en-US", Type: HeaderLanguage},
+				{Value: "John Doe", Type: HeaderTranslator},
+				{Value: "nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
 				{Value: "There is 1 apple", Type: MsgId},
 				{Value: "There is %d apples", Type: PluralMsgId},
 				{Value: "Il y a 1 pomme", Type: PluralMsgStr, Index: 0},
@@ -105,7 +107,7 @@ func Test_TokensToPo(t *testing.T) {
 			expected: Po{
 				Header: headerNode{
 					Language:    language.Make("en-US"),
-					Translator:  "Translator: John Doe",
+					Translator:  "John Doe",
 					PluralForms: pluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
 				},
 				Messages: []messageNode{
@@ -120,9 +122,9 @@ func Test_TokensToPo(t *testing.T) {
 		{
 			name: "Invalid plural forms format is provided",
 			input: []Token{
-				{Value: "Language: en-US", Type: HeaderLanguage},
-				{Value: "Translator: John Doe", Type: HeaderTranslator},
-				{Value: "Plural-Forms: nplurals=2", Type: HeaderPluralForms},
+				{Value: "en-US", Type: HeaderLanguage},
+				{Value: "John Doe", Type: HeaderTranslator},
+				{Value: "nplurals=2", Type: HeaderPluralForms},
 				{Value: "There is 1 apple", Type: MsgId},
 				{Value: "There is %d apples", Type: PluralMsgId},
 				{Value: "Il y a 1 pomme", Type: PluralMsgStr, Index: 0},
@@ -133,9 +135,9 @@ func Test_TokensToPo(t *testing.T) {
 		{
 			name: "Invalid nplurals value is provided",
 			input: []Token{
-				{Value: "Language: en-US", Type: HeaderLanguage},
-				{Value: "Translator: John Doe", Type: HeaderTranslator},
-				{Value: "Plural-Forms: nplurals=part; plural=(n != 1);", Type: HeaderPluralForms},
+				{Value: "en-US", Type: HeaderLanguage},
+				{Value: "John Doe", Type: HeaderTranslator},
+				{Value: "nplurals=part; plural=(n != 1);", Type: HeaderPluralForms},
 				{Value: "There is 1 apple", Type: MsgId},
 				{Value: "There is %d apples", Type: PluralMsgId},
 				{Value: "Il y a 1 pomme", Type: PluralMsgStr, Index: 0},
@@ -146,9 +148,9 @@ func Test_TokensToPo(t *testing.T) {
 		{
 			name: "Invalid nplurals part is provided",
 			input: []Token{
-				{Value: "Language: en-US", Type: HeaderLanguage},
-				{Value: "Translator: John Doe", Type: HeaderTranslator},
-				{Value: "Plural-Forms: ; plural=(n != 1);", Type: HeaderPluralForms},
+				{Value: "en-US", Type: HeaderLanguage},
+				{Value: "John Doe", Type: HeaderTranslator},
+				{Value: "; plural=(n != 1);", Type: HeaderPluralForms},
 				{Value: "There is 1 apple", Type: MsgId},
 				{Value: "There is %d apples", Type: PluralMsgId},
 				{Value: "Il y a 1 pomme", Type: PluralMsgStr, Index: 0},
@@ -159,9 +161,9 @@ func Test_TokensToPo(t *testing.T) {
 		{
 			name: "Invalid plural string order is provided",
 			input: []Token{
-				{Value: "Language: en-US", Type: HeaderLanguage},
-				{Value: "Translator: John Doe", Type: HeaderTranslator},
-				{Value: "Plural-Forms: nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
+				{Value: "en-US", Type: HeaderLanguage},
+				{Value: "John Doe", Type: HeaderTranslator},
+				{Value: "nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
 				{Value: "There is 1 apple", Type: MsgId},
 				{Value: "There is %d apples", Type: PluralMsgId},
 				{Value: "Il y a 1 pomme", Type: PluralMsgStr, Index: 1},
@@ -170,22 +172,11 @@ func Test_TokensToPo(t *testing.T) {
 			expectedErr: fmt.Errorf("invalid plural string order %d", 1),
 		},
 		{
-			name: "Invalid language header format is provided",
-			input: []Token{
-				{Value: "Language en-US", Type: HeaderLanguage},
-				{Value: "Translator: John Doe", Type: HeaderTranslator},
-				{Value: "Plural-Forms: nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
-				{Value: "message id", Type: MsgId},
-				{Value: "message", Type: MsgStr},
-			},
-			expectedErr: fmt.Errorf("invalid token type %d", 0),
-		},
-		{
 			name: "Invalid po file: no messages found",
 			input: []Token{
-				{Value: "Language en-US", Type: HeaderLanguage},
-				{Value: "Translator: John Doe", Type: HeaderTranslator},
-				{Value: "Plural-Forms: nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
+				{Value: "en-US", Type: HeaderLanguage},
+				{Value: "John Doe", Type: HeaderTranslator},
+				{Value: "nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
 			},
 			expectedErr: fmt.Errorf("invalid po file: no messages found"),
 		},

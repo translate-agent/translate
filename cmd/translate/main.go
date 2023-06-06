@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -56,7 +57,7 @@ var rootCmd = &cobra.Command{
 		terminationChan := make(chan os.Signal, 1)
 		signal.Notify(terminationChan, syscall.SIGTERM, syscall.SIGINT)
 
-		tp, err := tracer.TracerProvider()
+		tp, err := tracer.TracerProvider(ctx)
 		if err != nil {
 			log.Panicf("set tracer provider: %v", err)
 		}
@@ -100,14 +101,18 @@ var rootCmd = &cobra.Command{
 			ctx,
 			mux,
 			addr,
-			[]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())})
+			[]grpc.DialOption{
+				grpc.WithTransportCredentials(insecure.NewCredentials()),
+				grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+				grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+			})
 		if err != nil {
 			log.Panicf("register translate service: %v", err)
 		}
 
 		httpServer := http.Server{
 			Addr:              addr,
-			Handler:           grpcHandlerFunc(grpcServer, mux),
+			Handler:           grpcHandlerFunc(grpcServer, otelhttp.NewHandler(mux, "grpc-gateway")),
 			ReadHeaderTimeout: time.Second * 5, //nolint:gomnd
 		}
 

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
 
@@ -54,15 +55,16 @@ func requireEqualMessages(t *testing.T, expected, actual *model.Messages) {
 func Test_SaveMessages(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	testCtx, subtest := testutil.Trace(t)
 
-	service := prepareService(ctx, t)
+	// Prepare
+	service := prepareService(testCtx, t)
 
 	tests := []struct {
-		name        string
-		serviceID   uuid.UUID
 		messages    *model.Messages
 		expectedErr error
+		name        string
+		serviceID   uuid.UUID
 	}{
 		{
 			name:        "Happy path",
@@ -80,10 +82,7 @@ func Test_SaveMessages(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			err := repository.SaveMessages(ctx, tt.serviceID, tt.messages)
 
 			if tt.expectedErr != nil {
@@ -100,15 +99,15 @@ func Test_SaveMessages(t *testing.T) {
 
 			requireEqualMessages(t, tt.messages, actualMessages)
 		})
-
 	}
 }
 
 func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, _ := testutil.Trace(t)
 
+	// Prepare
 	service := prepareService(ctx, t)
 
 	count := gofakeit.IntRange(3, 5)
@@ -126,6 +125,7 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 		}
 
 		languagesUsed[msg.Language] = true
+
 		messages = append(messages, msg)
 	}
 
@@ -147,25 +147,20 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 func Test_SaveMessagesUpdate(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, _ := testutil.Trace(t)
 
 	// Prepare
-
 	service := prepareService(ctx, t)
-
 	expectedMessages := randMessages()
 
 	err := repository.SaveMessages(ctx, service.ID, expectedMessages)
 	require.NoError(t, err, "Save messages")
-
-	// Actual Test
 
 	// Update Message, Description and Fuzzy values, while keeping the ID
 	for i := range expectedMessages.Messages {
 		expectedMessages.Messages[i].Message = gofakeit.SentenceSimple()
 		expectedMessages.Messages[i].Description = gofakeit.SentenceSimple()
 		expectedMessages.Messages[i].Fuzzy = gofakeit.Bool()
-
 	}
 
 	// Save updated messages
@@ -184,13 +179,13 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 func Test_LoadMessages(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	testCtx, subtest := testutil.Trace(t)
 
-	service := prepareService(ctx, t)
-
+	// Prepare
+	service := prepareService(testCtx, t)
 	messages := randMessages()
 
-	err := repository.SaveMessages(ctx, service.ID, messages)
+	err := repository.SaveMessages(testCtx, service.ID, messages)
 	require.NoError(t, err, "Prepare test messages")
 
 	missingServiceID := uuid.New()
@@ -202,9 +197,9 @@ func Test_LoadMessages(t *testing.T) {
 
 	tests := []struct {
 		expected  *model.Messages
+		language  language.Tag
 		name      string
 		serviceID uuid.UUID
-		language  language.Tag
 	}{
 		{
 			name:      "Happy Path",
@@ -228,9 +223,7 @@ func Test_LoadMessages(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			actualMessages, err := repository.LoadMessages(ctx, tt.serviceID, tt.language)
 			require.NoError(t, err, "Load messages")
 

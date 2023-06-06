@@ -1,6 +1,7 @@
 package pot
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -38,29 +39,49 @@ type Po struct {
 	Messages []messageNode
 }
 
+func previousToken(tokens []Token, index int) (Token, error) {
+	if index == 0 {
+		return Token{}, errors.New("no previous token")
+	}
+
+	return tokens[index-1], nil
+}
+
 func TokensToPo(tokens []Token) (Po, error) {
 	var messages []messageNode
 
-	partsN := 2
 	currentMessage := messageNode{}
 	header := headerNode{}
 
-	for _, token := range tokens {
+	for i, token := range tokens {
+		if token.Value == "" && token.Type == MsgStr {
+			prevToken, err := previousToken(tokens, i)
+			if err != nil {
+				return Po{}, fmt.Errorf("get previous token: %w", err)
+			}
+			// Skip an empty default msgstr in the header if it exists
+			if prevToken.Type == MsgId && prevToken.Value == "" {
+				continue
+			}
+		}
+
+		replacer := strings.NewReplacer("\\n ", "\n", "\\n", "\n")
+		token.Value = replacer.Replace(token.Value)
+
 		switch token.Type {
 		case HeaderLanguage:
-			parts := strings.Split(token.Value, ":")
-			if len(parts) < partsN {
-				return Po{}, fmt.Errorf("invalid language header format")
+			headerLang, err := language.Parse(token.Value)
+			if err != nil {
+				return Po{}, fmt.Errorf("invalid language tag: %w", err)
 			}
 
-			languageCode := strings.TrimSpace(parts[1])
-			header.Language = language.Make(languageCode)
+			header.Language = headerLang
 		case HeaderTranslator:
 			header.Translator = token.Value
 		case HeaderPluralForms:
 			pf, err := parsePluralForms(token.Value)
 			if err != nil {
-				return Po{}, err
+				return Po{}, fmt.Errorf("invalid plural forms: %w", err)
 			}
 
 			header.PluralForms = pf
@@ -106,7 +127,7 @@ func TokensToPo(tokens []Token) (Po, error) {
 	}
 
 	if len(messages) == 0 {
-		return Po{}, fmt.Errorf("invalid po file: no messages found")
+		return Po{}, errors.New("invalid po file: no messages found")
 	}
 
 	return Po{
@@ -124,12 +145,12 @@ func parsePluralForms(s string) (pluralForm, error) {
 
 	parts := strings.Split(s, "; ")
 	if len(parts) != pfArgCount {
-		return pf, fmt.Errorf("invalid plural forms format")
+		return pf, errors.New("invalid plural forms format")
 	}
 
 	nPluralsParts := strings.Split(strings.TrimSpace(parts[0]), "=")
 	if len(nPluralsParts) != pfArgCount {
-		return pf, fmt.Errorf("invalid nplurals part")
+		return pf, errors.New("invalid nplurals part")
 	}
 
 	pf.NPlurals, err = strconv.Atoi(nPluralsParts[1])
