@@ -99,12 +99,12 @@ func (s *schema) Set(v string) error {
 		return nil
 	}
 
-	validSchemas := make([]string, len(translatev1.Schema_name))
+	availableSchemas := make([]string, len(translatev1.Schema_name))
 	for schemaValue, schemaName := range translatev1.Schema_name {
-		validSchemas[schemaValue] = strings.ToLower(schemaName)
+		availableSchemas[schemaValue] = strings.ToLower(schemaName)
 	}
 
-	return fmt.Errorf("invalid schema value: must be one of: %s", strings.Join(validSchemas[1:], ", "))
+	return fmt.Errorf("invalid schema value: must be one of: %s", strings.Join(availableSchemas[1:], ", "))
 }
 
 // Type is only used in help text.
