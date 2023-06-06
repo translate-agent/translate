@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
 
@@ -54,7 +55,7 @@ func requireEqualMessages(t *testing.T, expected, actual *model.Messages) {
 func Test_SaveMessages(t *testing.T) {
 	t.Parallel()
 
-	testCtx := startSpan(context.Background(), t)
+	testCtx, subtest := testutil.Trace(t)
 
 	// Prepare
 	service := prepareService(testCtx, t)
@@ -81,11 +82,7 @@ func Test_SaveMessages(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			ctx := startSpan(testCtx, t)
-
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			err := repository.SaveMessages(ctx, tt.serviceID, tt.messages)
 
 			if tt.expectedErr != nil {
@@ -108,7 +105,7 @@ func Test_SaveMessages(t *testing.T) {
 func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 	t.Parallel()
 
-	ctx := startSpan(context.Background(), t)
+	ctx, _ := testutil.Trace(t)
 
 	// Prepare
 	service := prepareService(ctx, t)
@@ -150,7 +147,7 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 func Test_SaveMessagesUpdate(t *testing.T) {
 	t.Parallel()
 
-	ctx := startSpan(context.Background(), t)
+	ctx, _ := testutil.Trace(t)
 
 	// Prepare
 	service := prepareService(ctx, t)
@@ -182,7 +179,7 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 func Test_LoadMessages(t *testing.T) {
 	t.Parallel()
 
-	testCtx := startSpan(context.Background(), t)
+	testCtx, subtest := testutil.Trace(t)
 
 	// Prepare
 	service := prepareService(testCtx, t)
@@ -226,11 +223,7 @@ func Test_LoadMessages(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			ctx := startSpan(testCtx, t)
-
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			actualMessages, err := repository.LoadMessages(ctx, tt.serviceID, tt.language)
 			require.NoError(t, err, "Load messages")
 

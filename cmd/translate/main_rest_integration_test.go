@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/testutil"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -95,7 +96,7 @@ func gRPCDownloadFileToRESTReq(
 func Test_UploadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
 	service := createService(ctx, t)
@@ -133,7 +134,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, tt.request))
 			require.NoError(t, err, "do request")
 
@@ -150,7 +151,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, _ := testutil.Trace(t)
 
 	// Prepare
 	service := createService(ctx, t)
@@ -176,7 +177,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 func Test_DownloadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
 	service := createService(ctx, t)
@@ -231,7 +232,7 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			resp, err := otelhttp.DefaultClient.Do(gRPCDownloadFileToRESTReq(ctx, t, tt.request))
 			require.NoError(t, err, "do request")
 
@@ -250,7 +251,7 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 func Test_CreateService_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	_, subtest := testutil.Trace(t)
 
 	// Prepare
 	serviceWithID := randService()
@@ -285,7 +286,7 @@ func Test_CreateService_REST(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			body, err := json.Marshal(tt.service)
 			require.NoError(t, err, "marshal service")
 
@@ -316,7 +317,7 @@ type restUpdateBody struct {
 func Test_UpdateServiceAllFields_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, _ := testutil.Trace(t)
 
 	// Prepare
 	service := randService()
@@ -354,7 +355,7 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, _ := testutil.Trace(t)
 
 	// Prepare
 	service := randService()
@@ -392,7 +393,7 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 func Test_GetService_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
 	service := randService()
@@ -420,7 +421,7 @@ func Test_GetService_REST(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
@@ -445,7 +446,7 @@ func Test_GetService_REST(t *testing.T) {
 func Test_DeleteService_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
 	service := randService()
@@ -473,7 +474,7 @@ func Test_DeleteService_REST(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
@@ -497,7 +498,7 @@ func Test_DeleteService_REST(t *testing.T) {
 func Test_ListServices_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, _ := testutil.Trace(t)
 
 	u := url.URL{
 		Scheme: "http",

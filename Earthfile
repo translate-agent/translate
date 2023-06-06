@@ -97,7 +97,7 @@ lint:
 
 test-unit:
   FROM +go
-  RUN go test ./... --count 1
+  RUN go test ./...
 
 test-integration:
   FROM earthly/dind:alpine

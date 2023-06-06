@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/translate"
 	"golang.org/x/text/language"
 	"google.golang.org/genproto/protobuf/field_mask"
@@ -59,7 +60,7 @@ func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTransl
 func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 	t.Helper()
 
-	ctx, span := testTracer.Start(ctx, "test: create service")
+	ctx, span := testutil.Tracer().Start(ctx, "test: create service")
 	defer span.End()
 
 	service := randService()
@@ -73,7 +74,7 @@ func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
 	service := createService(ctx, t)
@@ -112,7 +113,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 
-		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.UploadTranslationFile(ctx, tt.request)
 
 			actualCode := status.Code(err)
@@ -124,7 +125,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, _ := testutil.Trace(t)
 
 	// Prepare
 	service := createService(ctx, t)
@@ -155,7 +156,7 @@ func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslatio
 func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
 	service := createService(ctx, t)
@@ -209,7 +210,7 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.DownloadTranslationFile(ctx, tt.request)
 
 			assert.Equal(t, tt.expectedCode, status.Code(err))
@@ -229,7 +230,7 @@ func randService() *translatev1.Service {
 func Test_CreateService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	_, subtest := testutil.Trace(t)
 
 	// Prepare
 	serviceWithID := randService()
@@ -264,7 +265,7 @@ func Test_CreateService_gRPC(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.CreateService(ctx, tt.request)
 
 			assert.Equal(t, tt.expectedCode, status.Code(err))
@@ -275,7 +276,7 @@ func Test_CreateService_gRPC(t *testing.T) {
 func Test_UpdateService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
 	tests := []struct {
@@ -319,7 +320,7 @@ func Test_UpdateService_gRPC(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			// Change the ID to the one of the service that was created in the prepare step.
 			tt.request.Service.Id = tt.serviceToUpdate.Id
 
@@ -333,7 +334,7 @@ func Test_UpdateService_gRPC(t *testing.T) {
 func Test_GetService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
 	service := randService()
@@ -360,7 +361,7 @@ func Test_GetService_gRPC(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.GetService(ctx, tt.request)
 
 			assert.Equal(t, tt.expectedCode, status.Code(err))
@@ -371,7 +372,7 @@ func Test_GetService_gRPC(t *testing.T) {
 func Test_DeleteService_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
 	service := randService()
@@ -398,7 +399,7 @@ func Test_DeleteService_gRPC(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		subtest(ctx, t, tt.name, func(ctx context.Context, t *testing.T) {
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.DeleteService(ctx, tt.request)
 
 			assert.Equal(t, tt.expectedCode, status.Code(err))
@@ -409,7 +410,7 @@ func Test_DeleteService_gRPC(t *testing.T) {
 func Test_ListServices_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx := trace(context.Background(), t)
+	ctx, _ := testutil.Trace(t)
 
 	_, err := client.ListServices(ctx, &translatev1.ListServicesRequest{})
 

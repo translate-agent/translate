@@ -14,10 +14,7 @@ import (
 
 	"github.com/spf13/viper"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/testutil"
-	"go.expect.digital/translate/pkg/tracer"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	oteltrace "go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -25,9 +22,8 @@ import (
 const host = "localhost"
 
 var (
-	port       string
-	client     translatev1.TranslateServiceClient
-	testTracer oteltrace.Tracer
+	port   string
+	client translatev1.TranslateServiceClient
 )
 
 func TestMain(m *testing.M) {
@@ -36,15 +32,6 @@ func TestMain(m *testing.M) {
 
 func testMain(m *testing.M) (code int) {
 	ctx := context.Background()
-
-	tp, err := tracer.TracerProvider(ctx)
-	if err != nil {
-		log.Panicf("set tracer provider: %v", err)
-	}
-
-	defer tp.ForceFlush(ctx)
-
-	testTracer = tp.Tracer("go.expect.digital/translate/cmd/translate")
 
 	// start the translate service
 
@@ -91,8 +78,6 @@ func testMain(m *testing.M) (code int) {
 		log.Panicf("close gRPC client connection: %v", err)
 	}
 
-	tp.ForceFlush(ctx)
-
 	return code
 }
 
@@ -108,20 +93,4 @@ func mustGetFreePort() string {
 	addr := l.Addr().(*net.TCPAddr)
 
 	return fmt.Sprint(addr.Port)
-}
-
-// trace provides integration test span.
-func trace(ctx context.Context, t *testing.T) context.Context {
-	return testutil.Trace(ctx, t, testTracer)
-}
-
-// subtest runs parallel subtest with a trace instrumentation.
-func subtest(ctx context.Context, t *testing.T, name string, f func(context.Context, *testing.T)) {
-	t.Run(name, func(t *testing.T) {
-		t.Parallel()
-
-		ctx = trace(ctx, t)
-
-		f(ctx, t)
-	})
 }
