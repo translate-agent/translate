@@ -31,8 +31,8 @@ func newRootCmd() *cobra.Command {
 	return rootCmd
 }
 
-func Execute() error {
-	if err := newRootCmd().Execute(); err != nil {
+func Execute(ctx context.Context) error {
+	if err := newRootCmd().ExecuteContext(ctx); err != nil { //nolint:contextcheck
 		return fmt.Errorf("execute root command: %w", err)
 	}
 
@@ -41,8 +41,8 @@ func Execute() error {
 
 // ExecuteWithParams executes root command using passed in command parameters,
 // returns output result bytes and error.
-func ExecuteWithParams(params []string) ([]byte, error) {
-	rootCmd := newRootCmd()
+func ExecuteWithParams(ctx context.Context, params []string) ([]byte, error) {
+	rootCmd := newRootCmd() //nolint:contextcheck
 	rootCmd.SetArgs(params)
 
 	var output []byte
@@ -50,7 +50,7 @@ func ExecuteWithParams(params []string) ([]byte, error) {
 	rootCmd.SetOut(buf)
 	rootCmd.SetErr(buf)
 
-	if err := rootCmd.Execute(); err != nil {
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		buf.WriteString(err.Error())
 		return nil, fmt.Errorf("execute root command with params: %w", err)
 	}

@@ -33,7 +33,7 @@ func newDownloadCmd() *cobra.Command {
 				return fmt.Errorf("download file: get cli parameter 'timeout': %w", err)
 			}
 
-			ctx, cancelFunc := context.WithTimeout(context.Background(), timeout)
+			ctx, cancelFunc := context.WithTimeout(cmd.Context(), timeout)
 			defer cancelFunc()
 
 			client, err := newClientConn(ctx, cmd)

@@ -4,7 +4,6 @@
 package main
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,11 +13,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/cmd/client/cmd"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/testutil"
 )
 
 func Test_ListServices(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
-		res, err := cmd.ExecuteWithParams([]string{
+		ctx, _ := testutil.Trace(t)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "ls",
 			"-a", addr,
 			"-i", "true",
@@ -29,7 +31,9 @@ func Test_ListServices(t *testing.T) {
 	})
 
 	t.Run("error, no transport security set", func(t *testing.T) {
-		res, err := cmd.ExecuteWithParams([]string{
+		ctx, _ := testutil.Trace(t)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "ls",
 			"-a", addr,
 		})
@@ -41,7 +45,9 @@ func Test_ListServices(t *testing.T) {
 
 func Test_TranslationFileUpload(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
-		service := createService(context.Background(), t)
+		ctx, _ := testutil.Trace(t)
+
+		service := createService(ctx, t)
 		require.NotNil(t, service)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
@@ -52,7 +58,7 @@ func Test_TranslationFileUpload(t *testing.T) {
 		_, err = file.Write(data)
 		require.NoError(t, err)
 
-		res, err := cmd.ExecuteWithParams([]string{
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"-a", addr,
 			"-i", "true",
@@ -68,6 +74,8 @@ func Test_TranslationFileUpload(t *testing.T) {
 	})
 
 	t.Run("error, malformed language tag", func(t *testing.T) {
+		ctx, _ := testutil.Trace(t)
+
 		file, err := os.CreateTemp(t.TempDir(), "test")
 
 		require.NoError(t, err)
@@ -83,7 +91,7 @@ func Test_TranslationFileUpload(t *testing.T) {
 
 		require.NoError(t, err)
 
-		res, err := cmd.ExecuteWithParams([]string{
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"-a", addr,
 			"-i", "true",
@@ -99,7 +107,9 @@ func Test_TranslationFileUpload(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' unrecognized", func(t *testing.T) {
-		res, err := cmd.ExecuteWithParams([]string{
+		ctx, _ := testutil.Trace(t)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"-a", addr,
 			"-i", "true",
@@ -116,7 +126,9 @@ func Test_TranslationFileUpload(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' unspecified", func(t *testing.T) {
-		res, err := cmd.ExecuteWithParams([]string{
+		ctx, _ := testutil.Trace(t)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"-a", addr,
 			"-i", "true",
@@ -133,7 +145,9 @@ func Test_TranslationFileUpload(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' missing", func(t *testing.T) {
-		res, err := cmd.ExecuteWithParams([]string{
+		ctx, _ := testutil.Trace(t)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"-a", addr,
 			"-i", "true",
@@ -148,7 +162,9 @@ func Test_TranslationFileUpload(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
-		res, err := cmd.ExecuteWithParams([]string{
+		ctx, _ := testutil.Trace(t)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"-a", addr,
 			"-i", "true",
@@ -163,7 +179,9 @@ func Test_TranslationFileUpload(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'path' missing", func(t *testing.T) {
-		res, err := cmd.ExecuteWithParams([]string{
+		ctx, _ := testutil.Trace(t)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"-a", addr,
 			"-i", "true",
@@ -178,7 +196,9 @@ func Test_TranslationFileUpload(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'serviceID' missing", func(t *testing.T) {
-		res, err := cmd.ExecuteWithParams([]string{
+		ctx, _ := testutil.Trace(t)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"-a", addr,
 			"-i", "true",
@@ -195,7 +215,9 @@ func Test_TranslationFileUpload(t *testing.T) {
 
 func Test_TranslationFileDownload(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
-		service := createService(context.Background(), t)
+		ctx, _ := testutil.Trace(t)
+
+		service := createService(ctx, t)
 		require.NotNil(t, service)
 
 		tempDir := t.TempDir()
@@ -208,7 +230,7 @@ func Test_TranslationFileDownload(t *testing.T) {
 		_, err = file.Write(data)
 		require.NoError(t, err)
 
-		res, err := cmd.ExecuteWithParams([]string{
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"-a", addr,
 			"-i", "true",
@@ -222,7 +244,7 @@ func Test_TranslationFileDownload(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "File uploaded successfully.\n", string(res))
 
-		res, err = cmd.ExecuteWithParams([]string{
+		res, err = cmd.ExecuteWithParams(ctx, []string{
 			"service", "download",
 			"-a", addr,
 			"-i", "true",
@@ -241,7 +263,9 @@ func Test_TranslationFileDownload(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
-		res, err := cmd.ExecuteWithParams([]string{
+		ctx, _ := testutil.Trace(t)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "download",
 			"-a", addr,
 			"-i", "true",
@@ -256,7 +280,9 @@ func Test_TranslationFileDownload(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' missing", func(t *testing.T) {
-		res, err := cmd.ExecuteWithParams([]string{
+		ctx, _ := testutil.Trace(t)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "download",
 			"-a", addr,
 			"-i", "true",
@@ -271,7 +297,9 @@ func Test_TranslationFileDownload(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'serviceID' missing", func(t *testing.T) {
-		res, err := cmd.ExecuteWithParams([]string{
+		ctx, _ := testutil.Trace(t)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "download",
 			"-a", addr,
 			"-i", "true",
@@ -286,7 +314,9 @@ func Test_TranslationFileDownload(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'path' missing", func(t *testing.T) {
-		res, err := cmd.ExecuteWithParams([]string{
+		ctx, _ := testutil.Trace(t)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "download",
 			"-a", addr,
 			"-i", "true",
