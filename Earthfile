@@ -2,7 +2,7 @@ VERSION 0.7
 
 ARG --global USERARCH
 
-ARG --global go_version=1.20.4
+ARG --global go_version=1.20.5
 ARG --global golangci_lint_version=1.53.2
 ARG --global bufbuild_version=1.21.0
 ARG --global migrate_version=4.16.1
