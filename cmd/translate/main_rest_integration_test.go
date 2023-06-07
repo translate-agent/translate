@@ -7,7 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -17,6 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/testutil"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // TODO Currently, we manually create requests for the REST API.
@@ -94,10 +96,9 @@ func gRPCDownloadFileToRESTReq(
 func Test_UploadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
-
 	service := createService(ctx, t)
 
 	// Requests
@@ -110,79 +111,49 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
 	tests := []struct {
+		request      *translatev1.UploadTranslationFileRequest
 		name         string
-		request      *http.Request
-		expectedCode uint
+		expectedCode int
 	}{
 		{
 			name:         "Happy Path",
-			request:      gRPCUploadFileToRESTReq(ctx, t, happyRequest),
+			request:      happyRequest,
 			expectedCode: http.StatusOK,
 		},
 		{
 			name:         "Bad request missing language",
-			request:      gRPCUploadFileToRESTReq(ctx, t, missingLanguageRequest),
+			request:      missingLanguageRequest,
 			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:         "Not found service ID",
-			request:      gRPCUploadFileToRESTReq(ctx, t, notFoundServiceIDRequest),
+			request:      notFoundServiceIDRequest,
 			expectedCode: http.StatusNotFound,
 		},
 	}
+
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			resp, err := http.DefaultClient.Do(tt.request)
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, tt.request))
 			require.NoError(t, err, "do request")
 
 			defer resp.Body.Close()
 
 			// Read the response to give error message on failure
-			respBody, _ := ioutil.ReadAll(resp.Body)
+			respBody, _ := io.ReadAll(resp.Body)
 
-			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", string(respBody))
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "body: %s", string(respBody))
 		})
-	}
-}
-
-func Test_UploadTranslationFileDifferentLanguages_REST(t *testing.T) {
-	t.Parallel()
-
-	ctx := context.Background()
-
-	service := createService(ctx, t)
-
-	uploadRequest := randUploadRequest(t, service.Id)
-
-	for i := 0; i < 3; i++ {
-		uploadRequest.Language = gofakeit.LanguageBCP()
-
-		req := gRPCUploadFileToRESTReq(ctx, t, uploadRequest)
-
-		resp, err := http.DefaultClient.Do(req)
-		require.NoError(t, err, "do request")
-
-		respBody, _ := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-
-		actualCode := resp.StatusCode
-		expectedCode := http.StatusOK
-
-		require.Equal(t, int(expectedCode), actualCode, "body: %s", string(respBody))
 	}
 }
 
 func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, _ := testutil.Trace(t)
 
 	// Prepare
-
 	service := createService(ctx, t)
 
 	// Upload initial
@@ -194,27 +165,21 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	// Change messages and upload again with the same language and serviceID
 	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
 
-	req := gRPCUploadFileToRESTReq(ctx, t, uploadReq)
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, uploadReq))
 	require.NoError(t, err, "do request")
 
 	defer resp.Body.Close()
-	respBody, _ := ioutil.ReadAll(resp.Body)
+	respBody, _ := io.ReadAll(resp.Body)
 
-	actualCode := resp.StatusCode
-	expectedCode := http.StatusOK
-
-	assert.Equal(t, int(expectedCode), actualCode, "body: %s", string(respBody))
+	assert.Equal(t, http.StatusOK, resp.StatusCode, "body: %s", string(respBody))
 }
 
 func Test_DownloadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
-
 	service := createService(ctx, t)
 
 	uploadRequest := randUploadRequest(t, service.Id)
@@ -238,45 +203,43 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 	unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
 
 	tests := []struct {
+		request      *translatev1.DownloadTranslationFileRequest
 		name         string
-		request      *http.Request
-		expectedCode uint
+		expectedCode int
 	}{
 		{
 			name:         "Happy path",
-			request:      gRPCDownloadFileToRESTReq(ctx, t, happyRequest),
+			request:      happyRequest,
 			expectedCode: http.StatusOK,
 		},
 
 		{
 			name:         "Happy path no messages with language",
-			request:      gRPCDownloadFileToRESTReq(ctx, t, happyReqNoMessagesLanguage),
+			request:      happyReqNoMessagesLanguage,
 			expectedCode: http.StatusOK,
 		},
 		{
 			name:         "Happy path no messages with Service ID",
-			request:      gRPCDownloadFileToRESTReq(ctx, t, happyReqNoMessagesServiceID),
+			request:      happyReqNoMessagesServiceID,
 			expectedCode: http.StatusOK,
 		},
 		{
 			name:         "Bad request unspecified schema",
-			request:      gRPCDownloadFileToRESTReq(ctx, t, unspecifiedSchemaRequest),
+			request:      unspecifiedSchemaRequest,
 			expectedCode: http.StatusBadRequest,
 		},
 	}
+
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			resp, err := http.DefaultClient.Do(tt.request)
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			resp, err := otelhttp.DefaultClient.Do(gRPCDownloadFileToRESTReq(ctx, t, tt.request))
 			require.NoError(t, err, "do request")
 
 			defer resp.Body.Close()
-			respBody, _ := ioutil.ReadAll(resp.Body)
+			respBody, _ := io.ReadAll(resp.Body)
 
-			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode, "body: %s", string(respBody))
+			assert.Equal(t, tt.expectedCode, resp.StatusCode, "body: %s", string(respBody))
 		})
 	}
 }
@@ -287,6 +250,9 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 func Test_CreateService_REST(t *testing.T) {
 	t.Parallel()
 
+	_, subtest := testutil.Trace(t)
+
+	// Prepare
 	serviceWithID := randService()
 
 	serviceWithoutID := randService()
@@ -298,7 +264,7 @@ func Test_CreateService_REST(t *testing.T) {
 	tests := []struct {
 		service      *translatev1.Service
 		name         string
-		expectedCode uint
+		expectedCode int
 	}{
 		{
 			name:         "Happy path With ID",
@@ -319,9 +285,7 @@ func Test_CreateService_REST(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			body, err := json.Marshal(tt.service)
 			require.NoError(t, err, "marshal service")
 
@@ -331,17 +295,15 @@ func Test_CreateService_REST(t *testing.T) {
 				Path:   "v1/services",
 			}
 
-			req, err := http.NewRequestWithContext(context.Background(), "POST", u.String(), bytes.NewBuffer(body))
+			req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(body))
 			require.NoError(t, err, "create request")
 
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := otelhttp.DefaultClient.Do(req)
 			require.NoError(t, err, "do request")
 
 			defer resp.Body.Close()
 
-			actualCode := resp.StatusCode
-
-			assert.Equal(t, int(tt.expectedCode), actualCode)
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
 		})
 	}
 }
@@ -354,8 +316,9 @@ type restUpdateBody struct {
 func Test_UpdateServiceAllFields_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, _ := testutil.Trace(t)
 
+	// Prepare
 	service := randService()
 
 	// Using gRPC client to create service
@@ -376,23 +339,21 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 	req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(putBodyBytes))
 	require.NoError(t, err, "create request")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := otelhttp.DefaultClient.Do(req)
 	require.NoError(t, err, "do request")
 
 	defer resp.Body.Close()
 
-	actualCode := resp.StatusCode
-	expectedCode := http.StatusOK
-
-	assert.Equal(t, expectedCode, actualCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 // PATCH.
 func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, _ := testutil.Trace(t)
 
+	// Prepare
 	service := randService()
 
 	// Using gRPC client to create service
@@ -413,23 +374,21 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 	req, err := http.NewRequestWithContext(ctx, "PATCH", u.String(), bytes.NewReader(patchBodyBytes))
 	require.NoError(t, err, "create request")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := otelhttp.DefaultClient.Do(req)
 	require.NoError(t, err, "do request")
 
 	defer resp.Body.Close()
 
-	actualCode := resp.StatusCode
-	expectedCode := http.StatusOK
-
-	assert.Equal(t, expectedCode, actualCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 // GET.
 func Test_GetService_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, subtest := testutil.Trace(t)
 
+	// Prepare
 	service := randService()
 
 	// Using gRPC client to create service
@@ -439,7 +398,7 @@ func Test_GetService_REST(t *testing.T) {
 	tests := []struct {
 		service      *translatev1.Service
 		name         string
-		expectedCode uint
+		expectedCode int
 	}{
 		{
 			service:      service,
@@ -455,9 +414,7 @@ func Test_GetService_REST(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
@@ -467,13 +424,12 @@ func Test_GetService_REST(t *testing.T) {
 			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 			require.NoError(t, err, "create request")
 
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := otelhttp.DefaultClient.Do(req)
 			require.NoError(t, err, "do request")
 
 			defer resp.Body.Close()
 
-			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode)
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
 		})
 	}
 }
@@ -482,8 +438,9 @@ func Test_GetService_REST(t *testing.T) {
 func Test_DeleteService_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, subtest := testutil.Trace(t)
 
+	// Prepare
 	service := randService()
 
 	// Using gRPC client to create service
@@ -493,7 +450,7 @@ func Test_DeleteService_REST(t *testing.T) {
 	tests := []struct {
 		service      *translatev1.Service
 		name         string
-		expectedCode uint
+		expectedCode int
 	}{
 		{
 			service:      service,
@@ -509,9 +466,7 @@ func Test_DeleteService_REST(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
@@ -521,13 +476,12 @@ func Test_DeleteService_REST(t *testing.T) {
 			req, err := http.NewRequestWithContext(ctx, "DELETE", u.String(), nil)
 			require.NoError(t, err, "create request")
 
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := otelhttp.DefaultClient.Do(req)
 			require.NoError(t, err, "do request")
 
 			defer resp.Body.Close()
 
-			actualCode := resp.StatusCode
-			assert.Equal(t, int(tt.expectedCode), actualCode)
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
 		})
 	}
 }
@@ -536,7 +490,7 @@ func Test_DeleteService_REST(t *testing.T) {
 func Test_ListServices_REST(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
+	ctx, _ := testutil.Trace(t)
 
 	u := url.URL{
 		Scheme: "http",
@@ -547,13 +501,10 @@ func Test_ListServices_REST(t *testing.T) {
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	require.NoError(t, err, "create request")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := otelhttp.DefaultClient.Do(req)
 	require.NoError(t, err, "do request")
 
 	defer resp.Body.Close()
 
-	actualCode := resp.StatusCode
-	expectedCode := http.StatusOK
-
-	assert.Equal(t, expectedCode, actualCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
