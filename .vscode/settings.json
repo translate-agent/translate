@@ -6,6 +6,12 @@
         "match": "\\.proto$",
         "cmd": "earthly +proto"
       },
+      {
+        "match": "\\.go$",
+        // https://github.com/segmentio/golines
+        // Same settings as golangcli-lint lll linter
+        "cmd": "golines ${file} -w --max-len=120 --tab-len=1 --ignore-generated"
+      }
     ]
   },
   "go.testEnvFile": "${workspaceFolder}/.env.test",
