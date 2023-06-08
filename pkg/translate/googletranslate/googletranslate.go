@@ -6,16 +6,21 @@ import (
 	"io"
 
 	"cloud.google.com/go/translate"
+	"github.com/spf13/viper"
 	"golang.org/x/text/language"
 	"google.golang.org/api/option"
 )
 
+// Interface that defines some of the methods of the Google Translate client.
+// This interface helps to mock the Google Translate client in tests.
+// https://pkg.go.dev/cloud.google.com/go/translate#Client
 type GoogleClient interface {
 	Translate(ctx context.Context, inputs []string, target language.Tag, opts *translate.Options) ([]translate.Translation, error) //nolint:lll
 	SupportedLanguages(ctx context.Context, target language.Tag) ([]translate.Language, error)
 	io.Closer
 }
 
+// GoogleTranslate is a translation service that uses the Google Translate API.
 type GoogleTranslate struct {
 	client            GoogleClient
 	supportedLangTags map[language.Tag]bool
@@ -23,6 +28,7 @@ type GoogleTranslate struct {
 
 type TranslateOption func(*GoogleTranslate) error
 
+// WithClient sets the Google Translate client.
 func WithClient(c GoogleClient) TranslateOption {
 	return func(g *GoogleTranslate) error {
 		g.client = c
@@ -30,11 +36,12 @@ func WithClient(c GoogleClient) TranslateOption {
 	}
 }
 
-func WithDefaultClient(ctx context.Context, apiKey string) TranslateOption {
+// WithDefaultClient creates a new Google Translate client with the given API key.
+func WithDefaultClient(ctx context.Context) TranslateOption {
 	return func(g *GoogleTranslate) error {
 		var err error
 
-		g.client, err = translate.NewClient(ctx, option.WithAPIKey(apiKey))
+		g.client, err = translate.NewClient(ctx, option.WithAPIKey(viper.GetString("googletranslate.api.key")))
 		if err != nil {
 			return fmt.Errorf("with default client: new google translate client: %w", err)
 		}

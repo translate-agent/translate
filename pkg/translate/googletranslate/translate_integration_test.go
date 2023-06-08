@@ -32,8 +32,7 @@ func testMain(m *testing.M) (code int) {
 
 	viper.AutomaticEnv()
 
-	apiKey := viper.GetString("googletranslate.api.key")
-	if apiKey == "" {
+	if viper.GetString("googletranslate.api.key") == "" {
 		log.Println("no Google Translate API key provided, skipping integration tests")
 		return 0
 	}
@@ -43,7 +42,7 @@ func testMain(m *testing.M) (code int) {
 		closer func() error
 	)
 
-	translateService, closer, err = NewGoogleTranslate(ctx, WithDefaultClient(ctx, apiKey))
+	translateService, closer, err = NewGoogleTranslate(ctx, WithDefaultClient(ctx))
 	if err != nil {
 		log.Panicf("create new google translate service: %v", err)
 	}
