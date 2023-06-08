@@ -1,4 +1,4 @@
-package service
+package server
 
 import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
