@@ -3,6 +3,7 @@ module go.expect.digital/translate
 go 1.20
 
 require (
+	cloud.google.com/go/translate v1.8.0
 	github.com/XSAM/otelsql v0.22.0
 	github.com/brianvoe/gofakeit/v6 v6.21.0
 	github.com/go-sql-driver/mysql v1.7.1
@@ -20,6 +21,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.15.1
 	golang.org/x/net v0.10.0
 	golang.org/x/text v0.9.0
+	google.golang.org/api v0.125.0
 	google.golang.org/genproto v0.0.0-20230530153820-e85fd2cbaebc
 	google.golang.org/genproto/googleapis/api v0.0.0-20230530153820-e85fd2cbaebc
 	google.golang.org/grpc v1.55.0
@@ -30,7 +32,6 @@ require (
 	cloud.google.com/go v0.110.2 // indirect
 	cloud.google.com/go/compute v1.19.3 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
-	cloud.google.com/go/translate v1.8.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
@@ -63,7 +64,6 @@ require (
 	golang.org/x/oauth2 v0.8.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/tools v0.9.1 // indirect
-	google.golang.org/api v0.125.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230530153820-e85fd2cbaebc // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
