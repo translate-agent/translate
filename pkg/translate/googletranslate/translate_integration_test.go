@@ -9,19 +9,15 @@ import (
 	"strings"
 	"testing"
 
-	googleTranslate "cloud.google.com/go/translate"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/translate"
 	"golang.org/x/text/language"
-	"google.golang.org/api/option"
 )
 
-var (
-	client *googleTranslate.Client
-	apiKey string
-)
+var translateService translate.TranslationService
 
 func TestMain(m *testing.M) {
 	code := testMain(m)
@@ -36,17 +32,28 @@ func testMain(m *testing.M) (code int) {
 
 	viper.AutomaticEnv()
 
-	apiKey = viper.GetString("googletranslate.api.key")
-
-	var err error
-	client, err = googleTranslate.NewClient(ctx, option.WithAPIKey(apiKey))
-	// Ignore error if the error is about not finding default credentials.
-	// In that case, integration tests will be skipped.
-	if err != nil && !strings.Contains(err.Error(), "could not find default credentials") {
-		log.Panicf("create new google translate client: %v", err)
+	apiKey := viper.GetString("googletranslate.api.key")
+	if apiKey == "" {
+		log.Println("no Google Translate API key provided, skipping integration tests")
+		return 0
 	}
 
-	defer client.Close()
+	var (
+		err    error
+		closer func() error
+	)
+
+	translateService, closer, err = NewGoogleTranslate(ctx, WithDefaultClient(ctx, apiKey))
+	if err != nil {
+		log.Panicf("create new google translate service: %v", err)
+	}
+
+	// Try to close the Google Translate service after the tests have finished.
+	defer func() {
+		if err := closer(); err != nil {
+			log.Printf("close google translate service: %v", err)
+		}
+	}()
 
 	return m.Run()
 }
@@ -55,14 +62,7 @@ func testMain(m *testing.M) (code int) {
 func Test_GoogleTranslate(t *testing.T) {
 	t.Parallel()
 
-	if apiKey == "" {
-		t.Skip("Google Translate API key not set")
-	}
-
-	ctx, subTest := testutil.Trace(t)
-
-	translateService, err := NewGoogleTranslate(ctx, client)
-	require.NoError(t, err)
+	_, subTest := testutil.Trace(t)
 
 	tests := []struct {
 		messages   *model.Messages

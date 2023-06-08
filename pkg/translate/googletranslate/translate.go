@@ -2,46 +2,75 @@ package googletranslate
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"io"
 
 	"cloud.google.com/go/translate"
+	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
 
-type GoogleClient interface {
-	Translate(ctx context.Context, inputs []string, target language.Tag, opts *translate.Options) ([]translate.Translation, error) //nolint:lll
-	SupportedLanguages(ctx context.Context, target language.Tag) ([]translate.Language, error)
-	io.Closer
+func (g *GoogleTranslate) validateTranslateReq(messages *model.Messages, targetLang language.Tag) error {
+	if messages == nil {
+		return errors.New("nil messages")
+	}
+
+	if len(messages.Messages) == 0 {
+		return errors.New("no messages")
+	}
+
+	if targetLang == language.Und {
+		return errors.New("target language undefined")
+	}
+
+	// Enforce that source language is supported.
+	if ok := g.supportedLangTags[messages.Language]; !ok {
+		return fmt.Errorf("source language %s not supported", messages.Language)
+	}
+
+	// Enforce that target language is supported.
+	if ok := g.supportedLangTags[targetLang]; !ok {
+		return fmt.Errorf("target language %s not supported", targetLang)
+	}
+
+	return nil
 }
 
-type GoogleTranslate struct {
-	client            GoogleClient
-	supportedLangTags map[language.Tag]bool
-}
+func (g *GoogleTranslate) Translate(
+	ctx context.Context,
+	messages *model.Messages,
+	targetLang language.Tag,
+) (*model.Messages, error) {
+	if err := g.validateTranslateReq(messages, targetLang); err != nil {
+		return nil, fmt.Errorf("google translate: validate translate request: %w", err)
+	}
 
-func NewGoogleTranslate(ctx context.Context, c GoogleClient) (*GoogleTranslate, error) {
-	// Ping the Google Translate API to ensure that the client is working.
-	_, err := c.Translate(ctx, []string{"Hello World!"}, language.Latvian, nil)
+	targetTexts := make([]string, 0, len(messages.Messages))
+	for _, m := range messages.Messages {
+		targetTexts = append(targetTexts, m.ID)
+	}
+
+	// Set source language if defined, otherwise let Google Translate detect it.
+	opts := &translate.Options{}
+	if messages.Language != language.Und {
+		opts = &translate.Options{Source: messages.Language}
+	}
+
+	translations, err := g.client.Translate(ctx, targetTexts, targetLang, opts)
 	if err != nil {
-		return nil, fmt.Errorf("new google translate client: ping google translate: %w", err)
+		return nil, fmt.Errorf("google translate client: translate: %w", err)
 	}
 
-	// Get the list of supported languages.
-	supported, err := c.SupportedLanguages(ctx, language.English)
-	if err != nil {
-		return nil, fmt.Errorf("new google translate client: get supported languages: %w", err)
+	translatedMessages := make([]model.Message, 0, len(translations))
+	for i, t := range translations {
+		translatedMessages = append(translatedMessages, model.Message{
+			ID:          messages.Messages[i].ID,
+			PluralID:    messages.Messages[i].PluralID,
+			Description: messages.Messages[i].Description,
+			Message:     t.Text,
+			Fuzzy:       true,
+		})
 	}
 
-	// Create a map of supported languages for quick lookup.
-	supportedLangTags := make(map[language.Tag]bool, len(supported))
-	for _, lang := range supported {
-		supportedLangTags[lang.Tag] = true
-	}
-
-	// Add the undefined language tag to the map of supported languages
-	// as Google Translate tries to detect the language then.
-	supportedLangTags[language.Und] = true
-
-	return &GoogleTranslate{client: c, supportedLangTags: supportedLangTags}, nil
+	return &model.Messages{Language: messages.Language, Messages: translatedMessages}, nil
 }

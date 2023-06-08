@@ -10,8 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil/rand"
+	"go.expect.digital/translate/pkg/translate"
 	"golang.org/x/text/language"
 )
+
+var mockGoogleTranslate translate.TranslationService
+
+func init() {
+	// Create a mock Google Translate service. Closer and error are not needed because the client is mocked.
+	mockGoogleTranslate, _, _ = NewGoogleTranslate(context.Background(), WithClient(&mockGoogleClient{}))
+}
 
 // mockGoogleClient is a mock implementation of the Google Translate client.
 type mockGoogleClient struct{}
@@ -60,13 +68,6 @@ func randMessages(count uint, lang language.Tag) *model.Messages {
 
 func Test_ValidateTranslateReq(t *testing.T) {
 	t.Parallel()
-
-	ctx := context.Background()
-
-	mockGoogleTranslate, err := NewGoogleTranslate(ctx, &mockGoogleClient{})
-	require.NoError(t, err)
-
-	defer mockGoogleTranslate.client.Close()
 
 	tests := []struct {
 		targetLang  language.Tag
@@ -117,7 +118,7 @@ func Test_ValidateTranslateReq(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := mockGoogleTranslate.validateTranslateReq(tt.messages, tt.targetLang)
+			err := mockGoogleTranslate.(*GoogleTranslate).validateTranslateReq(tt.messages, tt.targetLang)
 			if tt.expectedErr != nil {
 				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
@@ -131,13 +132,6 @@ func Test_ValidateTranslateReq(t *testing.T) {
 // Test_Translate tests the Translate method of the Google Translate service using a mock client.
 func Test_Translate(t *testing.T) {
 	t.Parallel()
-
-	ctx := context.Background()
-
-	mockGoogleTranslate, err := NewGoogleTranslate(ctx, &mockGoogleClient{})
-	require.NoError(t, err)
-
-	defer mockGoogleTranslate.client.Close()
 
 	tests := []struct {
 		messages   *model.Messages
@@ -166,7 +160,7 @@ func Test_Translate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			translatedMsgs, err := mockGoogleTranslate.Translate(ctx, tt.messages, tt.targetLang)
+			translatedMsgs, err := mockGoogleTranslate.Translate(context.Background(), tt.messages, tt.targetLang)
 			require.NoError(t, err)
 
 			// Check the language is the same as the input language. (Check for side effects)
