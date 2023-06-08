@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	googleTran "cloud.google.com/go/translate"
+	googleTranslate "cloud.google.com/go/translate"
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
@@ -21,13 +21,13 @@ func (m *mockGoogleClient) Translate(
 	ctx context.Context,
 	inputs []string,
 	target language.Tag,
-	opts *googleTran.Options,
-) ([]googleTran.Translation, error) {
+	opts *googleTranslate.Options,
+) ([]googleTranslate.Translation, error) {
 	lang := rand.Lang()
 
-	translations := make([]googleTran.Translation, 0, len(inputs))
+	translations := make([]googleTranslate.Translation, 0, len(inputs))
 	for range inputs {
-		translations = append(translations, googleTran.Translation{
+		translations = append(translations, googleTranslate.Translation{
 			Text:   gofakeit.SentenceSimple(),
 			Source: lang,
 		})
