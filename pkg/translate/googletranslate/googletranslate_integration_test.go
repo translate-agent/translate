@@ -26,13 +26,11 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	code, cleanup := testMain(m)
-	cleanup()
-
+	code := testMain(m)
 	os.Exit(code)
 }
 
-func testMain(m *testing.M) (code int, cleanup func()) {
+func testMain(m *testing.M) (code int) {
 	ctx := context.Background()
 
 	viper.SetEnvPrefix("translate")
@@ -49,13 +47,11 @@ func testMain(m *testing.M) (code int, cleanup func()) {
 		log.Panicf("create new google translate client: %v", err)
 	}
 
+	defer client.Close()
+
 	translateService = NewGoogleTranslate(client)
 
-	cleanup = func() {
-		client.Close()
-	}
-
-	return m.Run(), cleanup
+	return m.Run()
 }
 
 // Test_GoogleTranslate tests the Translate method of the Google Translate service using a real Google Translate client.

@@ -2,6 +2,7 @@ package googletranslate
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"cloud.google.com/go/translate"
@@ -15,15 +16,15 @@ func (g *GoogleTranslate) Translate(
 	targetLang language.Tag,
 ) (*model.Messages, error) {
 	if messages == nil {
-		return nil, fmt.Errorf("google translate: nil messages")
+		return nil, errors.New("google translate: translate: nil messages")
 	}
 
 	if len(messages.Messages) == 0 {
-		return messages, fmt.Errorf("google translate: no messages")
+		return messages, errors.New("google translate: translate: no messages")
 	}
 
 	if targetLang == language.Und {
-		return nil, fmt.Errorf("google translate: target language undefined")
+		return nil, errors.New("google translate: translate: target language undefined")
 	}
 
 	textsToTranslate := make([]string, 0, len(messages.Messages))
@@ -39,7 +40,7 @@ func (g *GoogleTranslate) Translate(
 
 	translations, err := g.client.Translate(ctx, textsToTranslate, targetLang, opts)
 	if err != nil {
-		return nil, fmt.Errorf("google translate: Translate: %w", err)
+		return nil, fmt.Errorf("google translate client: translate: %w", err)
 	}
 
 	translatedMessages := make([]model.Message, 0, len(translations))
