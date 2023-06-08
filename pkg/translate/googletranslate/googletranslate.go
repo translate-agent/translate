@@ -20,7 +20,7 @@ type GoogleClient interface {
 	io.Closer
 }
 
-// GoogleTranslate is a translation service that uses the Google Translate API.
+// GoogleTranslate implements the TranslationService interface.
 type GoogleTranslate struct {
 	client            GoogleClient
 	supportedLangTags map[language.Tag]bool
@@ -36,7 +36,7 @@ func WithClient(c GoogleClient) TranslateOption {
 	}
 }
 
-// WithDefaultClient creates a new Google Translate client with the given API key.
+// WithDefaultClient creates a new Google Translate client with the API key from the viper.
 func WithDefaultClient(ctx context.Context) TranslateOption {
 	return func(g *GoogleTranslate) error {
 		var err error
