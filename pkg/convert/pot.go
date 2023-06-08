@@ -64,9 +64,9 @@ func FromPot(b []byte) (model.Messages, error) {
 		case po.Header.PluralForms.NPlurals > pluralCountLimit:
 			return model.Messages{}, errors.New("plural forms with more than 2 forms are not implemented yet")
 		case po.Header.PluralForms.NPlurals == pluralCountLimit:
-			message.Message = convertToFormatMessage(node.MsgStr)
+			message.Message = convertToMessageFormatPlural(node.MsgStr)
 		default:
-			message.Message = node.MsgStr[0]
+			message.Message = convertToMessageFormatSingular(node.MsgStr[0])
 		}
 
 		messages = append(messages, message)
@@ -227,7 +227,7 @@ func getPoTagLines(str string) []string {
 	return lines
 }
 
-func convertToFormatMessage(plurals []string) string {
+func convertToMessageFormatPlural(plurals []string) string {
 	var sb strings.Builder
 
 	sb.WriteString("match {$count :number}\n")
@@ -248,6 +248,14 @@ func convertToFormatMessage(plurals []string) string {
 	}
 
 	return sb.String()
+}
+
+func convertToMessageFormatSingular(message string) string {
+	if message != "" {
+		return "{" + message + "}"
+	}
+
+	return ""
 }
 
 func writeMessage(b *bytes.Buffer, index int, message model.Message) error {

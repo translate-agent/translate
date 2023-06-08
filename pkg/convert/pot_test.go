@@ -54,6 +54,28 @@ msgstr "Au revoir!"
 `),
 		},
 		{
+			name: "msgstr in curly braces",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello, world!",
+						Message:     "{Bonjour le monde!}",
+						Description: "A simple greeting",
+						Fuzzy:       true,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: en\n"
+#. A simple greeting
+#, fuzzy
+msgid "Hello, world!"
+msgstr "Bonjour le monde!"
+`),
+		},
+		{
 			name: "multiline description",
 			input: model.Messages{
 				Language: language.English,
@@ -189,6 +211,29 @@ msgstr "Au revoir!"
 `),
 		},
 		{
+			name: "multiline msgstr in curly braces",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello, world!",
+						Message:     "{Bonjour le monde!\nvery long string}\n",
+						Description: "A simple greeting", Fuzzy: true,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: en\n"
+#. A simple greeting
+#, fuzzy
+msgid "Hello, world!"
+msgstr ""
+"Bonjour le monde!\n"
+"very long string\n"
+`),
+		},
+		{
 			name: "qouted msgstr",
 			input: model.Messages{
 				Language: language.English,
@@ -219,6 +264,28 @@ msgstr "This is a \"quoted\" string"
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
+`),
+		},
+		{
+			name: "qouted msgstr in curly braces",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello, world!",
+						Message:     "{This is a \"quoted\" string}",
+						Description: "A simple greeting",
+						Fuzzy:       true,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: en\n"
+#. A simple greeting
+#, fuzzy
+msgid "Hello, world!"
+msgstr "This is a \"quoted\" string"
 `),
 		},
 		{
@@ -550,13 +617,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "Hello, world!",
+						Message:     "{Hello, world!}",
 						Description: "a greeting",
 						Fuzzy:       false,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "Goodbye, world!",
+						Message:     "{Goodbye, world!}",
 						Description: "a farewell",
 						Fuzzy:       true,
 					},
@@ -582,13 +649,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "Hello, world!",
+						Message:     "{Hello, world!}",
 						Description: "a greeting",
 						Fuzzy:       true,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "Goodbye, world!",
+						Message:     "{Goodbye, world!}",
 						Description: "a farewell",
 						Fuzzy:       false,
 					},
@@ -612,13 +679,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "Hello, world!",
+						Message:     "{Hello, world!}",
 						Description: "a greeting",
 						Fuzzy:       true,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "Goodbye, world!",
+						Message:     "{Goodbye, world!}",
 						Description: "a farewell",
 						Fuzzy:       false,
 					},
@@ -642,13 +709,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "Hello, world!",
+						Message:     "{Hello, world!}",
 						Description: "a greeting",
 						Fuzzy:       false,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "Goodbye, world!",
+						Message:     "{Goodbye, world!}",
 						Description: "a farewell",
 						Fuzzy:       false,
 					},
@@ -677,13 +744,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "Hello, world!\nvery long string\n",
+						Message:     "{Hello, world!\nvery long string\n}",
 						Description: "a greeting\n a greeting2",
 						Fuzzy:       false,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "Goodbye, world!",
+						Message:     "{Goodbye, world!}",
 						Description: "a farewell",
 						Fuzzy:       true,
 					},
@@ -707,7 +774,7 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello\nHello2\n",
-						Message:     "Hello, world!",
+						Message:     "{Hello, world!}",
 						Description: "a greeting",
 						Fuzzy:       true,
 					},
