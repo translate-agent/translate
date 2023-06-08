@@ -10,21 +10,40 @@ import (
 	"golang.org/x/text/language"
 )
 
+func (g *GoogleTranslate) validate(messages *model.Messages, targetLang language.Tag) error {
+	if messages == nil {
+		return errors.New("nil messages")
+	}
+
+	if len(messages.Messages) == 0 {
+		return errors.New("no messages")
+	}
+
+	if targetLang == language.Und {
+		return errors.New("target language undefined")
+	}
+
+	// Enforce that source language is supported.
+	if ok := g.supportedLangTags[messages.Language]; !ok {
+		return fmt.Errorf("source language %s not supported", messages.Language)
+	}
+
+	// Enforce that target language is supported.
+	if ok := g.supportedLangTags[targetLang]; !ok {
+		return fmt.Errorf("target language %s not supported", targetLang)
+	}
+
+	return nil
+}
+
 func (g *GoogleTranslate) Translate(
 	ctx context.Context,
 	messages *model.Messages,
 	targetLang language.Tag,
 ) (*model.Messages, error) {
-	if messages == nil {
-		return nil, errors.New("google translate: translate: nil messages")
-	}
-
-	if len(messages.Messages) == 0 {
-		return messages, errors.New("google translate: translate: no messages")
-	}
-
-	if targetLang == language.Und {
-		return nil, errors.New("google translate: translate: target language undefined")
+	err := g.validate(messages, targetLang)
+	if err != nil {
+		return nil, fmt.Errorf("google translate: validate translate request: %w", err)
 	}
 
 	textsToTranslate := make([]string, 0, len(messages.Messages))

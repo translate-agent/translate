@@ -14,15 +14,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
-	"go.expect.digital/translate/pkg/testutil/rand"
-	"go.expect.digital/translate/pkg/translate"
 	"golang.org/x/text/language"
 	"google.golang.org/api/option"
 )
 
 var (
-	translateService translate.TranslationService
-	apiKey           string
+	client *googleTranslate.Client
+	apiKey string
 )
 
 func TestMain(m *testing.M) {
@@ -40,7 +38,8 @@ func testMain(m *testing.M) (code int) {
 
 	apiKey = viper.GetString("googletranslate.api.key")
 
-	client, err := googleTranslate.NewClient(ctx, option.WithAPIKey(apiKey))
+	var err error
+	client, err = googleTranslate.NewClient(ctx, option.WithAPIKey(apiKey))
 	// Ignore error if the error is about not finding default credentials.
 	// In that case, integration tests will be skipped.
 	if err != nil && !strings.Contains(err.Error(), "could not find default credentials") {
@@ -49,12 +48,10 @@ func testMain(m *testing.M) (code int) {
 
 	defer client.Close()
 
-	translateService = NewGoogleTranslate(client)
-
 	return m.Run()
 }
 
-// Test_GoogleTranslate tests the Translate method of the Google Translate service using a real Google Translate client.
+// Test_GoogleTranslate tests the Translate method of the Google Translate service using a real client.
 func Test_GoogleTranslate(t *testing.T) {
 	t.Parallel()
 
@@ -62,7 +59,10 @@ func Test_GoogleTranslate(t *testing.T) {
 		t.Skip("Google Translate API key not set")
 	}
 
-	_, subTest := testutil.Trace(t)
+	ctx, subTest := testutil.Trace(t)
+
+	translateService, err := NewGoogleTranslate(ctx, client)
+	require.NoError(t, err)
 
 	tests := []struct {
 		messages   *model.Messages
@@ -71,12 +71,12 @@ func Test_GoogleTranslate(t *testing.T) {
 	}{
 		{
 			name:       "One message",
-			messages:   rand.ModelMessages(3, rand.WithoutTranslations()),
+			messages:   randMessages(1, language.English),
 			targetLang: language.Latvian,
 		},
 		{
-			name:       "messagesWithUndLanguage messages",
-			messages:   rand.ModelMessages(3, rand.WithoutTranslations(), rand.WithLanguage(language.Und)),
+			name:       "Undefined language messages",
+			messages:   randMessages(7, language.Und),
 			targetLang: language.Latvian,
 		},
 	}
