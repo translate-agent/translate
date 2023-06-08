@@ -3,30 +3,11 @@ package googletranslate
 import (
 	"context"
 	"fmt"
-	"io"
 
 	"cloud.google.com/go/translate"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
-
-type GoogleClient interface {
-	Translate(
-		ctx context.Context,
-		inputs []string,
-		target language.Tag,
-		opts *translate.Options,
-	) ([]translate.Translation, error)
-	io.Closer
-}
-
-type GoogleTranslate struct {
-	Client GoogleClient
-}
-
-func NewGoogleTranslate(c GoogleClient) *GoogleTranslate {
-	return &GoogleTranslate{Client: c}
-}
 
 func (g *GoogleTranslate) Translate(
 	ctx context.Context,
@@ -56,7 +37,7 @@ func (g *GoogleTranslate) Translate(
 		opts = &translate.Options{Source: messages.Language}
 	}
 
-	translations, err := g.Client.Translate(ctx, textsToTranslate, targetLang, opts)
+	translations, err := g.client.Translate(ctx, textsToTranslate, targetLang, opts)
 	if err != nil {
 		return nil, fmt.Errorf("google translate: %w", err)
 	}

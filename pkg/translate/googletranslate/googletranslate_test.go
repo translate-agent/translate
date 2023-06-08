@@ -38,26 +38,16 @@ func (m *mockGoogleClient) Translate(
 
 func (m *mockGoogleClient) Close() error { return nil }
 
+// Test_Translate tests the Translate method of the Google Translate service using a mock Google Translate client.
 func Test_Translate(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 
 	mockGoogleTranslate := NewGoogleTranslate(&mockGoogleClient{})
-	defer mockGoogleTranslate.Client.Close()
+	defer mockGoogleTranslate.client.Close()
 
 	// Tests
-
-	oneMessage := rand.Messages(1, rand.WithoutTranslation())
-
-	multipleMessages := rand.Messages(5, rand.WithoutTranslation())
-
-	noMessages := rand.Messages(0, rand.WithoutTranslation())
-
-	undTargetLangMessages := rand.Messages(5, rand.WithoutTranslation())
-
-	undLangMessages := rand.Messages(5, rand.WithoutTranslation())
-	undLangMessages.Language = language.Und
 
 	tests := []struct {
 		input       *model.Messages
@@ -67,31 +57,31 @@ func Test_Translate(t *testing.T) {
 	}{
 		{
 			name:        "One message",
-			input:       oneMessage,
+			input:       rand.Messages(1, rand.WithoutTranslations()),
 			targetLang:  rand.Lang(),
 			expectedErr: nil,
 		},
 		{
 			name:        "Multiple messages",
-			input:       multipleMessages,
+			input:       rand.Messages(5, rand.WithoutTranslations()),
 			targetLang:  rand.Lang(),
 			expectedErr: nil,
 		},
 		{
 			name:        "No messages",
-			input:       noMessages,
+			input:       rand.Messages(0, rand.WithoutTranslations()),
 			targetLang:  rand.Lang(),
 			expectedErr: errors.New("no messages"),
 		},
 		{
 			name:        "Undefined target language",
-			input:       undTargetLangMessages,
+			input:       rand.Messages(5, rand.WithoutTranslations()),
 			targetLang:  language.Und,
 			expectedErr: errors.New("target language undefined"),
 		},
 		{
 			name:        "Undefined messages language",
-			input:       undLangMessages,
+			input:       rand.Messages(5, rand.WithoutTranslations(), rand.WithLanguage(language.Und)),
 			targetLang:  rand.Lang(),
 			expectedErr: nil,
 		},

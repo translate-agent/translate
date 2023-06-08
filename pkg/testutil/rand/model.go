@@ -3,37 +3,46 @@ package rand
 import (
 	"github.com/brianvoe/gofakeit/v6"
 	"go.expect.digital/translate/pkg/model"
+	"golang.org/x/text/language"
 )
 
-func Message(opts ...MessageOption) model.Message {
-	msgs := &model.Message{
+func Message() *model.Message {
+	return &model.Message{
 		ID:          gofakeit.SentenceSimple(),
 		Message:     gofakeit.SentenceSimple(),
 		Description: gofakeit.SentenceSimple(),
 		Fuzzy:       gofakeit.Bool(),
 	}
+}
+
+func Messages(count uint, opts ...MessagesOption) *model.Messages {
+	msgs := make([]model.Message, 0, count)
+	for i := uint(0); i < count; i++ {
+		msgs = append(msgs, *Message())
+	}
+
+	messages := &model.Messages{Language: Lang(), Messages: msgs}
 
 	for _, opt := range opts {
-		opt(msgs)
+		opt(messages)
 	}
 
-	return *msgs
+	return messages
 }
 
-type MessageOption func(*model.Message)
+type MessagesOption func(*model.Messages)
 
-func WithoutTranslation() MessageOption {
-	return func(m *model.Message) {
-		m.Message = ""
-		m.Fuzzy = false
+func WithLanguage(lang language.Tag) MessagesOption {
+	return func(m *model.Messages) {
+		m.Language = lang
 	}
 }
 
-func Messages(count uint, opts ...MessageOption) *model.Messages {
-	messages := make([]model.Message, 0, count)
-	for i := uint(0); i < count; i++ {
-		messages = append(messages, Message(opts...))
+func WithoutTranslations() MessagesOption {
+	return func(m *model.Messages) {
+		for i := range m.Messages {
+			m.Messages[i].Message = ""
+			m.Messages[i].Fuzzy = false
+		}
 	}
-
-	return &model.Messages{Language: Lang(), Messages: messages}
 }
