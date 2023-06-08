@@ -8,5 +8,5 @@ import (
 )
 
 type TranslationService interface {
-	Translate(ctx context.Context, message *model.Messages, targetLang language.Tag) (*model.Messages, error)
+	Translate(ctx context.Context, messages *model.Messages, targetLang language.Tag) (*model.Messages, error)
 }

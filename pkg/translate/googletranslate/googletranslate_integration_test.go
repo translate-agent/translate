@@ -65,18 +65,18 @@ func Test_GoogleTranslate(t *testing.T) {
 	_, subTest := testutil.Trace(t)
 
 	tests := []struct {
-		input      *model.Messages
+		messages   *model.Messages
 		targetLang language.Tag
 		name       string
 	}{
 		{
 			name:       "One message",
-			input:      rand.ModelMessages(3, rand.WithoutTranslations()),
+			messages:   rand.ModelMessages(3, rand.WithoutTranslations()),
 			targetLang: language.Latvian,
 		},
 		{
 			name:       "messagesWithUndLanguage messages",
-			input:      rand.ModelMessages(3, rand.WithoutTranslations(), rand.WithLanguage(language.Und)),
+			messages:   rand.ModelMessages(3, rand.WithoutTranslations(), rand.WithLanguage(language.Und)),
 			targetLang: language.Latvian,
 		},
 	}
@@ -84,11 +84,11 @@ func Test_GoogleTranslate(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		subTest(tt.name, func(ctx context.Context, t *testing.T) {
-			translatedMsgs, err := translateService.Translate(ctx, tt.input, tt.targetLang)
+			translatedMsgs, err := translateService.Translate(ctx, tt.messages, tt.targetLang)
 			require.NoError(t, err)
 
 			// Check the number of translated messages is the same as the number of input messages.
-			require.Len(t, translatedMsgs.Messages, len(tt.input.Messages))
+			require.Len(t, translatedMsgs.Messages, len(tt.messages.Messages))
 
 			// Check the translated messages are not empty and are marked as fuzzy.
 			for _, m := range translatedMsgs.Messages {

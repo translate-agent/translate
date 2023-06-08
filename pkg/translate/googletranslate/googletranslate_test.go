@@ -50,44 +50,44 @@ func Test_Translate(t *testing.T) {
 	// Tests
 
 	tests := []struct {
-		input       *model.Messages
+		messages    *model.Messages
 		targetLang  language.Tag
 		expectedErr error
 		name        string
 	}{
 		{
 			name:        "One message",
-			input:       rand.ModelMessages(1, rand.WithoutTranslations()),
+			messages:    rand.ModelMessages(1, rand.WithoutTranslations()),
 			targetLang:  rand.Lang(),
 			expectedErr: nil,
 		},
 		{
 			name:        "Multiple messages",
-			input:       rand.ModelMessages(5, rand.WithoutTranslations()),
+			messages:    rand.ModelMessages(5, rand.WithoutTranslations()),
 			targetLang:  rand.Lang(),
 			expectedErr: nil,
 		},
 		{
 			name:        "No messages",
-			input:       rand.ModelMessages(0, rand.WithoutTranslations()),
+			messages:    rand.ModelMessages(0, rand.WithoutTranslations()),
 			targetLang:  rand.Lang(),
 			expectedErr: errors.New("no messages"),
 		},
 		{
 			name:        "Undefined target language",
-			input:       rand.ModelMessages(5, rand.WithoutTranslations()),
+			messages:    rand.ModelMessages(5, rand.WithoutTranslations()),
 			targetLang:  language.Und,
 			expectedErr: errors.New("target language undefined"),
 		},
 		{
 			name:        "Undefined messages language",
-			input:       rand.ModelMessages(5, rand.WithoutTranslations(), rand.WithLanguage(language.Und)),
+			messages:    rand.ModelMessages(5, rand.WithoutTranslations(), rand.WithLanguage(language.Und)),
 			targetLang:  rand.Lang(),
 			expectedErr: nil,
 		},
 		{
 			name:        "Nil input",
-			input:       nil,
+			messages:    nil,
 			expectedErr: errors.New("nil messages"),
 		},
 	}
@@ -97,7 +97,7 @@ func Test_Translate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			translatedMsgs, err := mockGoogleTranslate.Translate(ctx, tt.input, tt.targetLang)
+			translatedMsgs, err := mockGoogleTranslate.Translate(ctx, tt.messages, tt.targetLang)
 			if tt.expectedErr != nil {
 				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
@@ -106,7 +106,7 @@ func Test_Translate(t *testing.T) {
 			require.NoError(t, err)
 
 			// Check the language is the same as the input language. (Check for side effects)
-			require.Equal(t, tt.input.Language, translatedMsgs.Language)
+			require.Equal(t, tt.messages.Language, translatedMsgs.Language)
 
 			for i, m := range translatedMsgs.Messages {
 				// Check the translated messages are not empty and are marked as fuzzy.
@@ -114,12 +114,12 @@ func Test_Translate(t *testing.T) {
 				require.True(t, m.Fuzzy)
 
 				// Reset the message to empty and fuzzy to original values, for the last check for side effects.
-				translatedMsgs.Messages[i].Message = tt.input.Messages[i].Message
-				translatedMsgs.Messages[i].Fuzzy = tt.input.Messages[i].Fuzzy
+				translatedMsgs.Messages[i].Message = tt.messages.Messages[i].Message
+				translatedMsgs.Messages[i].Fuzzy = tt.messages.Messages[i].Fuzzy
 			}
 
 			// Check the translated messages are the same as the input messages. (Check for side effects)
-			require.ElementsMatch(t, tt.input.Messages, translatedMsgs.Messages)
+			require.ElementsMatch(t, tt.messages.Messages, translatedMsgs.Messages)
 		})
 	}
 }
