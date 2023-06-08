@@ -57,31 +57,31 @@ func Test_Translate(t *testing.T) {
 	}{
 		{
 			name:        "One message",
-			input:       rand.Messages(1, rand.WithoutTranslations()),
+			input:       rand.ModelMessages(1, rand.WithoutTranslations()),
 			targetLang:  rand.Lang(),
 			expectedErr: nil,
 		},
 		{
 			name:        "Multiple messages",
-			input:       rand.Messages(5, rand.WithoutTranslations()),
+			input:       rand.ModelMessages(5, rand.WithoutTranslations()),
 			targetLang:  rand.Lang(),
 			expectedErr: nil,
 		},
 		{
 			name:        "No messages",
-			input:       rand.Messages(0, rand.WithoutTranslations()),
+			input:       rand.ModelMessages(0, rand.WithoutTranslations()),
 			targetLang:  rand.Lang(),
 			expectedErr: errors.New("no messages"),
 		},
 		{
 			name:        "Undefined target language",
-			input:       rand.Messages(5, rand.WithoutTranslations()),
+			input:       rand.ModelMessages(5, rand.WithoutTranslations()),
 			targetLang:  language.Und,
 			expectedErr: errors.New("target language undefined"),
 		},
 		{
 			name:        "Undefined messages language",
-			input:       rand.Messages(5, rand.WithoutTranslations(), rand.WithLanguage(language.Und)),
+			input:       rand.ModelMessages(5, rand.WithoutTranslations(), rand.WithLanguage(language.Und)),
 			targetLang:  rand.Lang(),
 			expectedErr: nil,
 		},
@@ -108,14 +108,14 @@ func Test_Translate(t *testing.T) {
 			// Check the language is the same as the input language. (Check for side effects)
 			require.Equal(t, tt.input.Language, translatedMsgs.Language)
 
-			// Check the translated messages are not empty and are marked as fuzzy.
 			for i, m := range translatedMsgs.Messages {
+				// Check the translated messages are not empty and are marked as fuzzy.
 				require.NotEmpty(t, m.Message)
 				require.True(t, m.Fuzzy)
 
-				// Reset the message to empty and fuzzy to false for the final comparison.
-				translatedMsgs.Messages[i].Message = ""
-				translatedMsgs.Messages[i].Fuzzy = false
+				// Reset the message to empty and fuzzy to original values, for the last check for side effects.
+				translatedMsgs.Messages[i].Message = tt.input.Messages[i].Message
+				translatedMsgs.Messages[i].Fuzzy = tt.input.Messages[i].Fuzzy
 			}
 
 			// Check the translated messages are the same as the input messages. (Check for side effects)

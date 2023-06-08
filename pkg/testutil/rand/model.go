@@ -6,7 +6,8 @@ import (
 	"golang.org/x/text/language"
 )
 
-func Message() *model.Message {
+// ModelMessage returns a random message model.
+func ModelMessage() *model.Message {
 	return &model.Message{
 		ID:          gofakeit.SentenceSimple(),
 		Message:     gofakeit.SentenceSimple(),
@@ -15,10 +16,11 @@ func Message() *model.Message {
 	}
 }
 
-func Messages(count uint, opts ...MessagesOption) *model.Messages {
+// ModelMessages returns a random messages model.
+func ModelMessages(count uint, opts ...ModelMessagesOption) *model.Messages {
 	msgs := make([]model.Message, 0, count)
 	for i := uint(0); i < count; i++ {
-		msgs = append(msgs, *Message())
+		msgs = append(msgs, *ModelMessage())
 	}
 
 	messages := &model.Messages{Language: Lang(), Messages: msgs}
@@ -30,15 +32,17 @@ func Messages(count uint, opts ...MessagesOption) *model.Messages {
 	return messages
 }
 
-type MessagesOption func(*model.Messages)
+type ModelMessagesOption func(*model.Messages)
 
-func WithLanguage(lang language.Tag) MessagesOption {
+// WithLanguage sets the language of the messages model.
+func WithLanguage(lang language.Tag) ModelMessagesOption {
 	return func(m *model.Messages) {
 		m.Language = lang
 	}
 }
 
-func WithoutTranslations() MessagesOption {
+// WithoutTranslations removes the translations (m.Messages[n].Message) from the messages model.
+func WithoutTranslations() ModelMessagesOption {
 	return func(m *model.Messages) {
 		for i := range m.Messages {
 			m.Messages[i].Message = ""

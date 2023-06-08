@@ -75,12 +75,12 @@ func Test_GoogleTranslate(t *testing.T) {
 	}{
 		{
 			name:       "One message",
-			input:      rand.Messages(3, rand.WithoutTranslations()),
+			input:      rand.ModelMessages(3, rand.WithoutTranslations()),
 			targetLang: language.Latvian,
 		},
 		{
 			name:       "messagesWithUndLanguage messages",
-			input:      rand.Messages(3, rand.WithoutTranslations(), rand.WithLanguage(language.Und)),
+			input:      rand.ModelMessages(3, rand.WithoutTranslations(), rand.WithLanguage(language.Und)),
 			targetLang: language.Latvian,
 		},
 	}

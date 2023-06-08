@@ -39,7 +39,7 @@ func (g *GoogleTranslate) Translate(
 
 	translations, err := g.client.Translate(ctx, textsToTranslate, targetLang, opts)
 	if err != nil {
-		return nil, fmt.Errorf("google translate: %w", err)
+		return nil, fmt.Errorf("google translate: Translate: %w", err)
 	}
 
 	translatedMessages := make([]model.Message, 0, len(translations))
