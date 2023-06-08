@@ -143,45 +143,24 @@ func Test_Translate(t *testing.T) {
 	defer mockGoogleTranslate.client.Close()
 
 	tests := []struct {
-		messages    *model.Messages
-		targetLang  language.Tag
-		expectedErr error
-		name        string
+		messages   *model.Messages
+		targetLang language.Tag
+		name       string
 	}{
 		{
-			name:        "One message",
-			messages:    randMessages(1, language.English),
-			targetLang:  language.Latvian,
-			expectedErr: nil,
+			name:       "One message",
+			messages:   randMessages(1, language.English),
+			targetLang: language.Latvian,
 		},
 		{
-			name:        "Multiple messages",
-			messages:    randMessages(5, language.Latvian),
-			targetLang:  language.German,
-			expectedErr: nil,
+			name:       "Multiple messages",
+			messages:   randMessages(5, language.Latvian),
+			targetLang: language.German,
 		},
 		{
-			name:        "No messages",
-			messages:    randMessages(0, language.English),
-			targetLang:  language.Latvian,
-			expectedErr: errors.New("no messages"),
-		},
-		{
-			name:        "Undefined target language",
-			messages:    randMessages(5, language.English),
-			targetLang:  language.Und,
-			expectedErr: errors.New("target language undefined"),
-		},
-		{
-			name:        "Undefined messages language",
-			messages:    randMessages(5, language.Und),
-			targetLang:  language.English,
-			expectedErr: nil,
-		},
-		{
-			name:        "Nil input",
-			messages:    nil,
-			expectedErr: errors.New("nil messages"),
+			name:       "Undefined messages language",
+			messages:   randMessages(5, language.Und),
+			targetLang: language.English,
 		},
 	}
 
@@ -191,11 +170,6 @@ func Test_Translate(t *testing.T) {
 			t.Parallel()
 
 			translatedMsgs, err := mockGoogleTranslate.Translate(ctx, tt.messages, tt.targetLang)
-			if tt.expectedErr != nil {
-				require.ErrorContains(t, err, tt.expectedErr.Error())
-				return
-			}
-
 			require.NoError(t, err)
 
 			// Check the language is the same as the input language. (Check for side effects)

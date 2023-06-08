@@ -41,8 +41,7 @@ func (g *GoogleTranslate) Translate(
 	messages *model.Messages,
 	targetLang language.Tag,
 ) (*model.Messages, error) {
-	err := g.validate(messages, targetLang)
-	if err != nil {
+	if err := g.validate(messages, targetLang); err != nil {
 		return nil, fmt.Errorf("google translate: validate translate request: %w", err)
 	}
 
