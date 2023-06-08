@@ -61,7 +61,7 @@ func randMessages(count uint, lang language.Tag) *model.Messages {
 	return rand.ModelMessages(count, opts...)
 }
 
-func TestValidate(t *testing.T) {
+func Test_ValidateTranslateReq(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -120,7 +120,7 @@ func TestValidate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := mockGoogleTranslate.validate(tt.messages, tt.targetLang)
+			err := mockGoogleTranslate.validateTranslateReq(tt.messages, tt.targetLang)
 			if tt.expectedErr != nil {
 				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return

@@ -10,7 +10,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-func (g *GoogleTranslate) validate(messages *model.Messages, targetLang language.Tag) error {
+func (g *GoogleTranslate) validateTranslateReq(messages *model.Messages, targetLang language.Tag) error {
 	if messages == nil {
 		return errors.New("nil messages")
 	}
@@ -41,13 +41,13 @@ func (g *GoogleTranslate) Translate(
 	messages *model.Messages,
 	targetLang language.Tag,
 ) (*model.Messages, error) {
-	if err := g.validate(messages, targetLang); err != nil {
+	if err := g.validateTranslateReq(messages, targetLang); err != nil {
 		return nil, fmt.Errorf("google translate: validate translate request: %w", err)
 	}
 
-	textsToTranslate := make([]string, 0, len(messages.Messages))
+	targetTexts := make([]string, 0, len(messages.Messages))
 	for _, m := range messages.Messages {
-		textsToTranslate = append(textsToTranslate, m.ID)
+		targetTexts = append(targetTexts, m.ID)
 	}
 
 	// Set source language if defined, otherwise let Google Translate detect it.
@@ -56,7 +56,7 @@ func (g *GoogleTranslate) Translate(
 		opts = &translate.Options{Source: messages.Language}
 	}
 
-	translations, err := g.client.Translate(ctx, textsToTranslate, targetLang, opts)
+	translations, err := g.client.Translate(ctx, targetTexts, targetLang, opts)
 	if err != nil {
 		return nil, fmt.Errorf("google translate client: translate: %w", err)
 	}
