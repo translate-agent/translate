@@ -35,10 +35,7 @@ func (m *mockGoogleClient) Translate(
 }
 
 // mockGoogleClient.SupportedLanguages mocks the SupportedLanguages method of the Google Translate client.
-func (m *mockGoogleClient) SupportedLanguages(
-	_ context.Context,
-	_ language.Tag,
-) ([]googleTranslate.Language, error) {
+func (m *mockGoogleClient) SupportedLanguages(context.Context, language.Tag) ([]googleTranslate.Language, error) {
 	fakeSupportedLangs := []googleTranslate.Language{
 		{
 			Tag: language.English,
