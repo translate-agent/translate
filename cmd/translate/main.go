@@ -24,6 +24,7 @@ import (
 
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/repo/badgerdb"
 	"go.expect.digital/translate/pkg/repo/mysql"
 	"go.expect.digital/translate/pkg/tracer"
 	"go.expect.digital/translate/pkg/translate"
@@ -79,6 +80,8 @@ var rootCmd = &cobra.Command{
 		switch v := strings.TrimSpace(strings.ToLower(viper.GetString("service.db"))); v {
 		case "mysql":
 			repository, err = mysql.NewRepo(mysql.WithDefaultDB(ctx))
+		case "badgerdb":
+			repository, err = badgerdb.NewRepo(badgerdb.WithDefaultDB())
 		default:
 			log.Panicf("unsupported db '%s'. List of supported db: %s", v, strings.Join(repo.SupportedDBs, ", "))
 		}

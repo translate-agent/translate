@@ -9,7 +9,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-var SupportedDBs = []string{"mysql"}
+var SupportedDBs = []string{"MySQL", "BadgerDB"}
 
 var ErrNotFound = errors.New("entity not found")
 
