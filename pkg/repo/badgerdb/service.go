@@ -12,21 +12,43 @@ import (
 	"go.expect.digital/translate/pkg/repo"
 )
 
+const servicePrefix = "service:"
+
+// getServiceKey converts a service ID to a BadgerDB key with prefix.
+func getServiceKey(id uuid.UUID) []byte {
+	return []byte(fmt.Sprintf("%s%s", servicePrefix, id))
+}
+
+// getValues unmarshals the value of a BadgerDB item into v (either *model.Service or *model.Messages).
+func getValues[T *model.Service | *model.Messages](item *badger.Item, v T) error {
+	// return fmt.Errorf("repo: unmarshal %T: %w", v, errors.New("not implemented"))
+	return item.Value(func(val []byte) error { //nolint:wrapcheck
+		if err := json.Unmarshal(val, &v); err != nil {
+			return fmt.Errorf("unmarshal %T: %w", v, err)
+		}
+		return nil
+	})
+}
+
 func (r *Repo) SaveService(ctx context.Context, service *model.Service) error {
 	if service.ID == uuid.Nil {
 		service.ID = uuid.New()
 	}
 
 	err := r.db.Update(func(txn *badger.Txn) error {
-		key := []byte(fmt.Sprintf("service:%s", service.ID))
 		val, err := json.Marshal(service)
 		if err != nil {
-			return fmt.Errorf("repo: marshal service: %w", err)
+			return fmt.Errorf("marshal service: %w", err)
 		}
-		return txn.Set(key, val)
+
+		if err := txn.Set(getServiceKey(service.ID), val); err != nil {
+			return fmt.Errorf("transaction: set service: %w", err)
+		}
+
+		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("repo: insert service: %w", err)
+		return fmt.Errorf("repo: db update: %w", err)
 	}
 
 	return nil
@@ -36,21 +58,21 @@ func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Ser
 	var service model.Service
 
 	err := r.db.View(func(txn *badger.Txn) error {
-		key := []byte(fmt.Sprintf("service:%s", serviceID))
-		item, err := txn.Get(key)
-		if err != nil {
-			if errors.Is(err, badger.ErrKeyNotFound) {
-				return repo.ErrNotFound
-			}
-			return fmt.Errorf("repo: get service: %w", err)
+		item, err := txn.Get(getServiceKey(serviceID))
+
+		switch {
+		default:
+			// noop
+		case errors.Is(err, badger.ErrKeyNotFound):
+			return repo.ErrNotFound
+		case err != nil:
+			return fmt.Errorf("transaction: get service: %w", err)
 		}
 
-		return item.Value(func(val []byte) error {
-			return json.Unmarshal(val, &service)
-		})
+		return getValues(item, &service)
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("repo: db view: %w", err)
 	}
 
 	return &service, nil
@@ -61,58 +83,52 @@ func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
 
 	err := r.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
-		opts.Prefix = []byte("service:")
+		opts.Prefix = []byte(servicePrefix)
+
 		it := txn.NewIterator(opts)
 		defer it.Close()
 
 		for it.Rewind(); it.Valid(); it.Next() {
 			item := it.Item()
-			err := item.Value(func(val []byte) error {
-				var service model.Service
-				if err := json.Unmarshal(val, &service); err != nil {
-					return fmt.Errorf("repo: unmarshal service: %w", err)
-				}
-				services = append(services, service)
-				return nil
-			})
-			if err != nil {
+			var service model.Service
+
+			if err := getValues(item, &service); err != nil {
 				return err
 			}
+
+			services = append(services, service)
+
 		}
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("repo: db view: %w", err)
 	}
 
 	return services, nil
 }
 
 func (r *Repo) DeleteService(ctx context.Context, serviceID uuid.UUID) error {
-	key := []byte(fmt.Sprintf("service:%s", serviceID))
-
-	tx := r.db.NewTransaction(true)
-	defer tx.Commit()
+	key := getServiceKey(serviceID)
 
 	err := r.db.Update(func(txn *badger.Txn) error {
+		// BadgerDB does not return an error if the key does not exist on Delete.
+		// So we have to check if the key exists first.
 		_, err := txn.Get(key)
 		switch {
 		default:
-			return txn.Delete(key)
+			if deleteErr := txn.Delete(key); deleteErr != nil {
+				return fmt.Errorf("transaction: delete service: %w", deleteErr)
+			}
+			return nil
 		case errors.Is(err, badger.ErrKeyNotFound):
 			return repo.ErrNotFound
 		case err != nil:
-			return fmt.Errorf("repo: get service: %w", err)
+			return fmt.Errorf("transaction: get service for deletion: %w", err)
 		}
 	})
-
-	fmt.Printf("err: %v\n", err)
-
-	if errors.Is(err, badger.ErrKeyNotFound) {
-		return repo.ErrNotFound
-	}
 	if err != nil {
-		return fmt.Errorf("repo: delete service: %w", err)
+		return fmt.Errorf("repo: db update: %w", err)
 	}
 
 	return nil
