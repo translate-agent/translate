@@ -7,12 +7,15 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Repo implements the repo interface.
 type Repo struct {
 	db *badger.DB
 }
 
 type option func(*Repo) error
 
+// WithDefaultDB opens a new Badger database in file system
+// with the path from global config e.g. ENV, flag or config file.
 func WithDefaultDB() option {
 	return func(r *Repo) error {
 		path := viper.GetString("db.badgerdb.path")
@@ -21,7 +24,7 @@ func WithDefaultDB() option {
 		}
 
 		var err error
-		r.db, err = NewDB(badger.DefaultOptions(path))
+		r.db, err = newDB(badger.DefaultOptions(path))
 
 		if err != nil {
 			return fmt.Errorf("WithDefaultDB: open badger db: %w", err)
@@ -31,11 +34,12 @@ func WithDefaultDB() option {
 	}
 }
 
+// WithInMemoryDB opens a new Badger database in memory.
 func WithInMemoryDB() option {
 	return func(r *Repo) error {
 		var err error
 
-		r.db, err = NewDB(badger.DefaultOptions("").WithInMemory(true))
+		r.db, err = newDB(badger.DefaultOptions("").WithInMemory(true))
 		if err != nil {
 			return fmt.Errorf("WithInMemoryDB: open badger db: %w", err)
 		}
@@ -44,6 +48,10 @@ func WithInMemoryDB() option {
 	}
 }
 
+// NewRepo creates a new repo.
+//
+// NOTE: One of the options (WithDefaultDB or WithInMemoryDB) must be provided,
+// otherwise it will return an error.
 func NewRepo(opts ...option) (*Repo, error) {
 	r := new(Repo)
 

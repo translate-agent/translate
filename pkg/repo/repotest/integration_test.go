@@ -5,6 +5,7 @@ package repotest
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"testing"
@@ -16,8 +17,10 @@ import (
 	"go.expect.digital/translate/pkg/testutil"
 )
 
+// repos is a map of all possible repo with different backends. E.g. MySQL, BadgerDB, etc.
 var repos map[string]repo.Repo
 
+// initMysql creates a new MySQL repo and adds it to the repos map.
 func initMysql(ctx context.Context) error {
 	repo, err := mysql.NewRepo(mysql.WithDefaultDB(ctx))
 	if err != nil {
@@ -29,6 +32,7 @@ func initMysql(ctx context.Context) error {
 	return nil
 }
 
+// initBadgerDB creates a new BadgerDB repo and adds it to the repos map.
 func initBadgerDB() error {
 	repo, err := badgerdb.NewRepo(badgerdb.WithInMemoryDB())
 	if err != nil {
@@ -53,19 +57,17 @@ func TestMain(m *testing.M) {
 
 	// MySQL
 	if err := initMysql(ctx); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 
 	// BadgerDB
 	if err := initBadgerDB(); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		os.Exit(1)
 	}
 
-	code := m.Run()
-
-	os.Exit(code)
+	os.Exit(m.Run())
 }
 
 type repoFn = func(t *testing.T, repo repo.Repo, subtest testutil.SubtestFn)
