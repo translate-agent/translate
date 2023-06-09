@@ -29,10 +29,7 @@ import (
 	"go.expect.digital/translate/pkg/translate"
 )
 
-var (
-	cfgFile      string
-	supportedDBs = []string{"mysql"}
-)
+var cfgFile string
 
 // grpcHandlerFunc returns an http.Handler that routes gRPC and non-gRPC requests to the appropriate handler.
 func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
@@ -83,7 +80,7 @@ var rootCmd = &cobra.Command{
 		case "mysql":
 			repository, err = mysql.NewRepo(mysql.WithDefaultDB(ctx))
 		default:
-			log.Panicf("unsupported db '%s'. List of supported db: %s", v, strings.Join(supportedDBs, ", "))
+			log.Panicf("unsupported db '%s'. List of supported db: %s", v, strings.Join(repo.SupportedDBs, ", "))
 		}
 
 		if err != nil {

@@ -9,6 +9,8 @@ import (
 	"golang.org/x/text/language"
 )
 
+var SupportedDBs = []string{"mysql"}
+
 var ErrNotFound = errors.New("entity not found")
 
 type ServicesRepo interface {
