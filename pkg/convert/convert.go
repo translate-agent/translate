@@ -15,11 +15,10 @@ func convertToMessageFormatPlural(plurals []string) string {
 
 		var count string
 
-		switch i {
-		default:
-			count = fmt.Sprintf("%d", i+1)
-		case len(plurals) - 1:
+		if i == len(plurals)-1 {
 			count = "*"
+		} else {
+			count = fmt.Sprintf("%d", i+1)
 		}
 
 		sb.WriteString(fmt.Sprintf("when %s {%s}\n", count, line))
@@ -29,9 +28,9 @@ func convertToMessageFormatPlural(plurals []string) string {
 }
 
 func convertToMessageFormatSingular(message string) string {
-	if message != "" {
-		return "{" + message + "}"
+	if message == "" {
+		return ""
 	}
 
-	return ""
+	return "{" + message + "}"
 }
