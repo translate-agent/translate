@@ -64,14 +64,12 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language l
 		item, getErr := txn.Get(getMessagesKey(serviceID, language))
 		switch {
 		default:
-			// noop
+			return getValues(item, &messages)
 		case errors.Is(getErr, badger.ErrKeyNotFound):
 			return nil // Empty messages.messages for this language (Not an error)
 		case getErr != nil:
 			return fmt.Errorf("transaction: get messages: %w", getErr)
 		}
-
-		return getValues(item, &messages)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("repo: db view: %w", err)
