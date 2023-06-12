@@ -88,7 +88,15 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 
 		// Prepare
 		service := prepareService(testCtx, t, repository)
-		messages := rand.ModelMessagesSlice(3, true, nil)
+
+		// Create unique languages
+		langs := rand.Langs(3)
+		messages := make([]*model.Messages, len(langs))
+
+		// Create messages for each language
+		for i, lang := range langs {
+			messages[i] = rand.ModelMessages(3, nil, rand.WithLanguage(lang))
+		}
 
 		// Save messages
 		for _, m := range messages {
@@ -177,13 +185,13 @@ func Test_LoadMessages(t *testing.T) {
 				name:      "No messages with service",
 				serviceID: uuid.New(),
 				language:  messages.Language,
-				expected:  rand.ModelMessages(0, nil, rand.WithLanguage(messagesLang)),
+				expected:  &model.Messages{Language: messagesLang},
 			},
 			{
 				name:      "No messages with language",
 				serviceID: service.ID,
 				language:  langWithNoMsgs,
-				expected:  rand.ModelMessages(0, nil, rand.WithLanguage(langWithNoMsgs)),
+				expected:  &model.Messages{Language: langWithNoMsgs},
 			},
 		}
 
