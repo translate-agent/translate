@@ -19,8 +19,8 @@ func getServiceKey(id uuid.UUID) []byte {
 	return []byte(fmt.Sprintf("%s%s", servicePrefix, id))
 }
 
-// getValues unmarshals the value of a BadgerDB item into v (either *model.Service or *model.Messages).
-func getValues[T *model.Service | *model.Messages](item *badger.Item, v T) error {
+// getValue unmarshals the value of a BadgerDB item into v (either *model.Service or *model.Messages).
+func getValue[T *model.Service | *model.Messages](item *badger.Item, v T) error {
 	return item.Value(func(val []byte) error { //nolint:wrapcheck
 		if err := json.Unmarshal(val, &v); err != nil {
 			return fmt.Errorf("unmarshal %T: %w", v, err)
@@ -61,14 +61,12 @@ func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Ser
 
 		switch {
 		default:
-			// noop
+			return getValue(item, &service)
 		case errors.Is(err, badger.ErrKeyNotFound):
 			return repo.ErrNotFound
 		case err != nil:
 			return fmt.Errorf("transaction: get service: %w", err)
 		}
-
-		return getValues(item, &service)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("repo: db view: %w", err)
@@ -91,7 +89,7 @@ func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
 			item := it.Item()
 			var service model.Service
 
-			if err := getValues(item, &service); err != nil {
+			if err := getValue(item, &service); err != nil {
 				return err
 			}
 

@@ -64,7 +64,7 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language l
 		item, getErr := txn.Get(getMessagesKey(serviceID, language))
 		switch {
 		default:
-			return getValues(item, &messages)
+			return getValue(item, &messages)
 		case errors.Is(getErr, badger.ErrKeyNotFound):
 			return nil // Empty messages.messages for this language (Not an error)
 		case getErr != nil:
