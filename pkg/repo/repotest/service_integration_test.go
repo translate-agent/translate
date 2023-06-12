@@ -127,15 +127,10 @@ func Test_LoadServices(t *testing.T) {
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
-		expectedServices := make([]model.Service, 3)
-
-		for i := 0; i < 3; i++ {
-			service := rand.ModelService()
-
+		expectedServices := rand.ModelServiceSlice(3)
+		for _, service := range expectedServices {
 			err := repository.SaveService(testCtx, service)
-			require.NoError(t, err, "Prepare test service")
-
-			expectedServices[i] = *service
+			require.NoError(t, err, "Insert test service")
 		}
 
 		actual, err := repository.LoadServices(testCtx)
@@ -144,7 +139,7 @@ func Test_LoadServices(t *testing.T) {
 		require.GreaterOrEqual(t, len(actual), len(expectedServices))
 
 		for _, expected := range expectedServices {
-			require.Contains(t, actual, expected)
+			require.Contains(t, actual, *expected)
 		}
 	})
 }
