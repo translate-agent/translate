@@ -146,19 +146,20 @@ func Test_LoadMessages(t *testing.T) {
 	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
 		testCtx, _ := testutil.Trace(t)
 
+		langs := rand.Langs(2)
+		// messagesLang is the language of the messages, for Happy Path test.
+		messagesLang := langs[0]
+		// langWithNoMsgs is a different language, for No messages with language test.
+		// It must be different from messagesLang, since otherwise that would return not nil Messages.Messages
+		// and will fail the test.
+		langWithNoMsgs := langs[1]
+
 		// Prepare
 		service := prepareService(testCtx, t, repository)
-		messages := rand.ModelMessages(3, nil)
+		messages := rand.ModelMessages(3, nil, rand.WithLanguage(messagesLang))
 
 		err := repository.SaveMessages(testCtx, service.ID, messages)
 		require.NoError(t, err, "Prepare test messages")
-
-		missingServiceID := uuid.New()
-		missingLang := language.MustParse(gofakeit.LanguageBCP())
-		// Make sure we don't use the same language as the message, since that would return not nil Messages.Messages.
-		for missingLang == messages.Language {
-			missingLang = language.MustParse(gofakeit.LanguageBCP())
-		}
 
 		tests := []struct {
 			expected  *model.Messages
@@ -174,15 +175,15 @@ func Test_LoadMessages(t *testing.T) {
 			},
 			{
 				name:      "No messages with service",
-				serviceID: missingServiceID,
+				serviceID: uuid.New(),
 				language:  messages.Language,
-				expected:  &model.Messages{Language: messages.Language, Messages: nil},
+				expected:  rand.ModelMessages(0, nil, rand.WithLanguage(messagesLang)),
 			},
 			{
 				name:      "No messages with language",
 				serviceID: service.ID,
-				language:  missingLang,
-				expected:  &model.Messages{Language: missingLang, Messages: nil},
+				language:  langWithNoMsgs,
+				expected:  rand.ModelMessages(0, nil, rand.WithLanguage(langWithNoMsgs)),
 			},
 		}
 
