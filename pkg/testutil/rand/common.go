@@ -10,22 +10,18 @@ func Lang() language.Tag {
 	return language.MustParse(gofakeit.LanguageBCP())
 }
 
-// Langs returns a slice of random unique language tags.
-func Langs(count uint) []language.Tag {
-	languagesUsed := make(map[language.Tag]bool, count)
+// Langs returns a slice of n random unique language tags.
+func Langs(n uint) []language.Tag {
+	languagesUsed := make(map[language.Tag]bool, n)
+	tags := make([]language.Tag, 0, n)
 
-	tags := make([]language.Tag, 0, count)
-
-	for i := uint(0); i < count; i++ {
+	for uint(len(tags)) < n {
 		lang := Lang()
+		if !languagesUsed[lang] {
+			languagesUsed[lang] = true
 
-		for languagesUsed[lang] {
-			lang = Lang()
+			tags = append(tags, lang)
 		}
-
-		languagesUsed[lang] = true
-
-		tags = append(tags, lang)
 	}
 
 	return tags
