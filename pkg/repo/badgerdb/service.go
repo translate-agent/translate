@@ -21,7 +21,6 @@ func getServiceKey(id uuid.UUID) []byte {
 
 // getValues unmarshals the value of a BadgerDB item into v (either *model.Service or *model.Messages).
 func getValues[T *model.Service | *model.Messages](item *badger.Item, v T) error {
-	// return fmt.Errorf("repo: unmarshal %T: %w", v, errors.New("not implemented"))
 	return item.Value(func(val []byte) error { //nolint:wrapcheck
 		if err := json.Unmarshal(val, &v); err != nil {
 			return fmt.Errorf("unmarshal %T: %w", v, err)

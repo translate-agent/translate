@@ -13,14 +13,8 @@ import (
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/rand"
 )
-
-func randService() *model.Service {
-	return &model.Service{
-		Name: gofakeit.FirstName(),
-		ID:   uuid.New(),
-	}
-}
 
 func Test_SaveService(t *testing.T) {
 	t.Parallel()
@@ -32,26 +26,22 @@ func Test_SaveService(t *testing.T) {
 		}{
 			{
 				name:    "With UUID",
-				service: randService(),
+				service: rand.ModelService(),
 			},
 			{
 				name:    "Without UUID",
-				service: &model.Service{Name: gofakeit.Name()},
+				service: rand.ModelService(rand.WithID(uuid.Nil)),
 			},
 		}
 		for _, tt := range tests {
 			tt := tt
 			subTest(tt.name, func(ctx context.Context, t *testing.T) {
 				err := repository.SaveService(ctx, tt.service)
-				if !assert.NoError(t, err) {
-					return
-				}
+				require.NoError(t, err, "Save service")
 
 				// check if really saved
 				actualService, err := repository.LoadService(ctx, tt.service.ID)
-				if !assert.NoError(t, err) {
-					return
-				}
+				require.NoError(t, err, "Load service saved service")
 
 				assert.Equal(t, tt.service, actualService)
 			})
@@ -66,12 +56,10 @@ func Test_UpdateService(t *testing.T) {
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
-		expectedService := randService()
+		expectedService := rand.ModelService()
 
 		err := repository.SaveService(testCtx, expectedService)
-		if !assert.NoError(t, err, "Prepare test data") {
-			return
-		}
+		require.NoError(t, err, "Prepare test service")
 
 		// Actual Test
 
@@ -79,15 +67,11 @@ func Test_UpdateService(t *testing.T) {
 		expectedService.Name = gofakeit.FirstName()
 
 		err = repository.SaveService(testCtx, expectedService)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err, "Update test service name")
 
 		// check if really updated
 		actualService, err := repository.LoadService(testCtx, expectedService.ID)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err, "Load updated service")
 
 		assert.Equal(t, expectedService, actualService)
 	})
@@ -99,12 +83,10 @@ func Test_LoadService(t *testing.T) {
 	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
 		testCtx, _ := testutil.Trace(t)
 		// Prepare
-		service := randService()
+		service := rand.ModelService()
 
 		err := repository.SaveService(testCtx, service)
-		if !assert.NoError(t, err, "Prepare test data") {
-			return
-		}
+		require.NoError(t, err, "Prepare test service")
 
 		tests := []struct {
 			expected    *model.Service
@@ -121,6 +103,7 @@ func Test_LoadService(t *testing.T) {
 			{
 				name:        "Not Found",
 				serviceID:   uuid.New(),
+				expected:    nil,
 				expectedErr: repo.ErrNotFound,
 			},
 		}
@@ -129,15 +112,7 @@ func Test_LoadService(t *testing.T) {
 			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				actual, err := repository.LoadService(ctx, tt.serviceID)
-
-				if tt.expectedErr != nil {
-					assert.ErrorContains(t, err, tt.expectedErr.Error())
-					return
-				}
-
-				if !assert.NoError(t, err) {
-					return
-				}
+				require.ErrorIs(t, err, tt.expectedErr, "Load service")
 
 				assert.Equal(t, tt.expected, actual)
 			})
@@ -155,27 +130,21 @@ func Test_LoadServices(t *testing.T) {
 		expectedServices := make([]model.Service, 3)
 
 		for i := 0; i < 3; i++ {
-			service := randService()
+			service := rand.ModelService()
 
 			err := repository.SaveService(testCtx, service)
-			if !assert.NoError(t, err, "Prepare test data") {
-				return
-			}
+			require.NoError(t, err, "Prepare test service")
 
 			expectedServices[i] = *service
 		}
 
 		actual, err := repository.LoadServices(testCtx)
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err, "Load saved services")
 
 		require.GreaterOrEqual(t, len(actual), len(expectedServices))
 
 		for _, expected := range expectedServices {
-			if !assert.Contains(t, actual, expected) {
-				return
-			}
+			require.Contains(t, actual, expected)
 		}
 	})
 }
@@ -187,12 +156,10 @@ func Test_DeleteService(t *testing.T) {
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
-		service := randService()
+		service := rand.ModelService()
 
 		err := repository.SaveService(testCtx, service)
-		if !assert.NoError(t, err, "Prepare test data") {
-			return
-		}
+		require.NoError(t, err, "Prepare test service")
 
 		tests := []struct {
 			expectedErr error
@@ -215,14 +182,7 @@ func Test_DeleteService(t *testing.T) {
 			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				err := repository.DeleteService(ctx, tt.serviceID)
-				if tt.expectedErr != nil {
-					assert.ErrorContains(t, err, tt.expectedErr.Error())
-					return
-				}
-
-				if !assert.NoError(t, err) {
-					return
-				}
+				require.ErrorIs(t, err, tt.expectedErr, "Delete service")
 
 				// check if really is deleted
 				_, err = repository.LoadService(ctx, tt.serviceID)

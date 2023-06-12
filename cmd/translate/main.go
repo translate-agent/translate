@@ -139,7 +139,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "translate.yaml", "config file")
 	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
 	rootCmd.PersistentFlags().String("host", "localhost", "host to run service on")
-	rootCmd.PersistentFlags().String("db", "mysql", "database to use with service")
+	rootCmd.PersistentFlags().String("db", "badgerdb", "database to use with service")
 }
 
 // initConfig reads in config file and ENV variables if set.
