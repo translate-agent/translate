@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/XSAM/otelsql v0.23.0
 	github.com/brianvoe/gofakeit/v6 v6.22.0
+	github.com/dgraph-io/badger/v3 v3.2103.5
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0
@@ -31,7 +32,6 @@ require (
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dgraph-io/badger/v3 v3.2103.5
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
