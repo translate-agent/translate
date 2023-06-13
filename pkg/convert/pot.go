@@ -21,6 +21,9 @@ const (
 	MsgStr       poTag = "msgstr"
 )
 
+// ToPot function takes a model.Messages structure,
+// writes the language information and each message to a buffer in the POT file format,
+// and returns the buffer contents as a byte slice representing the POT file.
 func ToPot(m model.Messages) ([]byte, error) {
 	var b bytes.Buffer
 
@@ -37,6 +40,7 @@ func ToPot(m model.Messages) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+// FromPot function parses a POT file by tokenizing and converting it into a pot.Po structure.
 func FromPot(b []byte) (model.Messages, error) {
 	const pluralCountLimit = 2
 
@@ -64,7 +68,7 @@ func FromPot(b []byte) (model.Messages, error) {
 		case po.Header.PluralForms.NPlurals > pluralCountLimit:
 			return model.Messages{}, errors.New("plural forms with more than 2 forms are not implemented yet")
 		case po.Header.PluralForms.NPlurals == pluralCountLimit:
-			message.Message = convertToMessageFormatPlural(node.MsgStr)
+			message.Message = convertPluralsToMessageString(node.MsgStr)
 		default:
 			message.Message = convertToMessageFormatSingular(node.MsgStr[0])
 		}
@@ -78,6 +82,8 @@ func FromPot(b []byte) (model.Messages, error) {
 	}, nil
 }
 
+// writeToPoTag function selects the appropriate write function (writeDefault or writePlural)
+// based on the tag type (poTag) and uses that function to write the tag value to a bytes.Buffer.
 func writeToPoTag(b *bytes.Buffer, tag poTag, str string) error {
 	write := writeDefault
 	if tag == MsgStrPlural {
@@ -91,6 +97,9 @@ func writeToPoTag(b *bytes.Buffer, tag poTag, str string) error {
 	return nil
 }
 
+// writeDefault parses a default message string into nodes, accumulates the text content,
+// handles cases where the default message doesn't have any text, splits the accumulated text into lines,
+// and writes the lines as a multiline tag value to a bytes.Buffer.
 func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
 	var text strings.Builder
 
@@ -133,6 +142,8 @@ func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
 	return nil
 }
 
+// writePlural parses a plural message string into nodes, iterates over the nodes,
+// and writes the variants of the plural message to a bytes.Buffer.
 func writePlural(b *bytes.Buffer, tag poTag, str string) error {
 	nodes, err := messageformat.Parse(str)
 	if err != nil {
@@ -153,6 +164,7 @@ func writePlural(b *bytes.Buffer, tag poTag, str string) error {
 	return nil
 }
 
+// writeVariants writes the variants of a plural message to a bytes.Buffer.
 func writeVariants(b *bytes.Buffer, tag poTag, nodeMatch messageformat.NodeMatch) error {
 	for i, variant := range nodeMatch.Variants {
 		if _, err := fmt.Fprintf(b, "msgstr[%d] ", i); err != nil {
@@ -194,6 +206,7 @@ func writeVariants(b *bytes.Buffer, tag poTag, nodeMatch messageformat.NodeMatch
 	return nil
 }
 
+// writeMultiline writes a slice of strings as a multiline tag value to a bytes.Buffer.
 func writeMultiline(b *bytes.Buffer, tag poTag, lines []string) error {
 	for _, line := range lines {
 		if !strings.HasSuffix(line, "\\n") {
@@ -208,6 +221,9 @@ func writeMultiline(b *bytes.Buffer, tag poTag, lines []string) error {
 	return nil
 }
 
+// getPoTagLines processes a string by encoding, splitting it into lines,
+// and handling special cases where the last line is an empty string due to trailing newline characters.
+// It returns a slice of strings representing the individual lines.
 func getPoTagLines(str string) []string {
 	encodedStr := strconv.Quote(str)
 
@@ -227,6 +243,8 @@ func getPoTagLines(str string) []string {
 	return lines
 }
 
+// writeMessage writes a single message entry to a bytes.Buffer,
+// including new lines, plural forms information, descriptions, fuzzy comment.
 func writeMessage(b *bytes.Buffer, index int, message model.Message) error {
 	if index > 0 {
 		if _, err := fmt.Fprint(b, "\n"); err != nil {
@@ -260,6 +278,8 @@ func writeMessage(b *bytes.Buffer, index int, message model.Message) error {
 	return writeTags(b, message)
 }
 
+// writeTags writes specific tags (MsgId, MsgStr, PluralId, MsgStrPlural)
+// along with their corresponding values to a bytes.Buffer.
 func writeTags(b *bytes.Buffer, message model.Message) error {
 	if err := writeToPoTag(b, MsgId, message.ID); err != nil {
 		return fmt.Errorf("format msgid: %w", err)
@@ -281,4 +301,27 @@ func writeTags(b *bytes.Buffer, message model.Message) error {
 	}
 
 	return nil
+}
+
+// convertPluralsToMessageString converts an array of strings to MessageFormat plural form.
+func convertPluralsToMessageString(plurals []string) string {
+	var sb strings.Builder
+
+	sb.WriteString("match {$count :number}\n")
+
+	for i, plural := range plurals {
+		line := strings.ReplaceAll(strings.TrimSpace(plural), "%d", "{$count}")
+
+		var count string
+
+		if i == len(plurals)-1 {
+			count = "*"
+		} else {
+			count = fmt.Sprintf("%d", i+1)
+		}
+
+		sb.WriteString(fmt.Sprintf("when %s {%s}\n", count, line))
+	}
+
+	return sb.String()
 }
