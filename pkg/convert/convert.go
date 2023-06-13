@@ -8,16 +8,3 @@ func convertToMessageFormatSingular(message string) string {
 
 	return "{" + message + "}"
 }
-
-// I will need this function later
-// convertFromMessageFormatStrToStr function replaces '{' and '}' only if message starts with '{' and ends with '}'.
-// func convertFromMessageFormatStrToStr(message string) string {
-//	if strings.HasPrefix(message, "{") && strings.HasSuffix(message, "}") {
-//		str := strings.TrimSuffix(message, "}")
-//		str = strings.TrimPrefix(str, "{")
-//
-//		return str
-//	}
-//
-//	return message
-// }
