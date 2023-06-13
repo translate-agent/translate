@@ -303,7 +303,7 @@ func writeTags(b *bytes.Buffer, message model.Message) error {
 	return nil
 }
 
-// convertPluralsToMessageString converts an array of strings to MessageFormat plural form.
+// convertPluralsToMessageString converts a slice of strings to MessageFormat plural form.
 func convertPluralsToMessageString(plurals []string) string {
 	var sb strings.Builder
 
