@@ -4,24 +4,108 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"log"
+	"net"
 	"os"
 	"path/filepath"
+	"sync"
+	"syscall"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/cmd/client/cmd"
+	translatesrv "go.expect.digital/translate/cmd/translate/service"
+	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/translate"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"golang.org/x/text/language"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-func Test_ListServices(t *testing.T) {
+const host = "localhost"
+
+var (
+	addr   string
+	client translatev1.TranslateServiceClient
+)
+
+func TestMain(m *testing.M) {
+	ctx := context.Background()
+	port := mustGetFreePort()
+	addr = fmt.Sprintf("%s:%s", host, port)
+
+	viper.Set("service.port", port)
+	viper.Set("service.host", host)
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		translatesrv.Serve()
+	}()
+
+	grpcOpts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+		grpc.WithBlock(),
+	}
+	// Wait for the server to start and establish a connection.
+	conn, err := grpc.DialContext(ctx, host+":"+port, grpcOpts...)
+	if err != nil {
+		log.Panicf("create connection to gRPC server: %v", err)
+	}
+
+	client = translatev1.NewTranslateServiceClient(conn)
+
+	// Run the tests.
+	code := m.Run()
+	// Send soft kill (termination) signal to process.
+	err = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+	if err != nil {
+		log.Panicf("send termination signal: %v", err)
+	}
+	// Wait for main() to finish cleanup.
+	wg.Wait()
+
+	// Close the connection and tracer.
+	if err := conn.Close(); err != nil {
+		log.Panicf("close gRPC client connection: %v", err)
+	}
+
+	os.Exit(code)
+}
+
+func mustGetFreePort() string {
+	// Listen on port 0 to have the operating system allocate an available port.
+	l, err := net.Listen("tcp", host+":0")
+	if err != nil {
+		log.Panicf("get free port: %v", err)
+	}
+	defer l.Close()
+
+	// Get the port number from the address that the Listener is listening on.
+	addr := l.Addr().(*net.TCPAddr)
+
+	return fmt.Sprint(addr.Port)
+}
+
+func Test_ListServices_CLI(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
-			"service", "ls",
+			"service", "list",
 			"-a", addr,
 			"-i", "true",
 		})
@@ -34,7 +118,7 @@ func Test_ListServices(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
-			"service", "ls",
+			"service", "list",
 			"-a", addr,
 		})
 
@@ -43,7 +127,7 @@ func Test_ListServices(t *testing.T) {
 	})
 }
 
-func Test_TranslationFileUpload(t *testing.T) {
+func Test_TranslationFileUpload_CLI(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
@@ -213,7 +297,7 @@ func Test_TranslationFileUpload(t *testing.T) {
 	})
 }
 
-func Test_TranslationFileDownload(t *testing.T) {
+func Test_TranslationFileDownload_CLI(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
@@ -329,4 +413,51 @@ func Test_TranslationFileDownload(t *testing.T) {
 		assert.ErrorContains(t, err, "required flag(s) \"path\" not set")
 		assert.Nil(t, res)
 	})
+}
+
+// helpers
+
+func randService(t *testing.T) *translatev1.Service {
+	t.Helper()
+
+	return &translatev1.Service{
+		Id:   gofakeit.UUID(),
+		Name: gofakeit.FirstName(),
+	}
+}
+
+// createService creates a random service, and calls the CreateService RPC.
+func createService(ctx context.Context, t *testing.T) *translatev1.Service {
+	t.Helper()
+
+	ctx, span := testutil.Tracer().Start(ctx, "test: create service")
+	defer span.End()
+
+	service := randService(t)
+
+	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
+	require.NoError(t, err, "create test service")
+
+	return service
+}
+
+func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.Tag) {
+	t.Helper()
+
+	n := gofakeit.IntRange(1, 5)
+	lang := language.MustParse(gofakeit.LanguageBCP())
+	messages := model.Messages{
+		Language: lang,
+		Messages: make([]model.Message, 0, n),
+	}
+
+	for i := 0; i < n; i++ {
+		message := model.Message{ID: gofakeit.SentenceSimple(), Description: gofakeit.SentenceSimple()}
+		messages.Messages = append(messages.Messages, message)
+	}
+
+	data, err := translate.MessagesToData(schema, messages)
+	require.NoError(t, err, "convert rand messages to serialized data")
+
+	return data, lang
 }

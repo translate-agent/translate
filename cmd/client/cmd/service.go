@@ -34,7 +34,7 @@ func newServiceCmd() *cobra.Command {
 
 	serviceCmd.AddCommand(newUploadCmd())
 	serviceCmd.AddCommand(newDownloadCmd())
-	serviceCmd.AddCommand(newLsCmd())
+	serviceCmd.AddCommand(newListCmd())
 
 	return serviceCmd
 }
