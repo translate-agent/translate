@@ -80,7 +80,7 @@ func ToXliff2(messages model.Messages) ([]byte, error) {
 
 		xlf.File.Units = append(xlf.File.Units, unit{
 			ID:     msg.ID,
-			Source: convertFromMessageFormatStrToStr(msg.Message),
+			Source: removeEnclosingBrackets(msg.Message),
 			Notes:  notes,
 		})
 	}

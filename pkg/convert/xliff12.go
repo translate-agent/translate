@@ -70,7 +70,7 @@ func ToXliff12(messages model.Messages) ([]byte, error) {
 	for _, msg := range messages.Messages {
 		xlf.File.Body.TransUnits = append(xlf.File.Body.TransUnits, transUnit{
 			ID:     msg.ID,
-			Source: convertFromMessageFormatStrToStr(msg.Message),
+			Source: removeEnclosingBrackets(msg.Message),
 			Note:   msg.Description,
 		})
 	}

@@ -43,7 +43,7 @@ func messagesToPipeline(m model.Messages) pipeline.Messages {
 	for _, value := range m.Messages {
 		pipelineMsg.Messages = append(pipelineMsg.Messages, pipeline.Message{
 			ID:          pipeline.IDList{value.ID},
-			Translation: pipeline.Text{Msg: convertFromMessageFormatStrToStr(value.Message)},
+			Translation: pipeline.Text{Msg: removeEnclosingBrackets(value.Message)},
 			Meaning:     value.Description,
 			Fuzzy:       value.Fuzzy,
 		})

@@ -211,7 +211,7 @@ func Test_ToArb(t *testing.T) {
 			},
 			{
 				ID:      "greeting",
-				Message: "{Welcome {user}}",
+				Message: "{Welcome Sion}",
 			},
 		},
 	}
@@ -223,7 +223,7 @@ func Test_ToArb(t *testing.T) {
 		"@title":{
 			"description":"Message to greet the World"
 		},
-		"greeting":"Welcome {user}"
+		"greeting":"Welcome Sion"
 	}`)
 
 	actual, err := ToArb(messages)

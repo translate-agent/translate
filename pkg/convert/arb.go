@@ -130,7 +130,7 @@ func ToArb(messages model.Messages) ([]byte, error) {
 	dst["@@locale"] = messages.Language
 
 	for _, msg := range messages.Messages {
-		dst[msg.ID] = convertFromMessageFormatStrToStr(msg.Message)
+		dst[msg.ID] = removeEnclosingBrackets(msg.Message)
 		if len(msg.Description) > 0 {
 			dst["@"+msg.ID] = map[string]string{"description": msg.Description}
 		}
