@@ -198,7 +198,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--address", addr,
 			"--insecure", "true",
 
-			"--language", "xyz-ZY--languageatn",
+			"--language", "xyz-ZY-Latn",
 			"--file", "test.json",
 			"--schema", "unrecognized",
 			"--serviceID", gofakeit.UUID(),
@@ -217,7 +217,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--address", addr,
 			"--insecure", "true",
 
-			"--language", "xyz-ZY--languageatn",
+			"--language", "xyz-ZY-Latn",
 			"--file", "test.json",
 			"--schema", "unspecified",
 			"--serviceID", gofakeit.UUID(),
@@ -236,7 +236,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--address", addr,
 			"--insecure", "true",
 
-			"--language", "xyz-ZY--languageatn",
+			"--language", "xyz-ZY-Latn",
 			"--file", "test.json",
 			"--serviceID", gofakeit.UUID(),
 		})
@@ -270,7 +270,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--address", addr,
 			"--insecure", "true",
 
-			"--language", "xyz-ZY--languageatn",
+			"--language", "xyz-ZY-Latn",
 			"--schema", "json_ng_localize",
 			"--serviceID", gofakeit.UUID(),
 		})
@@ -288,7 +288,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--insecure", "true",
 
 			"--file", "test.json",
-			"--language", "xyz-ZY--languageatn",
+			"--language", "xyz-ZY-Latn",
 			"--schema", "json_ng_localize",
 		})
 
@@ -371,7 +371,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--address", addr,
 			"--insecure", "true",
 
-			"--language", "lv--languagev",
+			"--language", "lv-lv",
 			"--serviceID", gofakeit.UUID(),
 			"--path", t.TempDir(),
 		})
@@ -388,7 +388,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--address", addr,
 			"--insecure", "true",
 
-			"--language", "lv--languagev",
+			"--language", "lv-lv",
 			"--schema", "xliff_12",
 			"--path", t.TempDir(),
 		})
@@ -405,7 +405,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--address", addr,
 			"--insecure", "true",
 
-			"--language", "lv--languagev",
+			"--language", "lv-lv",
 			"--schema", "xliff_12",
 			"--serviceID", gofakeit.UUID(),
 		})
