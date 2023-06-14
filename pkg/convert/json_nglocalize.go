@@ -31,7 +31,7 @@ func FromNgLocalize(data []byte) (model.Messages, error) {
 	}
 
 	for k, v := range ng.Translations {
-		messages.Messages = append(messages.Messages, model.Message{ID: k, Message: v})
+		messages.Messages = append(messages.Messages, model.Message{ID: k, Message: convertToMessageFormatSingular(v)})
 	}
 
 	return messages, nil
@@ -45,7 +45,7 @@ func ToNgLocalize(messages model.Messages) ([]byte, error) {
 	}
 
 	for _, msg := range messages.Messages {
-		ng.Translations[msg.ID] = msg.Message
+		ng.Translations[msg.ID] = convertFromMessageFormatStrToStr(msg.Message)
 	}
 
 	data, err := json.Marshal(ng)

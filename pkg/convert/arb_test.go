@@ -42,16 +42,54 @@ func Test_FromArb(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "title",
-						Message:     "Hello World!",
+						Message:     "{Hello World!}",
 						Description: "Message to greet the World",
 					},
 					{
 						ID:      "greeting",
-						Message: "Welcome {user}!",
+						Message: "{Welcome {user}!}",
 					},
 					{
 						ID:      "farewell",
-						Message: "Goodbye friend",
+						Message: "{Goodbye friend}",
+					},
+				},
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "Message in curly braces",
+			input: []byte(`
+			{
+				"title": "Hello World!",
+				"@title": {
+					"description": "Message to greet the World"
+				},
+				"greeting": "Welcome {user}!",
+				"@greeting": {
+					"placeholders": {
+						"user": {
+							"type": "string",
+							"example": "Bob"
+						}
+					}
+				},
+				"farewell": "Goodbye friend"
+			}`),
+			expected: model.Messages{
+				Messages: []model.Message{
+					{
+						ID:          "title",
+						Message:     "{Hello World!}",
+						Description: "Message to greet the World",
+					},
+					{
+						ID:      "greeting",
+						Message: "{Welcome {user}!}",
+					},
+					{
+						ID:      "farewell",
+						Message: "{Goodbye friend}",
 					},
 				},
 			},
@@ -105,7 +143,7 @@ func Test_FromArb(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "title",
-						Message:     "Hello World!",
+						Message:     "{Hello World!}",
 						Description: "Message to greet the World",
 					},
 				},
@@ -168,12 +206,12 @@ func Test_ToArb(t *testing.T) {
 		Messages: []model.Message{
 			{
 				ID:          "title",
-				Message:     "Hello World!",
+				Message:     "{Hello World!}",
 				Description: "Message to greet the World",
 			},
 			{
 				ID:      "greeting",
-				Message: "Welcome {user}",
+				Message: "{Welcome {user}}",
 			},
 		},
 	}
