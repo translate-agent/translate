@@ -32,7 +32,7 @@ func getCORS() *cors {
 //
 // TODO: Add preflight (OPTIONS) request handling, now it always returns OK.
 // The only header that is checked is the Origin header by the web browser itself.
-// All other headers should be checked in preflight requests.
+// All other headers should be checked in preflight request handler.
 func CORS() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
