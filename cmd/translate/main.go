@@ -15,13 +15,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
+	"go.expect.digital/translate/pkg/api/middleware"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/repo/mysql"
@@ -33,17 +31,6 @@ var (
 	cfgFile      string
 	supportedDBs = []string{"mysql"}
 )
-
-// grpcHandlerFunc returns an http.Handler that routes gRPC and non-gRPC requests to the appropriate handler.
-func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
-	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
-			grpcServer.ServeHTTP(w, r)
-		} else {
-			otherHandler.ServeHTTP(w, r)
-		}
-	}), &http2.Server{})
-}
 
 // rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
@@ -57,7 +44,7 @@ var rootCmd = &cobra.Command{
 		terminationChan := make(chan os.Signal, 1)
 		signal.Notify(terminationChan, syscall.SIGTERM, syscall.SIGINT)
 
-		tp, err := tracer.TracerProvider(ctx)
+		tp, err := tracer.TracerProvider(ctx, viper.GetString("service.otel.exporter"))
 		if err != nil {
 			log.Panicf("set tracer provider: %v", err)
 		}
@@ -110,9 +97,17 @@ var rootCmd = &cobra.Command{
 			log.Panicf("register translate service: %v", err)
 		}
 
+		handler := &middleware.Handler{
+			GrpcHandler: grpcServer,
+			RestHandler: mux,
+		}
+
+		handler.Add(middleware.REST, middleware.OtelHTTP())
+		handler.Add(middleware.BOTH, middleware.CORS())
+
 		httpServer := http.Server{
 			Addr:              addr,
-			Handler:           grpcHandlerFunc(grpcServer, otelhttp.NewHandler(mux, "grpc-gateway")),
+			Handler:           handler,
 			ReadHeaderTimeout: time.Second * 5, //nolint:gomnd
 		}
 
@@ -138,8 +133,9 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "translate.yaml", "config file")
 	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
-	rootCmd.PersistentFlags().String("host", "localhost", "host to run service on")
+	rootCmd.PersistentFlags().String("host", ":", "host to run service on")
 	rootCmd.PersistentFlags().String("db", "mysql", "database to use with service")
+	rootCmd.PersistentFlags().String("otel-exporter", "otlp", "exporter to use for opentelemetry")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -170,5 +166,10 @@ func initConfig() {
 	err = viper.BindPFlag("service.db", rootCmd.Flags().Lookup("db"))
 	if err != nil {
 		log.Panicf("bind db flag: %v", err)
+	}
+
+	err = viper.BindPFlag("service.otel.exporter", rootCmd.Flags().Lookup("otel-exporter"))
+	if err != nil {
+		log.Panicf("bind otel-exporter flag: %v", err)
 	}
 }

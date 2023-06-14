@@ -17,6 +17,9 @@ translate.yaml
 .env
 .secret
 
+# examples
+!examples/*
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 

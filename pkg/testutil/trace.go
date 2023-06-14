@@ -21,7 +21,7 @@ func init() {
 
 	var err error
 
-	tp, err = tracer.TracerProvider(ctx)
+	tp, err = tracer.TracerProvider(ctx, "otlp")
 	if err != nil {
 		log.Panicf("set tracer provider: %v", err)
 	}

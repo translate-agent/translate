@@ -1,8 +1,28 @@
 service:
   port: 8080
-  host: "localhost"
+  host: "0.0.0.0"
   db: "mysql"
-
+  otel:
+    exporter: "otlp"
+  api:
+    cors:
+      allowed_origins:
+        - "*"
+      allowed_methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowed_headers:
+        - "*"
+      exposed_headers:
+        - "Content-Length"
+        - "Content-Type"
+        - "X-Grpc-Web"
+      allow_credentials: false
+      max_age: 3600
 db:
   mysql:
     host: "localhost"
