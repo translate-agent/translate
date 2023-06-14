@@ -44,7 +44,7 @@ var rootCmd = &cobra.Command{
 		terminationChan := make(chan os.Signal, 1)
 		signal.Notify(terminationChan, syscall.SIGTERM, syscall.SIGINT)
 
-		tp, err := tracer.TracerProvider(ctx, viper.GetString("service.otel.exporter"))
+		tp, err := tracer.TracerProvider(ctx)
 		if err != nil {
 			log.Panicf("set tracer provider: %v", err)
 		}
@@ -135,7 +135,6 @@ func init() {
 	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
 	rootCmd.PersistentFlags().String("host", ":", "host to run service on")
 	rootCmd.PersistentFlags().String("db", "mysql", "database to use with service")
-	rootCmd.PersistentFlags().String("otel-exporter", "otlp", "exporter to use for opentelemetry")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -166,10 +165,5 @@ func initConfig() {
 	err = viper.BindPFlag("service.db", rootCmd.Flags().Lookup("db"))
 	if err != nil {
 		log.Panicf("bind db flag: %v", err)
-	}
-
-	err = viper.BindPFlag("service.otel.exporter", rootCmd.Flags().Lookup("otel-exporter"))
-	if err != nil {
-		log.Panicf("bind otel-exporter flag: %v", err)
 	}
 }
