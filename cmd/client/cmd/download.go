@@ -97,10 +97,10 @@ func newDownloadCmd() *cobra.Command {
 	}
 
 	downloadFlags := downloadCmd.Flags()
-	downloadFlags.StringP("serviceID", "u", "", "service UUID")
-	downloadFlags.StringP("path", "p", "", "download folder path")
-	downloadFlags.StringP("language", "l", "", "translation language in BCP47 format")
-	downloadFlags.VarP(&schemaFlag, "schema", "s",
+	downloadFlags.String("serviceID", "", "service UUID")
+	downloadFlags.String("path", "", "download folder path")
+	downloadFlags.String("language", "", "translation language in BCP47 format")
+	downloadFlags.Var(&schemaFlag, "schema",
 		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)
 
 	if err := downloadCmd.MarkFlagRequired("serviceID"); err != nil {

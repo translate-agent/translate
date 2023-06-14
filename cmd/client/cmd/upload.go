@@ -72,10 +72,10 @@ func newUploadCmd() *cobra.Command {
 	}
 
 	uploadFlags := uploadCmd.Flags()
-	uploadFlags.StringP("serviceID", "u", "", "service UUID")
-	uploadFlags.StringP("file", "f", "", "file path")
-	uploadFlags.StringP("language", "l", "", "translation language")
-	uploadFlags.VarP(&schemaFlag, "schema", "s",
+	uploadFlags.String("serviceID", "", "service UUID")
+	uploadFlags.String("file", "", "file path")
+	uploadFlags.String("language", "", "translation language")
+	uploadFlags.Var(&schemaFlag, "schema",
 		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)
 
 	if err := uploadCmd.MarkFlagRequired("serviceID"); err != nil {

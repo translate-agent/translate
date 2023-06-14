@@ -10,9 +10,9 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
-func newListCmd() *cobra.Command {
-	listCmd := &cobra.Command{
-		Use:   "list",
+func newLsCmd() *cobra.Command {
+	lsCmd := &cobra.Command{
+		Use:   "ls",
 		Short: "List services",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			timeout, err := cmd.InheritedFlags().GetDuration("timeout")
@@ -49,5 +49,5 @@ func newListCmd() *cobra.Command {
 		},
 	}
 
-	return listCmd
+	return lsCmd
 }

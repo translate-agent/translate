@@ -24,7 +24,7 @@ func newServiceCmd() *cobra.Command {
 	}
 
 	serviceFlags := serviceCmd.PersistentFlags()
-	serviceFlags.StringP("address", "a", "localhost:8080", `"translate" service address as "host:port"`)
+	serviceFlags.String("address", "localhost:8080", `"translate" service address as "host:port"`)
 	serviceFlags.BoolP("insecure", "i", false, `disable transport security (default false)`)
 	serviceFlags.DurationP("timeout", "t", cmdTimeout, `command execution timeout`)
 
@@ -34,7 +34,7 @@ func newServiceCmd() *cobra.Command {
 
 	serviceCmd.AddCommand(newUploadCmd())
 	serviceCmd.AddCommand(newDownloadCmd())
-	serviceCmd.AddCommand(newListCmd())
+	serviceCmd.AddCommand(newLsCmd())
 
 	return serviceCmd
 }
