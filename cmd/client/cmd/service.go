@@ -25,8 +25,8 @@ func newServiceCmd() *cobra.Command {
 
 	serviceFlags := serviceCmd.PersistentFlags()
 	serviceFlags.String("address", "localhost:8080", `"translate" service address as "host:port"`)
-	serviceFlags.BoolP("insecure", "i", false, `disable transport security (default false)`)
-	serviceFlags.DurationP("timeout", "t", cmdTimeout, `command execution timeout`)
+	serviceFlags.Bool("insecure", false, `disable transport security (default false)`)
+	serviceFlags.Duration("timeout", cmdTimeout, `command execution timeout`)
 
 	if err := viper.BindPFlags(serviceFlags); err != nil {
 		log.Panicf("service cmd: bind flags: %v", err)
