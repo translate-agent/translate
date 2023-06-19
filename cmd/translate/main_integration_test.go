@@ -22,8 +22,8 @@ import (
 const host = "localhost"
 
 var (
-	port   string
-	client translatev1.TranslateServiceClient
+	addr, port string
+	client     translatev1.TranslateServiceClient
 )
 
 func TestMain(m *testing.M) {
@@ -36,6 +36,7 @@ func testMain(m *testing.M) (code int) {
 	// start the translate service
 
 	port = mustGetFreePort()
+	addr = fmt.Sprintf("%s:%s", host, port)
 
 	viper.Set("service.port", port)
 	viper.Set("service.host", host)
