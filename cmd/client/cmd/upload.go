@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func newUploadCmd() *cobra.Command {
@@ -116,15 +117,15 @@ func newUploadCmd() *cobra.Command {
 func readFileFromURL(ctx context.Context, filePath string) ([]byte, error) {
 	u, err := url.ParseRequestURI(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("parse request: %w", err)
+		return nil, fmt.Errorf("parse URL: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.Path, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("prepare new GET request: %w", err)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := otelhttp.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("do GET request: %w", err)
 	}

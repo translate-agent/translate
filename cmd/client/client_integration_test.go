@@ -128,7 +128,7 @@ func Test_ListServices_CLI(t *testing.T) {
 }
 
 func Test_TranslationFileUpload_CLI(t *testing.T) {
-	t.Run("OK", func(t *testing.T) {
+	t.Run("OK, file from local path", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -149,6 +149,53 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 			"--language", lang.String(),
 			"--file", file.Name(),
+			"--schema", "json_ng_localize",
+			"--serviceID", service.Id,
+		})
+
+		require.NoError(t, err)
+		assert.Equal(t, "File uploaded successfully.\n", string(res))
+	})
+
+	t.Run("OK, file from URL", func(t *testing.T) {
+		ctx, _ := testutil.Trace(t)
+
+		service := createService(ctx, t)
+		require.NotNil(t, service)
+
+		tempDir := t.TempDir()
+
+		file, err := os.CreateTemp(tempDir, "test")
+		require.NoError(t, err)
+
+		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
+
+		_, err = file.Write(data)
+		require.NoError(t, err)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
+			"service", "upload",
+			"--address", addr,
+			"--insecure", "true",
+
+			"--language", lang.String(),
+			"--file", file.Name(),
+			"--schema", "json_ng_localize",
+			"--serviceID", service.Id,
+		})
+
+		require.NoError(t, err)
+		require.Equal(t, "File uploaded successfully.\n", string(res))
+
+		res, err = cmd.ExecuteWithParams(ctx, []string{
+			"service", "upload",
+			"--address", addr,
+			"--insecure", "true",
+
+			"--language", lang.String(),
+			"--file", fmt.Sprintf(
+				"http://%s/v1/services/%s/files/%s?schema=%s",
+				addr, service.Id, lang, translatev1.Schema_JSON_NG_LOCALIZE),
 			"--schema", "json_ng_localize",
 			"--serviceID", service.Id,
 		})
