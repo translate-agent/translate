@@ -86,10 +86,6 @@ func newUploadCmd() *cobra.Command {
 		log.Panicf("upload file cmd: set field 'file' as required: %v", err)
 	}
 
-	if err := uploadCmd.MarkFlagRequired("language"); err != nil {
-		log.Panicf("upload file cmd: set field 'language' as required: %v", err)
-	}
-
 	if err := uploadCmd.MarkFlagRequired("schema"); err != nil {
 		log.Panicf("upload file cmd: set field 'schema' as required: %v", err)
 	}

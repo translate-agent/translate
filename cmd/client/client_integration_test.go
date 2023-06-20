@@ -157,6 +157,36 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		assert.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
+	// Messages has language tag, but CLI parameter 'language' is not set.
+	t.Run("OK, without lang parameter", func(t *testing.T) {
+		ctx, _ := testutil.Trace(t)
+
+		service := createService(ctx, t)
+		require.NotNil(t, service)
+
+		file, err := os.CreateTemp(t.TempDir(), "test")
+		require.NoError(t, err)
+
+		// Ng localise schema has language tag in the file.
+		data, _ := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
+
+		_, err = file.Write(data)
+		require.NoError(t, err)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
+			"service", "upload",
+			"--address", addr,
+			"--insecure", "true",
+
+			"--file", file.Name(),
+			"--schema", "json_ng_localize",
+			"--serviceID", service.Id,
+		})
+
+		require.NoError(t, err)
+		assert.Equal(t, "File uploaded successfully.\n", string(res))
+	})
+
 	t.Run("error, malformed language tag", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
@@ -245,20 +275,33 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		assert.Nil(t, res)
 	})
 
-	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
+	// Messages does not have language tag, and CLI parameter 'language' is not set.
+	t.Run("error, language could not be determined", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
+
+		service := createService(ctx, t)
+		require.NotNil(t, service)
+
+		file, err := os.CreateTemp(t.TempDir(), "test")
+		require.NoError(t, err)
+
+		// ngx translate schema does not have language tag in the file.
+		data, _ := randUploadData(t, translatev1.Schema_JSON_NGX_TRANSLATE)
+
+		_, err = file.Write(data)
+		require.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
 
-			"--file", "test.json",
+			"--file", file.Name(),
 			"--schema", "json_ng_localize",
-			"--serviceID", gofakeit.UUID(),
+			"--serviceID", service.Id,
 		})
 
-		assert.ErrorContains(t, err, "required flag(s) \"language\" not set")
+		assert.ErrorContains(t, err, "no language is set")
 		assert.Nil(t, res)
 	})
 
@@ -456,7 +499,7 @@ func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.T
 		messages.Messages = append(messages.Messages, message)
 	}
 
-	data, err := translate.MessagesToData(schema, messages)
+	data, err := translate.MessagesToData(schema, &messages)
 	require.NoError(t, err, "convert rand messages to serialized data")
 
 	return data, lang
