@@ -53,7 +53,7 @@ func newUploadCmd() *cobra.Command {
 
 			var data []byte
 
-			if strings.HasPrefix(filePath, "http") || strings.HasPrefix(filePath, "https") {
+			if strings.HasPrefix(filePath, "http://") || strings.HasPrefix(filePath, "https://") {
 				if data, err = readFileFromURL(ctx, filePath); err != nil {
 					return fmt.Errorf("upload file: read file from URL: %w", err)
 				}
@@ -85,7 +85,7 @@ func newUploadCmd() *cobra.Command {
 
 	uploadFlags := uploadCmd.Flags()
 	uploadFlags.String("serviceID", "", "service UUID")
-	uploadFlags.String("file", "", "translation file local path or URL")
+	uploadFlags.String("file", "", "local path or URL for the translation file")
 	uploadFlags.String("language", "", "translation language")
 	uploadFlags.Var(&schemaFlag, "schema",
 		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)
@@ -117,29 +117,29 @@ func newUploadCmd() *cobra.Command {
 func readFileFromURL(ctx context.Context, filePath string) ([]byte, error) {
 	u, err := url.ParseRequestURI(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("parse URL: %w", err)
+		return nil, fmt.Errorf("validate file URL: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("prepare new GET request: %w", err)
+		return nil, fmt.Errorf("prepare request to fetch file: %w", err)
 	}
 
 	resp, err := otelhttp.DefaultClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("do GET request: %w", err)
+		return nil, fmt.Errorf("fetch file: %w", err)
 	}
 
 	defer resp.Body.Close()
 
 	// Check server response
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("bad status: %s", resp.Status)
+		return nil, fmt.Errorf("fetch file status: got %s, expected 200", resp.Status)
 	}
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read response body data: %w", err)
+		return nil, fmt.Errorf("read fetched file: %w", err)
 	}
 
 	return data, nil
