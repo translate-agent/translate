@@ -47,7 +47,7 @@ func FromXliff12(data []byte) (model.Messages, error) {
 	for _, unit := range xlf.File.Body.TransUnits {
 		messages.Messages = append(messages.Messages, model.Message{
 			ID:          unit.ID,
-			Message:     unit.Source,
+			Message:     convertToMessageFormatSingular(unit.Source),
 			Description: unit.Note,
 		})
 	}
@@ -70,7 +70,7 @@ func ToXliff12(messages model.Messages) ([]byte, error) {
 	for _, msg := range messages.Messages {
 		xlf.File.Body.TransUnits = append(xlf.File.Body.TransUnits, transUnit{
 			ID:     msg.ID,
-			Source: msg.Message,
+			Source: removeEnclosingBrackets(msg.Message),
 			Note:   msg.Description,
 		})
 	}

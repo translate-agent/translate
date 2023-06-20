@@ -109,6 +109,8 @@ func FromArb(data []byte) (model.Messages, error) {
 			return model.Messages{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
 		}
 
+		msg.Message = convertToMessageFormatSingular(msg.Message)
+
 		var err error
 		if msg.Description, err = findDescription(key); err != nil {
 			return model.Messages{}, fmt.Errorf("find description of '%s': %w", key, err)
@@ -128,7 +130,7 @@ func ToArb(messages model.Messages) ([]byte, error) {
 	dst["@@locale"] = messages.Language
 
 	for _, msg := range messages.Messages {
-		dst[msg.ID] = msg.Message
+		dst[msg.ID] = removeEnclosingBrackets(msg.Message)
 		if len(msg.Description) > 0 {
 			dst["@"+msg.ID] = map[string]string{"description": msg.Description}
 		}

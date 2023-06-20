@@ -14,13 +14,13 @@ var modelMsg = model.Messages{
 	Messages: []model.Message{
 		{
 			ID:          "1",
-			Message:     "message1",
+			Message:     "{message1}",
 			Description: "description1",
 			Fuzzy:       true,
 		},
 		{
 			ID:          "2",
-			Message:     "message2",
+			Message:     "{message2}",
 			Description: "description2",
 			Fuzzy:       false,
 		},
