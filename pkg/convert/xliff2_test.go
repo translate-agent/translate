@@ -60,11 +60,11 @@ func TestFromXliff2(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "common.welcome",
-						Message: "Welcome!",
+						Message: "{Welcome!}",
 					},
 					{
 						ID:          "common.app.title",
-						Message:     "Diary",
+						Message:     "{Diary}",
 						Description: "App title",
 					},
 				},
@@ -164,17 +164,17 @@ func Test_ToXliff2(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Welcome",
-						Message:     "Welcome to our website!",
+						Message:     "{Welcome to our website!}",
 						Description: "To welcome a new visitor",
 					},
 					{
 						ID:          "Error",
-						Message:     "Something went wrong. Please try again later.",
+						Message:     "{Something went wrong. Please try again later.}",
 						Description: "To inform the user of an error",
 					},
 					{
 						ID:      "Feedback",
-						Message: "We appreciate your feedback. Thank you for using our service.",
+						Message: "{We appreciate your feedback. Thank you for using our service.}",
 					},
 				},
 			},

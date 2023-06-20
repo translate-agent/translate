@@ -8,6 +8,8 @@ import (
 	"golang.org/x/text/message/pipeline"
 )
 
+// ToGo converts a model.Messages structure into a JSON byte slice
+// by first converting it into a format suitable for the pipeline and then encoding it using JSON.
 func ToGo(m model.Messages) ([]byte, error) {
 	pipelineMsgs := messagesToPipeline(m)
 
@@ -19,6 +21,8 @@ func ToGo(m model.Messages) ([]byte, error) {
 	return msg, nil
 }
 
+// FromGo takes a JSON-encoded byte slice, decodes it into a pipeline.Messages structure,
+// and then converts it into a model.Messages structure using the messagesFromPipeline function.
 func FromGo(b []byte) (model.Messages, error) {
 	var pipelineMsgs pipeline.Messages
 
@@ -29,6 +33,7 @@ func FromGo(b []byte) (model.Messages, error) {
 	return messagesFromPipeline(pipelineMsgs), nil
 }
 
+// messagesToPipeline converts a model.Messages structure into a pipeline.Messages structure.
 func messagesToPipeline(m model.Messages) pipeline.Messages {
 	pipelineMsg := pipeline.Messages{
 		Language: m.Language,
@@ -38,7 +43,7 @@ func messagesToPipeline(m model.Messages) pipeline.Messages {
 	for _, value := range m.Messages {
 		pipelineMsg.Messages = append(pipelineMsg.Messages, pipeline.Message{
 			ID:          pipeline.IDList{value.ID},
-			Translation: pipeline.Text{Msg: value.Message},
+			Translation: pipeline.Text{Msg: removeEnclosingBrackets(value.Message)},
 			Meaning:     value.Description,
 			Fuzzy:       value.Fuzzy,
 		})
@@ -47,6 +52,7 @@ func messagesToPipeline(m model.Messages) pipeline.Messages {
 	return pipelineMsg
 }
 
+// messagesFromPipeline converts a pipeline.Messages structure into a model.Messages structure.
 func messagesFromPipeline(m pipeline.Messages) model.Messages {
 	msg := model.Messages{
 		Language: m.Language,
@@ -58,7 +64,7 @@ func messagesFromPipeline(m pipeline.Messages) model.Messages {
 			ID:          value.ID[0],
 			Fuzzy:       value.Fuzzy,
 			Description: value.Meaning,
-			Message:     value.Message.Msg,
+			Message:     convertToMessageFormatSingular(value.Message.Msg),
 		})
 	}
 

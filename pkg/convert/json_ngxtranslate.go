@@ -7,6 +7,9 @@ import (
 	"go.expect.digital/translate/pkg/model"
 )
 
+// FromNgxTranslate  parses the JSON-encoded byte slice representing messages in the ngx-translate format,
+// recursively traverses the map, extracts the key-value pairs, converts the message strings,
+// and constructs a model.Messages structure.
 func FromNgxTranslate(b []byte) (messages model.Messages, err error) {
 	var dst map[string]interface{}
 
@@ -21,7 +24,7 @@ func FromNgxTranslate(b []byte) (messages model.Messages, err error) {
 		default:
 			return fmt.Errorf("unsupported value type %T for key %s", value, key)
 		case string:
-			messages.Messages = append(messages.Messages, model.Message{ID: key, Message: v})
+			messages.Messages = append(messages.Messages, model.Message{ID: key, Message: convertToMessageFormatSingular(v)})
 		case map[string]interface{}:
 			for subKey, subValue := range v {
 				if key != "" {
@@ -44,11 +47,12 @@ func FromNgxTranslate(b []byte) (messages model.Messages, err error) {
 	return messages, nil
 }
 
+// ToNgxTranslate converts a model.Messages structure into the ngx-translate format.
 func ToNgxTranslate(messages model.Messages) (b []byte, err error) {
 	dst := make(map[string]string, len(messages.Messages))
 
 	for _, msg := range messages.Messages {
-		dst[msg.ID] = msg.Message
+		dst[msg.ID] = removeEnclosingBrackets(msg.Message)
 	}
 
 	b, err = json.Marshal(dst)
