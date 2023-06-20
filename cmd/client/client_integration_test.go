@@ -187,6 +187,8 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "File uploaded successfully.\n", string(res))
 
+		// upload file using link to previously uploaded translation file.
+
 		res, err = cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
