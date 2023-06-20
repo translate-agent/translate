@@ -36,9 +36,9 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: new GRPC client connection: %w", err)
 			}
 
-			serviceID, err := cmd.Flags().GetString("serviceID")
+			serviceID, err := cmd.Flags().GetString("service")
 			if err != nil {
-				return fmt.Errorf("upload file: get cli parameter 'serviceID': %w", err)
+				return fmt.Errorf("upload file: get cli parameter 'service': %w", err)
 			}
 
 			language, err := cmd.Flags().GetString("language")
@@ -84,14 +84,14 @@ func newUploadCmd() *cobra.Command {
 	}
 
 	uploadFlags := uploadCmd.Flags()
-	uploadFlags.String("serviceID", "", "service UUID")
+	uploadFlags.String("service", "", "service UUID")
 	uploadFlags.String("file", "", "local path or URL for the translation file")
 	uploadFlags.String("language", "", "translation language")
 	uploadFlags.Var(&schemaFlag, "schema",
 		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)
 
-	if err := uploadCmd.MarkFlagRequired("serviceID"); err != nil {
-		log.Panicf("upload file cmd: set field 'serviceID' as required: %v", err)
+	if err := uploadCmd.MarkFlagRequired("service"); err != nil {
+		log.Panicf("upload file cmd: set field 'service' as required: %v", err)
 	}
 
 	if err := uploadCmd.MarkFlagRequired("file"); err != nil {
