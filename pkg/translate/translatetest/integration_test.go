@@ -68,7 +68,7 @@ func testMain(m *testing.M) int {
 	return m.Run()
 }
 
-// allServices runs a test for each repo that is defined in the repos map.
+// allServices runs a test for each translate service that is defined in the translators map.
 func allServices(t *testing.T, f func(t *testing.T, service service, subtest testutil.SubtestFn)) {
 	for name, service := range translators {
 		name, service := name, service
