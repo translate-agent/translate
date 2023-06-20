@@ -12,18 +12,16 @@ import (
 )
 
 // Interface that defines some of the methods of the Google Translate client.
-// This interface helps to mock the Google Translate client in tests.
+// This interface helps to mock the Google Translate client in unit tests.
 // https://pkg.go.dev/cloud.google.com/go/translate#Client
 type GoogleClient interface {
 	Translate(ctx context.Context, inputs []string, target language.Tag, opts *translate.Options) ([]translate.Translation, error) //nolint:lll
-	SupportedLanguages(ctx context.Context, target language.Tag) ([]translate.Language, error)
 	io.Closer
 }
 
 // GoogleTranslate implements the TranslationService interface.
 type GoogleTranslate struct {
-	client            GoogleClient
-	supportedLangTags map[language.Tag]bool
+	client GoogleClient
 }
 
 type TranslateOption func(*GoogleTranslate) error
@@ -50,6 +48,7 @@ func WithDefaultClient(ctx context.Context) TranslateOption {
 	}
 }
 
+// NewGoogleTranslate creates a new Google Translate service.
 func NewGoogleTranslate(ctx context.Context, opts ...TranslateOption) (*GoogleTranslate, func() error, error) {
 	googleTranslate := &GoogleTranslate{}
 
@@ -64,22 +63,6 @@ func NewGoogleTranslate(ctx context.Context, opts ...TranslateOption) (*GoogleTr
 	if err != nil {
 		return nil, nil, fmt.Errorf("google translate client: ping google translate: %w", err)
 	}
-
-	// Get the list of supported languages.
-	supported, err := googleTranslate.client.SupportedLanguages(ctx, language.English)
-	if err != nil {
-		return nil, nil, fmt.Errorf("google translate client: get supported languages: %w", err)
-	}
-
-	// Create a map of supported languages for quick lookup.
-	googleTranslate.supportedLangTags = make(map[language.Tag]bool, len(supported))
-	for _, lang := range supported {
-		googleTranslate.supportedLangTags[lang.Tag] = true
-	}
-
-	// Add the undefined language tag to the map of supported languages
-	// as Google Translate tries to detect the language then.
-	googleTranslate.supportedLangTags[language.Und] = true
 
 	return googleTranslate, googleTranslate.client.Close, nil
 }
