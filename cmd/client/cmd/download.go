@@ -41,9 +41,9 @@ func newDownloadCmd() *cobra.Command {
 				return fmt.Errorf("download file: new GRPC client connection: %w", err)
 			}
 
-			serviceID, err := cmd.Flags().GetString("serviceID")
+			serviceID, err := cmd.Flags().GetString("service")
 			if err != nil {
-				return fmt.Errorf("upload file: get cli parameter 'serviceID': %w", err)
+				return fmt.Errorf("upload file: get cli parameter 'service': %w", err)
 			}
 
 			path, err := cmd.Flags().GetString("path")
@@ -97,14 +97,14 @@ func newDownloadCmd() *cobra.Command {
 	}
 
 	downloadFlags := downloadCmd.Flags()
-	downloadFlags.String("serviceID", "", "service UUID")
+	downloadFlags.String("service", "", "service UUID")
 	downloadFlags.String("path", "", "download folder path")
 	downloadFlags.String("language", "", "translation language in BCP47 format")
 	downloadFlags.Var(&schemaFlag, "schema",
 		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)
 
-	if err := downloadCmd.MarkFlagRequired("serviceID"); err != nil {
-		log.Panicf("download file cmd: set field 'serviceID' as required: %v", err)
+	if err := downloadCmd.MarkFlagRequired("service"); err != nil {
+		log.Panicf("download file cmd: set field 'service' as required: %v", err)
 	}
 
 	if err := downloadCmd.MarkFlagRequired("path"); err != nil {
