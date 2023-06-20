@@ -24,7 +24,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: "example",
+						Message: "{example}",
 					},
 				},
 			},
@@ -36,7 +36,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
-						Message: "message1",
+						Message: "{message1}",
 					},
 				},
 			},
@@ -48,7 +48,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
-						Message: "message1",
+						Message: "{message1}",
 					},
 				},
 			},
@@ -60,11 +60,11 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
-						Message: "message1",
+						Message: "{message1}",
 					},
 					{
 						ID:      "msg.example",
-						Message: "message2",
+						Message: "{message2}",
 					},
 				},
 			},
@@ -107,11 +107,11 @@ func Test_ToNgxTranslate(t *testing.T) {
 		Messages: []model.Message{
 			{
 				ID:      "message",
-				Message: "example",
+				Message: "{example}",
 			},
 			{
 				ID:      "message.example",
-				Message: "message1",
+				Message: "{message1}",
 			},
 		},
 	}
