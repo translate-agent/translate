@@ -24,15 +24,13 @@ import (
 
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/repo/badgerdb"
 	"go.expect.digital/translate/pkg/repo/mysql"
 	"go.expect.digital/translate/pkg/tracer"
 	"go.expect.digital/translate/pkg/translate"
 )
 
-var (
-	cfgFile      string
-	supportedDBs = []string{"mysql"}
-)
+var cfgFile string
 
 // grpcHandlerFunc returns an http.Handler that routes gRPC and non-gRPC requests to the appropriate handler.
 func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
@@ -82,8 +80,10 @@ var rootCmd = &cobra.Command{
 		switch v := strings.TrimSpace(strings.ToLower(viper.GetString("service.db"))); v {
 		case "mysql":
 			repository, err = mysql.NewRepo(mysql.WithDefaultDB(ctx))
+		case "badgerdb":
+			repository, err = badgerdb.NewRepo(badgerdb.WithDefaultDB())
 		default:
-			log.Panicf("unsupported db '%s'. List of supported db: %s", v, strings.Join(supportedDBs, ", "))
+			log.Panicf("unsupported db '%s'. List of supported db: %s", v, strings.Join(repo.SupportedDBs, ", "))
 		}
 
 		if err != nil {
@@ -139,7 +139,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "translate.yaml", "config file")
 	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
 	rootCmd.PersistentFlags().String("host", "localhost", "host to run service on")
-	rootCmd.PersistentFlags().String("db", "mysql", "database to use with service")
+	rootCmd.PersistentFlags().String("db", "badgerdb", "database to use with service")
 }
 
 // initConfig reads in config file and ENV variables if set.
