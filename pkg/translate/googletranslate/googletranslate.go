@@ -39,7 +39,12 @@ func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
 	return func(g *GoogleTranslate) error {
 		var err error
 
-		g.client, err = translate.NewClient(ctx, option.WithAPIKey(viper.GetString("googletranslate.api.key")))
+		apiKey := viper.GetString("translate_services.google_translate.api_key")
+		if apiKey == "" {
+			return fmt.Errorf("with default client: google translate api key is not set")
+		}
+
+		g.client, err = translate.NewClient(ctx, option.WithAPIKey(apiKey))
 		if err != nil {
 			return fmt.Errorf("with default client: new google translate client: %w", err)
 		}
