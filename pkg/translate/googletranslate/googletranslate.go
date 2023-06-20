@@ -24,10 +24,10 @@ type GoogleTranslate struct {
 	client GoogleClient
 }
 
-type TranslateOption func(*GoogleTranslate) error
+type GoogleTranslateOption func(*GoogleTranslate) error
 
 // WithClient sets the Google Translate client.
-func WithClient(c GoogleClient) TranslateOption {
+func WithClient(c GoogleClient) GoogleTranslateOption {
 	return func(g *GoogleTranslate) error {
 		g.client = c
 		return nil
@@ -35,7 +35,7 @@ func WithClient(c GoogleClient) TranslateOption {
 }
 
 // WithDefaultClient creates a new Google Translate client with the API key from the viper.
-func WithDefaultClient(ctx context.Context) TranslateOption {
+func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
 	return func(g *GoogleTranslate) error {
 		var err error
 
@@ -49,20 +49,23 @@ func WithDefaultClient(ctx context.Context) TranslateOption {
 }
 
 // NewGoogleTranslate creates a new Google Translate service.
-func NewGoogleTranslate(ctx context.Context, opts ...TranslateOption) (*GoogleTranslate, func() error, error) {
-	googleTranslate := &GoogleTranslate{}
+func NewGoogleTranslate(
+	ctx context.Context,
+	opts ...GoogleTranslateOption,
+) (gt *GoogleTranslate, closer func() error, err error) {
+	gt = &GoogleTranslate{}
 
 	for _, opt := range opts {
-		if err := opt(googleTranslate); err != nil {
-			return nil, nil, fmt.Errorf("apply opt: %w", err)
+		if optErr := opt(gt); optErr != nil {
+			return nil, nil, fmt.Errorf("apply opt: %w", optErr)
 		}
 	}
 
 	// Ping the Google Translate API to ensure that the client is working.
-	_, err := googleTranslate.client.Translate(ctx, []string{"Hello World!"}, language.Latvian, nil)
+	_, err = gt.client.Translate(ctx, []string{"Hello World!"}, language.Latvian, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("google translate client: ping google translate: %w", err)
 	}
 
-	return googleTranslate, googleTranslate.client.Close, nil
+	return gt, gt.client.Close, nil
 }

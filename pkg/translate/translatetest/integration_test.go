@@ -17,7 +17,7 @@ import (
 	"go.expect.digital/translate/pkg/testutil"
 )
 
-// alias
+// alias for the translate service interface.
 type service translate.TranslationService
 
 // translators is a map of all possible translation services, e.g. Google Translate, DeepL, etc.
