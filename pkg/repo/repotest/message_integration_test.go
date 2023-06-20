@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/repo/common"
 	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
@@ -53,7 +54,7 @@ func Test_SaveMessages(t *testing.T) {
 				name:        "Missing service",
 				serviceID:   uuid.New(),
 				messages:    rand.ModelMessages(3, nil),
-				expectedErr: repo.ErrNotFound,
+				expectedErr: common.ErrNotFound,
 			},
 		}
 

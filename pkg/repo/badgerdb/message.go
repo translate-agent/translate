@@ -9,7 +9,8 @@ import (
 	"github.com/dgraph-io/badger/v3"
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/repo/common"
+
 	"golang.org/x/text/language"
 )
 
@@ -54,7 +55,7 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language l
 	switch {
 	default:
 	// noop
-	case errors.Is(err, repo.ErrNotFound):
+	case errors.Is(err, common.ErrNotFound):
 		return &messages, nil // Empty messages.messages for this service (Not an error)
 	case err != nil:
 		return nil, fmt.Errorf("repo: load service: %w", err)

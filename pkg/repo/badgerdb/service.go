@@ -9,7 +9,7 @@ import (
 	"github.com/dgraph-io/badger/v3"
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/repo/common"
 )
 
 const servicePrefix = "service:"
@@ -63,7 +63,7 @@ func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Ser
 		default:
 			return getValue(item, &service)
 		case errors.Is(err, badger.ErrKeyNotFound):
-			return repo.ErrNotFound
+			return common.ErrNotFound
 		case err != nil:
 			return fmt.Errorf("transaction: get service: %w", err)
 		}
@@ -119,7 +119,7 @@ func (r *Repo) DeleteService(ctx context.Context, serviceID uuid.UUID) error {
 			}
 			return nil
 		case errors.Is(err, badger.ErrKeyNotFound):
-			return repo.ErrNotFound
+			return common.ErrNotFound
 		case err != nil:
 			return fmt.Errorf("transaction: get service for deletion: %w", err)
 		}

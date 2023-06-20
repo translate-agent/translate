@@ -2,16 +2,11 @@ package repo
 
 import (
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
-
-var SupportedDBs = []string{"MySQL", "BadgerDB"}
-
-var ErrNotFound = errors.New("entity not found")
 
 type ServicesRepo interface {
 	// SaveService handles both Create and Update

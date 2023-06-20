@@ -24,8 +24,6 @@ import (
 
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
-	"go.expect.digital/translate/pkg/repo/badgerdb"
-	"go.expect.digital/translate/pkg/repo/mysql"
 	"go.expect.digital/translate/pkg/tracer"
 	"go.expect.digital/translate/pkg/translate"
 )
@@ -75,22 +73,12 @@ var rootCmd = &cobra.Command{
 
 		mux := runtime.NewServeMux()
 
-		var repository repo.Repo
-
-		switch v := strings.TrimSpace(strings.ToLower(viper.GetString("service.db"))); v {
-		case "mysql":
-			repository, err = mysql.NewRepo(mysql.WithDefaultDB(ctx))
-		case "badgerdb":
-			repository, err = badgerdb.NewRepo(badgerdb.WithDefaultDB())
-		default:
-			log.Panicf("unsupported db '%s'. List of supported db: %s", v, strings.Join(repo.SupportedDBs, ", "))
-		}
-
+		repo, err := repo.NewRepo(ctx, viper.GetString("service.db"))
 		if err != nil {
 			log.Panicf("create new repo: %v", err)
 		}
 
-		translatev1.RegisterTranslateServiceServer(grpcServer, translate.NewTranslateServiceServer(repository))
+		translatev1.RegisterTranslateServiceServer(grpcServer, translate.NewTranslateServiceServer(repo))
 
 		// gRPC Server Reflection provides information about publicly-accessible gRPC services on a server,
 		// and assists clients at runtime to construct RPC requests and responses without precompiled service information.
@@ -138,8 +126,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "translate.yaml", "config file")
 	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
-	rootCmd.PersistentFlags().String("host", "localhost", "host to run service on")
-	rootCmd.PersistentFlags().String("db", "badgerdb", "database to use with service")
+	rootCmd.PersistentFlags().String("host", "0.0.0.0", "host to run service on")
+	rootCmd.PersistentFlags().String("db", "badgerdb", repo.Usage())
 }
 
 // initConfig reads in config file and ENV variables if set.
