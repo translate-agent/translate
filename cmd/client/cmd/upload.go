@@ -3,8 +3,12 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -46,9 +50,16 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: get cli parameter 'file': %w", err)
 			}
 
-			data, err := os.ReadFile(filePath)
-			if err != nil {
-				return fmt.Errorf("upload file: read file from path: %w", err)
+			var data []byte
+
+			if strings.HasPrefix(filePath, "http") || strings.HasPrefix(filePath, "https") {
+				if data, err = readFileFromURL(ctx, filePath); err != nil {
+					return fmt.Errorf("upload file: read file from URL: %w", err)
+				}
+			} else {
+				if data, err = os.ReadFile(filePath); err != nil {
+					return fmt.Errorf("upload file: read file from local path: %w", err)
+				}
 			}
 
 			translateSchema, err := schemaFlag.ToTranslateSchema()
@@ -73,7 +84,7 @@ func newUploadCmd() *cobra.Command {
 
 	uploadFlags := uploadCmd.Flags()
 	uploadFlags.String("serviceID", "", "service UUID")
-	uploadFlags.String("file", "", "file path")
+	uploadFlags.String("file", "", "translation file file path or URL")
 	uploadFlags.String("language", "", "translation language")
 	uploadFlags.Var(&schemaFlag, "schema",
 		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)
@@ -99,4 +110,36 @@ func newUploadCmd() *cobra.Command {
 	}
 
 	return uploadCmd
+}
+
+// readFileFromURL reads translation file from URL.
+func readFileFromURL(ctx context.Context, filePath string) ([]byte, error) {
+	u, err := url.ParseRequestURI(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("parse request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.Path, nil)
+	if err != nil {
+		return nil, fmt.Errorf("prepare new GET request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("do GET request: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	// Check server response
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bad status: %s", resp.Status)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body data: %w", err)
+	}
+
+	return data, nil
 }
