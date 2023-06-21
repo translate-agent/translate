@@ -67,7 +67,7 @@ func FromPot(b []byte) (model.Messages, error) {
 		switch {
 		case po.Header.PluralForms.NPlurals > pluralCountLimit:
 			return model.Messages{}, errors.New("plural forms with more than 2 forms are not implemented yet")
-		case po.Header.PluralForms.NPlurals == pluralCountLimit:
+		case po.Header.PluralForms.NPlurals == pluralCountLimit && node.MsgIdPlural != "":
 			message.Message = convertPluralsToMessageString(node.MsgStr)
 		default:
 			message.Message = convertToMessageFormatSingular(node.MsgStr[0])
