@@ -1,10 +1,12 @@
 package badgerdb
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/dgraph-io/badger/v3"
+	"go.expect.digital/translate/pkg/model"
 )
 
 // newDB opens a new Badger database with the given options.
@@ -28,4 +30,14 @@ func newDB(options badger.Options) (*badger.DB, error) {
 	}
 
 	return db, nil
+}
+
+// getValue unmarshals the value of a BadgerDB item into v (either *model.Service or *model.Messages).
+func getValue[T *model.Service | *model.Messages](item *badger.Item, v T) error {
+	return item.Value(func(val []byte) error { //nolint:wrapcheck
+		if err := json.Unmarshal(val, &v); err != nil {
+			return fmt.Errorf("unmarshal %T: %w", v, err)
+		}
+		return nil
+	})
 }

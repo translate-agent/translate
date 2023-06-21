@@ -24,8 +24,8 @@ func WithDefaultDB() option {
 		}
 
 		var err error
-		r.db, err = newDB(badger.DefaultOptions(path))
 
+		r.db, err = newDB(badger.DefaultOptions(path))
 		if err != nil {
 			return fmt.Errorf("WithDefaultDB: open badger db: %w", err)
 		}

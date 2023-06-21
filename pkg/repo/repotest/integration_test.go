@@ -53,7 +53,7 @@ func TestMain(m *testing.M) {
 	viper.AutomaticEnv()
 
 	// Initialize repos
-	repos = make(map[string]repo.Repo, len(repo.RepoDBNames))
+	repos = make(map[string]repo.Repo, len(repo.SupportedDBs))
 
 	// MySQL
 	if err := initMysql(ctx); err != nil {
