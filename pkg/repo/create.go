@@ -28,8 +28,8 @@ func (r RepoDB) String() string {
 // SupportedDBs returns a list of supported databases.
 func SupportedDBs() []string {
 	dbs := make([]string, 0, len(RepoDBNames))
-	for _, v := range RepoDBNames {
-		dbs = append(dbs, v)
+	for i := 0; i < len(RepoDBNames); i++ {
+		dbs = append(dbs, RepoDBNames[RepoDB(i)])
 	}
 
 	return dbs
