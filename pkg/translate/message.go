@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/repo/common"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -56,7 +56,7 @@ func (t *TranslateServiceServer) ListMessages(
 	}
 
 	messages, err := t.repo.LoadMessages(ctx, params.serviceID,
-		repo.LoadMessagesOpts{FilterLanguages: params.languageTags})
+		common.LoadMessagesOpts{FilterLanguages: params.languageTags})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}

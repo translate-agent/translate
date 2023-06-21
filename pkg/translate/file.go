@@ -154,7 +154,7 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 	}
 
 	messages, err := t.repo.LoadMessages(ctx, params.serviceID,
-		repo.LoadMessagesOpts{FilterLanguages: []language.Tag{params.languageTag}})
+		common.LoadMessagesOpts{FilterLanguages: []language.Tag{params.languageTag}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}

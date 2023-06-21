@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/repo/common"
 	"golang.org/x/text/language"
 )
 
@@ -101,7 +101,7 @@ ON DUPLICATE KEY UPDATE
 	return nil
 }
 
-func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts repo.LoadMessagesOpts) ([]model.Messages, error) {
+func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts) ([]model.Messages, error) {
 	var (
 		qb   strings.Builder
 		args []interface{}
