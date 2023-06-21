@@ -53,6 +53,22 @@ func langTagFromProto(s string) (language.Tag, error) {
 	return l, nil
 }
 
+// langTagsFromProto converts a slice of strings to []language.Tag.
+func langTagsFromProto(languageTags []string) ([]language.Tag, error) {
+	lts := make([]language.Tag, 0, len(languageTags))
+
+	for _, v := range languageTags {
+		lt, err := langTagFromProto(v)
+		if err != nil {
+			return nil, err
+		}
+
+		lts = append(lts, lt)
+	}
+
+	return lts, nil
+}
+
 // sliceToProto converts a slice of type T to a slice of type *R using the provided elementToProto function.
 func sliceToProto[T any, R any](slice []T, elementToProto func(*T) *R) []*R {
 	if len(slice) == 0 {
@@ -126,4 +142,42 @@ func servicesToProto(s []model.Service) []*translatev1.Service {
 // servicesFromProto converts []*translatev1.Service to []model.Service.
 func servicesFromProto(s []*translatev1.Service) ([]model.Service, error) {
 	return sliceFromProto(s, serviceFromProto)
+}
+
+// ----------------------Message----------------------
+
+// messageToProto converts model.Message to translatev1.Message.
+func messageToProto(m *model.Message) *translatev1.Message {
+	if m == nil {
+		return nil
+	}
+
+	return &translatev1.Message{
+		Id:          m.ID,
+		Message:     m.Message,
+		Description: m.Description,
+		Fuzzy:       m.Fuzzy,
+	}
+}
+
+// messageSliceToProto converts []model.Message to []*translatev1.Message.
+func messageSliceToProto(m []model.Message) []*translatev1.Message {
+	return sliceToProto(m, messageToProto)
+}
+
+// messagesToProto converts model.Messages to translatev1.Messages.
+func messagesToProto(m *model.Messages) *translatev1.Messages {
+	if m == nil {
+		return nil
+	}
+
+	return &translatev1.Messages{
+		Language: langTagToProto(m.Language),
+		Messages: messageSliceToProto(m.Messages),
+	}
+}
+
+// messagesSliceToProto converts []model.Messages to []*translatev1.Messages.
+func messagesSliceToProto(m []model.Messages) []*translatev1.Messages {
+	return sliceToProto(m, messagesToProto)
 }

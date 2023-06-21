@@ -94,10 +94,12 @@ func Test_SaveMessages(t *testing.T) {
 
 			// Assure that the messages were saved correctly.
 
-			actualMessages, err := repository.LoadMessages(ctx, tt.serviceID, tt.messages.Language)
+			actualMessages, err := repository.LoadMessages(ctx, tt.serviceID,
+				repo.LoadMessagesOpts{FilterLanguages: []language.Tag{tt.messages.Language}})
+
 			require.NoError(t, err, "Load saved messages")
 
-			requireEqualMessages(t, tt.messages, actualMessages)
+			requireEqualMessages(t, tt.messages, &actualMessages[0])
 		})
 	}
 }
@@ -137,10 +139,12 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 
 	// Assure that all messages are saved
 	for _, m := range messages {
-		actualMessages, err := repository.LoadMessages(ctx, service.ID, m.Language)
+		actualMessages, err := repository.LoadMessages(ctx, service.ID,
+			repo.LoadMessagesOpts{FilterLanguages: []language.Tag{m.Language}})
+
 		require.NoError(t, err, "Load saved messages")
 
-		requireEqualMessages(t, m, actualMessages)
+		requireEqualMessages(t, m, &actualMessages[0])
 	}
 }
 
@@ -170,10 +174,12 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 
 	// Assure that messages are updated
 
-	actualMessages, err := repository.LoadMessages(ctx, service.ID, expectedMessages.Language)
+	actualMessages, err := repository.LoadMessages(ctx, service.ID,
+		repo.LoadMessagesOpts{FilterLanguages: []language.Tag{expectedMessages.Language}})
+
 	require.NoError(t, err, "Load updated messages")
 
-	requireEqualMessages(t, expectedMessages, actualMessages)
+	requireEqualMessages(t, expectedMessages, &actualMessages[0])
 }
 
 func Test_LoadMessages(t *testing.T) {
@@ -224,10 +230,12 @@ func Test_LoadMessages(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			actualMessages, err := repository.LoadMessages(ctx, tt.serviceID, tt.language)
+			actualMessages, err := repository.LoadMessages(ctx, tt.serviceID,
+				repo.LoadMessagesOpts{FilterLanguages: []language.Tag{tt.language}})
+
 			require.NoError(t, err, "Load messages")
 
-			requireEqualMessages(t, tt.expected, actualMessages)
+			requireEqualMessages(t, tt.expected, &actualMessages[0])
 		})
 	}
 }

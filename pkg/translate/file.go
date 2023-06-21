@@ -153,12 +153,13 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := t.repo.LoadMessages(ctx, params.serviceID, params.languageTag)
+	messages, err := t.repo.LoadMessages(ctx, params.serviceID,
+		repo.LoadMessagesOpts{FilterLanguages: []language.Tag{params.languageTag}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	data, err := MessagesToData(params.schema, *messages)
+	data, err := MessagesToData(params.schema, messages[0])
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
