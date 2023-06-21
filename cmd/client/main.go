@@ -9,6 +9,6 @@ import (
 
 func main() {
 	if err := cmd.Execute(context.Background()); err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 }

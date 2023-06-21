@@ -128,7 +128,7 @@ func Test_ListServices_CLI(t *testing.T) {
 }
 
 func Test_TranslationFileUpload_CLI(t *testing.T) {
-	t.Run("OK", func(t *testing.T) {
+	t.Run("OK, file from local path", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -150,7 +150,56 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--language", lang.String(),
 			"--file", file.Name(),
 			"--schema", "json_ng_localize",
-			"--serviceID", service.Id,
+			"--service", service.Id,
+		})
+
+		require.NoError(t, err)
+		assert.Equal(t, "File uploaded successfully.\n", string(res))
+	})
+
+	t.Run("OK, file from URL", func(t *testing.T) {
+		ctx, _ := testutil.Trace(t)
+
+		service := createService(ctx, t)
+		require.NotNil(t, service)
+
+		tempDir := t.TempDir()
+
+		file, err := os.CreateTemp(tempDir, "test")
+		require.NoError(t, err)
+
+		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
+
+		_, err = file.Write(data)
+		require.NoError(t, err)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
+			"service", "upload",
+			"--address", addr,
+			"--insecure", "true",
+
+			"--language", lang.String(),
+			"--file", file.Name(),
+			"--schema", "json_ng_localize",
+			"--service", service.Id,
+		})
+
+		require.NoError(t, err)
+		require.Equal(t, "File uploaded successfully.\n", string(res))
+
+		// upload file using link to previously uploaded translation file.
+
+		res, err = cmd.ExecuteWithParams(ctx, []string{
+			"service", "upload",
+			"--address", addr,
+			"--insecure", "true",
+
+			"--language", lang.String(),
+			"--file", fmt.Sprintf(
+				"http://%s/v1/services/%s/files/%s?schema=%s",
+				addr, service.Id, lang, translatev1.Schema_JSON_NG_LOCALIZE),
+			"--schema", "json_ng_localize",
+			"--service", service.Id,
 		})
 
 		require.NoError(t, err)
@@ -183,7 +232,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--language", "xyz-ZY-Latn",
 			"--file", file.Name(),
 			"--schema", "json_ng_localize",
-			"--serviceID", gofakeit.UUID(),
+			"--service", gofakeit.UUID(),
 		})
 
 		assert.ErrorContains(t, err, "well-formed but unknown")
@@ -201,7 +250,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--language", "xyz-ZY-Latn",
 			"--file", "test.json",
 			"--schema", "unrecognized",
-			"--serviceID", gofakeit.UUID(),
+			"--service", gofakeit.UUID(),
 		})
 
 		assert.ErrorContains(t, err,
@@ -220,7 +269,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--language", "xyz-ZY-Latn",
 			"--file", "test.json",
 			"--schema", "unspecified",
-			"--serviceID", gofakeit.UUID(),
+			"--service", gofakeit.UUID(),
 		})
 
 		assert.ErrorContains(t, err,
@@ -238,7 +287,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 			"--language", "xyz-ZY-Latn",
 			"--file", "test.json",
-			"--serviceID", gofakeit.UUID(),
+			"--service", gofakeit.UUID(),
 		})
 
 		assert.ErrorContains(t, err, "required flag(s) \"schema\" not set")
@@ -255,7 +304,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 			"--file", "test.json",
 			"--schema", "json_ng_localize",
-			"--serviceID", gofakeit.UUID(),
+			"--service", gofakeit.UUID(),
 		})
 
 		assert.ErrorContains(t, err, "required flag(s) \"language\" not set")
@@ -272,14 +321,14 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 			"--language", "xyz-ZY-Latn",
 			"--schema", "json_ng_localize",
-			"--serviceID", gofakeit.UUID(),
+			"--service", gofakeit.UUID(),
 		})
 
 		assert.ErrorContains(t, err, "required flag(s) \"file\" not set")
 		assert.Nil(t, res)
 	})
 
-	t.Run("error, path parameter 'serviceID' missing", func(t *testing.T) {
+	t.Run("error, path parameter 'service' missing", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -292,7 +341,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 		})
 
-		assert.ErrorContains(t, err, "required flag(s) \"serviceID\" not set")
+		assert.ErrorContains(t, err, "required flag(s) \"service\" not set")
 		assert.Nil(t, res)
 	})
 }
@@ -322,7 +371,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--language", lang.String(),
 			"--file", file.Name(),
 			"--schema", "json_ng_localize",
-			"--serviceID", service.Id,
+			"--service", service.Id,
 		})
 
 		require.NoError(t, err)
@@ -335,7 +384,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 
 			"--language", lang.String(),
 			"--schema", "xliff_12",
-			"--serviceID", service.Id,
+			"--service", service.Id,
 			"--path", tempDir,
 		})
 
@@ -355,7 +404,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--insecure", "true",
 
 			"--schema", "xliff_12",
-			"--serviceID", gofakeit.UUID(),
+			"--service", gofakeit.UUID(),
 			"--path", t.TempDir(),
 		})
 
@@ -372,7 +421,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--insecure", "true",
 
 			"--language", "lv-lv",
-			"--serviceID", gofakeit.UUID(),
+			"--service", gofakeit.UUID(),
 			"--path", t.TempDir(),
 		})
 
@@ -380,7 +429,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		assert.Nil(t, res)
 	})
 
-	t.Run("error, path parameter 'serviceID' missing", func(t *testing.T) {
+	t.Run("error, path parameter 'service' missing", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -393,7 +442,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--path", t.TempDir(),
 		})
 
-		assert.ErrorContains(t, err, "required flag(s) \"serviceID\" not set")
+		assert.ErrorContains(t, err, "required flag(s) \"service\" not set")
 		assert.Nil(t, res)
 	})
 
@@ -407,7 +456,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 
 			"--language", "lv-lv",
 			"--schema", "xliff_12",
-			"--serviceID", gofakeit.UUID(),
+			"--service", gofakeit.UUID(),
 		})
 
 		assert.ErrorContains(t, err, "required flag(s) \"path\" not set")

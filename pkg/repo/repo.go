@@ -19,10 +19,14 @@ type ServicesRepo interface {
 type MessagesRepo interface {
 	// SaveMessages handles both Create and Update
 	SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *model.Messages) error
-	LoadMessages(ctx context.Context, serviceID uuid.UUID, language language.Tag) (*model.Messages, error)
+	LoadMessages(ctx context.Context, serviceID uuid.UUID, opts LoadMessagesOpts) ([]model.Messages, error)
 }
 
 type Repo interface {
 	ServicesRepo
 	MessagesRepo
+}
+
+type LoadMessagesOpts struct {
+	FilterLanguages []language.Tag
 }

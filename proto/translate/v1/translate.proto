@@ -53,6 +53,17 @@ message DownloadTranslationFileResponse {
   bytes data = 1;
 }
 
+// --------------Messages requests/responses-------------------
+
+message ListMessagesRequest {
+  string service_id = 1;
+  repeated string languages = 2;
+}
+
+message ListMessagesResponse {
+  repeated Messages messages = 1;
+}
+
 // -----------------Service requests/responses-----------------------
 
 message GetServiceRequest {
@@ -106,6 +117,10 @@ service TranslateService {
 
   rpc DeleteService(DeleteServiceRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {delete: "/v1/services/{id}"};
+  }
+
+  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse) {
+    option (google.api.http) = {get: "/v1/services/{service_id}/messages"};
   }
 
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
