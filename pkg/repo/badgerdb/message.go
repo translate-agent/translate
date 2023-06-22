@@ -47,7 +47,7 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 	return nil
 }
 
-// LoadsMessages retrieves messages from db based on serviceID and LoadMessageOpts.
+// LoadMessages retrieves messages from db based on serviceID and LoadMessageOpts.
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts,
 ) ([]model.Messages, error) {
 	if _, err := r.LoadService(ctx, serviceID); errors.Is(err, common.ErrNotFound) {
@@ -84,11 +84,11 @@ func (r *Repo) loadMessagesForLangTags(serviceID uuid.UUID, langTags []language.
 		for _, langTag := range langTags {
 			var msgs model.Messages
 
-			item, getErr := txn.Get(getMessagesKey(serviceID, langTag))
+			item, er := txn.Get(getMessagesKey(serviceID, langTag))
 			switch {
 			default:
 				if valErr := getValue(item, &msgs); valErr != nil {
-					return fmt.Errorf("get messages for language tag '%s': %w", langTag, getErr)
+					return fmt.Errorf("get messages for language tag '%s': %w", langTag, er)
 				}
 
 				// skip empty Messages
@@ -97,10 +97,10 @@ func (r *Repo) loadMessagesForLangTags(serviceID uuid.UUID, langTags []language.
 				}
 
 				messages = append(messages, msgs)
-			case errors.Is(getErr, badger.ErrKeyNotFound):
+			case errors.Is(er, badger.ErrKeyNotFound):
 				return nil // Empty messages.messages for this language (Not an error)
-			case getErr != nil:
-				return fmt.Errorf("transaction: get messages for language tag '%s': %w", langTag, getErr)
+			case er != nil:
+				return fmt.Errorf("transaction: get messages for language tag '%s': %w", langTag, er)
 			}
 		}
 
