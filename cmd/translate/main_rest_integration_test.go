@@ -546,38 +546,38 @@ func Test_GetMessages_REST(t *testing.T) {
 		query        string
 		expectedCode int
 	}{
-		// {
-		// 	serviceID:    service.Id,
-		// 	name:         "Happy Path, get all messages",
-		// 	expectedCode: http.StatusOK,
-		// },
-		// {
-		// 	serviceID:    gofakeit.UUID(),
-		// 	name:         "Happy path, service doesn't exist",
-		// 	expectedCode: http.StatusOK,
-		// },
-		// {
-		// 	serviceID:    service.Id,
-		// 	name:         "Happy Path, filter language",
-		// 	query:        langTagQuery.Encode(),
-		// 	expectedCode: http.StatusOK,
-		// },
+		{
+			serviceID:    service.Id,
+			name:         "Happy Path, get all messages",
+			expectedCode: http.StatusOK,
+		},
+		{
+			serviceID:    gofakeit.UUID(),
+			name:         "Happy path, service doesn't exist",
+			expectedCode: http.StatusOK,
+		},
+		{
+			serviceID:    service.Id,
+			name:         "Happy Path, filter language",
+			query:        langTagQuery.Encode(),
+			expectedCode: http.StatusOK,
+		},
 		{
 			serviceID:    service.Id,
 			name:         "Happy Path, filter existing languages",
 			query:        langTagsQuery.Encode(),
 			expectedCode: http.StatusOK,
 		},
-		// {
-		// 	serviceID:    service.Id,
-		// 	name:         "Bad request, filter by unknown language format",
-		// 	query:        gofakeit.Street(),
-		// 	expectedCode: http.StatusBadRequest,
-		// },
-		// {
-		// 	name:         "Bad request, ServiceID not provided",
-		// 	expectedCode: http.StatusBadRequest,
-		// },
+		{
+			serviceID:    service.Id,
+			name:         "Bad request, filter by unknown language format",
+			query:        gofakeit.Street(),
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "Bad request, ServiceID not provided",
+			expectedCode: http.StatusBadRequest,
+		},
 	}
 
 	for _, tt := range tests {
