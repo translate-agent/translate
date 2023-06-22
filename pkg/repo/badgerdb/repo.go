@@ -2,6 +2,7 @@ package badgerdb
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/dgraph-io/badger/v3"
 	"github.com/spf13/viper"
@@ -20,7 +21,15 @@ func WithDefaultDB() option {
 	return func(r *Repo) error {
 		path := viper.GetString("db.badgerdb.path")
 		if path == "" {
-			return fmt.Errorf("WithDefaultDB: viper: empty db.badgerdb.path")
+			// TODO: tidy
+			log.Println("badger db path is not set using in memory")
+
+			var err error
+			if r.db, err = newDB(badger.DefaultOptions("").WithInMemory(true)); err != nil {
+				return fmt.Errorf("WithInMemoryDB: open badger db: %w", err)
+			}
+
+			return nil
 		}
 
 		var err error
@@ -28,20 +37,6 @@ func WithDefaultDB() option {
 		r.db, err = newDB(badger.DefaultOptions(path))
 		if err != nil {
 			return fmt.Errorf("WithDefaultDB: open badger db: %w", err)
-		}
-
-		return nil
-	}
-}
-
-// WithInMemoryDB opens a new Badger database in memory.
-func WithInMemoryDB() option {
-	return func(r *Repo) error {
-		var err error
-
-		r.db, err = newDB(badger.DefaultOptions("").WithInMemory(true))
-		if err != nil {
-			return fmt.Errorf("WithInMemoryDB: open badger db: %w", err)
 		}
 
 		return nil
