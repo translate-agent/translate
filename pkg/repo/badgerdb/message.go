@@ -53,25 +53,30 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 
 	messages := make([]model.Messages, 0, len(opts.FilterLanguages))
 
-	// load messages based on provided language tags.
-	if len(opts.FilterLanguages) > 0 {
-		for _, langTag := range opts.FilterLanguages {
-			msgs, er := r.LoadIndividualMessages(ctx, serviceID, langTag)
-			if er != nil {
-				return nil, fmt.Errorf("load messages for service '%s' language '%s': %w", serviceID, langTag, er)
-			}
-
-			if msgs != nil && len(msgs.Messages) != 0 {
-				messages = append(messages, *msgs)
-			}
+	// load all messages if language tags are not provided.
+	if len(opts.FilterLanguages) == 0 {
+		messages, err = r.LoadAllMessages(ctx, serviceID)
+		if err != nil {
+			return nil, fmt.Errorf("load all messages for service '%s': %w", serviceID, err)
 		}
 
 		return messages, nil
 	}
 
-	messages, err = r.LoadAllMessages(ctx, serviceID)
-	if err != nil {
-		return nil, fmt.Errorf("load all messages for service '%s': %w", serviceID, err)
+	// load messages based on provided language tags.
+
+	for _, langTag := range opts.FilterLanguages {
+		msgs, er := r.LoadIndividualMessages(ctx, serviceID, langTag)
+		if er != nil {
+			return nil, fmt.Errorf("load messages for service '%s' language '%s': %w", serviceID, langTag, er)
+		}
+
+		// skip empty Messages
+		if msgs == nil || len(msgs.Messages) == 0 {
+			continue
+		}
+
+		messages = append(messages, *msgs)
 	}
 
 	return messages, nil
