@@ -21,6 +21,25 @@ type listMessagesParams struct {
 	serviceID    uuid.UUID
 }
 
+// filterLanguageTags removes duplicates returns slice of unique language tags.
+func filterLanguageTags(lt []language.Tag) []language.Tag {
+	uniques := make([]language.Tag, 0, len(lt))
+
+	m := make(map[language.Tag]struct{}, len(lt))
+
+	for _, v := range lt {
+		if _, ok := m[v]; ok {
+			continue
+		}
+
+		m[v] = struct{}{}
+
+		uniques = append(uniques, v)
+	}
+
+	return uniques
+}
+
 func parseListMessagesRequestParams(req *translatev1.ListMessagesRequest) (*listMessagesParams, error) {
 	serviceID, err := uuidFromProto(req.GetServiceId())
 	if err != nil {
@@ -61,6 +80,9 @@ func (t *TranslateServiceServer) ListMessages(
 	if err = params.validate(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
+
+	// remove duplicates
+	params.languageTags = filterLanguageTags(params.languageTags)
 
 	messages, err := t.repo.LoadMessages(ctx, params.serviceID,
 		common.LoadMessagesOpts{FilterLanguages: params.languageTags})
