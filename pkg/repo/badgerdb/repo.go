@@ -21,8 +21,7 @@ func WithDefaultDB() option {
 	return func(r *Repo) error {
 		path := viper.GetString("db.badgerdb.path")
 		if path == "" {
-			// TODO: tidy
-			log.Println("badger db path is not set using in memory")
+			log.Println("Info: badger db path not provided: defaulting to in-memory storage")
 
 			var err error
 			if r.db, err = newDB(badger.DefaultOptions("").WithInMemory(true)); err != nil {

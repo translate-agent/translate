@@ -54,13 +54,13 @@ func langTagFromProto(s string) (language.Tag, error) {
 }
 
 // langTagsFromProto converts a slice of strings to []language.Tag.
-func langTagsFromProto(languageTags []string) ([]language.Tag, error) {
-	lts := make([]language.Tag, 0, len(languageTags))
+func langTagsFromProto(langTags []string) ([]language.Tag, error) {
+	lts := make([]language.Tag, 0, len(langTags))
 
-	for _, v := range languageTags {
-		lt, err := langTagFromProto(v)
+	for _, langTag := range langTags {
+		lt, err := langTagFromProto(langTag)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("transform language tag '%s' to proto: %w", langTag, err)
 		}
 
 		lts = append(lts, lt)
