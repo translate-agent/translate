@@ -417,7 +417,7 @@ func Test_ListServices_gRPC(t *testing.T) {
 	assert.Equal(t, codes.OK, status.Code(err))
 }
 
-// ------------------Message------------------
+// ------------------Messages------------------
 
 func Test_ListMessages_gRPC(t *testing.T) {
 	t.Parallel()

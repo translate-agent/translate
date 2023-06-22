@@ -509,7 +509,7 @@ func Test_ListServices_REST(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-// ------------------Message------------------
+// ------------------Messages------------------
 
 // GET.
 func Test_GetMessages_REST(t *testing.T) {
