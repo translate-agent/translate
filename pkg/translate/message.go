@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
@@ -24,6 +25,10 @@ func parseListMessagesRequestParams(req *translatev1.ListMessagesRequest) (*list
 	serviceID, err := uuidFromProto(req.GetServiceId())
 	if err != nil {
 		return nil, fmt.Errorf("parse service_id: %w", err)
+	}
+
+	if len(req.GetLanguages()) == 1 && strings.Contains(req.GetLanguages()[0], ",") {
+		req.Languages = strings.Split(req.GetLanguages()[0], ",")
 	}
 
 	langTags, err := langTagsFromProto(req.GetLanguages())

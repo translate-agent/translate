@@ -11,6 +11,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -214,12 +215,12 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 		},
 
 		{
-			name:         "Happy path no messages with language",
+			name:         "File not found, no messages with language",
 			request:      happyReqNoMessagesLanguage,
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "Happy path no messages with Service ID",
+			name:         "File not found, no messages with Service ID",
 			request:      happyReqNoMessagesServiceID,
 			expectedCode: http.StatusNotFound,
 		},
@@ -521,20 +522,39 @@ func Test_GetMessages_REST(t *testing.T) {
 	service := createService(ctx, t)
 
 	n := gofakeit.IntRange(1, 5)
+	langTags := make([]string, 0, n)
+
 	for i := 0; i < n; i++ {
 		uploadRequest := randUploadRequest(t, service.Id)
 		_, err := client.UploadTranslationFile(ctx, uploadRequest)
 		require.NoError(t, err, "create test translation file")
+
+		langTags = append(langTags, uploadRequest.Language)
 	}
 
 	// Requests
+
+	langTagsQuery := url.Values{}
+	langTagsQuery.Add("languages", strings.Join(langTags, ","))
+
 	tests := []struct {
 		name         string
+		query        string
 		expectedCode int
 	}{
 		{
-			name:         "Happy Path",
+			name:         "Happy Path, get all languages",
 			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Happy Path, filter languages",
+			query:        langTagsQuery.Encode(),
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Bad request, filter by unknown language format",
+			query:        gofakeit.BeerName(),
+			expectedCode: http.StatusBadRequest,
 		},
 	}
 
@@ -542,9 +562,10 @@ func Test_GetMessages_REST(t *testing.T) {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
-				Scheme: "http",
-				Host:   host + ":" + port,
-				Path:   "v1/services/" + service.Id + "/messages",
+				Scheme:   "http",
+				Host:     host + ":" + port,
+				Path:     "v1/services/" + service.Id + "/messages",
+				RawQuery: tt.query,
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)

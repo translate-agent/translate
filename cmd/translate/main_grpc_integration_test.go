@@ -192,12 +192,12 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 			expectedCode: codes.OK,
 		},
 		{
-			name:         "Happy path no messages with language",
+			name:         "File not found, no messages with language",
 			request:      happyReqNoMessagesLanguage,
 			expectedCode: codes.NotFound,
 		},
 		{
-			name:         "Happy path no messages with Service ID",
+			name:         "File not found, no messages with Service ID",
 			request:      happyReqNoMessagesServiceID,
 			expectedCode: codes.NotFound,
 		},
@@ -428,10 +428,14 @@ func Test_ListMessages_gRPC(t *testing.T) {
 	service := createService(ctx, t)
 
 	n := gofakeit.IntRange(1, 5)
+	langTags := make([]string, 0, n)
+
 	for i := 0; i < n; i++ {
 		uploadRequest := randUploadRequest(t, service.Id)
 		_, err := client.UploadTranslationFile(ctx, uploadRequest)
 		require.NoError(t, err, "create test translation file")
+
+		langTags = append(langTags, uploadRequest.Language)
 	}
 
 	// Requests
@@ -452,10 +456,18 @@ func Test_ListMessages_gRPC(t *testing.T) {
 			expectedCode: codes.OK,
 		},
 		{
-			name: "Happy path, filter languages",
+			name: "Happy path, filter language",
+			request: &translatev1.ListMessagesRequest{
+				ServiceId: service.Id,
+				Languages: []string{gofakeit.LanguageBCP()},
+			},
+			expectedCode: codes.OK,
+		},
+		{
+			name: "Happy path, filter existing languages",
 			request: &translatev1.ListMessagesRequest{
 				ServiceId: uuid.New().String(),
-				Languages: []string{gofakeit.LanguageBCP(), gofakeit.LanguageBCP()},
+				Languages: langTags,
 			},
 			expectedCode: codes.OK,
 		},
@@ -469,7 +481,11 @@ func Test_ListMessages_gRPC(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			_, err := client.ListMessages(ctx, tt.request)
+			resp, err := client.ListMessages(ctx, tt.request)
+
+			if err == nil {
+				require.NotNil(t, resp)
+			}
 
 			assert.Equal(t, tt.expectedCode, status.Code(err))
 		})
