@@ -15,6 +15,16 @@ const (
 	HeaderLanguage tokenType = iota
 	HeaderTranslator
 	HeaderPluralForms
+	HeaderProjectIdVersion
+	HeaderPOTCreationDate
+	HeaderPORevisionDate
+	HeaderLanguageTeam
+	HeaderLastTranslator
+	HeaderXGenerator
+	HeaderReportMsgidBugsTo
+	HeaderMIMEVersion
+	HeaderContentType
+	HeaderContentTransferEncoding
 	MsgCtxt
 	MsgId
 	MsgStr
@@ -56,8 +66,20 @@ var validPrefixes = []string{
 	"\"Language",
 	"\"Plural-Forms",
 	"\"Translator",
+	"\"Project-Id-Version",
+	"\"POT-Creation-Date",
+	"\"PO-Revision-Date",
+	"\"Last-Translator",
+	"\"Language-Team",
+	"\"MIME-Version",
+	"\"Content-Type",
+	"\"Content-Transfer-Encoding",
+	"\"X-Generator",
+	"\"Report-Msgid-Bugs-To",
 }
 
+// Lex function performs lexical analysis on the input by reading lines from the reader
+// and parsing each line using the parseLine function.
 func Lex(r io.Reader) ([]Token, error) {
 	var tokens []Token
 
@@ -80,6 +102,8 @@ func Lex(r io.Reader) ([]Token, error) {
 	return tokens, nil
 }
 
+// parseLine function processes the line based on different prefixes
+// and returns a pointer to a Token object and an error.
 func parseLine(line string, tokens *[]Token) (*Token, error) {
 	line = strings.TrimSpace(line)
 	if len(line) == 0 {
@@ -93,6 +117,26 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 		return parseToken(line, HeaderPluralForms)
 	case strings.HasPrefix(line, "\"Translator:"):
 		return parseToken(line, HeaderTranslator)
+	case strings.HasPrefix(line, "\"Project-Id-Version"):
+		return parseToken(line, HeaderProjectIdVersion)
+	case strings.HasPrefix(line, "\"POT-Creation-Date"):
+		return parseToken(line, HeaderPOTCreationDate)
+	case strings.HasPrefix(line, "\"PO-Revision-Date"):
+		return parseToken(line, HeaderPORevisionDate)
+	case strings.HasPrefix(line, "\"Last-Translator"):
+		return parseToken(line, HeaderLastTranslator)
+	case strings.HasPrefix(line, "\"Language-Team"):
+		return parseToken(line, HeaderLanguageTeam)
+	case strings.HasPrefix(line, "\"MIME-Version"):
+		return parseToken(line, HeaderMIMEVersion)
+	case strings.HasPrefix(line, "\"Content-Type"):
+		return parseToken(line, HeaderContentType)
+	case strings.HasPrefix(line, "\"Content-Transfer-Encoding"):
+		return parseToken(line, HeaderContentTransferEncoding)
+	case strings.HasPrefix(line, "\"Report-Msgid-Bugs-To"):
+		return parseToken(line, HeaderReportMsgidBugsTo)
+	case strings.HasPrefix(line, "\"X-Generator"):
+		return parseToken(line, HeaderXGenerator)
 	case strings.HasPrefix(line, "msgctxt"):
 		return parseToken(line, MsgCtxt)
 	case strings.HasPrefix(line, "msgid_plural"):
@@ -124,6 +168,8 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 	}
 }
 
+// parseToken function parses the line using the parseMsgString function, which returns a modified string and an error.
+// If there is no error a new Token object is created with the parsed value and the specified tokenType.
 func parseToken(line string, tokenType tokenType) (*Token, error) {
 	val, err := parseMsgString(line)
 	if err != nil {
@@ -136,6 +182,8 @@ func parseToken(line string, tokenType tokenType) (*Token, error) {
 	}, nil
 }
 
+// parsePluralMsgToken function first parses the plural index from the line string by finding the start and end indices
+// of the index value within square brackets. Then converts the extracted substring to an integer.
 func parsePluralMsgToken(line string) (*Token, error) {
 	// Parse the plural index from the line
 	indexStart := strings.Index(line, "[") + 1
@@ -157,6 +205,8 @@ func parsePluralMsgToken(line string) (*Token, error) {
 	}, nil
 }
 
+// parseCommentToken function parses the line using the parseMsgString function,
+// which returns a modified string and an error.
 func parseCommentToken(line string, tokenType tokenType) (*Token, error) {
 	val, err := parseMsgString(line)
 	if err != nil {
@@ -169,6 +219,8 @@ func parseCommentToken(line string, tokenType tokenType) (*Token, error) {
 	}, nil
 }
 
+// parseMsgString first checks if the line has a valid prefix using the hasValidPrefix function.
+// If the prefix is not valid, it returns an empty string and an error indicating an incorrect format.
 func parseMsgString(line string) (string, error) {
 	if !hasValidPrefix(line) {
 		return "", errors.New("incorrect format of po tags")
@@ -188,6 +240,9 @@ func parseMsgString(line string) (string, error) {
 	return tokenValue, nil
 }
 
+// parseMultilineToken function modifies the last token in the slice
+// by appending a parsed multiline string from the line. The modified token's value is trimmed of whitespace,
+// and the function returns nil for both the token pointer and the error.
 func parseMultilineToken(line string, tokens *[]Token) (*Token, error) {
 	lastToken := (*tokens)[len(*tokens)-1]
 	switch lastToken.Type { //nolint:exhaustive
@@ -200,10 +255,13 @@ func parseMultilineToken(line string, tokens *[]Token) (*Token, error) {
 	return nil, nil
 }
 
+// parseMultilineString removes all double quote characters from the input line string and returns the modified string.
 func parseMultilineString(line string) string {
 	return strings.ReplaceAll(line, `"`, "")
 }
 
+// hasValidPrefix determines whether the provided line string has a valid prefix
+// by iterating through a collection of valid prefixes.
 func hasValidPrefix(line string) bool {
 	for _, prefix := range validPrefixes {
 		if strings.HasPrefix(line, prefix) {

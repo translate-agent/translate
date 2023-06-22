@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/repo/common"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -87,7 +87,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	switch err := t.repo.SaveMessages(ctx, params.serviceID, &messages); {
 	default:
 		return &emptypb.Empty{}, nil
-	case errors.Is(err, repo.ErrNotFound):
+	case errors.Is(err, common.ErrNotFound):
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "")

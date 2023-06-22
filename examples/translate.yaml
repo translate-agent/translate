@@ -10,7 +10,8 @@ db:
     user: "root"
     password: ""
     database: "translate"
-  postgres:
+  badgerdb:
+    path: "/tmp/badgerdb"
 
 translate_services:
   google_translate:

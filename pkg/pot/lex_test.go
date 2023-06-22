@@ -21,9 +21,19 @@ func TestLex(t *testing.T) {
 			name: "When all values are provided",
 			input: "msgid \"\"\n" +
 				"msgstr \"\"\n" +
-				"\"Translator: John Doe <johndoe@example.com> \\n\"\n" +
-				"\"Language: en-US \\n\"\n" +
-				"\"Plural-Forms: nplurals=2; plural=(n != 1); \\n\"\n" +
+				"\"Translator: John Doe <johndoe@example.com>\\n\"\n" +
+				"\"Language: en-US\\n\"\n" +
+				"\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n" +
+				"\"Project-Id-Version: 1.2\\n\"\n" +
+				"\"POT-Creation-Date: 10.02.2022.\\n\"\n" +
+				"\"PO-Revision-Date: 10.02.2022.\\n\"\n" +
+				"\"Last-Translator: John Doe\\n\"\n" +
+				"\"Language-Team: team\\n\"\n" +
+				"\"MIME-Version: 1.0\\n\"\n" +
+				"\"Content-Type: text/plain; charset=UTF-8\\n\"\n" +
+				"\"Content-Transfer-Encoding: 8bit\\n\"\n" +
+				"\"X-Generator: Poedit 2.2\\n\"\n" +
+				"\"Report-Msgid-Bugs-To: support@lingohub.com\\n\"\n" +
 				"msgctxt \"ctxt\"\n" +
 				"msgid \"id\"\n" +
 				"msgstr \"str\"\n" +
@@ -43,6 +53,16 @@ func TestLex(t *testing.T) {
 				{Value: "John Doe <johndoe@example.com>", Type: HeaderTranslator},
 				{Value: "en-US", Type: HeaderLanguage},
 				{Value: "nplurals=2; plural=(n != 1);", Type: HeaderPluralForms},
+				{Value: "1.2", Type: HeaderProjectIdVersion},
+				{Value: "10.02.2022.", Type: HeaderPOTCreationDate},
+				{Value: "10.02.2022.", Type: HeaderPORevisionDate},
+				{Value: "John Doe", Type: HeaderLastTranslator},
+				{Value: "team", Type: HeaderLanguageTeam},
+				{Value: "1.0", Type: HeaderMIMEVersion},
+				{Value: "text/plain; charset=UTF-8", Type: HeaderContentType},
+				{Value: "8bit", Type: HeaderContentTransferEncoding},
+				{Value: "Poedit 2.2", Type: HeaderXGenerator},
+				{Value: "support@lingohub.com", Type: HeaderReportMsgidBugsTo},
 				{Value: "ctxt", Type: MsgCtxt},
 				{Value: "id", Type: MsgId},
 				{Value: "str", Type: MsgStr},
