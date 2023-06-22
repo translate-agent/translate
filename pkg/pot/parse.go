@@ -39,14 +39,8 @@ type Po struct {
 	Messages []messageNode
 }
 
-func previousToken(tokens []Token, index int) (Token, error) {
-	if index == 0 {
-		return Token{}, errors.New("no previous token")
-	}
-
-	return tokens[index-1], nil
-}
-
+// TokensToPo function takes a slice of Token objects and converts them into a Po object representing
+// a PO (Portable Object) file. It returns the generated Po object and an error.
 func TokensToPo(tokens []Token) (Po, error) {
 	var messages []messageNode
 
@@ -123,6 +117,11 @@ func TokensToPo(tokens []Token) (Po, error) {
 				messages = append(messages, currentMessage)
 				currentMessage = messageNode{}
 			}
+			// In our model.Messages currently there are no place to store these headers/metadata about translation file.
+		case HeaderReportMsgidBugsTo, HeaderProjectIdVersion, HeaderPOTCreationDate, HeaderPORevisionDate,
+			HeaderLanguageTeam, HeaderLastTranslator, HeaderXGenerator, HeaderMIMEVersion, HeaderContentType,
+			HeaderContentTransferEncoding:
+			continue
 		}
 	}
 
@@ -136,6 +135,10 @@ func TokensToPo(tokens []Token) (Po, error) {
 	}, nil
 }
 
+// parsePluralForms function splits the input string into two parts using the separator "; ".
+// The first part represents the "nplurals" information and is further split using "=" as the separator.
+// The second part represents the plural expression and is trimmed of leading and trailing whitespace.
+// The function converts the parsed "nplurals" value to an integer and assigns it to the pluralForm object.
 func parsePluralForms(s string) (pluralForm, error) {
 	var pf pluralForm
 
@@ -161,4 +164,14 @@ func parsePluralForms(s string) (pluralForm, error) {
 	pf.Plural = strings.TrimSpace(parts[1])
 
 	return pf, nil
+}
+
+// previousToken function takes a slice of Token objects and an index representing the current position in the slice.
+// It returns the previous Token object relative to the given index.
+func previousToken(tokens []Token, index int) (Token, error) {
+	if index == 0 {
+		return Token{}, errors.New("no previous token")
+	}
+
+	return tokens[index-1], nil
 }

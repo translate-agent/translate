@@ -18,4 +18,9 @@
   "sqlfluff.format.arguments": [
     "--FIX-EVEN-UNPARSABLE"
   ],
+
+  "files.readonlyInclude": {
+    "**/bin/*": true,
+    "**/pkg/pb/**": true
+  }
 }

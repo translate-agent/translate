@@ -782,6 +782,100 @@ func TestFromPot(t *testing.T) {
 			},
 		},
 		{
+			name: "all possible headers with plural messag",
+			input: []byte(`msgid ""
+						msgstr ""
+						"Project-Id-Version: \n"
+						"POT-Creation-Date: \n"
+						"PO-Revision-Date: \n"
+						"Last-Translator: \n"
+						"Language-Team: \n"
+						"Language: fr\n"
+						"MIME-Version: 1.0\n"
+						"Content-Type: text/plain; charset=UTF-8\n"
+						"Content-Transfer-Encoding: 8bit\n"
+						"X-Generator: Poedit 2.2\n"
+						"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+						
+						#: examples/simple/example.clj
+						msgid "Greetings"
+						msgstr "Bonjour"
+						
+						#: examples/simple/example.clj
+						msgid "Please confirm your email"
+						msgstr "Veuillez confirmer votre email"
+						
+						#: examples/simple/example.clj
+						msgid "Welcome, %s!"
+						msgstr "Bienvenue, %s!"
+						
+						#: examples/simple/example.clj
+						msgid "product"
+						msgid_plural "%s products"
+						msgstr[0] "produit"
+						msgstr[1] "%s produits"`),
+			expected: model.Messages{
+				Language: language.French,
+				Messages: []model.Message{
+					{
+						ID:      "Greetings",
+						Message: "{Bonjour}",
+					},
+					{
+						ID:      "Please confirm your email",
+						Message: "{Veuillez confirmer votre email}",
+					},
+					{
+						ID:      "Welcome, %s!",
+						Message: "{Bienvenue, %s!}",
+					},
+					{
+						ID:       "product",
+						PluralID: "%s products",
+						Message: `match {$count :number}
+when 1 {produit}
+when * {%s produits}
+`,
+					},
+				},
+			},
+		},
+		{
+			name: "plural msgstr with simple msgstr",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							#. apple counts
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] "Il y a %d pomme."
+							msgstr[1] "Il y a %d pommes."
+
+							msgid "hi"
+							msgstr "ciao"
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:       "There is %d apple.",
+						PluralID: "There are %d apples.",
+						Message: `match {$count :number}
+when 1 {Il y a {$count} pomme.}
+when * {Il y a {$count} pommes.}
+`,
+						Description: "apple counts",
+						Fuzzy:       false,
+					},
+					{
+						ID:      "hi",
+						Message: "{ciao}",
+					},
+				},
+			},
+		},
+		{
 			name: "plural msgstr",
 			input: []byte(`msgid ""
 							msgstr ""
@@ -901,6 +995,7 @@ when * {Il y a {$count} pommes.}
 				assert.Errorf(t, err, tt.expectedErr.Error())
 				return
 			}
+
 			if !assert.NoError(t, err) {
 				return
 			}
