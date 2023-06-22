@@ -146,7 +146,7 @@ func servicesFromProto(s []*translatev1.Service) ([]model.Service, error) {
 
 // ----------------------Message----------------------
 
-// messageToProto converts model.Message to translatev1.Message.
+// messageToProto converts *model.Message to *translatev1.Message.
 func messageToProto(m *model.Message) *translatev1.Message {
 	if m == nil {
 		return nil
@@ -167,7 +167,7 @@ func messageSliceToProto(m []model.Message) []*translatev1.Message {
 
 // ----------------------Messages----------------------
 
-// messagesToProto converts model.Messages to translatev1.Messages.
+// messagesToProto converts *model.Messages to *translatev1.Messages.
 func messagesToProto(m *model.Messages) *translatev1.Messages {
 	if m == nil {
 		return nil
