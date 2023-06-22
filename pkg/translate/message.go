@@ -27,6 +27,8 @@ func parseListMessagesRequestParams(req *translatev1.ListMessagesRequest) (*list
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
+	// normalize REST language query parameters
+	// []string{"lv-LV,cs-CZ,he-IL"} -> []string{"lv-LV", "cs-CZ", "he-IL"}
 	if len(req.GetLanguages()) == 1 && strings.Contains(req.GetLanguages()[0], ",") {
 		req.Languages = strings.Split(req.GetLanguages()[0], ",")
 	}
