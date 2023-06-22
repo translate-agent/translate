@@ -537,23 +537,45 @@ func Test_GetMessages_REST(t *testing.T) {
 	langTagsQuery := url.Values{}
 	langTagsQuery.Add("languages", strings.Join(langTags, ","))
 
+	langTagQuery := url.Values{}
+	langTagQuery.Add("languages", gofakeit.LanguageBCP())
+
 	tests := []struct {
+		serviceID    string
 		name         string
 		query        string
 		expectedCode int
 	}{
 		{
-			name:         "Happy Path, get all languages",
+			serviceID:    service.Id,
+			name:         "Happy Path, get all messages",
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "Happy Path, filter languages",
+			serviceID:    gofakeit.UUID(),
+			name:         "Happy path, service doesn't exist",
+			expectedCode: http.StatusOK,
+		},
+		{
+			serviceID:    service.Id,
+			name:         "Happy Path, filter language",
+			query:        langTagQuery.Encode(),
+			expectedCode: http.StatusOK,
+		},
+		{
+			serviceID:    service.Id,
+			name:         "Happy Path, filter existing languages",
 			query:        langTagsQuery.Encode(),
 			expectedCode: http.StatusOK,
 		},
 		{
+			serviceID:    service.Id,
 			name:         "Bad request, filter by unknown language format",
 			query:        gofakeit.BeerName(),
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "Bad request, ServiceID not provided",
 			expectedCode: http.StatusBadRequest,
 		},
 	}
@@ -564,7 +586,7 @@ func Test_GetMessages_REST(t *testing.T) {
 			u := url.URL{
 				Scheme:   "http",
 				Host:     host + ":" + port,
-				Path:     "v1/services/" + service.Id + "/messages",
+				Path:     "v1/services/" + tt.serviceID + "/messages",
 				RawQuery: tt.query,
 			}
 
