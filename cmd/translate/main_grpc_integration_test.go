@@ -466,7 +466,7 @@ func Test_ListMessages_gRPC(t *testing.T) {
 		{
 			name: "Happy path, filter existing languages",
 			request: &translatev1.ListMessagesRequest{
-				ServiceId: uuid.New().String(),
+				ServiceId: service.Id,
 				Languages: langTags,
 			},
 			expectedCode: codes.OK,

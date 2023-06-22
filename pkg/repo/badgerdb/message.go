@@ -47,15 +47,18 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 	return nil
 }
 
+// LoadsMessages retrieves messages from db based on serviceID and LoadMessageOpts.
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts,
 ) ([]model.Messages, error) {
-	var err error
-
-	messages := make([]model.Messages, 0, len(opts.FilterLanguages))
+	if _, err := r.LoadService(ctx, serviceID); errors.Is(err, common.ErrNotFound) {
+		return nil, nil // Empty messages.messages for this service (Not an error)
+	} else if err != nil {
+		return nil, fmt.Errorf("repo: load service: %w", err)
+	}
 
 	// load all messages if language tags are not provided.
 	if len(opts.FilterLanguages) == 0 {
-		messages, err = r.LoadAllMessages(ctx, serviceID)
+		messages, err := r.loadAllMessages(serviceID)
 		if err != nil {
 			return nil, fmt.Errorf("load all messages for service '%s': %w", serviceID, err)
 		}
@@ -64,60 +67,53 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 	}
 
 	// load messages based on provided language tags.
-
-	for _, langTag := range opts.FilterLanguages {
-		msgs, er := r.LoadIndividualMessages(ctx, serviceID, langTag)
-		if er != nil {
-			return nil, fmt.Errorf("load messages for service '%s' language '%s': %w", serviceID, langTag, er)
-		}
-
-		// skip empty Messages
-		if msgs == nil || len(msgs.Messages) == 0 {
-			continue
-		}
-
-		messages = append(messages, *msgs)
+	messages, err := r.loadMessagesForLangTags(serviceID, opts.FilterLanguages)
+	if err != nil {
+		return nil, fmt.Errorf("load messages for language tags: %w", err)
 	}
 
 	return messages, nil
 }
 
-// LoadIndividualMessages returns messages based on serviceID and language.Tag.
-func (r *Repo) LoadIndividualMessages(ctx context.Context, serviceID uuid.UUID, language language.Tag,
-) (*model.Messages, error) {
-	var messages model.Messages
+// loadMessagesForLangTags returns messages for service based on provided language tags.
+func (r *Repo) loadMessagesForLangTags(serviceID uuid.UUID, langTags []language.Tag,
+) ([]model.Messages, error) {
+	messages := make([]model.Messages, 0, len(langTags))
 
-	_, err := r.LoadService(ctx, serviceID)
+	if err := r.db.View(func(txn *badger.Txn) error {
+		for _, langTag := range langTags {
+			var msgs model.Messages
 
-	switch {
-	default:
-	// noop
-	case errors.Is(err, common.ErrNotFound):
-		return &messages, nil // Empty messages.messages for this service (Not an error)
-	case err != nil:
-		return nil, fmt.Errorf("repo: load service: %w", err)
-	}
+			item, getErr := txn.Get(getMessagesKey(serviceID, langTag))
+			switch {
+			default:
+				if valErr := getValue(item, &msgs); valErr != nil {
+					return fmt.Errorf("get messages for language tag '%s': %w", langTag, getErr)
+				}
 
-	err = r.db.View(func(txn *badger.Txn) error {
-		item, getErr := txn.Get(getMessagesKey(serviceID, language))
-		switch {
-		default:
-			return getValue(item, &messages)
-		case errors.Is(getErr, badger.ErrKeyNotFound):
-			return nil // Empty messages.messages for this language (Not an error)
-		case getErr != nil:
-			return fmt.Errorf("transaction: get messages: %w", getErr)
+				// skip empty Messages
+				if len(msgs.Messages) == 0 {
+					continue
+				}
+
+				messages = append(messages, msgs)
+			case errors.Is(getErr, badger.ErrKeyNotFound):
+				return nil // Empty messages.messages for this language (Not an error)
+			case getErr != nil:
+				return fmt.Errorf("transaction: get messages for language tag '%s': %w", langTag, getErr)
+			}
 		}
-	})
-	if err != nil {
+
+		return nil
+	}); err != nil {
 		return nil, fmt.Errorf("repo: db view: %w", err)
 	}
 
-	return &messages, nil
+	return messages, nil
 }
 
-// LoadAllMessages returns all messages for service.
-func (r *Repo) LoadAllMessages(ctx context.Context, serviceID uuid.UUID) ([]model.Messages, error) {
+// loadAllMessages returns all messages for service.
+func (r *Repo) loadAllMessages(serviceID uuid.UUID) ([]model.Messages, error) {
 	keyPrefix := []byte(messagesPrefix + serviceID.String())
 
 	var messages []model.Messages
