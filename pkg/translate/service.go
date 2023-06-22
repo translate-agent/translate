@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/repo/common"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -53,7 +53,7 @@ func (t *TranslateServiceServer) GetService(
 	switch service, err := t.repo.LoadService(ctx, params.id); {
 	default:
 		return serviceToProto(service), nil
-	case errors.Is(err, repo.ErrNotFound):
+	case errors.Is(err, common.ErrNotFound):
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "")
@@ -200,7 +200,7 @@ func (t *TranslateServiceServer) UpdateService(
 	oldService, err := t.repo.LoadService(ctx, params.service.ID)
 
 	switch {
-	case errors.Is(err, repo.ErrNotFound):
+	case errors.Is(err, common.ErrNotFound):
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "")
@@ -254,7 +254,7 @@ func (t *TranslateServiceServer) DeleteService(
 	switch err := t.repo.DeleteService(ctx, params.id); {
 	default:
 		return &emptypb.Empty{}, nil
-	case errors.Is(err, repo.ErrNotFound):
+	case errors.Is(err, common.ErrNotFound):
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "")
