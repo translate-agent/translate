@@ -159,6 +159,10 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
+	if len(messages) == 0 {
+		return nil, status.Errorf(codes.NotFound, "")
+	}
+
 	data, err := MessagesToData(params.schema, messages[0])
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")

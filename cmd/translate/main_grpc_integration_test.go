@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
@@ -193,12 +194,12 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 		{
 			name:         "Happy path no messages with language",
 			request:      happyReqNoMessagesLanguage,
-			expectedCode: codes.OK,
+			expectedCode: codes.NotFound,
 		},
 		{
 			name:         "Happy path no messages with Service ID",
 			request:      happyReqNoMessagesServiceID,
-			expectedCode: codes.OK,
+			expectedCode: codes.NotFound,
 		},
 		{
 			name:         "Invalid argument unspecified schema",
@@ -414,4 +415,63 @@ func Test_ListServices_gRPC(t *testing.T) {
 	_, err := client.ListServices(ctx, &translatev1.ListServicesRequest{})
 
 	assert.Equal(t, codes.OK, status.Code(err))
+}
+
+// ------------------Message------------------
+
+func Test_ListMessages_gRPC(t *testing.T) {
+	t.Parallel()
+
+	ctx, subtest := testutil.Trace(t)
+
+	// Prepare
+	service := createService(ctx, t)
+
+	n := gofakeit.IntRange(1, 5)
+	for i := 0; i < n; i++ {
+		uploadRequest := randUploadRequest(t, service.Id)
+		_, err := client.UploadTranslationFile(ctx, uploadRequest)
+		require.NoError(t, err, "create test translation file")
+	}
+
+	// Requests
+
+	tests := []struct {
+		request      *translatev1.ListMessagesRequest
+		name         string
+		expectedCode codes.Code
+	}{
+		{
+			name:         "Happy path",
+			request:      &translatev1.ListMessagesRequest{ServiceId: service.Id},
+			expectedCode: codes.OK,
+		},
+		{
+			name:         "Happy path, service doesn't exist",
+			request:      &translatev1.ListMessagesRequest{ServiceId: uuid.New().String()},
+			expectedCode: codes.OK,
+		},
+		{
+			name: "Happy path, filter languages",
+			request: &translatev1.ListMessagesRequest{
+				ServiceId: uuid.New().String(),
+				Languages: []string{gofakeit.LanguageBCP(), gofakeit.LanguageBCP()},
+			},
+			expectedCode: codes.OK,
+		},
+		{
+			name:         "ServiceID not provided",
+			request:      &translatev1.ListMessagesRequest{},
+			expectedCode: codes.InvalidArgument,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			_, err := client.ListMessages(ctx, tt.request)
+
+			assert.Equal(t, tt.expectedCode, status.Code(err))
+		})
+	}
 }

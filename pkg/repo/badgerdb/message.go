@@ -53,23 +53,25 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 
 	messages := make([]model.Messages, 0, len(opts.FilterLanguages))
 
-	if len(opts.FilterLanguages) == 0 {
-		messages, err = r.LoadAllMessages(ctx, serviceID)
-		if err != nil {
-			return nil, fmt.Errorf("load all messages for service '%s': %w", serviceID, err)
+	// load messages based on provided language tags.
+	if len(opts.FilterLanguages) > 0 {
+		for _, langTag := range opts.FilterLanguages {
+			msgs, er := r.LoadIndividualMessages(ctx, serviceID, langTag)
+			if er != nil {
+				return nil, fmt.Errorf("load messages for service '%s' language '%s': %w", serviceID, langTag, er)
+			}
+
+			if msgs != nil && len(msgs.Messages) != 0 {
+				messages = append(messages, *msgs)
+			}
 		}
 
 		return messages, nil
 	}
 
-	// load messages based on provided language tags.
-	for _, langTag := range opts.FilterLanguages {
-		msgs, err := r.LoadIndividualMessages(ctx, serviceID, langTag)
-		if err != nil {
-			return nil, fmt.Errorf("load messages for service '%s' language '%s': %w", serviceID, langTag, err)
-		}
-
-		messages = append(messages, *msgs)
+	messages, err = r.LoadAllMessages(ctx, serviceID)
+	if err != nil {
+		return nil, fmt.Errorf("load all messages for service '%s': %w", serviceID, err)
 	}
 
 	return messages, nil
@@ -78,7 +80,7 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 // LoadIndividualMessages returns messages based on serviceID and language.Tag.
 func (r *Repo) LoadIndividualMessages(ctx context.Context, serviceID uuid.UUID, language language.Tag,
 ) (*model.Messages, error) {
-	messages := model.Messages{Language: language}
+	var messages model.Messages
 
 	_, err := r.LoadService(ctx, serviceID)
 

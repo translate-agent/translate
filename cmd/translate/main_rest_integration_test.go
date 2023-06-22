@@ -216,12 +216,12 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 		{
 			name:         "Happy path no messages with language",
 			request:      happyReqNoMessagesLanguage,
-			expectedCode: http.StatusOK,
+			expectedCode: http.StatusNotFound,
 		},
 		{
 			name:         "Happy path no messages with Service ID",
 			request:      happyReqNoMessagesServiceID,
-			expectedCode: http.StatusOK,
+			expectedCode: http.StatusNotFound,
 		},
 		{
 			name:         "Bad request unspecified schema",
@@ -507,4 +507,55 @@ func Test_ListServices_REST(t *testing.T) {
 	defer resp.Body.Close()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+// ------------------Message------------------
+
+// GET.
+func Test_GetMessages_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx, subtest := testutil.Trace(t)
+
+	// Prepare
+	service := createService(ctx, t)
+
+	n := gofakeit.IntRange(1, 5)
+	for i := 0; i < n; i++ {
+		uploadRequest := randUploadRequest(t, service.Id)
+		_, err := client.UploadTranslationFile(ctx, uploadRequest)
+		require.NoError(t, err, "create test translation file")
+	}
+
+	// Requests
+	tests := []struct {
+		name         string
+		expectedCode int
+	}{
+		{
+			name:         "Happy Path",
+			expectedCode: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			u := url.URL{
+				Scheme: "http",
+				Host:   host + ":" + port,
+				Path:   "v1/services/" + service.Id + "/messages",
+			}
+
+			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+			require.NoError(t, err, "create request")
+
+			resp, err := otelhttp.DefaultClient.Do(req)
+			require.NoError(t, err, "do request")
+
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+		})
+	}
 }

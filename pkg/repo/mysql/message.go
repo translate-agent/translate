@@ -101,7 +101,8 @@ ON DUPLICATE KEY UPDATE
 	return nil
 }
 
-func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts) ([]model.Messages, error) {
+func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts,
+) ([]model.Messages, error) {
 	var (
 		qb   strings.Builder
 		args []interface{}
@@ -111,10 +112,11 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 	FROM message_message mm
 	JOIN message m ON m.id = mm.message_id
 	WHERE m.service_id = UUID_TO_BIN(?)`)
+
 	args = append(args, serviceID)
 
 	if len(opts.FilterLanguages) > 0 {
-		qb.WriteString("AND m.language IN (")
+		qb.WriteString(" AND m.language IN (")
 
 		for i, v := range opts.FilterLanguages {
 			if i > 0 {
@@ -122,20 +124,21 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 			}
 
 			qb.WriteByte('?')
+
 			args = append(args, v.String())
 		}
 
 		qb.WriteByte(')')
 	}
 
-	rows, err := r.db.QueryContext(ctx, qb.String(), args)
+	rows, err := r.db.QueryContext(ctx, qb.String(), args...)
 	if err != nil {
 		return nil, fmt.Errorf("repo: query messages: %w", err)
 	}
 
 	defer rows.Close()
 
-	messagesLookup := make(map[string]model.Messages)
+	messagesLookup := make(map[string][]model.Message)
 
 	for rows.Next() {
 		var (
@@ -147,14 +150,7 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 			return nil, fmt.Errorf("repo: scan message: %w", err)
 		}
 
-		if msgs, ok := messagesLookup[lang]; ok {
-			msgs.Messages = append(messagesLookup[lang].Messages, msg)
-		} else {
-			messagesLookup[lang] = model.Messages{
-				Language: language.MustParse(lang),
-				Messages: []model.Message{msg},
-			}
-		}
+		messagesLookup[lang] = append(messagesLookup[lang], msg)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -163,8 +159,11 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 
 	messages := make([]model.Messages, 0, len(messagesLookup))
 
-	for _, msgs := range messagesLookup {
-		messages = append(messages, msgs)
+	for langTag, msgs := range messagesLookup {
+		messages = append(messages, model.Messages{
+			Language: language.MustParse(langTag),
+			Messages: msgs,
+		})
 	}
 
 	return messages, nil

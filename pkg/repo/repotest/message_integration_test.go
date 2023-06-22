@@ -174,28 +174,28 @@ func Test_LoadMessages(t *testing.T) {
 		require.NoError(t, err, "Prepare test messages")
 
 		tests := []struct {
-			expected  *model.Messages
 			language  language.Tag
 			name      string
+			expected  []model.Messages
 			serviceID uuid.UUID
 		}{
 			{
+				language:  messages.Language,
 				name:      "Happy Path",
-				expected:  messages,
+				expected:  []model.Messages{*messages},
 				serviceID: service.ID,
-				language:  messages.Language,
 			},
 			{
+				language:  messages.Language,
 				name:      "No messages with service",
+				expected:  []model.Messages{},
 				serviceID: uuid.New(),
-				language:  messages.Language,
-				expected:  &model.Messages{Language: messagesLang},
 			},
 			{
-				name:      "No messages with language",
-				serviceID: service.ID,
 				language:  langWithNoMsgs,
-				expected:  &model.Messages{Language: langWithNoMsgs},
+				name:      "No messages with language",
+				expected:  []model.Messages{},
+				serviceID: service.ID,
 			},
 		}
 
@@ -206,7 +206,7 @@ func Test_LoadMessages(t *testing.T) {
 					common.LoadMessagesOpts{FilterLanguages: []language.Tag{tt.language}})
 				require.NoError(t, err, "Load messages")
 
-				testutil.EqualMessages(t, tt.expected, &actualMessages[0])
+				assert.ElementsMatch(t, tt.expected, actualMessages)
 			})
 		}
 	})
