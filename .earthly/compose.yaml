@@ -15,6 +15,7 @@ services:
       interval: 1s
       timeout: 10s
       retries: 10
+
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: jaeger
@@ -33,5 +34,15 @@ services:
       - "14269:14269"
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+
+  envoy:
+    image: envoyproxy/envoy:v1.26-latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
+    networks:
+      - translate
+
 networks:
   translate:

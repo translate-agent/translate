@@ -18,7 +18,11 @@
   "sqlfluff.format.arguments": [
     "--FIX-EVEN-UNPARSABLE"
   ],
-
+  "yaml.schemas": {
+    "https://gist.githubusercontent.com/mmizutani/17d83a90791e7122aef7230fbcf009d4/raw/d0c96d433c611a60652b17a45dc76f298f802976/envoy-schema.json": [
+      "envoy.yaml"
+    ]
+  },
   "files.readonlyInclude": {
     "**/bin/*": true,
     "**/pkg/pb/**": true

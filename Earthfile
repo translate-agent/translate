@@ -1,6 +1,6 @@
 VERSION 0.7
 
-ARG --global USERARCH
+ARG --global USERARCH # Arch of the user running the build
 
 ARG --global go_version=1.20.5
 ARG --global golangci_lint_version=1.53.2
@@ -19,6 +19,7 @@ deps:
 
 go:
   FROM +deps
+  WORKDIR /translate
   COPY --dir cmd pkg .
   COPY --platform=linux/$USERARCH +proto/translate/v1/* pkg/pb/translate/v1
   SAVE ARTIFACT /translate 
@@ -97,7 +98,7 @@ lint:
 
 test-unit:
   FROM +go
-  RUN go test ./...
+  RUN --mount=type=cache,target=/go/pkg/mod go test ./...
 
 test-integration:
   FROM earthly/dind:alpine
@@ -128,7 +129,6 @@ test-integration:
         -e TRANSLATE_DB_MYSQL_PORT=3306 \
         -e TRANSLATE_DB_MYSQL_DATABASE=translate \
         -e TRANSLATE_DB_MYSQL_USER=root \
-        -e TRANSLATE_DB_BADGERDB_PATH=/tmp/badger \
         golang:$go_version-alpine go test -C /translate --tags=integration -count=1 ./...
   END
 
@@ -164,3 +164,46 @@ image-multiplatform:
   --platform=linux/amd64 \
   --platform=linux/arm64 \
   +image --registry=$registry
+
+# -----------------------All-in-one image-----------------------
+
+# jeager is helper target for all-in-one image, it removes the need 
+# to download the correct jaeger image on every build
+jaeger:
+  FROM jaegertracing/all-in-one:1.46
+  SAVE ARTIFACT /go/bin/all-in-one-linux jaeger
+
+image-all-in-one:
+  ARG TARGETARCH
+  ARG --required registry
+  ARG tag=latest
+  FROM envoyproxy/envoy:v1.26-latest
+
+  # Install supervisor to run multiple processes in a single container
+  RUN apt-get update && apt-get install -y supervisor
+
+  WORKDIR app/
+
+  # Copy supervisord configuration and envoy configuration
+  COPY .earthly/supervisord.conf supervisord.conf
+  COPY .earthly/envoy.yaml envoy.yaml
+
+  # Copy binaries
+  COPY +jaeger/jaeger jaeger
+  COPY --platform=linux/$USERARCH (+build/bin/translate --GOARCH=$TARGETARCH) translate
+
+  # Set required environment variables
+  ENV TRANSLATE_DB_BADGERDB_PATH=/tmp/badger
+  ENV OTEL_SERVICE_NAME=translate
+  ENV OTEL_EXPORTER_OTLP_INSECURE=true
+
+  ENTRYPOINT ["supervisord","-c","/app/supervisord.conf"]
+  SAVE IMAGE --push $registry/translate-agent-all-in-one:$tag
+
+image-all-in-one-multiplatform:
+  ARG --required registry
+  ARG tag=latest
+  BUILD \
+  --platform=linux/amd64 \
+  --platform=linux/arm64 \
+  +image-all-in-one --registry=$registry --tag=$tag
