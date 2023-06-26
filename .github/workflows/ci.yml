@@ -34,4 +34,4 @@ jobs:
       - name: Unit
         run: earthly --ci +test-unit
       - name: Integration
-        run: earthly --ci --allow-privileged --secret googletranslate_api_key=${{secrets.GOOGLETRANSLATE_API_KEY}} +test-integration
+        run: earthly --ci --allow-privileged --secret googletranslate_api_key=${{ secrets.GOOGLETRANSLATE_API_KEY }} +test-integration
