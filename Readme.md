@@ -23,5 +23,5 @@ docker rm -f translate-all-in-one 2> /dev/null; docker pull expectdigital/transl
 |-----------------------------------------|--------------------------------------------------------|
 | `-p 8080:8080`                          | Translate service port                                 |
 | `-p 16686:16686`                        | Jaeger UI port                                         |
-| `-v /tmp/badger:/tmp/badger`            | Path for BadgerDB db for data persistency *(Optional)* |
+| `-v path/to/badger-dir:/tmp/badger`     | Path for BadgerDB db for data persistency *(Optional)* |
 | `-v path/to/envoy.yaml:/app/envoy.yaml` | Path to custom envoy.yaml *(Optional)*                 |

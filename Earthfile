@@ -129,6 +129,7 @@ test-integration:
         -e TRANSLATE_DB_MYSQL_PORT=3306 \
         -e TRANSLATE_DB_MYSQL_DATABASE=translate \
         -e TRANSLATE_DB_MYSQL_USER=root \
+        -e TRANSLATE_DB_BADGERDB_PATH=/tmp/badger \
         golang:$go_version-alpine go test -C /translate --tags=integration -count=1 ./...
   END
 
@@ -146,16 +147,18 @@ build:
   RUN \
   --mount=type=cache,target=/go/pkg/mod \
   --mount=type=cache,target=/root/.cache/go-build \
-    go build -o translate cmd/translate/main.go
-  SAVE ARTIFACT translate bin/translate
+    go build -o translate-service cmd/translate/main.go && \
+    go build -o translate cmd/client/main.go
+  SAVE ARTIFACT translate-service bin/translate-service # service
+  SAVE ARTIFACT translate bin/translate # client
 
 image:
   ARG TARGETARCH
   ARG --required registry
   ARG tag=latest
   FROM alpine
-  COPY --platform=linux/$USERARCH (+build/bin/translate --GOARCH=$TARGETARCH) /translate
-  ENTRYPOINT ["/translate"]
+  COPY --platform=linux/$USERARCH (+build/bin/translate-service --GOARCH=$TARGETARCH) /translate-service
+  ENTRYPOINT ["/translate-service"]
   SAVE IMAGE --push $registry/translate:$tag
 
 image-multiplatform:
@@ -189,8 +192,9 @@ image-all-in-one:
   COPY .earthly/envoy.yaml envoy.yaml
 
   # Copy binaries
-  COPY +jaeger/jaeger jaeger
-  COPY --platform=linux/$USERARCH (+build/bin/translate --GOARCH=$TARGETARCH) translate
+  COPY +jaeger/jaeger /usr/local/bin/jaeger
+  COPY --platform=linux/$USERARCH (+build/bin/translate-service --GOARCH=$TARGETARCH) /usr/local/bin/translate-service # service
+  COPY --platform=linux/$USERARCH (+build/bin/translate --GOARCH=$TARGETARCH) /usr/local/bin/translate # client
 
   # Set required environment variables
   ENV TRANSLATE_DB_BADGERDB_PATH=/tmp/badger
