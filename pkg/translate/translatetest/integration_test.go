@@ -21,7 +21,9 @@ import (
 type service translate.TranslationService
 
 // translators is a map of all possible translation services, e.g. Google Translate, DeepL, etc.
-var translators map[string]service
+var translators = map[string]service{
+	"GoogleTranslate": nil,
+}
 
 // initGoogleTranslate creates a new Google Translate service and adds it to the translators map.
 func initGoogleTranslate(ctx context.Context) (func() error, error) {
@@ -49,21 +51,30 @@ func testMain(m *testing.M) int {
 
 	viper.AutomaticEnv()
 
-	// Initialize translators map
-	translators = make(map[string]service, len(translate.SupportedServices))
+	// Initialize all translation services.
 
 	// Google Translate
 	gtCloser, err := initGoogleTranslate(ctx)
 	if err != nil {
-		log.Println(err)
-		os.Exit(1)
+		// If the Google Translate API key is not set, skip the Google Translate tests.
+		if strings.Contains(err.Error(), "api key is not set") {
+			log.Println("Google Translate API key is not set. Skipping Google Translate tests.")
+		} else {
+			// All other errors are fatal.
+			log.Fatal(err)
+		}
 	}
 
-	defer func() {
-		if err := gtCloser(); err != nil {
-			log.Printf("close Google Translate: %v", err)
-		}
-	}()
+	// Close all connections
+
+	// Close the Google Translate client.
+	if gtCloser != nil {
+		defer func() {
+			if err := gtCloser(); err != nil {
+				log.Printf("close Google Translate: %v", err)
+			}
+		}()
+	}
 
 	return m.Run()
 }
@@ -74,6 +85,10 @@ func allServices(t *testing.T, f func(t *testing.T, service service, subtest tes
 		name, service := name, service
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
+
+			if service == nil {
+				t.Skipf("'%s' is not initialized", name)
+			}
 
 			_, subTest := testutil.Trace(t)
 
