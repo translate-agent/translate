@@ -53,22 +53,6 @@ func langTagFromProto(s string) (language.Tag, error) {
 	return l, nil
 }
 
-// langTagsFromProto converts a slice of strings to []language.Tag.
-func langTagsFromProto(langTags []string) ([]language.Tag, error) {
-	lts := make([]language.Tag, 0, len(langTags))
-
-	for _, langTag := range langTags {
-		lt, err := langTagFromProto(langTag)
-		if err != nil {
-			return nil, fmt.Errorf("transform language tag '%s' to proto: %w", langTag, err)
-		}
-
-		lts = append(lts, lt)
-	}
-
-	return lts, nil
-}
-
 // sliceToProto converts a slice of type T to a slice of type *R using the provided elementToProto function.
 func sliceToProto[T any, R any](slice []T, elementToProto func(*T) *R) []*R {
 	if len(slice) == 0 {
@@ -84,8 +68,29 @@ func sliceToProto[T any, R any](slice []T, elementToProto func(*T) *R) []*R {
 	return v
 }
 
-// sliceFromProto converts a slice of type *T to a slice of type R using the provided elementFromProto function.
-func sliceFromProto[T any, R any](slice []*T, elementFromProto func(*T) (*R, error)) ([]R, error) {
+// sliceFromProto converts a slice of type T to a slice of type R using the provided elementFromProto function.
+func sliceFromProto[T any, R any](slice []T, elementFromProto func(T) (R, error)) ([]R, error) {
+	if len(slice) == 0 {
+		return nil, nil
+	}
+
+	v := make([]R, 0, len(slice))
+
+	for i := range slice {
+		r, err := elementFromProto(slice[i])
+		if err != nil {
+			return nil, fmt.Errorf("transform element: %w", err)
+		}
+
+		v = append(v, r)
+	}
+
+	return v, nil
+}
+
+// sliceFromProtoPointers converts a slice of type *T to a slice of type R
+// using the provided elementFromProto function.
+func sliceFromProtoPointers[T any, R any](slice []*T, elementFromProto func(*T) (*R, error)) ([]R, error) {
 	if len(slice) == 0 {
 		return nil, nil
 	}
@@ -141,7 +146,7 @@ func servicesToProto(s []model.Service) []*translatev1.Service {
 
 // servicesFromProto converts []*translatev1.Service to []model.Service.
 func servicesFromProto(s []*translatev1.Service) ([]model.Service, error) {
-	return sliceFromProto(s, serviceFromProto)
+	return sliceFromProtoPointers(s, serviceFromProto)
 }
 
 // ----------------------Message----------------------

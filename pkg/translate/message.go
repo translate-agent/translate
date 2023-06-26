@@ -34,7 +34,7 @@ func parseListMessagesRequestParams(req *translatev1.ListMessagesRequest) (*list
 		req.Languages = strings.Split(req.GetLanguages()[0], ",")
 	}
 
-	langTags, err := langTagsFromProto(req.GetLanguages())
+	langTags, err := sliceFromProto(req.GetLanguages(), langTagFromProto)
 	if err != nil {
 		return nil, fmt.Errorf("parse languages: %w", err)
 	}
