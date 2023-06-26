@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 
 	"cloud.google.com/go/translate"
 	"github.com/spf13/viper"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/text/language"
 	"google.golang.org/api/option"
+	htransport "google.golang.org/api/transport/http"
 )
 
 // Interface that defines some of the methods of the Google Translate client.
@@ -44,7 +47,17 @@ func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
 			return fmt.Errorf("with default client: google translate api key is not set")
 		}
 
-		g.client, err = translate.NewClient(ctx, option.WithAPIKey(apiKey))
+		// Create new Google Cloud service transport with the base of OpenTelemetry HTTP transport.
+		trans, err := htransport.NewTransport(
+			ctx,
+			otelhttp.NewTransport(http.DefaultTransport),
+			option.WithAPIKey(apiKey),
+		)
+		if err != nil {
+			return fmt.Errorf("with default client: new transport: %w", err)
+		}
+
+		g.client, err = translate.NewClient(ctx, option.WithHTTPClient(&http.Client{Transport: trans}))
 		if err != nil {
 			return fmt.Errorf("with default client: new google translate client: %w", err)
 		}
