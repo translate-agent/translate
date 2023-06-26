@@ -49,6 +49,14 @@ proto:
   SAVE ARTIFACT . proto
   SAVE ARTIFACT gen/proto/go/translate/v1 translate/v1 AS LOCAL pkg/pb/translate/v1
 
+# buf-registry pushes BUF modules to the registry.
+buf-registry:
+  FROM bufbuild/buf:$bufbuild_version
+  WORKDIR proto
+  COPY +proto/proto .
+  RUN --secret BUF_USERNAME --secret BUF_API_TOKEN echo $BUF_API_TOKEN | buf registry login --username $BUF_USERNAME --token-stdin
+  RUN --push buf push
+
 # migrate runs DDL migration scripts against the given database.
 migrate:
   FROM migrate/migrate:v$migrate_version
