@@ -17,11 +17,11 @@ jobs:
           use-cache: true
       - uses: actions/checkout@v3
       - name: Proto
-        run: earthly +lint-proto
+        run: earthly --ci +lint-proto
       - name: Migrate
-        run: earthly +lint-migrate
+        run: earthly --ci +lint-migrate
       - name: GO
-        run: earthly +lint-go
+        run: earthly --ci +lint-go
   test:
     name: test
     runs-on: ubuntu-latest
@@ -32,6 +32,6 @@ jobs:
           use-cache: true
       - uses: actions/checkout@v3
       - name: Unit
-        run: earthly +test-unit
+        run: earthly --ci +test-unit
       - name: Integration
-        run: earthly --allow-privileged +test-integration
+        run: earthly --ci --allow-privileged --secret googletranslate_api_key=${{secrets.GOOGLETRANSLATE_API_KEY}} +test-integration
