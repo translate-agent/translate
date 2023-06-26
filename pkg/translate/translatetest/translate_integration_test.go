@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/translate"
 	"golang.org/x/text/language"
 )
 
@@ -16,7 +17,7 @@ import (
 func Test_Translate(t *testing.T) {
 	t.Parallel()
 
-	allServices(t, func(t *testing.T, service service, subTest testutil.SubtestFn) {
+	allServices(t, func(t *testing.T, service translate.TranslationService, subTest testutil.SubtestFn) {
 		subTest("One message", func(ctx context.Context, t *testing.T) {
 			messages := RandMessages(1, language.English)
 

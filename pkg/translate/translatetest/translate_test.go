@@ -13,10 +13,10 @@ import (
 	"golang.org/x/text/language"
 )
 
-var mockTranslators map[string]service
+var mockTranslators map[string]translate.TranslationService
 
 func init() {
-	mockTranslators = make(map[string]service, len(translate.SupportedServices))
+	mockTranslators = make(map[string]translate.TranslationService, len(translate.SupportedServices))
 
 	// Google Translate
 	gt, _, _ := googletranslate.NewGoogleTranslate(
@@ -29,7 +29,7 @@ func init() {
 }
 
 // allMocks runs a test function f for each mocked translate service that is defined in the mockTranslators map.
-func allMocks(t *testing.T, f func(t *testing.T, mock service)) {
+func allMocks(t *testing.T, f func(t *testing.T, mock translate.TranslationService)) {
 	for name, mock := range mockTranslators {
 		name, mock := name, mock
 		t.Run(name, func(t *testing.T) {
@@ -43,7 +43,7 @@ func allMocks(t *testing.T, f func(t *testing.T, mock service)) {
 func Test_TranslateMock(t *testing.T) {
 	t.Parallel()
 
-	allMocks(t, func(t *testing.T, mock service) {
+	allMocks(t, func(t *testing.T, mock translate.TranslationService) {
 		tests := []struct {
 			targetLang  language.Tag
 			expectedErr error

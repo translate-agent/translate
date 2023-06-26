@@ -17,11 +17,8 @@ import (
 	"go.expect.digital/translate/pkg/testutil"
 )
 
-// alias for the translate service interface.
-type service translate.TranslationService
-
 // translators is a map of all possible translation services, e.g. Google Translate, DeepL, etc.
-var translators = map[string]service{
+var translators = map[string]translate.TranslationService{
 	"GoogleTranslate": nil,
 }
 
@@ -80,7 +77,7 @@ func testMain(m *testing.M) int {
 }
 
 // allServices runs a test for each translate service that is defined in the translators map.
-func allServices(t *testing.T, f func(t *testing.T, service service, subtest testutil.SubtestFn)) {
+func allServices(t *testing.T, f func(t *testing.T, service translate.TranslationService, subtest testutil.SubtestFn)) {
 	for name, service := range translators {
 		name, service := name, service
 		t.Run(name, func(t *testing.T) {
