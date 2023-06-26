@@ -3,9 +3,9 @@ VERSION 0.7
 ARG --global USERARCH
 
 ARG --global go_version=1.20.5
-ARG --global golangci_lint_version=1.53.2
-ARG --global bufbuild_version=1.21.0
-ARG --global migrate_version=4.16.1
+ARG --global golangci_lint_version=1.53.3
+ARG --global bufbuild_version=1.22.0
+ARG --global migrate_version=4.16.2
 ARG --global sqlfluff_version=2.1.1
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
