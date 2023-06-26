@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.expect.digital/translate/pkg/filter"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/repo/common"
@@ -220,23 +219,15 @@ func Test_LoadAllMessagesForService(t *testing.T) {
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
-		var langTags []language.Tag
 
 		service := prepareService(testCtx, t, repository)
-
-		for i := 0; i < gofakeit.IntRange(1, 5); i++ {
-			langTags = append(langTags, rand.Langs(1)[0])
-		}
-
-		// remove duplicate language tags
-		langTags = filter.LanguageTags(langTags)
+		langTags := rand.Langs(gofakeit.UintRange(1, 5))
 		messages := make([]model.Messages, 0, len(langTags))
 
 		for _, langTag := range langTags {
 			msgs := rand.ModelMessages(1, nil, rand.WithLanguage(langTag))
 			err := repository.SaveMessages(testCtx, service.ID, msgs)
 			require.NoError(t, err, "Prepare test messages")
-
 			messages = append(messages, *msgs)
 		}
 
