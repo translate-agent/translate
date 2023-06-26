@@ -4,7 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"github.com/Masterminds/squirrel"
 )
+
+// sq is SQL builder for MySQL.
+var sq squirrel.StatementBuilderType
+
+func init() {
+	sq = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Question)
+}
 
 type Repo struct {
 	db *sql.DB
@@ -60,4 +69,22 @@ func NewRepo(opts ...Option) (*Repo, error) {
 	}
 
 	return r, nil
+}
+
+// helpers - SQL builder.
+
+type eb squirrel.Eq
+
+// in adds where clause only if string values are not empty.
+func (e eb) in(column string, values []string) eb {
+	if len(values) > 0 {
+		e[column] = values
+	}
+
+	return e
+}
+
+// eq returns squirrel.Eq.
+func (e eb) eq() squirrel.Eq {
+	return squirrel.Eq(e)
 }

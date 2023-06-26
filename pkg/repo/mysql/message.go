@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
@@ -103,35 +102,12 @@ ON DUPLICATE KEY UPDATE
 
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts,
 ) ([]model.Messages, error) {
-	var (
-		qb   strings.Builder
-		args []interface{}
-	)
-
-	qb.WriteString(`SELECT mm.id, mm.message, mm.description, mm.fuzzy, m.language
-	FROM message_message mm
-	JOIN message m ON m.id = mm.message_id
-	WHERE m.service_id = UUID_TO_BIN(?)`)
-
-	args = append(args, serviceID)
-
-	if len(opts.FilterLanguages) > 0 {
-		qb.WriteString(" AND m.language IN (")
-
-		for i, v := range opts.FilterLanguages {
-			if i > 0 {
-				qb.WriteByte(',')
-			}
-
-			qb.WriteByte('?')
-
-			args = append(args, v.String())
-		}
-
-		qb.WriteByte(')')
-	}
-
-	rows, err := r.db.QueryContext(ctx, qb.String(), args...)
+	rows, err := sq.RunWith(r.db).
+		Select("mm.id, mm.message, mm.description, mm.fuzzy, m.language").
+		From("message_message mm").Join("message m ON m.id = mm.message_id").
+		Where("m.service_id = UUID_TO_BIN(?)", serviceID).
+		Where(make(eb).in("m.language", langTagsToStringSlice(opts.FilterLanguages)).eq()).
+		QueryContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("repo: query messages: %w", err)
 	}
@@ -167,4 +143,15 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 	}
 
 	return messages, nil
+}
+
+// helpers
+
+func langTagsToStringSlice(lt []language.Tag) []string {
+	langTags := make([]string, 0, len(lt))
+	for _, langTag := range lt {
+		langTags = append(langTags, langTag.String())
+	}
+
+	return langTags
 }
