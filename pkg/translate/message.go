@@ -63,7 +63,7 @@ func (t *TranslateServiceServer) ListMessages(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	// remove duplicates
+	// remove duplicates & empty language tags
 	params.languageTags = filter.LanguageTags(params.languageTags)
 
 	messages, err := t.repo.LoadMessages(ctx, params.serviceID,

@@ -147,11 +147,11 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 
 // helpers
 
-func langTagsToStringSlice(lt []language.Tag) []string {
-	langTags := make([]string, 0, len(lt))
-	for _, langTag := range lt {
-		langTags = append(langTags, langTag.String())
+func langTagsToStringSlice(langTags []language.Tag) []string {
+	lt := make([]string, 0, len(langTags))
+	for _, langTag := range langTags {
+		lt = append(lt, langTag.String())
 	}
 
-	return langTags
+	return lt
 }
