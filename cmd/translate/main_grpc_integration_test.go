@@ -451,20 +451,6 @@ func Test_ListMessages_gRPC(t *testing.T) {
 			expectedCode: codes.OK,
 		},
 		{
-			name: "Happy path, filter language",
-			request: &translatev1.ListMessagesRequest{
-				ServiceId: service.Id,
-			},
-			expectedCode: codes.OK,
-		},
-		{
-			name: "Happy path, filter existing languages",
-			request: &translatev1.ListMessagesRequest{
-				ServiceId: service.Id,
-			},
-			expectedCode: codes.OK,
-		},
-		{
 			name:         "Invalid argument, ServiceID not provided",
 			request:      &translatev1.ListMessagesRequest{},
 			expectedCode: codes.InvalidArgument,
