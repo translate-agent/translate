@@ -166,7 +166,7 @@ func messageSliceToProto(m []model.Message) []*translatev1.Message {
 
 // messageSliceFromProto converts []*translatev1.Message to []model.Message.
 func messageSliceFromProto(m []*translatev1.Message) ([]model.Message, error) {
-	return sliceFromProtoPointers(m, messageFromProto)
+	return sliceFromProto(m, messageFromProto)
 }
 
 // ----------------------Messages----------------------
