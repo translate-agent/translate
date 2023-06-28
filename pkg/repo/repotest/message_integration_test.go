@@ -92,11 +92,11 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 		service := prepareService(testCtx, t, repository)
 
 		// Create unique languages
-		langs := rand.Langs(3)
-		messages := make([]*model.Messages, len(langs))
+		languages := rand.Languages(3)
+		messages := make([]*model.Messages, len(languages))
 
 		// Create messages for each language
-		for i, lang := range langs {
+		for i, lang := range languages {
 			messages[i] = rand.ModelMessages(3, nil, rand.WithLanguage(lang))
 		}
 
@@ -158,7 +158,7 @@ func Test_LoadMessages(t *testing.T) {
 	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
 		testCtx, _ := testutil.Trace(t)
 
-		langs := rand.Langs(2)
+		langs := rand.Languages(2)
 		// messagesLang is the language of the messages, for Happy Path test.
 		messagesLang := langs[0]
 		// langWithNoMsgs is a different language, for No messages with language test.
@@ -221,11 +221,11 @@ func Test_LoadAllMessagesForService(t *testing.T) {
 		// Prepare
 
 		service := prepareService(testCtx, t, repository)
-		langTags := rand.Langs(gofakeit.UintRange(1, 5))
-		messages := make([]model.Messages, 0, len(langTags))
+		languages := rand.Languages(gofakeit.UintRange(1, 5))
+		messages := make([]model.Messages, 0, len(languages))
 
-		for _, langTag := range langTags {
-			msgs := rand.ModelMessages(1, nil, rand.WithLanguage(langTag))
+		for _, lang := range languages {
+			msgs := rand.ModelMessages(1, nil, rand.WithLanguage(lang))
 			err := repository.SaveMessages(testCtx, service.ID, msgs)
 			require.NoError(t, err, "Prepare test messages")
 			messages = append(messages, *msgs)
@@ -234,7 +234,7 @@ func Test_LoadAllMessagesForService(t *testing.T) {
 		tests := []struct {
 			name         string
 			expectedMsgs []model.Messages
-			langTags     []language.Tag
+			languages    []language.Tag
 			serviceID    uuid.UUID
 		}{
 			{
@@ -246,7 +246,7 @@ func Test_LoadAllMessagesForService(t *testing.T) {
 				name:         "Happy Path, filter by existing languages",
 				expectedMsgs: messages,
 				serviceID:    service.ID,
-				langTags:     langTags,
+				languages:    languages,
 			},
 		}
 
@@ -254,7 +254,7 @@ func Test_LoadAllMessagesForService(t *testing.T) {
 			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				actualMessages, err := repository.LoadMessages(ctx, tt.serviceID,
-					common.LoadMessagesOpts{FilterLanguages: tt.langTags})
+					common.LoadMessagesOpts{FilterLanguages: tt.languages})
 
 				require.NoError(t, err, "Load messages")
 				assert.ElementsMatch(t, actualMessages, tt.expectedMsgs)

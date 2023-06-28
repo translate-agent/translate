@@ -34,13 +34,13 @@ func uuidFromProto(s string) (uuid.UUID, error) {
 	return id, nil
 }
 
-// langTagToProto converts language.Tag to string.
-func langTagToProto(l language.Tag) string {
+// languagesToProto converts language.Tag to string.
+func languagesToProto(l language.Tag) string {
 	return l.String()
 }
 
-// langTagFromProto converts string to language.Tag.
-func langTagFromProto(s string) (language.Tag, error) {
+// languagesFromProto converts string to language.Tag.
+func languagesFromProto(s string) (language.Tag, error) {
 	if s == "" {
 		return language.Und, nil
 	}
@@ -159,7 +159,7 @@ func messagesToProto(m *model.Messages) *translatev1.Messages {
 	}
 
 	return &translatev1.Messages{
-		Language: langTagToProto(m.Language),
+		Language: languagesToProto(m.Language),
 		Messages: messageSliceToProto(m.Messages),
 	}
 }

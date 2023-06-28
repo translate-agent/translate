@@ -30,7 +30,7 @@ func parseUploadTranslationFileRequestParams(req *translatev1.UploadTranslationF
 		err    error
 	)
 
-	params.languageTag, err = langTagFromProto(req.GetLanguage())
+	params.languageTag, err = languagesFromProto(req.GetLanguage())
 	if err != nil {
 		return nil, fmt.Errorf("parse language: %w", err)
 	}
@@ -116,7 +116,7 @@ func parseDownloadTranslationFileRequestParams(
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	params.languageTag, err = langTagFromProto(req.GetLanguage())
+	params.languageTag, err = languagesFromProto(req.GetLanguage())
 	if err != nil {
 		return nil, fmt.Errorf("parse language: %w", err)
 	}

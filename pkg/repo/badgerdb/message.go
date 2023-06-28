@@ -58,7 +58,7 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 
 	// load all messages if language tags are not provided.
 	if len(opts.FilterLanguages) == 0 {
-		messages, err := r.loadAllMessages(serviceID)
+		messages, err := r.loadMessages(serviceID)
 		if err != nil {
 			return nil, fmt.Errorf("load all messages for service '%s': %w", serviceID, err)
 		}
@@ -67,7 +67,7 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 	}
 
 	// load messages based on provided language tags.
-	messages, err := r.loadMessagesForLangTags(serviceID, opts.FilterLanguages)
+	messages, err := r.loadMessagesByLang(serviceID, opts.FilterLanguages)
 	if err != nil {
 		return nil, fmt.Errorf("load messages for language tags: %w", err)
 	}
@@ -75,27 +75,27 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 	return messages, nil
 }
 
-// loadMessagesForLangTags returns messages for service based on provided language tags.
-func (r *Repo) loadMessagesForLangTags(serviceID uuid.UUID, langTags []language.Tag,
+// loadMessagesByLang returns messages for service based on provided language tags.
+func (r *Repo) loadMessagesByLang(serviceID uuid.UUID, languages []language.Tag,
 ) ([]model.Messages, error) {
-	messages := make([]model.Messages, 0, len(langTags))
+	messages := make([]model.Messages, 0, len(languages))
 
 	if err := r.db.View(func(txn *badger.Txn) error {
-		for _, langTag := range langTags {
+		for _, lang := range languages {
 			var msgs model.Messages
 
-			item, txErr := txn.Get(getMessagesKey(serviceID, langTag))
+			item, txErr := txn.Get(getMessagesKey(serviceID, lang))
 			switch {
 			default:
 				if valErr := getValue(item, &msgs); valErr != nil {
-					return fmt.Errorf("get messages for language tag '%s': %w", langTag, valErr)
+					return fmt.Errorf("get messages for language tag '%s': %w", lang, valErr)
 				}
 
 				messages = append(messages, msgs)
 			case errors.Is(txErr, badger.ErrKeyNotFound):
 				return nil // Empty messages.messages for this language (Not an error)
 			case txErr != nil:
-				return fmt.Errorf("transaction: get messages for language tag '%s': %w", langTag, txErr)
+				return fmt.Errorf("transaction: get messages for language tag '%s': %w", lang, txErr)
 			}
 		}
 
@@ -107,8 +107,8 @@ func (r *Repo) loadMessagesForLangTags(serviceID uuid.UUID, langTags []language.
 	return messages, nil
 }
 
-// loadAllMessages returns all messages for service.
-func (r *Repo) loadAllMessages(serviceID uuid.UUID) ([]model.Messages, error) {
+// loadMessages returns all messages for service.
+func (r *Repo) loadMessages(serviceID uuid.UUID) ([]model.Messages, error) {
 	keyPrefix := []byte(messagesPrefix + serviceID.String())
 
 	var messages []model.Messages
