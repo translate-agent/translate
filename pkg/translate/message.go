@@ -44,7 +44,7 @@ func (c *createMessagesParams) validate() error {
 	}
 
 	if c.messages == nil {
-		return errors.New("'messages' are required")
+		return errors.New("'messages' is required")
 	}
 
 	if c.messages.Language == language.Und {
