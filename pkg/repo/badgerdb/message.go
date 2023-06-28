@@ -88,7 +88,7 @@ func (r *Repo) loadMessagesForLangTags(serviceID uuid.UUID, langTags []language.
 			switch {
 			default:
 				if valErr := getValue(item, &msgs); valErr != nil {
-					return fmt.Errorf("get messages for language tag '%s': %w", langTag, txErr)
+					return fmt.Errorf("get messages for language tag '%s': %w", langTag, valErr)
 				}
 
 				messages = append(messages, msgs)
