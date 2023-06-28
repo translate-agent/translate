@@ -1,4 +1,4 @@
-package googletranslate
+package fuzzy
 
 import (
 	"context"
@@ -8,30 +8,33 @@ import (
 
 	"cloud.google.com/go/translate"
 	"github.com/spf13/viper"
+	"go.expect.digital/translate/pkg/model"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/text/language"
 	"google.golang.org/api/option"
 	htransport "google.golang.org/api/transport/http"
 )
 
+// --------------------Definitions--------------------
+
 // Interface that defines some of the methods of the Google Translate client.
 // This interface helps to mock the Google Translate client in unit tests.
 // https://pkg.go.dev/cloud.google.com/go/translate#Client
-type GoogleClient interface {
+type googleClient interface {
 	Translate(ctx context.Context, inputs []string, target language.Tag, opts *translate.Options) ([]translate.Translation, error) //nolint:lll
 	io.Closer
 }
 
-// GoogleTranslate implements the TranslationService interface.
-type GoogleTranslate struct {
-	client GoogleClient
+// googleTranslate implements the TranslationService interface.
+type googleTranslate struct {
+	client googleClient
 }
 
-type GoogleTranslateOption func(*GoogleTranslate) error
+type GoogleTranslateOption func(*googleTranslate) error
 
 // WithClient sets the Google Translate client.
-func WithClient(c GoogleClient) GoogleTranslateOption {
-	return func(g *GoogleTranslate) error {
+func WithClient(c googleClient) GoogleTranslateOption {
+	return func(g *googleTranslate) error {
 		g.client = c
 		return nil
 	}
@@ -39,7 +42,7 @@ func WithClient(c GoogleClient) GoogleTranslateOption {
 
 // WithDefaultClient creates a new Google Translate client with the API key from the viper.
 func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
-	return func(g *GoogleTranslate) error {
+	return func(g *googleTranslate) error {
 		var err error
 
 		apiKey := viper.GetString("translate_services.google_translate.api_key")
@@ -70,8 +73,8 @@ func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
 func NewGoogleTranslate(
 	ctx context.Context,
 	opts ...GoogleTranslateOption,
-) (gt *GoogleTranslate, closer func() error, err error) {
-	gt = &GoogleTranslate{}
+) (gt *googleTranslate, closer func() error, err error) {
+	gt = &googleTranslate{}
 
 	for _, opt := range opts {
 		if optErr := opt(gt); optErr != nil {
@@ -86,4 +89,49 @@ func NewGoogleTranslate(
 	}
 
 	return gt, gt.client.Close, nil
+}
+
+// --------------------Methods--------------------
+
+func (g *googleTranslate) Translate(
+	ctx context.Context,
+	messages *model.Messages,
+	targetLang language.Tag,
+) (*model.Messages, error) {
+	if err := validateTranslate(messages, targetLang); err != nil {
+		return nil, fmt.Errorf("google translate: validate translate request: %w", err)
+	}
+
+	translatedMessages := model.Messages{
+		Language: targetLang,
+		Messages: make([]model.Message, 0, len(messages.Messages)),
+	}
+
+	targetTexts := make([]string, 0, len(messages.Messages))
+	for _, m := range messages.Messages {
+		targetTexts = append(targetTexts, m.Message)
+	}
+
+	// Set source language if defined, otherwise let Google Translate detect it.
+	opts := &translate.Options{}
+	if messages.Language != language.Und {
+		opts = &translate.Options{Source: messages.Language}
+	}
+
+	translations, err := g.client.Translate(ctx, targetTexts, targetLang, opts)
+	if err != nil {
+		return nil, fmt.Errorf("google translate client: translate: %w", err)
+	}
+
+	for i, t := range translations {
+		translatedMessages.Messages = append(translatedMessages.Messages, model.Message{
+			ID:          messages.Messages[i].ID,
+			PluralID:    messages.Messages[i].PluralID,
+			Description: messages.Messages[i].Description,
+			Message:     t.Text,
+			Fuzzy:       true,
+		})
+	}
+
+	return &translatedMessages, nil
 }

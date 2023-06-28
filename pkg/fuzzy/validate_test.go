@@ -1,10 +1,9 @@
-package common
+package fuzzy
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.expect.digital/translate/pkg/fuzzy/translatetest"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -20,7 +19,7 @@ func Test_ValidateTranslate(t *testing.T) {
 	}{
 		{
 			name:        "Valid input",
-			messages:    translatetest.RandMessages(5, language.English),
+			messages:    randMessages(5, language.English),
 			targetLang:  language.Latvian,
 			expectedErr: nil,
 		},
@@ -28,19 +27,19 @@ func Test_ValidateTranslate(t *testing.T) {
 			name:        "Nil messages",
 			messages:    nil,
 			targetLang:  language.German,
-			expectedErr: ErrNilMessages,
+			expectedErr: errNilMessages,
 		},
 		{
 			name:        "No messages",
-			messages:    translatetest.RandMessages(0, language.English),
+			messages:    randMessages(0, language.English),
 			targetLang:  language.Latvian,
-			expectedErr: ErrNoMessages,
+			expectedErr: errNoMessages,
 		},
 		{
 			name:        "Undefined target language",
-			messages:    translatetest.RandMessages(5, language.English),
+			messages:    randMessages(5, language.English),
 			targetLang:  language.Und,
-			expectedErr: ErrTargetLangUndefined,
+			expectedErr: errTargetLangUndefined,
 		},
 	}
 
@@ -49,7 +48,7 @@ func Test_ValidateTranslate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := ValidateTranslate(tt.messages, tt.targetLang)
+			err := validateTranslate(tt.messages, tt.targetLang)
 			require.ErrorIs(t, err, tt.expectedErr)
 		})
 	}

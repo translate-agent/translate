@@ -1,6 +1,6 @@
 //go:build integration
 
-package translatetest
+package fuzzy
 
 import (
 	"context"
@@ -11,20 +11,45 @@ import (
 	"testing"
 
 	"github.com/spf13/viper"
-	"go.expect.digital/translate/pkg/fuzzy"
-	"go.expect.digital/translate/pkg/fuzzy/googletranslate"
-
+	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/testutil"
+	"golang.org/x/text/language"
 )
 
+// ---–––--------------Actual Tests------------------–––---
+
+func Test_Translate(t *testing.T) {
+	t.Parallel()
+
+	allServices(t, func(t *testing.T, service TranslationService, subTest testutil.SubtestFn) {
+		subTest("Multiple messages", func(ctx context.Context, t *testing.T) {
+			messages := randMessages(3, language.English)
+
+			translatedMsgs, err := service.Translate(ctx, messages, language.Latvian)
+			require.NoError(t, err)
+
+			// Check the number of translated messages is the same as the number of input messages.
+			require.Len(t, translatedMsgs.Messages, len(messages.Messages))
+
+			// Check the translated messages are not empty and are marked as fuzzy.
+			for _, m := range translatedMsgs.Messages {
+				require.NotEmpty(t, m.Message)
+				require.True(t, m.Fuzzy)
+			}
+		})
+	})
+}
+
+// ------------------Helpers and init------------------
+
 // translators is a map of all possible translation services, e.g. Google Translate, DeepL, etc.
-var translators = map[string]fuzzy.TranslationService{
+var translators = map[string]TranslationService{
 	"GoogleTranslate": nil,
 }
 
 // initGoogleTranslate creates a new Google Translate service and adds it to the translators map.
 func initGoogleTranslate(ctx context.Context) (func() error, error) {
-	gt, closer, err := googletranslate.NewGoogleTranslate(ctx, googletranslate.WithDefaultClient(ctx))
+	gt, closer, err := NewGoogleTranslate(ctx, WithDefaultClient(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("create new Google Translate: %w", err)
 	}
@@ -32,12 +57,6 @@ func initGoogleTranslate(ctx context.Context) (func() error, error) {
 	translators["GoogleTranslate"] = gt
 
 	return closer, nil
-}
-
-func TestMain(m *testing.M) {
-	code := testMain(m)
-
-	os.Exit(code)
 }
 
 func testMain(m *testing.M) int {
@@ -76,8 +95,14 @@ func testMain(m *testing.M) int {
 	return m.Run()
 }
 
+func TestMain(m *testing.M) {
+	code := testMain(m)
+
+	os.Exit(code)
+}
+
 // allServices runs a test for each translate service that is defined in the translators map.
-func allServices(t *testing.T, f func(t *testing.T, service fuzzy.TranslationService, subtest testutil.SubtestFn)) {
+func allServices(t *testing.T, f func(t *testing.T, service TranslationService, subtest testutil.SubtestFn)) {
 	for name, service := range translators {
 		name, service := name, service
 		t.Run(name, func(t *testing.T) {
