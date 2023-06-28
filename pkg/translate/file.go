@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo/common"
 	"golang.org/x/text/language"
@@ -159,12 +160,13 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	var data []byte
+	if len(messages) == 0 {
+		messages = append(messages, model.Messages{Language: params.languageTag})
+	}
 
-	if len(messages) > 0 {
-		if data, err = MessagesToData(params.schema, messages[0]); err != nil {
-			return nil, status.Errorf(codes.Internal, "")
-		}
+	data, err := MessagesToData(params.schema, messages[0])
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "")
 	}
 
 	return &translatev1.DownloadTranslationFileResponse{Data: data}, nil
