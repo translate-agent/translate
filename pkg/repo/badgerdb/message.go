@@ -84,18 +84,18 @@ func (r *Repo) loadMessagesForLangTags(serviceID uuid.UUID, langTags []language.
 		for _, langTag := range langTags {
 			var msgs model.Messages
 
-			item, er := txn.Get(getMessagesKey(serviceID, langTag))
+			item, txErr := txn.Get(getMessagesKey(serviceID, langTag))
 			switch {
 			default:
 				if valErr := getValue(item, &msgs); valErr != nil {
-					return fmt.Errorf("get messages for language tag '%s': %w", langTag, er)
+					return fmt.Errorf("get messages for language tag '%s': %w", langTag, valErr)
 				}
 
 				messages = append(messages, msgs)
-			case errors.Is(er, badger.ErrKeyNotFound):
+			case errors.Is(txErr, badger.ErrKeyNotFound):
 				return nil // Empty messages.messages for this language (Not an error)
-			case er != nil:
-				return fmt.Errorf("transaction: get messages for language tag '%s': %w", langTag, er)
+			case txErr != nil:
+				return fmt.Errorf("transaction: get messages for language tag '%s': %w", langTag, txErr)
 			}
 		}
 
