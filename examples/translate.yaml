@@ -13,6 +13,6 @@ db:
   badgerdb:
     path: "/tmp/badgerdb"
 
-translate_services:
+other:
   google_translate:
     api_key: ""
