@@ -529,7 +529,6 @@ func Test_GetMessages_REST(t *testing.T) {
 	tests := []struct {
 		serviceID    string
 		name         string
-		query        string
 		expectedCode int
 	}{
 		{
@@ -552,10 +551,9 @@ func Test_GetMessages_REST(t *testing.T) {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
-				Scheme:   "http",
-				Host:     host + ":" + port,
-				Path:     "v1/services/" + tt.serviceID + "/messages",
-				RawQuery: tt.query,
+				Scheme: "http",
+				Host:   host + ":" + port,
+				Path:   "v1/services/" + tt.serviceID + "/messages",
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
