@@ -452,15 +452,10 @@ func Test_ListMessages_gRPC(t *testing.T) {
 	// Prepare
 	service := createService(ctx, t)
 
-	n := gofakeit.IntRange(1, 5)
-	langTags := make([]string, 0, n)
-
-	for i := 0; i < n; i++ {
+	for i := 0; i < gofakeit.IntRange(1, 5); i++ {
 		uploadRequest := randUploadRequest(t, service.Id)
 		_, err := client.UploadTranslationFile(ctx, uploadRequest)
 		require.NoError(t, err, "create test translation file")
-
-		langTags = append(langTags, uploadRequest.Language)
 	}
 
 	// Requests
@@ -478,22 +473,6 @@ func Test_ListMessages_gRPC(t *testing.T) {
 		{
 			name:         "Happy path, service doesn't exist",
 			request:      &translatev1.ListMessagesRequest{ServiceId: uuid.New().String()},
-			expectedCode: codes.OK,
-		},
-		{
-			name: "Happy path, filter language",
-			request: &translatev1.ListMessagesRequest{
-				ServiceId: service.Id,
-				Languages: []string{gofakeit.LanguageBCP()},
-			},
-			expectedCode: codes.OK,
-		},
-		{
-			name: "Happy path, filter existing languages",
-			request: &translatev1.ListMessagesRequest{
-				ServiceId: service.Id,
-				Languages: langTags,
-			},
 			expectedCode: codes.OK,
 		},
 		{

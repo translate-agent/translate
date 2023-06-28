@@ -62,7 +62,6 @@ message CreateMessagesRequest {
 
 message ListMessagesRequest {
   string service_id = 1;
-  repeated string languages = 2;
 }
 
 message ListMessagesResponse {

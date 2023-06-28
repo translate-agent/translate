@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
-	"go.expect.digital/translate/pkg/filter"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo/common"
@@ -75,8 +73,7 @@ func (t *TranslateServiceServer) CreateMessages(
 // ----------------------ListMessages-------------------------------
 
 type listMessagesParams struct {
-	languageTags []language.Tag
-	serviceID    uuid.UUID
+	serviceID uuid.UUID
 }
 
 func parseListMessagesRequestParams(req *translatev1.ListMessagesRequest) (*listMessagesParams, error) {
@@ -85,18 +82,7 @@ func parseListMessagesRequestParams(req *translatev1.ListMessagesRequest) (*list
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	// normalize REST language query parameters
-	// []string{"lv-LV,cs-CZ,he-IL"} -> []string{"lv-LV", "cs-CZ", "he-IL"}
-	if len(req.GetLanguages()) == 1 && strings.Contains(req.GetLanguages()[0], ",") {
-		req.Languages = strings.Split(req.GetLanguages()[0], ",")
-	}
-
-	langTags, err := sliceFromProto(req.GetLanguages(), langTagFromProto)
-	if err != nil {
-		return nil, fmt.Errorf("parse languages: %w", err)
-	}
-
-	return &listMessagesParams{serviceID: serviceID, languageTags: langTags}, nil
+	return &listMessagesParams{serviceID: serviceID}, nil
 }
 
 func (l *listMessagesParams) validate() error {
@@ -120,11 +106,7 @@ func (t *TranslateServiceServer) ListMessages(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	// remove duplicates & empty language tags
-	params.languageTags = filter.LanguageTags(params.languageTags)
-
-	messages, err := t.repo.LoadMessages(ctx, params.serviceID,
-		common.LoadMessagesOpts{FilterLanguages: params.languageTags})
+	messages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
