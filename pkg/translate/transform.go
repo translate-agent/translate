@@ -68,9 +68,9 @@ func sliceToProto[T any, R any](slice []T, elementToProto func(*T) *R) []*R {
 	return v
 }
 
-// sliceFromProtoPointers converts a slice of type *T to a slice of type R
+// sliceFromProto converts a slice of type *T to a slice of type R
 // using the provided elementFromProto function.
-func sliceFromProtoPointers[T any, R any](slice []*T, elementFromProto func(*T) (*R, error)) ([]R, error) {
+func sliceFromProto[T any, R any](slice []*T, elementFromProto func(*T) (*R, error)) ([]R, error) {
 	if len(slice) == 0 {
 		return nil, nil
 	}
@@ -126,7 +126,7 @@ func servicesToProto(s []model.Service) []*translatev1.Service {
 
 // servicesFromProto converts []*translatev1.Service to []model.Service.
 func servicesFromProto(s []*translatev1.Service) ([]model.Service, error) {
-	return sliceFromProtoPointers(s, serviceFromProto)
+	return sliceFromProto(s, serviceFromProto)
 }
 
 // ----------------------Message----------------------
