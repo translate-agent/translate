@@ -11,7 +11,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -521,24 +520,11 @@ func Test_GetMessages_REST(t *testing.T) {
 	// Prepare
 	service := createService(ctx, t)
 
-	n := gofakeit.IntRange(1, 5)
-	langTags := make([]string, 0, n)
-
-	for i := 0; i < n; i++ {
+	for i := 0; i < gofakeit.IntRange(1, 5); i++ {
 		uploadRequest := randUploadRequest(t, service.Id)
 		_, err := client.UploadTranslationFile(ctx, uploadRequest)
 		require.NoError(t, err, "create test translation file")
-
-		langTags = append(langTags, uploadRequest.Language)
 	}
-
-	// Requests
-
-	langTagsQuery := url.Values{}
-	langTagsQuery.Add("languages", strings.Join(langTags, ","))
-
-	langTagQuery := url.Values{}
-	langTagQuery.Add("languages", gofakeit.LanguageBCP())
 
 	tests := []struct {
 		serviceID    string
@@ -555,24 +541,6 @@ func Test_GetMessages_REST(t *testing.T) {
 			serviceID:    gofakeit.UUID(),
 			name:         "Happy path, service doesn't exist",
 			expectedCode: http.StatusOK,
-		},
-		{
-			serviceID:    service.Id,
-			name:         "Happy Path, filter language",
-			query:        langTagQuery.Encode(),
-			expectedCode: http.StatusOK,
-		},
-		{
-			serviceID:    service.Id,
-			name:         "Happy Path, filter existing languages",
-			query:        langTagsQuery.Encode(),
-			expectedCode: http.StatusOK,
-		},
-		{
-			serviceID:    service.Id,
-			name:         "Bad request, filter by unknown language format",
-			query:        gofakeit.Street(),
-			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:         "Bad request, ServiceID not provided",

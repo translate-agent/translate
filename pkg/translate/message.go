@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/filter"
@@ -28,18 +27,7 @@ func parseListMessagesRequestParams(req *translatev1.ListMessagesRequest) (*list
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	// normalize REST language query parameters
-	// []string{"lv-LV,cs-CZ,he-IL"} -> []string{"lv-LV", "cs-CZ", "he-IL"}
-	if len(req.GetLanguages()) == 1 && strings.Contains(req.GetLanguages()[0], ",") {
-		req.Languages = strings.Split(req.GetLanguages()[0], ",")
-	}
-
-	langTags, err := sliceFromProto(req.GetLanguages(), langTagFromProto)
-	if err != nil {
-		return nil, fmt.Errorf("parse languages: %w", err)
-	}
-
-	return &listMessagesParams{serviceID: serviceID, languageTags: langTags}, nil
+	return &listMessagesParams{serviceID: serviceID}, nil
 }
 
 func (l *listMessagesParams) validate() error {
@@ -66,8 +54,7 @@ func (t *TranslateServiceServer) ListMessages(
 	// remove duplicates & empty language tags
 	params.languageTags = filter.LanguageTags(params.languageTags)
 
-	messages, err := t.repo.LoadMessages(ctx, params.serviceID,
-		common.LoadMessagesOpts{FilterLanguages: params.languageTags})
+	messages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
