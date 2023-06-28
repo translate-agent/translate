@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	gtranslate "cloud.google.com/go/translate"
+	"go.expect.digital/translate/pkg/fuzzy/common"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/translate/common"
 	"golang.org/x/text/language"
 )
 

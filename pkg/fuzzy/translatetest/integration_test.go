@@ -11,14 +11,14 @@ import (
 	"testing"
 
 	"github.com/spf13/viper"
-	"go.expect.digital/translate/pkg/translate"
-	"go.expect.digital/translate/pkg/translate/googletranslate"
+	"go.expect.digital/translate/pkg/fuzzy"
+	"go.expect.digital/translate/pkg/fuzzy/googletranslate"
 
 	"go.expect.digital/translate/pkg/testutil"
 )
 
 // translators is a map of all possible translation services, e.g. Google Translate, DeepL, etc.
-var translators = map[string]translate.TranslationService{
+var translators = map[string]fuzzy.TranslationService{
 	"GoogleTranslate": nil,
 }
 
@@ -77,7 +77,7 @@ func testMain(m *testing.M) int {
 }
 
 // allServices runs a test for each translate service that is defined in the translators map.
-func allServices(t *testing.T, f func(t *testing.T, service translate.TranslationService, subtest testutil.SubtestFn)) {
+func allServices(t *testing.T, f func(t *testing.T, service fuzzy.TranslationService, subtest testutil.SubtestFn)) {
 	for name, service := range translators {
 		name, service := name, service
 		t.Run(name, func(t *testing.T) {

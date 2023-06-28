@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.expect.digital/translate/pkg/fuzzy/translatetest"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/translate/translatetest"
 	"golang.org/x/text/language"
 )
 

@@ -6,17 +6,17 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.expect.digital/translate/pkg/fuzzy"
+	"go.expect.digital/translate/pkg/fuzzy/googletranslate"
+	"go.expect.digital/translate/pkg/fuzzy/translatetest/mock"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/translate"
-	"go.expect.digital/translate/pkg/translate/googletranslate"
-	"go.expect.digital/translate/pkg/translate/translatetest/mock"
 	"golang.org/x/text/language"
 )
 
-var mockTranslators map[string]translate.TranslationService
+var mockTranslators map[string]fuzzy.TranslationService
 
 func init() {
-	mockTranslators = make(map[string]translate.TranslationService, len(translate.SupportedServices))
+	mockTranslators = make(map[string]fuzzy.TranslationService, len(fuzzy.SupportedServices))
 
 	// Google Translate
 	gt, _, _ := googletranslate.NewGoogleTranslate(
@@ -29,7 +29,7 @@ func init() {
 }
 
 // allMocks runs a test function f for each mocked translate service that is defined in the mockTranslators map.
-func allMocks(t *testing.T, f func(t *testing.T, mock translate.TranslationService)) {
+func allMocks(t *testing.T, f func(t *testing.T, mock fuzzy.TranslationService)) {
 	for name, mock := range mockTranslators {
 		name, mock := name, mock
 		t.Run(name, func(t *testing.T) {
@@ -43,7 +43,7 @@ func allMocks(t *testing.T, f func(t *testing.T, mock translate.TranslationServi
 func Test_TranslateMock(t *testing.T) {
 	t.Parallel()
 
-	allMocks(t, func(t *testing.T, mock translate.TranslationService) {
+	allMocks(t, func(t *testing.T, mock fuzzy.TranslationService) {
 		tests := []struct {
 			targetLang  language.Tag
 			expectedErr error
