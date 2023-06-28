@@ -6,10 +6,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"go.expect.digital/translate/pkg/filter"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo/common"
-	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -17,8 +15,7 @@ import (
 // ----------------------ListMessages-------------------------------
 
 type listMessagesParams struct {
-	languageTags []language.Tag
-	serviceID    uuid.UUID
+	serviceID uuid.UUID
 }
 
 func parseListMessagesRequestParams(req *translatev1.ListMessagesRequest) (*listMessagesParams, error) {
@@ -50,9 +47,6 @@ func (t *TranslateServiceServer) ListMessages(
 	if err = params.validate(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
-
-	// remove duplicates & empty language tags
-	params.languageTags = filter.LanguageTags(params.languageTags)
 
 	messages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
 	if err != nil {
