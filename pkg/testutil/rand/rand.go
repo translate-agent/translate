@@ -5,12 +5,12 @@ import (
 	"golang.org/x/text/language"
 )
 
-// Language returns a random language tag.
+// Language returns a random language.
 func Language() language.Tag {
 	return language.MustParse(gofakeit.LanguageBCP())
 }
 
-// Languages returns a slice of n random unique language tags.
+// Languages returns a slice of n random unique languages.
 func Languages(n uint) []language.Tag {
 	languagesUsed := make(map[language.Tag]bool, n)
 	tags := make([]language.Tag, 0, n)

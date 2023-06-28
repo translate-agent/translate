@@ -47,7 +47,7 @@ func languagesFromProto(s string) (language.Tag, error) {
 
 	l, err := language.Parse(s)
 	if err != nil {
-		return language.Und, fmt.Errorf("parse language tag: %w", err)
+		return language.Und, fmt.Errorf("parse language: %w", err)
 	}
 
 	return l, nil

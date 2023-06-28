@@ -56,26 +56,26 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 		return nil, fmt.Errorf("repo: load service: %w", err)
 	}
 
-	// load all messages if language tags are not provided.
+	// load all messages if languages are not provided.
 	if len(opts.FilterLanguages) == 0 {
 		messages, err := r.loadMessages(serviceID)
 		if err != nil {
-			return nil, fmt.Errorf("load all messages for service '%s': %w", serviceID, err)
+			return nil, fmt.Errorf("load messages by service '%s': %w", serviceID, err)
 		}
 
 		return messages, nil
 	}
 
-	// load messages based on provided language tags.
+	// load messages based on provided languages.
 	messages, err := r.loadMessagesByLang(serviceID, opts.FilterLanguages)
 	if err != nil {
-		return nil, fmt.Errorf("load messages for language tags: %w", err)
+		return nil, fmt.Errorf("load messages by languages: %w", err)
 	}
 
 	return messages, nil
 }
 
-// loadMessagesByLang returns messages for service based on provided language tags.
+// loadMessagesByLang returns messages for service based on provided languages.
 func (r *Repo) loadMessagesByLang(serviceID uuid.UUID, languages []language.Tag,
 ) ([]model.Messages, error) {
 	messages := make([]model.Messages, 0, len(languages))
@@ -88,14 +88,14 @@ func (r *Repo) loadMessagesByLang(serviceID uuid.UUID, languages []language.Tag,
 			switch {
 			default:
 				if valErr := getValue(item, &msgs); valErr != nil {
-					return fmt.Errorf("get messages for language tag '%s': %w", lang, valErr)
+					return fmt.Errorf("get messages by language '%s': %w", lang, valErr)
 				}
 
 				messages = append(messages, msgs)
 			case errors.Is(txErr, badger.ErrKeyNotFound):
 				return nil // Empty messages.messages for this language (Not an error)
 			case txErr != nil:
-				return fmt.Errorf("transaction: get messages for language tag '%s': %w", lang, txErr)
+				return fmt.Errorf("transaction: get messages by language '%s': %w", lang, txErr)
 			}
 		}
 
