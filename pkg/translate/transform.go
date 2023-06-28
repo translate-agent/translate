@@ -165,9 +165,28 @@ func messageToProto(m *model.Message) *translatev1.Message {
 	}
 }
 
+// messageFromProto converts *translatev1.Message to *model.Message.
+func messageFromProto(m *translatev1.Message) (*model.Message, error) {
+	if m == nil {
+		return nil, nil
+	}
+
+	return &model.Message{
+		ID:          m.Id,
+		Message:     m.Message,
+		Description: m.Description,
+		Fuzzy:       m.Fuzzy,
+	}, nil
+}
+
 // messageSliceToProto converts []model.Message to []*translatev1.Message.
 func messageSliceToProto(m []model.Message) []*translatev1.Message {
 	return sliceToProto(m, messageToProto)
+}
+
+// messageSliceFromProto converts []*translatev1.Message to []model.Message.
+func messageSliceFromProto(m []*translatev1.Message) ([]model.Message, error) {
+	return sliceFromProtoPointers(m, messageFromProto)
 }
 
 // ----------------------Messages----------------------
@@ -182,6 +201,28 @@ func messagesToProto(m *model.Messages) *translatev1.Messages {
 		Language: langTagToProto(m.Language),
 		Messages: messageSliceToProto(m.Messages),
 	}
+}
+
+// messagesFromProto converts *translatev1.Messages to *model.Messages.
+func messagesFromProto(m *translatev1.Messages) (*model.Messages, error) {
+	if m == nil {
+		return nil, nil
+	}
+
+	var (
+		err  error
+		msgs = &model.Messages{}
+	)
+
+	if msgs.Language, err = langTagFromProto(m.Language); err != nil {
+		return nil, fmt.Errorf("transform language tag: %w", err)
+	}
+
+	if msgs.Messages, err = messageSliceFromProto(m.Messages); err != nil {
+		return nil, fmt.Errorf("transform messages: %w", err)
+	}
+
+	return msgs, nil
 }
 
 // messagesSliceToProto converts []model.Messages to []*translatev1.Messages.

@@ -40,7 +40,7 @@ func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.T
 	data, err := translate.MessagesToData(schema, messages)
 	require.NoError(t, err, "convert rand messages to serialized data")
 
-	return data, lang
+	return data, messages.Language
 }
 
 func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTranslationFileRequest {
@@ -419,6 +419,31 @@ func Test_ListServices_gRPC(t *testing.T) {
 
 // ------------------Messages------------------
 
+func randMessages(t *testing.T) *translatev1.Messages {
+	t.Helper()
+
+	n := gofakeit.IntRange(1, 5)
+	lang := language.MustParse(gofakeit.LanguageBCP())
+
+	msgs := &translatev1.Messages{
+		Language: lang.String(),
+		Messages: make([]*translatev1.Message, 0, n),
+	}
+
+	for i := 0; i < n; i++ {
+		message := &translatev1.Message{
+			Id:          gofakeit.SentenceSimple(),
+			Message:     gofakeit.SentenceSimple(),
+			Description: gofakeit.SentenceSimple(),
+			Fuzzy:       gofakeit.Bool(),
+		}
+
+		msgs.Messages = append(msgs.Messages, message)
+	}
+
+	return msgs
+}
+
 func Test_ListMessages_gRPC(t *testing.T) {
 	t.Parallel()
 
@@ -485,6 +510,52 @@ func Test_ListMessages_gRPC(t *testing.T) {
 
 			if err == nil {
 				require.NotNil(t, resp)
+			}
+
+			assert.Equal(t, tt.expectedCode, status.Code(err))
+		})
+	}
+}
+
+func Test_CreateMessages_gRPC(t *testing.T) {
+	t.Parallel()
+
+	_, subtest := testutil.Trace(t)
+
+	// Prepare
+	service := randService()
+
+	msgs := randMessages(t)
+
+	tests := []struct {
+		request      *translatev1.CreateMessagesRequest
+		name         string
+		expectedCode codes.Code
+	}{
+		{
+			name:         "Happy path With ID",
+			request:      &translatev1.CreateMessagesRequest{ServiceId: service.Id, Messages: msgs},
+			expectedCode: codes.OK,
+		},
+		// {
+		// 	name:         "Happy path With ID",
+		// 	request:      &translatev1.CreateMessagesRequest{ServiceId: service.Id},
+		// 	expectedCode: codes.OK,
+		// },
+		// {
+		// 	name:         "Invalid argument, missing service ID",
+		// 	request:      &translatev1.CreateMessagesRequest{ServiceId: ""},
+		// 	expectedCode: codes.OK,
+		// },
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			msgs, err := client.CreateMessages(ctx, tt.request)
+
+			if err == nil {
+				require.NotEmpty(t, msgs)
 			}
 
 			assert.Equal(t, tt.expectedCode, status.Code(err))
