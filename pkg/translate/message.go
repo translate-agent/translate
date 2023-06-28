@@ -63,6 +63,12 @@ func (t *TranslateServiceServer) CreateMessages(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
+	if msgs, err := t.repo.LoadMessages(ctx, params.serviceID,
+		common.LoadMessagesOpts{FilterLanguages: []language.Tag{params.messages.Language}},
+	); err != nil {
+
+	}
+
 	if err := t.repo.SaveMessages(ctx, params.serviceID, params.messages); err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
