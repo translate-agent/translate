@@ -40,7 +40,7 @@ func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.T
 	data, err := translate.MessagesToData(schema, messages)
 	require.NoError(t, err, "convert rand messages to serialized data")
 
-	return data, messages.Language
+	return data, lang
 }
 
 func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTranslationFileRequest {
