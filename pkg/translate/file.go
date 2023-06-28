@@ -159,13 +159,12 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if len(messages) == 0 {
-		return nil, status.Errorf(codes.NotFound, "")
-	}
+	var data []byte
 
-	data, err := MessagesToData(params.schema, messages[0])
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "")
+	if len(messages) > 0 {
+		if data, err = MessagesToData(params.schema, messages[0]); err != nil {
+			return nil, status.Errorf(codes.Internal, "")
+		}
 	}
 
 	return &translatev1.DownloadTranslationFileResponse{Data: data}, nil

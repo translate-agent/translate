@@ -192,14 +192,14 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 			expectedCode: codes.OK,
 		},
 		{
-			name:         "File not found, no messages with language",
+			name:         "Happy path no messages with language",
 			request:      happyReqNoMessagesLanguage,
-			expectedCode: codes.NotFound,
+			expectedCode: codes.OK,
 		},
 		{
-			name:         "File not found, no messages with Service ID",
+			name:         "Happy path no messages with Service ID",
 			request:      happyReqNoMessagesServiceID,
-			expectedCode: codes.NotFound,
+			expectedCode: codes.OK,
 		},
 		{
 			name:         "Invalid argument unspecified schema",
