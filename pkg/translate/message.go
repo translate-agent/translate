@@ -35,16 +35,20 @@ func parseCreateMessagesRequestParams(req *translatev1.CreateMessagesRequest) (*
 		return nil, fmt.Errorf("parse messages: %w", err)
 	}
 
-	if p.messages.Language == language.Und {
-		return nil, fmt.Errorf("invalid messages: %w", errors.New("'language' is required"))
-	}
-
 	return p, nil
 }
 
 func (c *createMessagesParams) validate() error {
 	if c.serviceID == uuid.Nil {
 		return errors.New("'service_id' is required")
+	}
+
+	if c.messages == nil {
+		return errors.New("'messages' are required")
+	}
+
+	if c.messages.Language == language.Und {
+		return fmt.Errorf("invalid messages: %w", errors.New("'language' is required"))
 	}
 
 	return nil
@@ -63,13 +67,19 @@ func (t *TranslateServiceServer) CreateMessages(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	if msgs, err := t.repo.LoadMessages(ctx, params.serviceID,
-		common.LoadMessagesOpts{FilterLanguages: []language.Tag{params.messages.Language}},
-	); err != nil {
-
+	msgs, err := t.repo.LoadMessages(ctx, params.serviceID,
+		common.LoadMessagesOpts{FilterLanguages: []language.Tag{params.messages.Language}})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if err := t.repo.SaveMessages(ctx, params.serviceID, params.messages); err != nil {
+	if len(msgs) > 0 {
+		return nil, status.Errorf(codes.AlreadyExists, "messages already exist for language: '%s'", params.messages.Language)
+	}
+
+	if err := t.repo.SaveMessages(ctx, params.serviceID, params.messages); errors.Is(err, common.ErrNotFound) {
+		return nil, status.Errorf(codes.NotFound, "service not found")
+	} else if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 

@@ -214,14 +214,14 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 		},
 
 		{
-			name:         "File not found, no messages with language",
+			name:         "Happy path no messages with language",
 			request:      happyReqNoMessagesLanguage,
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "File not found, no messages with Service ID",
+			name:         "Happy path no messages with Service ID",
 			request:      happyReqNoMessagesServiceID,
-			expectedCode: http.StatusNotFound,
+			expectedCode: http.StatusOK,
 		},
 		{
 			name:         "Bad request unspecified schema",

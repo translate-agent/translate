@@ -192,14 +192,14 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 			expectedCode: codes.OK,
 		},
 		{
-			name:         "File not found, no messages with language",
+			name:         "Happy path no messages with language",
 			request:      happyReqNoMessagesLanguage,
-			expectedCode: codes.NotFound,
+			expectedCode: codes.OK,
 		},
 		{
-			name:         "File not found, no messages with Service ID",
+			name:         "Happy path no messages with Service ID",
 			request:      happyReqNoMessagesServiceID,
-			expectedCode: codes.NotFound,
+			expectedCode: codes.OK,
 		},
 		{
 			name:         "Invalid argument unspecified schema",
@@ -499,12 +499,14 @@ func Test_ListMessages_gRPC(t *testing.T) {
 func Test_CreateMessages_gRPC(t *testing.T) {
 	t.Parallel()
 
-	_, subtest := testutil.Trace(t)
+	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
-	service := randService()
-
-	msgs := randMessages(t)
+	service := createService(ctx, t)
+	serviceWithMsgs := createService(ctx, t)
+	uploadReq := randUploadRequest(t, serviceWithMsgs.Id)
+	_, err := client.UploadTranslationFile(ctx, uploadReq)
+	require.NoError(t, err, "create test translation file")
 
 	tests := []struct {
 		request      *translatev1.CreateMessagesRequest
@@ -512,29 +514,57 @@ func Test_CreateMessages_gRPC(t *testing.T) {
 		expectedCode codes.Code
 	}{
 		{
-			name:         "Happy path With ID",
-			request:      &translatev1.CreateMessagesRequest{ServiceId: service.Id, Messages: msgs},
+			name:         "Happy path, create messages",
+			request:      &translatev1.CreateMessagesRequest{ServiceId: service.Id, Messages: randMessages(t)},
 			expectedCode: codes.OK,
 		},
-		// {
-		// 	name:         "Happy path With ID",
-		// 	request:      &translatev1.CreateMessagesRequest{ServiceId: service.Id},
-		// 	expectedCode: codes.OK,
-		// },
-		// {
-		// 	name:         "Invalid argument, missing service ID",
-		// 	request:      &translatev1.CreateMessagesRequest{ServiceId: ""},
-		// 	expectedCode: codes.OK,
-		// },
+		{
+			name: "Happy path, empty messages.messages",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: service.Id,
+				Messages:  &translatev1.Messages{Language: gofakeit.LanguageBCP()},
+			},
+			expectedCode: codes.OK,
+		},
+		{
+			name: "Not found, service not found",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: gofakeit.UUID(),
+				Messages:  randMessages(t),
+			},
+			expectedCode: codes.NotFound,
+		},
+		{
+			name:         "Invalid argument, messages not provided",
+			request:      &translatev1.CreateMessagesRequest{ServiceId: service.Id},
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Invalid argument, messages.language not provided",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: service.Id,
+				Messages:  &translatev1.Messages{Language: ""},
+			},
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Already exists, messages already exist for service and language",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: serviceWithMsgs.Id,
+				Messages: &translatev1.Messages{
+					Language: uploadReq.Language,
+				},
+			},
+			expectedCode: codes.AlreadyExists,
+		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			msgs, err := client.CreateMessages(ctx, tt.request)
-
-			if err == nil {
-				require.NotEmpty(t, msgs)
+			if err != nil {
+				require.Nil(t, msgs)
 			}
 
 			assert.Equal(t, tt.expectedCode, status.Code(err))
