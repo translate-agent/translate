@@ -21,7 +21,7 @@ import (
 // This interface helps to mock the Google Translate client in unit tests.
 // https://pkg.go.dev/cloud.google.com/go/translate#Client
 type googleClient interface {
-	Translate(ctx context.Context, inputs []string, target language.Tag, opts *translate.Options) ([]translate.Translation, error) //nolint:lll
+	Translate(context.Context, []string, language.Tag, *translate.Options) ([]translate.Translation, error)
 	io.Closer
 }
 
