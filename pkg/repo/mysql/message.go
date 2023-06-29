@@ -102,11 +102,13 @@ ON DUPLICATE KEY UPDATE
 
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts,
 ) ([]model.Messages, error) {
-	rows, err := sq.RunWith(r.db).
+	rows, err := sq.
 		Select("mm.id, mm.message, mm.description, mm.fuzzy, m.language").
-		From("message_message mm").Join("message m ON m.id = mm.message_id").
+		From("message_message mm").
+		Join("message m ON m.id = mm.message_id").
 		Where("m.service_id = UUID_TO_BIN(?)", serviceID).
-		Where(make(eb).in("m.language", langTagsToStringSlice(opts.FilterLanguages)).eq()).
+		Where(eq("m.language", langToStringSlice(opts.FilterLanguages))).
+		RunWith(r.db).
 		QueryContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("repo: query messages: %w", err)
@@ -135,9 +137,9 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 
 	messages := make([]model.Messages, 0, len(messagesLookup))
 
-	for langTag, msgs := range messagesLookup {
+	for lang, msgs := range messagesLookup {
 		messages = append(messages, model.Messages{
-			Language: language.MustParse(langTag),
+			Language: language.MustParse(lang),
 			Messages: msgs,
 		})
 	}
@@ -147,10 +149,10 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 
 // helpers
 
-func langTagsToStringSlice(langTags []language.Tag) []string {
-	lt := make([]string, 0, len(langTags))
-	for _, langTag := range langTags {
-		lt = append(lt, langTag.String())
+func langToStringSlice(languages []language.Tag) []string {
+	lt := make([]string, 0, len(languages))
+	for _, lang := range languages {
+		lt = append(lt, lang.String())
 	}
 
 	return lt

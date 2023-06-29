@@ -97,15 +97,18 @@ service TranslateService {
   rpc GetService(GetServiceRequest) returns (Service) {
     option (google.api.http) = {get: "/v1/services/{id}"};
   }
+
   rpc ListServices(ListServicesRequest) returns (ListServicesResponse) {
     option (google.api.http) = {get: "/v1/services"};
   }
+
   rpc CreateService(CreateServiceRequest) returns (Service) {
     option (google.api.http) = {
       post: "/v1/services"
       body: "service"
     };
   }
+
   rpc UpdateService(UpdateServiceRequest) returns (Service) {
     option (google.api.http) = {
       put: "/v1/services/{service.id}"
@@ -137,6 +140,7 @@ service TranslateService {
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {put: "/v1/services/{service_id}/files/{language}"};
   }
+
   rpc DownloadTranslationFile(DownloadTranslationFileRequest) returns (DownloadTranslationFileResponse) {
     option (google.api.http) = {get: "/v1/services/{service_id}/files/{language}"};
   }

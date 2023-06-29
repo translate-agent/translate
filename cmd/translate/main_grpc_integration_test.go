@@ -457,7 +457,7 @@ func Test_CreateMessages_gRPC(t *testing.T) {
 
 	// Prepare
 	service := createService(ctx, t)
-	langs := rand.Langs(2)
+	langs := rand.Languages(2)
 
 	serviceWithMsgs := createService(ctx, t)
 	uploadReq := randUploadRequest(t, serviceWithMsgs.Id)
