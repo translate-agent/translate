@@ -13,6 +13,7 @@ import (
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/rand"
 	"go.expect.digital/translate/pkg/translate"
 	"golang.org/x/text/language"
 	"google.golang.org/genproto/protobuf/field_mask"
@@ -418,6 +419,122 @@ func Test_ListServices_gRPC(t *testing.T) {
 }
 
 // ------------------Messages------------------
+
+func randMessages(t *testing.T, override *translatev1.Messages) *translatev1.Messages {
+	t.Helper()
+
+	lang := gofakeit.LanguageBCP()
+	if override != nil {
+		lang = override.Language
+	}
+
+	n := gofakeit.IntRange(1, 5)
+
+	msgs := &translatev1.Messages{
+		Language: lang,
+		Messages: make([]*translatev1.Message, 0, n),
+	}
+
+	for i := 0; i < n; i++ {
+		message := &translatev1.Message{
+			Id:          gofakeit.SentenceSimple(),
+			Message:     gofakeit.SentenceSimple(),
+			Description: gofakeit.SentenceSimple(),
+			Fuzzy:       gofakeit.Bool(),
+		}
+
+		msgs.Messages = append(msgs.Messages, message)
+	}
+
+	return msgs
+}
+
+func Test_CreateMessages_gRPC(t *testing.T) {
+	t.Parallel()
+
+	ctx, subtest := testutil.Trace(t)
+
+	// Prepare
+	service := createService(ctx, t)
+	langs := rand.Languages(2)
+
+	serviceWithMsgs := createService(ctx, t)
+	uploadReq := randUploadRequest(t, serviceWithMsgs.Id)
+	_, err := client.UploadTranslationFile(ctx, uploadReq)
+	require.NoError(t, err, "create test translation file")
+
+	tests := []struct {
+		request      *translatev1.CreateMessagesRequest
+		name         string
+		expectedCode codes.Code
+	}{
+		{
+			name: "Happy path, create messages",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: service.Id,
+				Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+			},
+			expectedCode: codes.OK,
+		},
+		{
+			name: "Happy path, empty messages.messages",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: service.Id,
+				Messages: &translatev1.Messages{
+					Language: langs[1].String(),
+				},
+			},
+			expectedCode: codes.OK,
+		},
+		{
+			name: "Not found, service not found",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: gofakeit.UUID(),
+				Messages:  randMessages(t, nil),
+			},
+			expectedCode: codes.NotFound,
+		},
+		{
+			name: "Invalid argument, messages not provided",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: service.Id,
+			},
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Invalid argument, messages.language not provided",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: service.Id,
+				Messages: &translatev1.Messages{
+					Language: "",
+				},
+			},
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Already exists, service already has messages for specified language",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: serviceWithMsgs.Id,
+				Messages: &translatev1.Messages{
+					Language: uploadReq.Language,
+				},
+			},
+			expectedCode: codes.AlreadyExists,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			msgs, err := client.CreateMessages(ctx, tt.request)
+			if err != nil {
+				require.Nil(t, msgs)
+			}
+
+			assert.Equal(t, tt.expectedCode, status.Code(err))
+		})
+	}
+}
 
 func Test_ListMessages_gRPC(t *testing.T) {
 	t.Parallel()
