@@ -34,7 +34,7 @@ func initMysql(ctx context.Context) error {
 
 // initBadgerDB creates a new BadgerDB repo and adds it to the repos map.
 func initBadgerDB() error {
-	repo, err := badgerdb.NewRepo(badgerdb.WithInMemoryDB())
+	repo, err := badgerdb.NewRepo(badgerdb.WithDefaultDB())
 	if err != nil {
 		return fmt.Errorf("create new badgerdb repo: %w", err)
 	}

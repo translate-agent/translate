@@ -80,12 +80,12 @@ func FromArb(data []byte) (model.Messages, error) {
 			return language.Tag{}, fmt.Errorf("unsupported value type '%T' for key '@@locale'", locale)
 		}
 
-		langTag, err := language.Parse(langString)
+		lang, err := language.Parse(langString)
 		if err != nil {
 			return language.Tag{}, fmt.Errorf("parse language: %w", err)
 		}
 
-		return langTag, nil
+		return lang, nil
 	}
 
 	lang, err := findLocale()
