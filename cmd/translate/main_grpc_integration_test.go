@@ -420,19 +420,18 @@ func Test_ListServices_gRPC(t *testing.T) {
 
 // ------------------Messages------------------
 
-func randMessages(t *testing.T, override *language.Tag) *translatev1.Messages {
+func randMessages(t *testing.T, override *translatev1.Messages) *translatev1.Messages {
 	t.Helper()
 
-	lang := language.MustParse(gofakeit.LanguageBCP())
-
+	lang := gofakeit.LanguageBCP()
 	if override != nil {
-		lang = *override
+		lang = override.Language
 	}
 
 	n := gofakeit.IntRange(1, 5)
 
 	msgs := &translatev1.Messages{
-		Language: lang.String(),
+		Language: lang,
 		Messages: make([]*translatev1.Message, 0, n),
 	}
 
@@ -473,7 +472,7 @@ func Test_CreateMessages_gRPC(t *testing.T) {
 			name: "Happy path, create messages",
 			request: &translatev1.CreateMessagesRequest{
 				ServiceId: service.Id,
-				Messages:  randMessages(t, &langs[0]),
+				Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
 			},
 			expectedCode: codes.OK,
 		},

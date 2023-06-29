@@ -537,7 +537,7 @@ func Test_CreateMessages_REST(t *testing.T) {
 		{
 			name:         "Happy path, create messages",
 			serviceID:    service.Id,
-			messages:     randMessages(t, &langs[0]),
+			messages:     randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
 			expectedCode: http.StatusOK,
 		},
 		{
