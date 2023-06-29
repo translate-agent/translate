@@ -16,8 +16,8 @@ import (
 
 const messagesPrefix = "messages:"
 
-// getMessagesKey converts a serviceID and language to a BadgerDB key with prefix.
-func getMessagesKey(serviceID uuid.UUID, language language.Tag) []byte {
+// messagesKey converts a serviceID and language to a BadgerDB key with prefix.
+func messagesKey(serviceID uuid.UUID, language language.Tag) []byte {
 	return []byte(fmt.Sprintf("%s%s:%s", messagesPrefix, serviceID, language))
 }
 
@@ -34,7 +34,7 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 			return fmt.Errorf("marshal messages: %w", err)
 		}
 
-		if setErr := txn.Set(getMessagesKey(serviceID, messages.Language), val); setErr != nil {
+		if setErr := txn.Set(messagesKey(serviceID, messages.Language), val); setErr != nil {
 			return fmt.Errorf("transaction: set messages: %w", err)
 		}
 
@@ -84,7 +84,7 @@ func (r *Repo) loadMessagesByLang(serviceID uuid.UUID, languages []language.Tag,
 		for _, lang := range languages {
 			var msgs model.Messages
 
-			item, txErr := txn.Get(getMessagesKey(serviceID, lang))
+			item, txErr := txn.Get(messagesKey(serviceID, lang))
 			switch {
 			default:
 				if valErr := getValue(item, &msgs); valErr != nil {

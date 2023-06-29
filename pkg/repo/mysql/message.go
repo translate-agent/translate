@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo/common"
@@ -102,12 +103,13 @@ ON DUPLICATE KEY UPDATE
 
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts,
 ) ([]model.Messages, error) {
-	rows, err := sq.RunWith(r.db).
+	rows, err := sq.
 		Select("mm.id, mm.message, mm.description, mm.fuzzy, m.language").
 		From("message_message mm").
 		Join("message m ON m.id = mm.message_id").
 		Where("m.service_id = UUID_TO_BIN(?)", serviceID).
-		Where(make(eb).in("m.language", langToStringSlice(opts.FilterLanguages)).eq()).
+		Where(eq("m.language", langToStringSlice(opts.FilterLanguages))).
+		RunWith(r.db).
 		QueryContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("repo: query messages: %w", err)
