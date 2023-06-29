@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
+	"go.expect.digital/translate/pkg/repo/common"
 	"golang.org/x/text/language"
 )
 
@@ -99,36 +101,60 @@ ON DUPLICATE KEY UPDATE
 	return nil
 }
 
-func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, language language.Tag) (*model.Messages, error) {
-	messages := &model.Messages{Language: language}
-
-	rows, err := r.db.QueryContext(
-		ctx,
-		`SELECT mm.id, mm.message, mm.description, mm.fuzzy
-FROM message_message mm
-JOIN message m ON m.id = mm.message_id
-WHERE m.service_id = UUID_TO_BIN(?) AND m.language = ?`,
-		serviceID,
-		language.String(),
-	)
+func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts,
+) ([]model.Messages, error) {
+	rows, err := sq.
+		Select("mm.id, mm.message, mm.description, mm.fuzzy, m.language").
+		From("message_message mm").
+		Join("message m ON m.id = mm.message_id").
+		Where("m.service_id = UUID_TO_BIN(?)", serviceID).
+		Where(eq("m.language", langToStringSlice(opts.FilterLanguages))).
+		RunWith(r.db).
+		QueryContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("repo: query messages: %w", err)
 	}
 
 	defer rows.Close()
 
+	messagesLookup := make(map[string][]model.Message)
+
 	for rows.Next() {
-		var m model.Message
-		if err := rows.Scan(&m.ID, &m.Message, &m.Description, &m.Fuzzy); err != nil {
+		var (
+			msg  model.Message
+			lang string
+		)
+
+		if err := rows.Scan(&msg.ID, &msg.Message, &msg.Description, &msg.Fuzzy, &lang); err != nil {
 			return nil, fmt.Errorf("repo: scan message: %w", err)
 		}
 
-		messages.Messages = append(messages.Messages, m)
+		messagesLookup[lang] = append(messagesLookup[lang], msg)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("repo: scan messages: %w", err)
 	}
 
+	messages := make([]model.Messages, 0, len(messagesLookup))
+
+	for lang, msgs := range messagesLookup {
+		messages = append(messages, model.Messages{
+			Language: language.MustParse(lang),
+			Messages: msgs,
+		})
+	}
+
 	return messages, nil
+}
+
+// helpers
+
+func langToStringSlice(languages []language.Tag) []string {
+	lt := make([]string, 0, len(languages))
+	for _, lang := range languages {
+		lt = append(lt, lang.String())
+	}
+
+	return lt
 }

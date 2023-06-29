@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
-	"golang.org/x/text/language"
+	"go.expect.digital/translate/pkg/repo/common"
 )
 
 type ServicesRepo interface {
@@ -19,7 +19,7 @@ type ServicesRepo interface {
 type MessagesRepo interface {
 	// SaveMessages handles both Create and Update
 	SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *model.Messages) error
-	LoadMessages(ctx context.Context, serviceID uuid.UUID, language language.Tag) (*model.Messages, error)
+	LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts) ([]model.Messages, error)
 }
 
 type Repo interface {

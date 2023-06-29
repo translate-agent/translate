@@ -45,7 +45,7 @@ func Test_ParseUploadParams(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name:        "Malformed language tag",
+			name:        "Malformed language",
 			request:     malformedLangReq,
 			expectedErr: errors.New("parse language"),
 		},
@@ -190,7 +190,7 @@ func Test_ParseDownloadParams(t *testing.T) {
 			expectedErr: errors.New("parse service_id"),
 		},
 		{
-			name:        "Malformed language tag",
+			name:        "Malformed language",
 			request:     malformedLangTagReq,
 			expectedErr: errors.New("parse language"),
 		},
@@ -257,7 +257,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 			expectedErr: errors.New("'service_id' is required"),
 		},
 		{
-			name:        "Unspecified language tag",
+			name:        "Unspecified language",
 			params:      unspecifiedLanguageTagReq,
 			expectedErr: errors.New("'language' is required"),
 		},

@@ -72,7 +72,7 @@ func TestFromXliff2(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name: "Malformed language tag",
+			name: "Malformed language",
 			input: []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <xliff version="2.0" xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang="xyz-ZY-Latn" trgLang="fr">
   <file id="ngi18n" original="ng.template">

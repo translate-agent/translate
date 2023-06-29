@@ -42,7 +42,7 @@ func Test_TransformUUID(t *testing.T) {
 	})
 }
 
-func Test_TransformLangTag(t *testing.T) {
+func Test_TransformLanguage(t *testing.T) {
 	t.Parallel()
 
 	conf := &quick.Config{
@@ -53,7 +53,7 @@ func Test_TransformLangTag(t *testing.T) {
 	}
 
 	f := func(expectedLangTag language.Tag) bool {
-		restoredLangTag, err := langTagFromProto(langTagToProto(expectedLangTag))
+		restoredLangTag, err := languageFromProto(languageToProto(expectedLangTag))
 
 		return assert.NoError(t, err) && assert.Equal(t, expectedLangTag, restoredLangTag)
 	}
