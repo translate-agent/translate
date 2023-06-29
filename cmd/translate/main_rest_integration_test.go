@@ -508,3 +508,67 @@ func Test_ListServices_REST(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
+
+// ------------------Messages------------------
+
+// GET.
+func Test_GetMessages_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx, subtest := testutil.Trace(t)
+
+	// Prepare
+	service := createService(ctx, t)
+
+	for i := 0; i < gofakeit.IntRange(1, 5); i++ {
+		uploadRequest := randUploadRequest(t, service.Id)
+		_, err := client.UploadTranslationFile(ctx, uploadRequest)
+		require.NoError(t, err, "create test translation file")
+	}
+
+	tests := []struct {
+		serviceID    string
+		name         string
+		expectedCode int
+	}{
+		{
+			serviceID:    service.Id,
+			name:         "Happy Path, get all messages",
+			expectedCode: http.StatusOK,
+		},
+		{
+			serviceID:    gofakeit.UUID(),
+			name:         "Happy path, service doesn't exist",
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Bad request, ServiceID not provided",
+			expectedCode: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			u := url.URL{
+				Scheme: "http",
+				Host:   host + ":" + port,
+				Path:   "v1/services/" + tt.serviceID + "/messages",
+			}
+
+			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+			require.NoError(t, err, "create request")
+
+			resp, err := otelhttp.DefaultClient.Do(req)
+			require.NoError(t, err, "do request")
+
+			defer resp.Body.Close()
+
+			if err == nil {
+				require.NotEmpty(t, resp.Body)
+			}
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+		})
+	}
+}

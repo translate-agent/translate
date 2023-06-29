@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
+	"github.com/Masterminds/squirrel"
 )
 
 type Repo struct {
@@ -60,4 +62,13 @@ func NewRepo(opts ...Option) (*Repo, error) {
 	}
 
 	return r, nil
+}
+
+// eq returns empty squirrel.Eq if values is empty.
+func eq[T any](column string, values []T) squirrel.Eq {
+	if len(values) == 0 {
+		return squirrel.Eq{}
+	}
+
+	return squirrel.Eq{column: values}
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo/common"
 	"golang.org/x/text/language"
@@ -29,7 +30,7 @@ func parseUploadTranslationFileRequestParams(req *translatev1.UploadTranslationF
 		err    error
 	)
 
-	params.languageTag, err = langTagFromProto(req.GetLanguage())
+	params.languageTag, err = languageFromProto(req.GetLanguage())
 	if err != nil {
 		return nil, fmt.Errorf("parse language: %w", err)
 	}
@@ -115,7 +116,7 @@ func parseDownloadTranslationFileRequestParams(
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	params.languageTag, err = langTagFromProto(req.GetLanguage())
+	params.languageTag, err = languageFromProto(req.GetLanguage())
 	if err != nil {
 		return nil, fmt.Errorf("parse language: %w", err)
 	}
@@ -153,12 +154,17 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := t.repo.LoadMessages(ctx, params.serviceID, params.languageTag)
+	messages, err := t.repo.LoadMessages(ctx, params.serviceID,
+		common.LoadMessagesOpts{FilterLanguages: []language.Tag{params.languageTag}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	data, err := MessagesToData(params.schema, *messages)
+	if len(messages) == 0 {
+		messages = append(messages, model.Messages{Language: params.languageTag})
+	}
+
+	data, err := MessagesToData(params.schema, messages[0])
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}

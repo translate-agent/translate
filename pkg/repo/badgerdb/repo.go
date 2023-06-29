@@ -2,6 +2,7 @@ package badgerdb
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/dgraph-io/badger/v3"
 	"github.com/spf13/viper"
@@ -16,32 +17,22 @@ type option func(*Repo) error
 
 // WithDefaultDB opens a new Badger database in file system
 // with the path from global config e.g. ENV, flag or config file.
+// If path is not provided defaults to in-memory storage.
 func WithDefaultDB() option {
 	return func(r *Repo) error {
 		path := viper.GetString("db.badgerdb.path")
+		badgerOpts := badger.DefaultOptions(path)
+
 		if path == "" {
-			return fmt.Errorf("WithDefaultDB: viper: empty db.badgerdb.path")
+			log.Println("Info: badger db path not provided: defaulting to in-memory storage")
+
+			badgerOpts = badgerOpts.WithInMemory(true)
 		}
 
 		var err error
 
-		r.db, err = newDB(badger.DefaultOptions(path))
-		if err != nil {
-			return fmt.Errorf("WithDefaultDB: open badger db: %w", err)
-		}
-
-		return nil
-	}
-}
-
-// WithInMemoryDB opens a new Badger database in memory.
-func WithInMemoryDB() option {
-	return func(r *Repo) error {
-		var err error
-
-		r.db, err = newDB(badger.DefaultOptions("").WithInMemory(true))
-		if err != nil {
-			return fmt.Errorf("WithInMemoryDB: open badger db: %w", err)
+		if r.db, err = newDB(badgerOpts); err != nil {
+			return fmt.Errorf("WithDefaultDB: new badger db: %w", err)
 		}
 
 		return nil
