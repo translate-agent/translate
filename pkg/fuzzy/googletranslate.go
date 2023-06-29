@@ -25,7 +25,7 @@ type googleClient interface {
 	io.Closer
 }
 
-// googleTranslate implements the TranslationService interface.
+// googleTranslate implements the Translator interface.
 type googleTranslate struct {
 	client googleClient
 }

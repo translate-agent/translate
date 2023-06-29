@@ -21,11 +21,11 @@ import (
 func Test_Translate(t *testing.T) {
 	t.Parallel()
 
-	allServices(t, func(t *testing.T, service TranslationService, subTest testutil.SubtestFn) {
+	allTranslators(t, func(t *testing.T, translator Translator, subTest testutil.SubtestFn) {
 		subTest("Multiple messages", func(ctx context.Context, t *testing.T) {
 			messages := randMessages(3, language.English)
 
-			translatedMsgs, err := service.Translate(ctx, messages, language.Latvian)
+			translatedMsgs, err := translator.Translate(ctx, messages, language.Latvian)
 			require.NoError(t, err)
 
 			// Check the number of translated messages is the same as the number of input messages.
@@ -43,7 +43,7 @@ func Test_Translate(t *testing.T) {
 // ------------------Helpers and init------------------
 
 // translators is a map of all possible translation services, e.g. Google Translate, DeepL, etc.
-var translators = map[string]TranslationService{
+var translators = map[string]Translator{
 	"GoogleTranslate": nil,
 }
 
@@ -101,20 +101,20 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// allServices runs a test for each translate service that is defined in the translators map.
-func allServices(t *testing.T, f func(t *testing.T, service TranslationService, subtest testutil.SubtestFn)) {
-	for name, service := range translators {
-		name, service := name, service
+// allTranslators runs a test for each translate service that is defined in the translators map.
+func allTranslators(t *testing.T, f func(t *testing.T, translator Translator, subtest testutil.SubtestFn)) {
+	for name, translator := range translators {
+		name, translator := name, translator
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			if service == nil {
+			if translator == nil {
 				t.Skipf("'%s' is not initialized", name)
 			}
 
 			_, subTest := testutil.Trace(t)
 
-			f(t, service, subTest)
+			f(t, translator, subTest)
 		})
 	}
 }

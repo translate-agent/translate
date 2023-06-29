@@ -18,7 +18,7 @@ import (
 func Test_TranslateMock(t *testing.T) {
 	t.Parallel()
 
-	allMocks(t, func(t *testing.T, mock TranslationService) {
+	allMocks(t, func(t *testing.T, mock Translator) {
 		tests := []struct {
 			targetLang  language.Tag
 			expectedErr error
@@ -117,10 +117,10 @@ func (m *MockGoogleTranslateClient) Close() error { return nil }
 
 // -----------------------Helpers and init----------------------------
 
-var mockTranslators map[string]TranslationService
+var mockTranslators map[string]Translator
 
 func init() {
-	mockTranslators = make(map[string]TranslationService, len(SupportedServices))
+	mockTranslators = make(map[string]Translator, len(SupportedServices))
 
 	// Google Translate
 	gt, _, _ := NewGoogleTranslate(
@@ -132,7 +132,7 @@ func init() {
 }
 
 // allMocks runs a test function f for each mocked translate service that is defined in the mockTranslators map.
-func allMocks(t *testing.T, f func(t *testing.T, mock TranslationService)) {
+func allMocks(t *testing.T, f func(t *testing.T, mock Translator)) {
 	for name, mock := range mockTranslators {
 		name, mock := name, mock
 		t.Run(name, func(t *testing.T) {
