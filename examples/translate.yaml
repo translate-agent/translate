@@ -1,14 +1,18 @@
 service:
   port: 8080
-  host: "localhost"
+  host: "0.0.0.0"
   db: "mysql"
 
 db:
   mysql:
-    host: "localhost"
+    host: "0.0.0.0"
     port: 3306
     user: "root"
     password: ""
     database: "translate"
   badgerdb:
     path: "/tmp/badgerdb"
+
+other:
+  google_translate:
+    api_key: ""

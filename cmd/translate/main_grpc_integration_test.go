@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/server"
 	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/rand"
-	"go.expect.digital/translate/pkg/translate"
 	"golang.org/x/text/language"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
@@ -27,7 +27,7 @@ func randUploadData(t *testing.T, schema translatev1.Schema, lang language.Tag) 
 
 	messages := rand.ModelMessages(3, nil, rand.WithLanguage(lang))
 
-	data, err := translate.MessagesToData(schema, messages)
+	data, err := server.MessagesToData(schema, messages)
 	require.NoError(t, err, "convert rand messages to serialized data")
 
 	return data
