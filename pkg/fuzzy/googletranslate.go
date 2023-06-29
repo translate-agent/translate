@@ -98,8 +98,12 @@ func (g *GoogleTranslate) Translate(
 	messages *model.Messages,
 	targetLang language.Tag,
 ) (*model.Messages, error) {
-	if err := validateTranslate(messages, targetLang); err != nil {
-		return nil, fmt.Errorf("google translate: validate translate request: %w", err)
+	if messages == nil {
+		return nil, nil
+	}
+
+	if len(messages.Messages) == 0 {
+		return &model.Messages{Language: targetLang}, nil
 	}
 
 	// Extract the strings to be send to the Google Translate API.
