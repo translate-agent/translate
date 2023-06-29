@@ -236,7 +236,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		assert.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
-	t.Run("error, malformed language tag", func(t *testing.T) {
+	t.Run("error, malformed language", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
