@@ -186,7 +186,7 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		messages = append(messages, model.Messages{Language: params.languageTag})
 	}
 
-	data, err := MessagesToData(params.schema, messages[0])
+	data, err := MessagesToData(params.schema, &messages[0])
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
