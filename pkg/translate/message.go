@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.expect.digital/translate/pkg/model"
+	"golang.org/x/text/language"
 
 	"github.com/google/uuid"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
@@ -54,4 +56,86 @@ func (t *TranslateServiceServer) ListMessages(
 	}
 
 	return &translatev1.ListMessagesResponse{Messages: messagesSliceToProto(messages)}, nil
+}
+
+// ----------------------UpdateMessages-------------------------------
+
+type updateMessagesParams struct {
+	serviceID uuid.UUID
+	messages  *model.Messages
+}
+
+func parseUpdateMessagesRequestParams(req *translatev1.UpdateMessagesRequest) (*updateMessagesParams, error) {
+	serviceID, err := uuidFromProto(req.GetServiceId())
+	if err != nil {
+		return nil, fmt.Errorf("parse service_id: %w", err)
+	}
+
+	requestLanguageTag, err := language.Parse(req.GetMessages().Language)
+	if err != nil {
+		return nil, fmt.Errorf("parse language: %w", err)
+	}
+
+	messages := &model.Messages{
+		Language: requestLanguageTag,
+		Messages: make([]model.Message, len(req.GetMessages().GetMessages())),
+	}
+
+	for i, pbMsg := range req.GetMessages().GetMessages() {
+		messages.Messages[i] = model.Message{
+			ID:          pbMsg.GetId(),
+			Message:     pbMsg.GetMessage(),
+			Description: pbMsg.GetDescription(),
+			Fuzzy:       pbMsg.GetFuzzy(),
+		}
+	}
+
+	return &updateMessagesParams{serviceID: serviceID, messages: messages}, nil
+}
+
+func (u *updateMessagesParams) validate() error {
+	if u.serviceID == uuid.Nil {
+		return errors.New("'service_id' is required")
+	}
+
+	return nil
+}
+
+func (t *TranslateServiceServer) UpdateMessages(
+	ctx context.Context,
+	req *translatev1.UpdateMessagesRequest,
+) (*translatev1.UpdateMessagesResponse, error) {
+	params, err := parseUpdateMessagesRequestParams(req)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	if err = params.validate(); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	err = t.repo.SaveMessages(ctx, params.serviceID, params.messages)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to update messages: %v", err)
+	}
+
+	// Construct and return the response
+	response := &translatev1.UpdateMessagesResponse{
+		Messages: &translatev1.Messages{
+			Language: params.messages.Language.String(),
+			Messages: make([]*translatev1.Message, len(params.messages.Messages)),
+		},
+	}
+
+	for i, msg := range params.messages.Messages {
+		pbMsg := &translatev1.Message{
+			Id:          msg.ID,
+			Message:     msg.Message,
+			Description: msg.Description,
+			Fuzzy:       msg.Fuzzy,
+		}
+		response.Messages.Messages[i] = pbMsg
+	}
+
+	return response, nil
 }

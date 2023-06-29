@@ -63,6 +63,15 @@ message ListMessagesResponse {
   repeated Messages messages = 1;
 }
 
+message UpdateMessagesRequest{
+  string service_id = 1;
+  Messages messages = 2;
+}
+
+message UpdateMessagesResponse {
+  Messages messages = 1;
+}
+
 // -----------------Service requests/responses-----------------------
 
 message GetServiceRequest {
@@ -123,6 +132,13 @@ service TranslateService {
 
   rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse) {
     option (google.api.http) = {get: "/v1/services/{service_id}/messages"};
+  }
+
+  rpc UpdateMessages(UpdateMessagesRequest) returns (UpdateMessagesResponse) {
+    option (google.api.http) = {
+      put: "/v1/services/{service_id}/messages"
+      body: "messages"
+    };
   }
 
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
