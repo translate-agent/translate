@@ -53,7 +53,7 @@ func Test_TransformLanguage(t *testing.T) {
 	}
 
 	f := func(expectedLangTag language.Tag) bool {
-		restoredLangTag, err := languagesFromProto(languagesToProto(expectedLangTag))
+		restoredLangTag, err := languageFromProto(languageToProto(expectedLangTag))
 
 		return assert.NoError(t, err) && assert.Equal(t, expectedLangTag, restoredLangTag)
 	}
