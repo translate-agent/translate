@@ -112,7 +112,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	happyRequestNoLang := &translatev1.UploadTranslationFileRequest{
 		ServiceId: service.Id,
 		// NG Localize has language in the file.
-		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, randLang()),
+		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, rand.Language()),
 		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
 	}
 
@@ -209,10 +209,10 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 
 	happyReqNoMessagesServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
 
-	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
+	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, rand.Language().String())
 	// Ensure that the language is not the same as the uploaded one.
 	for happyReqNoMessagesLanguage.Language == uploadRequest.Language {
-		happyReqNoMessagesLanguage.Language = gofakeit.LanguageBCP()
+		happyReqNoMessagesLanguage.Language = rand.Language().String()
 	}
 
 	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
