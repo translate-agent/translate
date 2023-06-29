@@ -72,10 +72,11 @@ func Test_SaveMessages(t *testing.T) {
 
 				// Assure that the messages were saved correctly.
 
-				actualMessages, err := repository.LoadMessages(ctx, tt.serviceID, tt.messages.Language)
+				actualMessages, err := repository.LoadMessages(ctx, tt.serviceID,
+					common.LoadMessagesOpts{FilterLanguages: []language.Tag{tt.messages.Language}})
 				require.NoError(t, err, "Load saved messages")
 
-				testutil.EqualMessages(t, tt.messages, actualMessages)
+				testutil.EqualMessages(t, tt.messages, &actualMessages[0])
 			})
 		}
 	})
@@ -91,11 +92,11 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 		service := prepareService(testCtx, t, repository)
 
 		// Create unique languages
-		langs := rand.Langs(3)
-		messages := make([]*model.Messages, len(langs))
+		languages := rand.Languages(3)
+		messages := make([]*model.Messages, len(languages))
 
 		// Create messages for each language
-		for i, lang := range langs {
+		for i, lang := range languages {
 			messages[i] = rand.ModelMessages(3, nil, rand.WithLanguage(lang))
 		}
 
@@ -107,10 +108,11 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 
 		// Assure that all messages are saved
 		for _, m := range messages {
-			actualMessages, err := repository.LoadMessages(testCtx, service.ID, m.Language)
+			actualMessages, err := repository.LoadMessages(testCtx, service.ID,
+				common.LoadMessagesOpts{FilterLanguages: []language.Tag{m.Language}})
 			require.NoError(t, err, "Load saved messages")
 
-			testutil.EqualMessages(t, m, actualMessages)
+			testutil.EqualMessages(t, m, &actualMessages[0])
 		}
 	})
 }
@@ -142,10 +144,11 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 
 		// Assure that messages are updated
 
-		actualMessages, err := repository.LoadMessages(testCtx, service.ID, expectedMessages.Language)
+		actualMessages, err := repository.LoadMessages(testCtx, service.ID,
+			common.LoadMessagesOpts{FilterLanguages: []language.Tag{expectedMessages.Language}})
 		require.NoError(t, err, "Load updated messages")
 
-		testutil.EqualMessages(t, expectedMessages, actualMessages)
+		testutil.EqualMessages(t, expectedMessages, &actualMessages[0])
 	})
 }
 
@@ -155,7 +158,7 @@ func Test_LoadMessages(t *testing.T) {
 	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
 		testCtx, _ := testutil.Trace(t)
 
-		langs := rand.Langs(2)
+		langs := rand.Languages(2)
 		// messagesLang is the language of the messages, for Happy Path test.
 		messagesLang := langs[0]
 		// langWithNoMsgs is a different language, for No messages with language test.
@@ -171,38 +174,90 @@ func Test_LoadMessages(t *testing.T) {
 		require.NoError(t, err, "Prepare test messages")
 
 		tests := []struct {
-			expected  *model.Messages
 			language  language.Tag
 			name      string
+			expected  []model.Messages
 			serviceID uuid.UUID
 		}{
 			{
+				language:  messages.Language,
 				name:      "Happy Path",
-				expected:  messages,
+				expected:  []model.Messages{*messages},
 				serviceID: service.ID,
-				language:  messages.Language,
 			},
 			{
+				language:  messages.Language,
 				name:      "No messages with service",
+				expected:  []model.Messages{},
 				serviceID: uuid.New(),
-				language:  messages.Language,
-				expected:  &model.Messages{Language: messagesLang},
 			},
 			{
-				name:      "No messages with language",
-				serviceID: service.ID,
 				language:  langWithNoMsgs,
-				expected:  &model.Messages{Language: langWithNoMsgs},
+				name:      "No messages with language",
+				expected:  []model.Messages{},
+				serviceID: service.ID,
 			},
 		}
 
 		for _, tt := range tests {
 			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				actualMessages, err := repository.LoadMessages(ctx, tt.serviceID, tt.language)
+				actualMessages, err := repository.LoadMessages(ctx, tt.serviceID,
+					common.LoadMessagesOpts{FilterLanguages: []language.Tag{tt.language}})
 				require.NoError(t, err, "Load messages")
 
-				testutil.EqualMessages(t, tt.expected, actualMessages)
+				assert.ElementsMatch(t, tt.expected, actualMessages)
+			})
+		}
+	})
+}
+
+func Test_LoadAllMessagesForService(t *testing.T) {
+	t.Parallel()
+
+	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
+		testCtx, _ := testutil.Trace(t)
+
+		// Prepare
+
+		service := prepareService(testCtx, t, repository)
+		languages := rand.Languages(gofakeit.UintRange(1, 5))
+		messages := make([]model.Messages, 0, len(languages))
+
+		for _, lang := range languages {
+			msgs := rand.ModelMessages(1, nil, rand.WithLanguage(lang))
+			err := repository.SaveMessages(testCtx, service.ID, msgs)
+			require.NoError(t, err, "Prepare test messages")
+			messages = append(messages, *msgs)
+		}
+
+		tests := []struct {
+			name         string
+			expectedMsgs []model.Messages
+			languages    []language.Tag
+			serviceID    uuid.UUID
+		}{
+			{
+				name:         "Happy Path, all service messages",
+				expectedMsgs: messages,
+				serviceID:    service.ID,
+			},
+			{
+				name:         "Happy Path, filter by existing languages",
+				expectedMsgs: messages,
+				serviceID:    service.ID,
+				languages:    languages,
+			},
+		}
+
+		for _, tt := range tests {
+			tt := tt
+			subtest(tt.name, func(ctx context.Context, t *testing.T) {
+				actualMessages, err := repository.LoadMessages(ctx, tt.serviceID,
+					common.LoadMessagesOpts{FilterLanguages: tt.languages})
+
+				require.NoError(t, err, "Load messages")
+				assert.ElementsMatch(t, actualMessages, tt.expectedMsgs)
 			})
 		}
 	})

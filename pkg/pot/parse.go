@@ -66,7 +66,7 @@ func TokensToPo(tokens []Token) (Po, error) {
 		case HeaderLanguage:
 			headerLang, err := language.Parse(token.Value)
 			if err != nil {
-				return Po{}, fmt.Errorf("invalid language tag: %w", err)
+				return Po{}, fmt.Errorf("invalid language: %w", err)
 			}
 
 			header.Language = headerLang
