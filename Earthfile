@@ -3,9 +3,9 @@ VERSION 0.7
 ARG --global USERARCH # Arch of the user running the build
 
 ARG --global go_version=1.20.5
-ARG --global golangci_lint_version=1.53.2
-ARG --global bufbuild_version=1.21.0
-ARG --global migrate_version=4.16.1
+ARG --global golangci_lint_version=1.53.3
+ARG --global bufbuild_version=1.22.0
+ARG --global migrate_version=4.16.2
 ARG --global sqlfluff_version=2.1.1
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
@@ -49,6 +49,14 @@ proto:
   RUN rm gen/proto/go/translate/v1/translate.pb.gw.go.bak
   SAVE ARTIFACT . proto
   SAVE ARTIFACT gen/proto/go/translate/v1 translate/v1 AS LOCAL pkg/pb/translate/v1
+
+# buf-registry pushes BUF modules to the registry.
+buf-registry:
+  FROM bufbuild/buf:$bufbuild_version
+  WORKDIR proto
+  COPY +proto/proto .
+  RUN --secret BUF_USERNAME --secret BUF_API_TOKEN echo $BUF_API_TOKEN | buf registry login --username $BUF_USERNAME --token-stdin
+  RUN --push buf push
 
 # migrate runs DDL migration scripts against the given database.
 migrate:
