@@ -10,10 +10,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/server"
 	"go.expect.digital/translate/pkg/testutil"
-	"go.expect.digital/translate/pkg/translate"
+	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
@@ -22,32 +22,24 @@ import (
 
 // -------------Translation File-------------.
 
-func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.Tag) {
+func randUploadData(t *testing.T, schema translatev1.Schema, lang language.Tag) []byte {
 	t.Helper()
 
-	n := gofakeit.IntRange(1, 5)
-	lang := language.MustParse(gofakeit.LanguageBCP())
-	messages := model.Messages{
-		Language: lang,
-		Messages: make([]model.Message, 0, n),
-	}
+	messages := rand.ModelMessages(3, nil, rand.WithLanguage(lang))
 
-	for i := 0; i < n; i++ {
-		message := model.Message{ID: gofakeit.SentenceSimple(), Description: gofakeit.SentenceSimple()}
-		messages.Messages = append(messages.Messages, message)
-	}
-
-	data, err := translate.MessagesToData(schema, messages)
+	data, err := server.MessagesToData(schema, messages)
 	require.NoError(t, err, "convert rand messages to serialized data")
 
-	return data, lang
+	return data
 }
 
 func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTranslationFileRequest {
 	t.Helper()
 
 	schema := translatev1.Schema(gofakeit.IntRange(1, 7))
-	data, lang := randUploadData(t, schema)
+	lang := rand.Language()
+
+	data := randUploadData(t, schema, lang)
 
 	return &translatev1.UploadTranslationFileRequest{
 		ServiceId: serviceID,
@@ -84,8 +76,15 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 	happyRequest := randUploadRequest(t, service.Id)
 
-	invalidArgumentMissingLangRequest := randUploadRequest(t, service.Id)
-	invalidArgumentMissingLangRequest.Language = ""
+	happyRequestNoLangInReq := &translatev1.UploadTranslationFileRequest{
+		ServiceId: service.Id,
+		// NG Localize has language in the file.
+		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, rand.Language()),
+		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
+	}
+
+	invalidArgumentMissingServiceRequest := randUploadRequest(t, service.Id)
+	invalidArgumentMissingServiceRequest.ServiceId = ""
 
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
@@ -100,8 +99,13 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 			expectedCode: codes.OK,
 		},
 		{
-			name:         "Invalid argument missing language",
-			request:      invalidArgumentMissingLangRequest,
+			name:         "Happy path no language in request",
+			request:      happyRequestNoLangInReq,
+			expectedCode: codes.OK,
+		},
+		{
+			name:         "Invalid argument missing service_id",
+			request:      invalidArgumentMissingServiceRequest,
 			expectedCode: codes.InvalidArgument,
 		},
 		{
@@ -138,7 +142,7 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 	require.NoError(t, err, "create test translation file")
 
 	// Change messages and upload again with the same language and serviceID
-	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
+	uploadReq.Data = randUploadData(t, uploadReq.Schema, language.MustParse(uploadReq.Language))
 
 	_, err = client.UploadTranslationFile(ctx, uploadReq)
 
@@ -172,10 +176,10 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 
 	happyReqNoMessagesServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
 
-	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
+	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, rand.Language().String())
 	// Ensure that the language is not the same as the uploaded one.
 	for happyReqNoMessagesLanguage.Language == uploadRequest.Language {
-		happyReqNoMessagesLanguage.Language = gofakeit.LanguageBCP()
+		happyReqNoMessagesLanguage.Language = rand.Language().String()
 	}
 
 	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
@@ -419,17 +423,119 @@ func Test_ListServices_gRPC(t *testing.T) {
 
 // ------------------Messages------------------
 
-func randMessages() *translatev1.Messages {
-	return &translatev1.Messages{
-		Language: gofakeit.LanguageBCP(),
-		Messages: []*translatev1.Message{
-			{
-				Id:          gofakeit.SentenceSimple(),
-				Description: gofakeit.SentenceSimple(),
-				Message:     gofakeit.SentenceSimple(),
-				Fuzzy:       gofakeit.Bool(),
+func randMessages(t *testing.T, override *translatev1.Messages) *translatev1.Messages {
+	t.Helper()
+
+	lang := rand.Language().String()
+	if override != nil {
+		lang = override.Language
+	}
+
+	n := gofakeit.IntRange(1, 5)
+
+	msgs := &translatev1.Messages{
+		Language: lang,
+		Messages: make([]*translatev1.Message, 0, n),
+	}
+
+	for i := 0; i < n; i++ {
+		message := &translatev1.Message{
+			Id:          gofakeit.SentenceSimple(),
+			Message:     gofakeit.SentenceSimple(),
+			Description: gofakeit.SentenceSimple(),
+			Fuzzy:       gofakeit.Bool(),
+		}
+
+		msgs.Messages = append(msgs.Messages, message)
+	}
+
+	return msgs
+}
+
+func Test_CreateMessages_gRPC(t *testing.T) {
+	t.Parallel()
+
+	ctx, subtest := testutil.Trace(t)
+
+	// Prepare
+	service := createService(ctx, t)
+	langs := rand.Languages(2)
+
+	serviceWithMsgs := createService(ctx, t)
+	uploadReq := randUploadRequest(t, serviceWithMsgs.Id)
+	_, err := client.UploadTranslationFile(ctx, uploadReq)
+	require.NoError(t, err, "create test translation file")
+
+	tests := []struct {
+		request      *translatev1.CreateMessagesRequest
+		name         string
+		expectedCode codes.Code
+	}{
+		{
+			name: "Happy path, create messages",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: service.Id,
+				Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
 			},
+			expectedCode: codes.OK,
 		},
+		{
+			name: "Happy path, empty messages.messages",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: service.Id,
+				Messages: &translatev1.Messages{
+					Language: langs[1].String(),
+				},
+			},
+			expectedCode: codes.OK,
+		},
+		{
+			name: "Not found, service not found",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: gofakeit.UUID(),
+				Messages:  randMessages(t, nil),
+			},
+			expectedCode: codes.NotFound,
+		},
+		{
+			name: "Invalid argument, messages not provided",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: service.Id,
+			},
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Invalid argument, messages.language not provided",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: service.Id,
+				Messages: &translatev1.Messages{
+					Language: "",
+				},
+			},
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Already exists, service already has messages for specified language",
+			request: &translatev1.CreateMessagesRequest{
+				ServiceId: serviceWithMsgs.Id,
+				Messages: &translatev1.Messages{
+					Language: uploadReq.Language,
+				},
+			},
+			expectedCode: codes.AlreadyExists,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			msgs, err := client.CreateMessages(ctx, tt.request)
+			if err != nil {
+				require.Nil(t, msgs)
+			}
+
+			assert.Equal(t, tt.expectedCode, status.Code(err))
+		})
 	}
 }
 

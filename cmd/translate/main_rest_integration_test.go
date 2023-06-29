@@ -18,7 +18,9 @@ import (
 	"github.com/stretchr/testify/require"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/rand"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"golang.org/x/text/language"
 )
 
 // TODO Currently, we manually create requests for the REST API.
@@ -103,10 +105,19 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 
 	// Requests
 
+	// PUT /v1/services/{service_id}/files/{language}
 	happyRequest := randUploadRequest(t, service.Id)
 
-	missingLanguageRequest := randUploadRequest(t, service.Id)
-	missingLanguageRequest.Language = ""
+	// PUT /v1/services/{service_id}/files
+	happyRequestNoLang := &translatev1.UploadTranslationFileRequest{
+		ServiceId: service.Id,
+		// NG Localize has language in the file.
+		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, rand.Language()),
+		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
+	}
+
+	invalidArgumentMissingServiceRequest := randUploadRequest(t, service.Id)
+	invalidArgumentMissingServiceRequest.ServiceId = ""
 
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
@@ -121,8 +132,13 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "Bad request missing language",
-			request:      missingLanguageRequest,
+			name:         "Happy Path no language in path",
+			request:      happyRequestNoLang,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Bad request missing service_id",
+			request:      invalidArgumentMissingServiceRequest,
 			expectedCode: http.StatusBadRequest,
 		},
 		{
@@ -163,7 +179,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	require.NoError(t, err, "create test translation file")
 
 	// Change messages and upload again with the same language and serviceID
-	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
+	uploadReq.Data = randUploadData(t, uploadReq.Schema, language.MustParse(uploadReq.Language))
 
 	resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, uploadReq))
 	require.NoError(t, err, "do request")
@@ -193,10 +209,10 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 
 	happyReqNoMessagesServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
 
-	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
+	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, rand.Language().String())
 	// Ensure that the language is not the same as the uploaded one.
 	for happyReqNoMessagesLanguage.Language == uploadRequest.Language {
-		happyReqNoMessagesLanguage.Language = gofakeit.LanguageBCP()
+		happyReqNoMessagesLanguage.Language = rand.Language().String()
 	}
 
 	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
@@ -510,6 +526,96 @@ func Test_ListServices_REST(t *testing.T) {
 }
 
 // ------------------Messages------------------
+
+// POST.
+func Test_CreateMessages_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx, subtest := testutil.Trace(t)
+
+	// Prepare
+
+	service := createService(ctx, t)
+	langs := rand.Languages(2)
+
+	serviceWithMsgs := createService(ctx, t)
+	uploadReq := randUploadRequest(t, serviceWithMsgs.Id)
+	_, err := client.UploadTranslationFile(ctx, uploadReq)
+	require.NoError(t, err, "create test translation file")
+
+	tests := []struct {
+		messages     *translatev1.Messages
+		name         string
+		serviceID    string
+		expectedCode int
+	}{
+		{
+			name:         "Happy path, create messages",
+			serviceID:    service.Id,
+			messages:     randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:      "Happy path, empty messages.messages",
+			serviceID: service.Id,
+			messages: &translatev1.Messages{
+				Language: langs[1].String(),
+			},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Not found, service not found",
+			serviceID:    gofakeit.UUID(),
+			messages:     randMessages(t, nil),
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			name:         "Bad request, messages not provided",
+			serviceID:    service.Id,
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:      "Bad request, messages.language not provided",
+			serviceID: service.Id,
+			messages: &translatev1.Messages{
+				Language: "",
+			},
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:      "Status conflict, service already has messages for specified language",
+			serviceID: serviceWithMsgs.Id,
+			messages: &translatev1.Messages{
+				Language: uploadReq.Language,
+			},
+			expectedCode: http.StatusConflict,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			body, err := json.Marshal(tt.messages)
+			require.NoError(t, err, "marshal messages")
+
+			u := url.URL{
+				Scheme: "http",
+				Host:   host + ":" + port,
+				Path:   "v1/services/" + tt.serviceID + "/messages",
+			}
+
+			req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(body))
+			require.NoError(t, err, "create request")
+
+			resp, err := otelhttp.DefaultClient.Do(req)
+			require.NoError(t, err, "do request")
+
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+		})
+	}
+}
 
 // GET.
 func Test_GetMessages_REST(t *testing.T) {

@@ -24,8 +24,8 @@ import (
 
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/server"
 	"go.expect.digital/translate/pkg/tracer"
-	"go.expect.digital/translate/pkg/translate"
 )
 
 var cfgFile string
@@ -78,7 +78,7 @@ var rootCmd = &cobra.Command{
 			log.Panicf("create new repo: %v", err)
 		}
 
-		translatev1.RegisterTranslateServiceServer(grpcServer, translate.NewTranslateServiceServer(repo))
+		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo))
 
 		// gRPC Server Reflection provides information about publicly-accessible gRPC services on a server,
 		// and assists clients at runtime to construct RPC requests and responses without precompiled service information.

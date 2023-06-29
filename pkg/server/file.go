@@ -1,4 +1,4 @@
-package translate
+package server
 
 import (
 	"context"
@@ -57,11 +57,31 @@ func (u *uploadParams) validate() error {
 		return errors.New("'service_id' is required")
 	}
 
-	if u.languageTag == language.Und {
-		return errors.New("'language' is required")
+	return nil
+}
+
+// getLanguage returns the language tag for an upload based on the upload parameters and messages.
+// It returns an error if no language is set or if the languages in the upload parameters and messages are mismatched.
+func getLanguage(reqParams *uploadParams, messages *model.Messages) (language.Tag, error) {
+	und := language.Und
+
+	// Scenario 1: Both messages and params have undefined language
+	if reqParams.languageTag == und && messages.Language == und {
+		return und, errors.New("no language is set")
+	}
+	// Scenario 2: The languages in messages and params are different
+	if reqParams.languageTag != und && messages.Language != und && messages.Language != reqParams.languageTag {
+		return und, errors.New("languages are mismatched")
+	}
+	// Scenario 3: The language in messages is undefined but the language in params is defined
+	if messages.Language == und {
+		return reqParams.languageTag, nil
 	}
 
-	return nil
+	// Scenario 4 and 5:
+	// The language in messages is defined but the language in params is undefined
+	// The languages in messages and params are the same
+	return messages.Language, nil
 }
 
 func (t *TranslateServiceServer) UploadTranslationFile(
@@ -82,10 +102,12 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	// Some converts do not provide language, so we override it with one from request for consistency.
-	messages.Language = params.languageTag
+	messages.Language, err = getLanguage(params, messages)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
 
-	switch err := t.repo.SaveMessages(ctx, params.serviceID, &messages); {
+	switch err := t.repo.SaveMessages(ctx, params.serviceID, messages); {
 	default:
 		return &emptypb.Empty{}, nil
 	case errors.Is(err, common.ErrNotFound):
@@ -164,7 +186,7 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		messages = append(messages, model.Messages{Language: params.languageTag})
 	}
 
-	data, err := MessagesToData(params.schema, messages[0])
+	data, err := MessagesToData(params.schema, &messages[0])
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
