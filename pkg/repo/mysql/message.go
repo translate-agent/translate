@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo/common"

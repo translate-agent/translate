@@ -8,13 +8,6 @@ import (
 	"github.com/Masterminds/squirrel"
 )
 
-// sq is SQL builder for MySQL.
-var sq squirrel.StatementBuilderType
-
-func init() {
-	sq = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Question)
-}
-
 type Repo struct {
 	db *sql.DB
 }
