@@ -55,6 +55,11 @@ message DownloadTranslationFileResponse {
 
 // --------------Messages requests/responses-------------------
 
+message CreateMessagesRequest {
+  string service_id = 1;
+  Messages messages = 2;
+}
+
 message ListMessagesRequest {
   string service_id = 1;
 }
@@ -66,10 +71,6 @@ message ListMessagesResponse {
 message UpdateMessagesRequest{
   string service_id = 1;
   Messages messages = 2;
-}
-
-message UpdateMessagesResponse {
-  Messages messages = 1;
 }
 
 // -----------------Service requests/responses-----------------------
@@ -130,19 +131,30 @@ service TranslateService {
     option (google.api.http) = {delete: "/v1/services/{id}"};
   }
 
-  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse) {
-    option (google.api.http) = {get: "/v1/services/{service_id}/messages"};
+  rpc CreateMessages(CreateMessagesRequest) returns (Messages) {
+    option (google.api.http) = {
+      post: "/v1/services/{service_id}/messages",
+      body: "messages"
+    };
   }
 
-  rpc UpdateMessages(UpdateMessagesRequest) returns (UpdateMessagesResponse) {
+  rpc UpdateMessages(UpdateMessagesRequest) returns (Messages) {
     option (google.api.http) = {
       put: "/v1/services/{service_id}/messages"
       body: "messages"
     };
   }
 
+  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse) {
+    option (google.api.http) = {get: "/v1/services/{service_id}/messages"};
+  }
+
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {put: "/v1/services/{service_id}/files/{language}"};
+    option (google.api.http) = {
+      put: "/v1/services/{service_id}/files/{language}"
+      additional_bindings [
+        {put: "/v1/services/{service_id}/files"}]
+    };
   }
 
   rpc DownloadTranslationFile(DownloadTranslationFileRequest) returns (DownloadTranslationFileResponse) {
