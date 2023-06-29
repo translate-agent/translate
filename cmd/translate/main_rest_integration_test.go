@@ -20,6 +20,7 @@ import (
 	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"golang.org/x/text/language"
 )
 
 // TODO Currently, we manually create requests for the REST API.
@@ -104,10 +105,19 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 
 	// Requests
 
+	// PUT /v1/services/{service_id}/files/{language}
 	happyRequest := randUploadRequest(t, service.Id)
 
-	missingLanguageRequest := randUploadRequest(t, service.Id)
-	missingLanguageRequest.Language = ""
+	// PUT /v1/services/{service_id}/files
+	happyRequestNoLang := &translatev1.UploadTranslationFileRequest{
+		ServiceId: service.Id,
+		// NG Localize has language in the file.
+		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, rand.Language()),
+		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
+	}
+
+	invalidArgumentMissingServiceRequest := randUploadRequest(t, service.Id)
+	invalidArgumentMissingServiceRequest.ServiceId = ""
 
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
 
@@ -122,8 +132,13 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "Bad request missing language",
-			request:      missingLanguageRequest,
+			name:         "Happy Path no language in path",
+			request:      happyRequestNoLang,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Bad request missing service_id",
+			request:      invalidArgumentMissingServiceRequest,
 			expectedCode: http.StatusBadRequest,
 		},
 		{
@@ -164,7 +179,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	require.NoError(t, err, "create test translation file")
 
 	// Change messages and upload again with the same language and serviceID
-	uploadReq.Data, _ = randUploadData(t, uploadReq.Schema)
+	uploadReq.Data = randUploadData(t, uploadReq.Schema, language.MustParse(uploadReq.Language))
 
 	resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, uploadReq))
 	require.NoError(t, err, "do request")
@@ -194,10 +209,10 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 
 	happyReqNoMessagesServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
 
-	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, gofakeit.LanguageBCP())
+	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, rand.Language().String())
 	// Ensure that the language is not the same as the uploaded one.
 	for happyReqNoMessagesLanguage.Language == uploadRequest.Language {
-		happyReqNoMessagesLanguage.Language = gofakeit.LanguageBCP()
+		happyReqNoMessagesLanguage.Language = rand.Language().String()
 	}
 
 	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)

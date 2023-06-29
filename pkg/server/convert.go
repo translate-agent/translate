@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 
 	"go.expect.digital/translate/pkg/convert"
@@ -8,8 +9,10 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
+var errUnspecifiedSchema = errors.New("unspecified schema")
+
 // MessagesFromData converts in specific schema serialized data to model.Messages.
-func MessagesFromData(schema translatev1.Schema, data []byte) (model.Messages, error) {
+func MessagesFromData(schema translatev1.Schema, data []byte) (*model.Messages, error) {
 	var from func([]byte) (model.Messages, error)
 
 	switch schema {
@@ -28,14 +31,19 @@ func MessagesFromData(schema translatev1.Schema, data []byte) (model.Messages, e
 	case translatev1.Schema_XLIFF_12:
 		from = convert.FromXliff12
 	case translatev1.Schema_UNSPECIFIED:
-		return model.Messages{}, fmt.Errorf("unspecified schema")
+		return nil, errUnspecifiedSchema
 	}
 
-	return from(data)
+	messages, err := from(data)
+	if err != nil {
+		return nil, fmt.Errorf("convert from %s schema: %w", schema, err)
+	}
+
+	return &messages, nil
 }
 
 // MessagesToData converts model.Messages to specific schema serialized data.
-func MessagesToData(schema translatev1.Schema, messages model.Messages) ([]byte, error) {
+func MessagesToData(schema translatev1.Schema, messages *model.Messages) ([]byte, error) {
 	var to func(model.Messages) ([]byte, error)
 
 	switch schema {
@@ -54,8 +62,18 @@ func MessagesToData(schema translatev1.Schema, messages model.Messages) ([]byte,
 	case translatev1.Schema_XLIFF_12:
 		to = convert.ToXliff12
 	case translatev1.Schema_UNSPECIFIED:
-		return nil, fmt.Errorf("unspecified schema")
+		return nil, errUnspecifiedSchema
 	}
 
-	return to(messages)
+	// Prevent nil pointer dereference.
+	if messages == nil {
+		messages = &model.Messages{}
+	}
+
+	data, err := to(*messages)
+	if err != nil {
+		return nil, fmt.Errorf("convert to %s schema: %w", schema, err)
+	}
+
+	return data, nil
 }
