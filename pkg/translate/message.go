@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 
@@ -61,8 +62,8 @@ func (t *TranslateServiceServer) ListMessages(
 // ----------------------UpdateMessages-------------------------------
 
 type updateMessagesParams struct {
-	serviceID uuid.UUID
 	messages  *model.Messages
+	serviceID uuid.UUID
 }
 
 func parseUpdateMessagesRequestParams(req *translatev1.UpdateMessagesRequest) (*updateMessagesParams, error) {
