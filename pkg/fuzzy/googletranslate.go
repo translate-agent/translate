@@ -25,16 +25,16 @@ type googleClient interface {
 	io.Closer
 }
 
-// googleTranslate implements the Translator interface.
-type googleTranslate struct {
+// GoogleTranslate implements the Translator interface.
+type GoogleTranslate struct {
 	client googleClient
 }
 
-type GoogleTranslateOption func(*googleTranslate) error
+type GoogleTranslateOption func(*GoogleTranslate) error
 
 // WithClient sets the Google Translate client.
 func WithClient(c googleClient) GoogleTranslateOption {
-	return func(g *googleTranslate) error {
+	return func(g *GoogleTranslate) error {
 		g.client = c
 		return nil
 	}
@@ -42,7 +42,7 @@ func WithClient(c googleClient) GoogleTranslateOption {
 
 // WithDefaultClient creates a new Google Translate client with the API key from the viper.
 func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
-	return func(g *googleTranslate) error {
+	return func(g *GoogleTranslate) error {
 		var err error
 
 		apiKey := viper.GetString("translate_services.google_translate.api_key")
@@ -73,8 +73,8 @@ func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
 func NewGoogleTranslate(
 	ctx context.Context,
 	opts ...GoogleTranslateOption,
-) (gt *googleTranslate, closer func() error, err error) {
-	gt = &googleTranslate{}
+) (gt *GoogleTranslate, closer func() error, err error) {
+	gt = &GoogleTranslate{}
 
 	for _, opt := range opts {
 		if optErr := opt(gt); optErr != nil {
@@ -93,7 +93,7 @@ func NewGoogleTranslate(
 
 // --------------------Methods--------------------
 
-func (g *googleTranslate) Translate(
+func (g *GoogleTranslate) Translate(
 	ctx context.Context,
 	messages *model.Messages,
 	targetLang language.Tag,
