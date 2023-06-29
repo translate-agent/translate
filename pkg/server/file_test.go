@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
 
@@ -20,7 +21,7 @@ func Test_ParseUploadParams(t *testing.T) {
 
 	randReq := func() *translatev1.UploadTranslationFileRequest {
 		return &translatev1.UploadTranslationFileRequest{
-			Language:  gofakeit.LanguageBCP(),
+			Language:  rand.Language().String(),
 			Data:      []byte(`{"key":"value"}`),
 			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
 			ServiceId: gofakeit.UUID(),
@@ -82,7 +83,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 
 	randParams := func() *uploadParams {
 		return &uploadParams{
-			languageTag: language.MustParse(gofakeit.LanguageBCP()),
+			languageTag: rand.Language(),
 			data:        []byte(`{"key":"value"}`),
 			schema:      translatev1.Schema(gofakeit.IntRange(1, 7)),
 			serviceID:   uuid.New(),
@@ -154,44 +155,33 @@ func Test_GetLanguage(t *testing.T) {
 		messages *model.Messages
 	}
 
-	// helper for langMismatch sub-test
-	getDifferentLanguages := func(lang language.Tag) (language.Tag, language.Tag) {
-		lang2 := language.MustParse(gofakeit.LanguageBCP())
-
-		for lang == lang2 {
-			lang2 = language.MustParse(gofakeit.LanguageBCP())
-		}
-
-		return lang, lang2
-	}
-
 	// Tests
 
 	messagesDefinedParamsUndefined := args{
 		params:   &uploadParams{languageTag: language.Und},
-		messages: &model.Messages{Language: language.MustParse(gofakeit.LanguageBCP())},
+		messages: rand.ModelMessages(3, nil),
 	}
 
 	messagesUndefinedParamsDefined := args{
-		params:   &uploadParams{languageTag: language.MustParse(gofakeit.LanguageBCP())},
-		messages: &model.Messages{Language: language.Und},
+		params:   &uploadParams{languageTag: rand.Language()},
+		messages: rand.ModelMessages(3, nil, rand.WithLanguage(language.Und)),
 	}
 
-	sameLang := language.MustParse(gofakeit.LanguageBCP())
+	sameLang := rand.Language()
 	bothDefinedSameLang := args{
 		params:   &uploadParams{languageTag: sameLang},
-		messages: &model.Messages{Language: sameLang},
+		messages: rand.ModelMessages(3, nil, rand.WithLanguage(sameLang)),
 	}
 
 	undefinedBoth := args{
 		params:   &uploadParams{languageTag: language.Und},
-		messages: &model.Messages{Language: language.Und},
+		messages: rand.ModelMessages(3, nil, rand.WithLanguage(language.Und)),
 	}
 
-	lang1, lang2 := getDifferentLanguages(language.MustParse(gofakeit.LanguageBCP()))
+	langs := rand.Languages(2)
 	langMismatch := args{
-		params:   &uploadParams{languageTag: lang1},
-		messages: &model.Messages{Language: lang2},
+		params:   &uploadParams{languageTag: langs[0]},
+		messages: rand.ModelMessages(3, nil, rand.WithLanguage(langs[1])),
 	}
 
 	tests := []struct {
@@ -254,7 +244,7 @@ func Test_ParseDownloadParams(t *testing.T) {
 
 	randReq := func() *translatev1.DownloadTranslationFileRequest {
 		return &translatev1.DownloadTranslationFileRequest{
-			Language:  gofakeit.LanguageBCP(),
+			Language:  rand.Language().String(),
 			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
 			ServiceId: gofakeit.UUID(),
 		}
@@ -316,7 +306,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 
 	randParams := func() *downloadParams {
 		return &downloadParams{
-			languageTag: language.MustParse(gofakeit.LanguageBCP()),
+			languageTag: rand.Language(),
 			schema:      translatev1.Schema(gofakeit.IntRange(1, 7)),
 			serviceID:   uuid.New(),
 		}
