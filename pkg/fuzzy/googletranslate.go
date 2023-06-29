@@ -102,11 +102,7 @@ func (g *GoogleTranslate) Translate(
 		return nil, fmt.Errorf("google translate: validate translate request: %w", err)
 	}
 
-	translatedMessages := model.Messages{
-		Language: targetLang,
-		Messages: make([]model.Message, 0, len(messages.Messages)),
-	}
-
+	// Extract the strings to be send to the Google Translate API.
 	targetTexts := make([]string, 0, len(messages.Messages))
 	for _, m := range messages.Messages {
 		targetTexts = append(targetTexts, m.Message)
@@ -121,6 +117,11 @@ func (g *GoogleTranslate) Translate(
 	translations, err := g.client.Translate(ctx, targetTexts, targetLang, opts)
 	if err != nil {
 		return nil, fmt.Errorf("google translate client: translate: %w", err)
+	}
+
+	translatedMessages := model.Messages{
+		Language: targetLang,
+		Messages: make([]model.Message, 0, len(translations)),
 	}
 
 	for i, t := range translations {
