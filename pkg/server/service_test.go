@@ -1,4 +1,4 @@
-package translate
+package server
 
 import (
 	"errors"
