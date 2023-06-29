@@ -114,7 +114,7 @@ test-integration:
   COPY +go/translate /translate
   COPY --dir migrate/mysql migrate
   WITH DOCKER --compose compose.yaml --service mysql --pull migrate/migrate:v$migrate_version --pull golang:$go_version-alpine
-    RUN \
+    RUN --no-cache --secret=googletranslate_api_key \
       --mount=type=cache,target=/go/pkg/mod \
       --mount=type=cache,target=/root/.cache/go-build \
 
@@ -137,6 +137,7 @@ test-integration:
         -e TRANSLATE_DB_MYSQL_PORT=3306 \
         -e TRANSLATE_DB_MYSQL_DATABASE=translate \
         -e TRANSLATE_DB_MYSQL_USER=root \
+        -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_API_KEY=$googletranslate_api_key \
         golang:$go_version-alpine go test -C /translate --tags=integration -count=1 ./...
   END
 
