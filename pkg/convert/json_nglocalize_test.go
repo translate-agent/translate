@@ -44,7 +44,7 @@ func Test_FromNgLocalize(t *testing.T) {
 			expectedErr: nil,
 		},
 		{
-			name: "Malformed language tag",
+			name: "Malformed language",
 			input: []byte(`
       {
         "locale": "xyz-ZY-Latn",

@@ -3,6 +3,7 @@ module go.expect.digital/translate
 go 1.20
 
 require (
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/XSAM/otelsql v0.23.0
 	github.com/brianvoe/gofakeit/v6 v6.22.0
 	github.com/dgraph-io/badger/v3 v3.2103.5
@@ -49,6 +50,8 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.16.6 // indirect
+	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
+	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect

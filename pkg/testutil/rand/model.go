@@ -104,7 +104,7 @@ func WithEmptyPluralID() ModelMessageOption {
 // modelMessages generates a random model.Messages with the given
 // count of Messages.messages and using the provided options for each message.
 func modelMessages(msgCount uint, msgOpts ...ModelMessageOption) *model.Messages {
-	messages := &model.Messages{Language: Lang(), Messages: make([]model.Message, msgCount)}
+	messages := &model.Messages{Language: Language(), Messages: make([]model.Message, msgCount)}
 
 	if msgCount == 0 {
 		return messages

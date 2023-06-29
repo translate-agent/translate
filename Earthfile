@@ -129,7 +129,6 @@ test-integration:
         -e TRANSLATE_DB_MYSQL_PORT=3306 \
         -e TRANSLATE_DB_MYSQL_DATABASE=translate \
         -e TRANSLATE_DB_MYSQL_USER=root \
-        -e TRANSLATE_DB_BADGERDB_PATH=/tmp/badger \
         golang:$go_version-alpine go test -C /translate --tags=integration -count=1 ./...
   END
 
