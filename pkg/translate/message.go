@@ -122,20 +122,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 
 	// Construct and return the response
 	response := &translatev1.UpdateMessagesResponse{
-		Messages: &translatev1.Messages{
-			Language: params.messages.Language.String(),
-			Messages: make([]*translatev1.Message, len(params.messages.Messages)),
-		},
-	}
-
-	for i, msg := range params.messages.Messages {
-		pbMsg := &translatev1.Message{
-			Id:          msg.ID,
-			Message:     msg.Message,
-			Description: msg.Description,
-			Fuzzy:       msg.Fuzzy,
-		}
-		response.Messages.Messages[i] = pbMsg
+		Messages: messagesToProto(params.messages),
 	}
 
 	return response, nil

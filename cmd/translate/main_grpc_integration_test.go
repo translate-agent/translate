@@ -419,6 +419,20 @@ func Test_ListServices_gRPC(t *testing.T) {
 
 // ------------------Messages------------------
 
+func randMessages() *translatev1.Messages {
+	return &translatev1.Messages{
+		Language: gofakeit.LanguageBCP(),
+		Messages: []*translatev1.Message{
+			{
+				Id:          gofakeit.SentenceSimple(),
+				Description: gofakeit.SentenceSimple(),
+				Message:     gofakeit.SentenceSimple(),
+				Fuzzy:       gofakeit.Bool(),
+			},
+		},
+	}
+}
+
 func Test_ListMessages_gRPC(t *testing.T) {
 	t.Parallel()
 
@@ -461,6 +475,58 @@ func Test_ListMessages_gRPC(t *testing.T) {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			resp, err := client.ListMessages(ctx, tt.request)
+
+			if err == nil {
+				require.NotNil(t, resp)
+			}
+
+			assert.Equal(t, tt.expectedCode, status.Code(err))
+		})
+	}
+}
+
+func Test_UpdateMessages_gRPC(t *testing.T) {
+	t.Parallel()
+
+	ctx, subtest := testutil.Trace(t)
+
+	// Prepare
+	service := createService(ctx, t)
+
+	for i := 0; i < gofakeit.IntRange(1, 5); i++ {
+		uploadRequest := randUploadRequest(t, service.Id)
+		_, err := client.UploadTranslationFile(ctx, uploadRequest)
+		require.NoError(t, err, "create test translation file")
+	}
+
+	// Requests
+
+	tests := []struct {
+		request      *translatev1.UpdateMessagesRequest
+		name         string
+		expectedCode codes.Code
+	}{
+		{
+			name:         "Happy path, get all messages",
+			request:      &translatev1.UpdateMessagesRequest{ServiceId: service.Id, Messages: randMessages()},
+			expectedCode: codes.OK,
+		},
+		{
+			name:         "Happy path, service doesn't exist",
+			request:      &translatev1.UpdateMessagesRequest{ServiceId: uuid.New().String(), Messages: randMessages()},
+			expectedCode: codes.Internal,
+		},
+		{
+			name:         "Invalid argument, ServiceID not provided",
+			request:      &translatev1.UpdateMessagesRequest{Messages: randMessages()},
+			expectedCode: codes.InvalidArgument,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			resp, err := client.UpdateMessages(ctx, tt.request)
 
 			if err == nil {
 				require.NotNil(t, resp)
