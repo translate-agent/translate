@@ -115,33 +115,29 @@ func Test_ToXliff12(t *testing.T) {
 func Test_TransformXLIFF12(t *testing.T) {
 	t.Parallel()
 
-	t.Run("All OK", func(t *testing.T) {
-		t.Parallel()
+	msgOpts := []testutilrand.ModelMessageOption{
+		testutilrand.WithMessageFormat(), // Enclose message in curly braces
+		testutilrand.WithFuzzy(false),    // Do not mark message as fuzzy, as this is not supported by XLIFF 1.2
+	}
 
-		msgOpts := []testutilrand.ModelMessageOption{
-			testutilrand.WithMessageFormat(), // Enclose message in curly braces
-			testutilrand.WithFuzzy(false),    // Do not mark message as fuzzy, as this is not supported by XLIFF 1.2
-		}
+	conf := &quick.Config{
+		MaxCount: 1000,
+		Values: func(values []reflect.Value, _ *rand.Rand) {
+			values[0] = reflect.ValueOf(testutilrand.ModelMessages(3, msgOpts)) // input generator
+		},
+	}
 
-		conf := &quick.Config{
-			MaxCount: 1000,
-			Values: func(values []reflect.Value, _ *rand.Rand) {
-				values[0] = reflect.ValueOf(testutilrand.ModelMessages(3, msgOpts)) // input generator
-			},
-		}
+	f := func(expected *model.Messages) bool {
+		xliffData, err := ToXliff12(*expected)
+		require.NoError(t, err)
 
-		f := func(expected *model.Messages) bool {
-			xliffData, err := ToXliff12(*expected)
-			require.NoError(t, err)
+		restoredMessages, err := FromXliff12(xliffData)
+		require.NoError(t, err)
 
-			restoredMessages, err := FromXliff12(xliffData)
-			require.NoError(t, err)
+		testutil.EqualMessages(t, expected, &restoredMessages)
 
-			testutil.EqualMessages(t, expected, &restoredMessages)
+		return true
+	}
 
-			return true
-		}
-
-		assert.NoError(t, quick.Check(f, conf))
-	})
+	assert.NoError(t, quick.Check(f, conf))
 }
