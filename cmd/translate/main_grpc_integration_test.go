@@ -35,6 +35,11 @@ func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.T
 
 	for i := 0; i < n; i++ {
 		message := model.Message{ID: gofakeit.SentenceSimple(), Description: gofakeit.SentenceSimple()}
+
+		if gofakeit.Bool() {
+			gofakeit.Slice(message.Positions)
+		}
+
 		messages.Messages = append(messages.Messages, message)
 	}
 
@@ -441,6 +446,10 @@ func randMessages(t *testing.T, override *translatev1.Messages) *translatev1.Mes
 			Message:     gofakeit.SentenceSimple(),
 			Description: gofakeit.SentenceSimple(),
 			Fuzzy:       gofakeit.Bool(),
+		}
+
+		if gofakeit.Bool() {
+			gofakeit.Slice(message.Positions)
 		}
 
 		msgs.Messages = append(msgs.Messages, message)

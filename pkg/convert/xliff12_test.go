@@ -26,10 +26,30 @@ func Test_FromXliff12(t *testing.T) {
     <body>
       <trans-unit id="introductionHeader" datatype="html">
         <source>Hello!</source>
+		<context-group purpose="location">
+			<context context-type="sourcefile">src/config.ts</context>
+			<context context-type="linenumber">50</context>
+	  	</context-group>
+	  	<context-group purpose="location">
+			<context context-type="sourcefile">src/config.html</context>
+			<context context-type="linenumber">60</context>
+		</context-group>
         <note priority="1" from="description">An introduction header for this sample</note>
       </trans-unit>
       <trans-unit id="welcomeMessage" datatype="html">
         <source>Welcome</source>
+		<context-group purpose="location">
+			<context context-type="sourcefile">src/config1.ts</context>
+			<context context-type="linenumber">40</context>
+	  	</context-group>
+	  	<context-group purpose="location">
+			<context context-type="sourcefile">src/config2.html</context>
+			<context context-type="linenumber">50</context>
+			<context context-type="sourcefile">src/config3.html</context>
+			<context context-type="sourcefile">src/config4.html</context>
+			<context context-type="sourcefile">src/config5.html</context>
+			<context context-type="linenumber">60</context>
+		</context-group>
       </trans-unit>
     </body>
   </file>
@@ -41,10 +61,15 @@ func Test_FromXliff12(t *testing.T) {
 						ID:          "introductionHeader",
 						Message:     "{Hello!}",
 						Description: "An introduction header for this sample",
+						Positions:   []string{"src/config.ts:50", "src/config.html:60"},
 					},
 					{
 						ID:      "welcomeMessage",
 						Message: "{Welcome}",
+						Positions: []string{
+							"src/config1.ts:40", "src/config2.html:50",
+							"src/config3.html", "src/config4.html", "src/config5.html:60",
+						},
 					},
 				},
 			},

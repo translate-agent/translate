@@ -3,6 +3,7 @@ package convert
 import (
 	"encoding/xml"
 	"fmt"
+	"strings"
 
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
@@ -27,9 +28,20 @@ type bodyElement struct {
 }
 
 type transUnit struct {
-	ID     string `xml:"id,attr"`
-	Source string `xml:"source"`
-	Note   string `xml:"note,omitempty"`
+	ID            string         `xml:"id,attr"`
+	Source        string         `xml:"source"`
+	Note          string         `xml:"note,omitempty"`
+	ContextGroups []ContextGroup `xml:"context-group"`
+}
+
+type ContextGroup struct {
+	Purpose  string    `xml:"purpose,attr"`
+	Contexts []context `xml:"context,omitempty"`
+}
+
+type context struct {
+	Type  string `xml:"context-type,attr"`
+	Value string `xml:",chardata"`
 }
 
 // FromXliff12 converts serialized data from the XML data in the XLIFF 1.2 format into a model.Messages struct.
@@ -45,11 +57,14 @@ func FromXliff12(data []byte) (model.Messages, error) {
 	}
 
 	for _, unit := range xlf.File.Body.TransUnits {
-		messages.Messages = append(messages.Messages, model.Message{
+		msg := model.Message{
 			ID:          unit.ID,
 			Message:     convertToMessageFormatSingular(unit.Source),
 			Description: unit.Note,
-		})
+			Positions:   positions(unit.ContextGroups),
+		}
+
+		messages.Messages = append(messages.Messages, msg)
 	}
 
 	return messages, nil
@@ -83,4 +98,34 @@ func ToXliff12(messages model.Messages) ([]byte, error) {
 	dataWithHeader := append([]byte(xml.Header), data...) // prepend generic XML header
 
 	return dataWithHeader, nil
+}
+
+// helpers
+
+// retrieves source file line positions from TransUnit context groups.
+func positions(contextGroups []ContextGroup) model.Positions {
+	var positions model.Positions
+
+	for _, cg := range contextGroups {
+		if cg.Purpose == "location" {
+			var pos string
+
+			for _, c := range cg.Contexts {
+				switch c.Type {
+				case "sourcefile":
+					if len(pos) > 0 {
+						pos += ", " + c.Value
+					} else {
+						pos += c.Value
+					}
+				case "linenumber":
+					pos += ":" + c.Value
+				}
+			}
+
+			positions = append(positions, strings.Split(pos, ", ")...)
+		}
+	}
+
+	return positions
 }
