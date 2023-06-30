@@ -617,6 +617,88 @@ func Test_CreateMessages_REST(t *testing.T) {
 	}
 }
 
+// PUT.
+func Test_UpdateMessages_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx, subtest := testutil.Trace(t)
+
+	// Prepare
+	service := createService(ctx, t)
+	langs := rand.Languages(2)
+
+	serviceWithMsgs := createService(ctx, t)
+	uploadReq := randUploadRequest(t, serviceWithMsgs.Id)
+	_, err := client.UploadTranslationFile(ctx, uploadReq)
+	require.NoError(t, err, "create test translation file")
+
+	tests := []struct {
+		messages         *translatev1.Messages
+		messagesToUpdate *translatev1.Messages
+		name             string
+		serviceID        string
+		expectedCode     int
+	}{
+		{
+			name:      "Happy path, update messages",
+			serviceID: serviceWithMsgs.Id,
+			messages: &translatev1.Messages{
+				Language: uploadReq.Language,
+			},
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Not Found, message does not exist",
+			serviceID:    service.Id,
+			messages:     randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			name:         "Not found, service not found",
+			serviceID:    gofakeit.UUID(),
+			messages:     randMessages(t, nil),
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			name:         "Bad request, messages not provided",
+			serviceID:    service.Id,
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:      "Bad request, messages.language not provided",
+			serviceID: service.Id,
+			messages: &translatev1.Messages{
+				Language: "",
+			},
+			expectedCode: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			body, err := json.Marshal(tt.messages)
+			require.NoError(t, err, "marshal messages")
+
+			u := url.URL{
+				Scheme: "http",
+				Host:   host + ":" + port,
+				Path:   "v1/services/" + tt.serviceID + "/messages",
+			}
+
+			req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(body))
+			require.NoError(t, err, "create request")
+
+			resp, err := otelhttp.DefaultClient.Do(req)
+			require.NoError(t, err, "do request")
+
+			defer resp.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+		})
+	}
+}
+
 // GET.
 func Test_GetMessages_REST(t *testing.T) {
 	t.Parallel()

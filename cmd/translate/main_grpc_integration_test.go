@@ -598,33 +598,60 @@ func Test_UpdateMessages_gRPC(t *testing.T) {
 
 	// Prepare
 	service := createService(ctx, t)
+	langs := rand.Languages(2)
 
-	for i := 0; i < gofakeit.IntRange(1, 5); i++ {
-		uploadRequest := randUploadRequest(t, service.Id)
-		_, err := client.UploadTranslationFile(ctx, uploadRequest)
-		require.NoError(t, err, "create test translation file")
-	}
+	serviceWithMsgs := createService(ctx, t)
+	uploadReq := randUploadRequest(t, serviceWithMsgs.Id)
+	_, err := client.UploadTranslationFile(ctx, uploadReq)
+	require.NoError(t, err, "create test translation file")
 
 	// Requests
-
 	tests := []struct {
 		request      *translatev1.UpdateMessagesRequest
 		name         string
 		expectedCode codes.Code
 	}{
 		{
-			name:         "Happy path, get all messages",
-			request:      &translatev1.UpdateMessagesRequest{ServiceId: service.Id, Messages: randMessages()},
+			name: "Happy Path, update existing message",
+			request: &translatev1.UpdateMessagesRequest{
+				ServiceId: serviceWithMsgs.Id,
+				Messages: &translatev1.Messages{
+					Language: uploadReq.Language,
+				},
+			},
 			expectedCode: codes.OK,
 		},
 		{
-			name:         "Happy path, service doesn't exist",
-			request:      &translatev1.UpdateMessagesRequest{ServiceId: uuid.New().String(), Messages: randMessages()},
-			expectedCode: codes.Internal,
+			name: "Not Found, message to update does not exists",
+			request: &translatev1.UpdateMessagesRequest{
+				ServiceId: service.Id,
+				Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+			},
+			expectedCode: codes.NotFound,
 		},
 		{
-			name:         "Invalid argument, ServiceID not provided",
-			request:      &translatev1.UpdateMessagesRequest{Messages: randMessages()},
+			name: "Not found, service not found",
+			request: &translatev1.UpdateMessagesRequest{
+				ServiceId: gofakeit.UUID(),
+				Messages:  randMessages(t, nil),
+			},
+			expectedCode: codes.NotFound,
+		},
+		{
+			name: "Invalid argument, messages not provided",
+			request: &translatev1.UpdateMessagesRequest{
+				ServiceId: service.Id,
+			},
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name: "Invalid argument, messages.language not provided",
+			request: &translatev1.UpdateMessagesRequest{
+				ServiceId: service.Id,
+				Messages: &translatev1.Messages{
+					Language: "",
+				},
+			},
 			expectedCode: codes.InvalidArgument,
 		},
 	}
