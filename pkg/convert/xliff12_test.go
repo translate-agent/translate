@@ -134,10 +134,36 @@ func Test_ToXliff12(t *testing.T) {
       <trans-unit id="Welcome">
         <source>Welcome to our website!</source>
         <note>To welcome a new visitor</note>
+		<context-group purpose="location">
+			<context context-type="sourcefile">src/config.ts</context>
+			<context context-type="linenumber">50</context>
+		</context-group>
+		<context-group purpose="location">
+			<context context-type="sourcefile">src/config.html</context>
+			<context context-type="linenumber">60</context>
+		</context-group>
       </trans-unit>
       <trans-unit id="Error">
         <source>Something went wrong. Please try again later.</source>
         <note>To inform the user of an error</note>
+		<context-group purpose="location">
+			<context context-type="sourcefile">src/config1.ts</context>
+			<context context-type="linenumber">40</context>
+		</context-group>
+		<context-group purpose="location">
+			<context context-type="sourcefile">src/config2.html</context>
+			<context context-type="linenumber">50</context>
+		</context-group>
+		<context-group purpose="location">
+			<context context-type="sourcefile">src/config3.html</context>
+		</context-group>
+		<context-group purpose="location">
+			<context context-type="sourcefile">src/config4.html</context>
+		</context-group>
+		<context-group purpose="location">
+			<context context-type="sourcefile">src/config5.html</context>
+			<context context-type="linenumber">60</context>
+		</context-group>
       </trans-unit>
       <trans-unit id="Feedback">
         <source>We appreciate your feedback. Thank you for using our service.</source>
@@ -153,11 +179,16 @@ func Test_ToXliff12(t *testing.T) {
 						ID:          "Welcome",
 						Message:     "{Welcome to our website!}",
 						Description: "To welcome a new visitor",
+						Positions:   []string{"src/config.ts:50", "src/config.html:60"},
 					},
 					{
 						ID:          "Error",
 						Message:     "{Something went wrong. Please try again later.}",
 						Description: "To inform the user of an error",
+						Positions: []string{
+							"src/config1.ts:40", "src/config2.html:50",
+							"src/config3.html", "src/config4.html", "src/config5.html:60",
+						},
 					},
 					{
 						ID:      "Feedback",

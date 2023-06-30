@@ -46,6 +46,8 @@ func TestFromXliff2(t *testing.T) {
     <unit id="common.app.title">
       <notes>
         <note category="location">src/app/app.component.html:4</note>
+		<note category="location">src/app/app.component.html:8</note>
+        <note category="location">src/app/app.component.html:12</note>
         <note category="description">App title</note>
       </notes>
       <segment>
@@ -59,13 +61,19 @@ func TestFromXliff2(t *testing.T) {
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:      "common.welcome",
-						Message: "{Welcome!}",
+						ID:        "common.welcome",
+						Message:   "{Welcome!}",
+						Positions: []string{"src/app/app.component.html:16"},
 					},
 					{
 						ID:          "common.app.title",
 						Message:     "{Diary}",
 						Description: "App title",
+						Positions: []string{
+							"src/app/app.component.html:4",
+							"src/app/app.component.html:8",
+							"src/app/app.component.html:12",
+						},
 					},
 				},
 			},
@@ -137,6 +145,9 @@ func Test_ToXliff2(t *testing.T) {
   <file>
     <unit id="Welcome">
       <notes>
+		<note category="location">src/app/app.component.html:4</note>
+		<note category="location">src/app/app.component.html:8</note>
+		<note category="location">src/app/app.component.html:12</note>
         <note category="description">To welcome a new visitor</note>
       </notes>
       <segment>
@@ -166,6 +177,11 @@ func Test_ToXliff2(t *testing.T) {
 						ID:          "Welcome",
 						Message:     "{Welcome to our website!}",
 						Description: "To welcome a new visitor",
+						Positions: []string{
+							"src/app/app.component.html:4",
+							"src/app/app.component.html:8",
+							"src/app/app.component.html:12",
+						},
 					},
 					{
 						ID:          "Error",

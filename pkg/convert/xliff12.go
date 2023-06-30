@@ -31,17 +31,17 @@ type transUnit struct {
 	ID            string         `xml:"id,attr"`
 	Source        string         `xml:"source"`
 	Note          string         `xml:"note,omitempty"`
-	ContextGroups []ContextGroup `xml:"context-group"`
+	ContextGroups []contextGroup `xml:"context-group"`
 }
 
-type ContextGroup struct {
+type contextGroup struct {
 	Purpose  string    `xml:"purpose,attr"`
 	Contexts []context `xml:"context,omitempty"`
 }
 
 type context struct {
-	Type  string `xml:"context-type,attr"`
-	Value string `xml:",chardata"`
+	Type    string `xml:"context-type,attr"`
+	Content string `xml:",chardata"`
 }
 
 // FromXliff12 converts serialized data from the XML data in the XLIFF 1.2 format into a model.Messages struct.
@@ -61,7 +61,7 @@ func FromXliff12(data []byte) (model.Messages, error) {
 			ID:          unit.ID,
 			Message:     convertToMessageFormatSingular(unit.Source),
 			Description: unit.Note,
-			Positions:   positions(unit.ContextGroups),
+			Positions:   positionsFromXliff12(unit.ContextGroups),
 		}
 
 		messages.Messages = append(messages.Messages, msg)
@@ -84,9 +84,10 @@ func ToXliff12(messages model.Messages) ([]byte, error) {
 
 	for _, msg := range messages.Messages {
 		xlf.File.Body.TransUnits = append(xlf.File.Body.TransUnits, transUnit{
-			ID:     msg.ID,
-			Source: removeEnclosingBrackets(msg.Message),
-			Note:   msg.Description,
+			ID:            msg.ID,
+			Source:        removeEnclosingBrackets(msg.Message),
+			Note:          msg.Description,
+			ContextGroups: positionsToXliff12(msg.Positions),
 		})
 	}
 
@@ -102,8 +103,8 @@ func ToXliff12(messages model.Messages) ([]byte, error) {
 
 // helpers
 
-// retrieves source file line positions from TransUnit context groups.
-func positions(contextGroups []ContextGroup) model.Positions {
+// positionsFromXliff12 extracts line positions from []contextGroup.
+func positionsFromXliff12(contextGroups []contextGroup) model.Positions {
 	var positions model.Positions
 
 	for _, cg := range contextGroups {
@@ -114,12 +115,12 @@ func positions(contextGroups []ContextGroup) model.Positions {
 				switch c.Type {
 				case "sourcefile":
 					if len(pos) > 0 {
-						pos += ", " + c.Value
+						pos += ", " + c.Content
 					} else {
-						pos += c.Value
+						pos += c.Content
 					}
 				case "linenumber":
-					pos += ":" + c.Value
+					pos += ":" + c.Content
 				}
 			}
 
@@ -128,4 +129,30 @@ func positions(contextGroups []ContextGroup) model.Positions {
 	}
 
 	return positions
+}
+
+// positionsToXliff12 transforms model.Positions to location []contextGroup.
+func positionsToXliff12(positions model.Positions) []contextGroup {
+	contextGroups := make([]contextGroup, 0, len(positions))
+
+	for _, pos := range positions {
+		cg := contextGroup{Purpose: "location"}
+		parts := strings.Split(pos, ":")
+
+		switch len(parts) {
+		case 0:
+			continue
+		case 1:
+			cg.Contexts = []context{{Type: "sourcefile", Content: parts[0]}}
+		default:
+			cg.Contexts = []context{
+				{Type: "sourcefile", Content: parts[0]},
+				{Type: "linenumber", Content: parts[1]},
+			}
+		}
+
+		contextGroups = append(contextGroups, cg)
+	}
+
+	return contextGroups
 }
