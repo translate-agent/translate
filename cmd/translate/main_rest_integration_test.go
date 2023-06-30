@@ -552,7 +552,7 @@ func Test_CreateMessages_REST(t *testing.T) {
 		{
 			name:         "Happy path, create messages",
 			serviceID:    service.Id,
-			messages:     randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+			messages:     randMessages(t, langs[0].String()),
 			expectedCode: http.StatusOK,
 		},
 		{
@@ -566,7 +566,7 @@ func Test_CreateMessages_REST(t *testing.T) {
 		{
 			name:         "Not found, service not found",
 			serviceID:    gofakeit.UUID(),
-			messages:     randMessages(t, nil),
+			messages:     randMessages(t, ""),
 			expectedCode: http.StatusNotFound,
 		},
 		{
@@ -617,7 +617,6 @@ func Test_CreateMessages_REST(t *testing.T) {
 	}
 }
 
-// PUT.
 func Test_UpdateMessages_REST(t *testing.T) {
 	t.Parallel()
 
@@ -627,49 +626,65 @@ func Test_UpdateMessages_REST(t *testing.T) {
 	service := createService(ctx, t)
 	langs := rand.Languages(2)
 
-	serviceWithMsgs := createService(ctx, t)
-	uploadReq := randUploadRequest(t, serviceWithMsgs.Id)
-	_, err := client.UploadTranslationFile(ctx, uploadReq)
-	require.NoError(t, err, "create test translation file")
+	_, err := client.CreateMessages(ctx, &translatev1.CreateMessagesRequest{
+		ServiceId: service.Id,
+		Messages:  randMessages(t, langs[0].String()),
+	})
+	require.NoError(t, err, "create test messages")
+
+	// helper for update request generation
+	randUpdateMessageReq := func(lang string) *translatev1.UpdateMessagesRequest {
+		if lang == "" {
+			lang = rand.Language().String()
+		}
+
+		return &translatev1.UpdateMessagesRequest{
+			ServiceId: service.Id,
+			Messages:  randMessages(t, lang),
+		}
+	}
+
+	happyReq := randUpdateMessageReq(langs[0].String()) // uploaded messages language
+
+	notFoundMessagesReq := randUpdateMessageReq(langs[1].String()) // different language without messages
+
+	notFoundServiceID := randUpdateMessageReq("")
+	notFoundServiceID.ServiceId = gofakeit.UUID()
+
+	invalidArgumentNilMessagesReq := randUpdateMessageReq("")
+	invalidArgumentNilMessagesReq.Messages = nil
+
+	invalidArgumentUndMessagesLanguageReq := randUpdateMessageReq("")
+	invalidArgumentUndMessagesLanguageReq.Messages.Language = ""
 
 	tests := []struct {
-		messages         *translatev1.Messages
-		messagesToUpdate *translatev1.Messages
-		name             string
-		serviceID        string
-		expectedCode     int
+		request      *translatev1.UpdateMessagesRequest
+		name         string
+		expectedCode uint
 	}{
 		{
-			name:      "Happy path, update messages",
-			serviceID: serviceWithMsgs.Id,
-			messages: &translatev1.Messages{
-				Language: uploadReq.Language,
-			},
+			name:         "Happy Path",
+			request:      happyReq,
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "Not Found, message does not exist",
-			serviceID:    service.Id,
-			messages:     randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+			name:         "Message does not exists",
+			request:      notFoundMessagesReq,
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "Not found, service not found",
-			serviceID:    gofakeit.UUID(),
-			messages:     randMessages(t, nil),
+			name:         "Service does not exists",
+			request:      notFoundServiceID,
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "Bad request, messages not provided",
-			serviceID:    service.Id,
+			name:         "Invalid argument nil messages",
+			request:      invalidArgumentNilMessagesReq,
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name:      "Bad request, messages.language not provided",
-			serviceID: service.Id,
-			messages: &translatev1.Messages{
-				Language: "",
-			},
+			name:         "Invalid argument und messages.language",
+			request:      invalidArgumentUndMessagesLanguageReq,
 			expectedCode: http.StatusBadRequest,
 		},
 	}
@@ -677,13 +692,13 @@ func Test_UpdateMessages_REST(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			body, err := json.Marshal(tt.messages)
+			body, err := json.Marshal(tt.request.Messages)
 			require.NoError(t, err, "marshal messages")
 
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.serviceID + "/messages",
+				Path:   "v1/services/" + tt.request.ServiceId + "/messages",
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(body))
@@ -694,7 +709,7 @@ func Test_UpdateMessages_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+			assert.Equal(t, int(tt.expectedCode), resp.StatusCode)
 		})
 	}
 }

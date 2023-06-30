@@ -68,7 +68,7 @@ message ListMessagesResponse {
   repeated Messages messages = 1;
 }
 
-message UpdateMessagesRequest{
+message UpdateMessagesRequest {
   string service_id = 1;
   Messages messages = 2;
 }
