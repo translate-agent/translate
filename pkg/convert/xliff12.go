@@ -41,7 +41,7 @@ type transUnit struct {
 func FromXliff12(data []byte) (model.Messages, error) {
 	var xlf xliff12
 	if err := xml.Unmarshal(data, &xlf); err != nil {
-		return model.Messages{}, fmt.Errorf("unmarshal to xliff12: %w", err)
+		return model.Messages{}, fmt.Errorf("unmarshal xliff12: %w", err)
 	}
 
 	messages := model.Messages{
@@ -96,10 +96,8 @@ func ToXliff12(messages model.Messages) ([]byte, error) {
 
 	data, err := xml.Marshal(&xlf)
 	if err != nil {
-		return nil, fmt.Errorf("marshal xliff12 struct to XLIFF 1.2 formatted XML: %w", err)
+		return nil, fmt.Errorf("marshal xliff12: %w", err)
 	}
 
-	dataWithHeader := append([]byte(xml.Header), data...) // prepend generic XML header
-
-	return dataWithHeader, nil
+	return append([]byte(xml.Header), data...), nil
 }
