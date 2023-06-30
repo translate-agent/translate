@@ -8,6 +8,8 @@ import (
 	"golang.org/x/text/language"
 )
 
+// TODO: For now we can only import XLIFF 1.2 files, export is not working correctly yet.
+
 // XLIFF 1.2 specification: https://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html
 // XLIFF 1.2 example: https://localizely.com/xliff-file/?tab=xliff-12
 
@@ -19,6 +21,7 @@ type xliff12 struct {
 
 type xliff12File struct {
 	SourceLanguage language.Tag `xml:"source-language,attr"`
+	TargetLanguage language.Tag `xml:"target-language,attr"`
 	Body           bodyElement  `xml:"body"`
 }
 
@@ -27,16 +30,18 @@ type bodyElement struct {
 }
 
 type transUnit struct {
-	ID     string `xml:"id,attr"`
-	Source string `xml:"source"`
-	Note   string `xml:"note,omitempty"`
+	ID     string `xml:"id,attr"`          // messages.messages[n].ID
+	Source string `xml:"source"`           // messages.messages[n].Message (if no target language is set)
+	Target string `xml:"target,omitempty"` // messages.messages[n].Message (if target language is set)
+	Note   string `xml:"note,omitempty"`   // messages.messages[n].Description
+	// No unified standard about storing fuzzy values
 }
 
 // FromXliff12 converts serialized data from the XML data in the XLIFF 1.2 format into a model.Messages struct.
 func FromXliff12(data []byte) (model.Messages, error) {
 	var xlf xliff12
 	if err := xml.Unmarshal(data, &xlf); err != nil {
-		return model.Messages{}, fmt.Errorf("unmarshal XLIFF 1.2 formatted XML into xliff12 struct: %w", err)
+		return model.Messages{}, fmt.Errorf("unmarshal to xliff12: %w", err)
 	}
 
 	messages := model.Messages{
@@ -44,10 +49,24 @@ func FromXliff12(data []byte) (model.Messages, error) {
 		Messages: make([]model.Message, 0, len(xlf.File.Body.TransUnits)),
 	}
 
+	// Check if file has a target language set
+	isTranslated := xlf.File.TargetLanguage != language.Und
+	if isTranslated {
+		messages.Language = xlf.File.TargetLanguage
+	}
+
+	getMessage := func(t transUnit) string {
+		if isTranslated {
+			return t.Target
+		}
+
+		return t.Source
+	}
+
 	for _, unit := range xlf.File.Body.TransUnits {
 		messages.Messages = append(messages.Messages, model.Message{
 			ID:          unit.ID,
-			Message:     convertToMessageFormatSingular(unit.Source),
+			Message:     convertToMessageFormatSingular(getMessage(unit)),
 			Description: unit.Note,
 		})
 	}

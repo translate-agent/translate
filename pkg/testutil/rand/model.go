@@ -111,6 +111,12 @@ func WithFuzzy(fuzzy bool) ModelMessageOption {
 	}
 }
 
+func WithMessageFormat() ModelMessageOption {
+	return func(m *model.Message) {
+		m.Message = "{" + m.Message + "}"
+	}
+}
+
 // ------------------Messages------------------
 
 // modelMessages generates a random model.Messages with the given

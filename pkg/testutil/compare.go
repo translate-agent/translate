@@ -12,6 +12,6 @@ func EqualMessages(t *testing.T, expected, actual *model.Messages) {
 		require.Equal(t, expected, actual)
 	}
 
-	require.Equal(t, expected.Language, actual.Language)
+	require.Equal(t, expected.Language, actual.Language, "got language %s, want %s", actual.Language, expected.Language)
 	require.ElementsMatch(t, expected.Messages, actual.Messages)
 }
