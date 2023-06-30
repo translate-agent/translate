@@ -3,6 +3,7 @@ package convert
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/message/pipeline"
@@ -45,6 +46,7 @@ func messagesToPipeline(m model.Messages) pipeline.Messages {
 			ID:          pipeline.IDList{value.ID},
 			Translation: pipeline.Text{Msg: removeEnclosingBrackets(value.Message)},
 			Meaning:     value.Description,
+			Position:    strings.Join(value.Positions, ", "),
 			Fuzzy:       value.Fuzzy,
 		})
 	}
@@ -60,10 +62,17 @@ func messagesFromPipeline(m pipeline.Messages) model.Messages {
 	}
 
 	for _, value := range m.Messages {
+		var pos model.Positions
+
+		if value.Position != "" {
+			pos = strings.Split(value.Position, ", ")
+		}
+
 		msg.Messages = append(msg.Messages, model.Message{
 			ID:          value.ID[0],
 			Fuzzy:       value.Fuzzy,
 			Description: value.Meaning,
+			Positions:   pos,
 			Message:     convertToMessageFormatSingular(value.Message.Msg),
 		})
 	}
