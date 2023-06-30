@@ -140,11 +140,11 @@ func positionsToXliff12(positions model.Positions) []contextGroup {
 		parts := strings.Split(pos, ":")
 
 		switch len(parts) {
-		case 0:
+		default:
 			continue
 		case 1:
 			cg.Contexts = []context{{Type: "sourcefile", Content: parts[0]}}
-		default:
+		case 2: //nolint:gomnd
 			cg.Contexts = []context{
 				{Type: "sourcefile", Content: parts[0]},
 				{Type: "linenumber", Content: parts[1]},

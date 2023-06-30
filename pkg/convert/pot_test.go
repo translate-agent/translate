@@ -29,13 +29,21 @@ func Test_ToPot(t *testing.T) {
 						ID:          "Hello, world!",
 						Message:     "Bonjour le monde!",
 						Description: "A simple greeting",
-						Fuzzy:       true,
+						Positions: []string{
+							"examples/simple/example.clj:10",
+							"examples/simple/example.clj:20",
+						},
+						Fuzzy: true,
 					},
 					{
 						ID:          "Goodbye!",
 						Message:     "Au revoir!",
 						Description: "A farewell",
-						Fuzzy:       true,
+						Positions: []string{
+							"examples/simple/example.clj:30",
+							"examples/simple/example.clj:40",
+						},
+						Fuzzy: true,
 					},
 				},
 			},
@@ -43,11 +51,15 @@ func Test_ToPot(t *testing.T) {
 msgstr ""
 "Language: en\n"
 #. A simple greeting
+#: examples/simple/example.clj:10
+#: examples/simple/example.clj:20
 #, fuzzy
 msgid "Hello, world!"
 msgstr "Bonjour le monde!"
 
 #. A farewell
+#: examples/simple/example.clj:30
+#: examples/simple/example.clj:40
 #, fuzzy
 msgid "Goodbye!"
 msgstr "Au revoir!"
@@ -797,19 +809,20 @@ func TestFromPot(t *testing.T) {
 						"X-Generator: Poedit 2.2\n"
 						"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 						
-						#: examples/simple/example.clj
+						#: examples/simple/example.clj:10
 						msgid "Greetings"
 						msgstr "Bonjour"
 						
-						#: examples/simple/example.clj
+						#: examples/simple/example.clj:20
 						msgid "Please confirm your email"
 						msgstr "Veuillez confirmer votre email"
 						
-						#: examples/simple/example.clj
+						#: examples/simple/example.clj:30
 						msgid "Welcome, %s!"
 						msgstr "Bienvenue, %s!"
 						
-						#: examples/simple/example.clj
+						#: examples/simple/example.clj:40
+						#: examples/simple/example.clj:50
 						msgid "product"
 						msgid_plural "%s products"
 						msgstr[0] "produit"
@@ -818,16 +831,19 @@ func TestFromPot(t *testing.T) {
 				Language: language.French,
 				Messages: []model.Message{
 					{
-						ID:      "Greetings",
-						Message: "{Bonjour}",
+						ID:        "Greetings",
+						Message:   "{Bonjour}",
+						Positions: []string{"examples/simple/example.clj:10"},
 					},
 					{
-						ID:      "Please confirm your email",
-						Message: "{Veuillez confirmer votre email}",
+						ID:        "Please confirm your email",
+						Message:   "{Veuillez confirmer votre email}",
+						Positions: []string{"examples/simple/example.clj:20"},
 					},
 					{
-						ID:      "Welcome, %s!",
-						Message: "{Bienvenue, %s!}",
+						ID:        "Welcome, %s!",
+						Message:   "{Bienvenue, %s!}",
+						Positions: []string{"examples/simple/example.clj:30"},
 					},
 					{
 						ID:       "product",
@@ -836,6 +852,10 @@ func TestFromPot(t *testing.T) {
 when 1 {produit}
 when * {%s produits}
 `,
+						Positions: []string{
+							"examples/simple/example.clj:40",
+							"examples/simple/example.clj:50",
+						},
 					},
 				},
 			},

@@ -42,7 +42,9 @@ func TestLex(t *testing.T) {
 				"msgstr[1] \"There are %d oranges\"\n" +
 				"# translator-comment\n" +
 				"#. extracted comment\n" +
-				"#: reference\n" +
+				"#: reference1\n" +
+				"#: reference2\n" +
+				"#: reference3\n" +
 				"#, flag\n" +
 				"#| msgctxt previous context\n" +
 				"#| msgid previous id\n" +
@@ -71,7 +73,9 @@ func TestLex(t *testing.T) {
 				{Value: "There are %d oranges", Type: PluralMsgStr, Index: 1},
 				{Value: "translator-comment", Type: TranslatorComment},
 				{Value: "extracted comment", Type: ExtractedComment},
-				{Value: "reference", Type: Reference},
+				{Value: "reference1", Type: Reference},
+				{Value: "reference2", Type: Reference},
+				{Value: "reference3", Type: Reference},
 				{Value: "flag", Type: Flag},
 				{Value: "msgctxt previous context", Type: MsgctxtPreviousContext},
 				{Value: "msgid previous id", Type: MsgidPrevUntStr},

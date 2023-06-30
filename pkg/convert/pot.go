@@ -61,6 +61,7 @@ func FromPot(b []byte) (model.Messages, error) {
 			ID:          node.MsgId,
 			PluralID:    node.MsgIdPlural,
 			Description: strings.Join(node.ExtractedComment, "\n "),
+			Positions:   node.References,
 			Fuzzy:       strings.Contains(node.Flag, "fuzzy"),
 		}
 
@@ -265,6 +266,14 @@ func writeMessage(b *bytes.Buffer, index int, message model.Message) error {
 		if description != "" {
 			if _, err := fmt.Fprintf(b, "#. %s\n", description); err != nil {
 				return fmt.Errorf("write description: %w", err)
+			}
+		}
+	}
+
+	for _, pos := range message.Positions {
+		if pos != "" {
+			if _, err := fmt.Fprintf(b, "#: %s\n", pos); err != nil {
+				return fmt.Errorf("write positions: %w", err)
 			}
 		}
 	}
