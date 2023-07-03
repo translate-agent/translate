@@ -37,7 +37,6 @@ type transUnit struct {
 	Note          string         `xml:"note,omitempty"`   // messages.messages[n].Description
 	ContextGroups []contextGroup `xml:"context-group,omitempty"`
 	// No unified standard about storing fuzzy values
-
 }
 
 type contextGroup struct {
