@@ -552,7 +552,7 @@ func Test_CreateMessages_REST(t *testing.T) {
 		{
 			name:         "Happy path, create messages",
 			serviceID:    service.Id,
-			messages:     randMessages(t, langs[0].String()),
+			messages:     randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
 			expectedCode: http.StatusOK,
 		},
 		{
@@ -566,7 +566,7 @@ func Test_CreateMessages_REST(t *testing.T) {
 		{
 			name:         "Not found, service not found",
 			serviceID:    gofakeit.UUID(),
-			messages:     randMessages(t, ""),
+			messages:     randMessages(t, nil),
 			expectedCode: http.StatusNotFound,
 		},
 		{
@@ -628,7 +628,7 @@ func Test_UpdateMessages_REST(t *testing.T) {
 
 	_, err := client.CreateMessages(ctx, &translatev1.CreateMessagesRequest{
 		ServiceId: service.Id,
-		Messages:  randMessages(t, langs[0].String()),
+		Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
 	})
 	require.NoError(t, err, "create test messages")
 
@@ -640,7 +640,7 @@ func Test_UpdateMessages_REST(t *testing.T) {
 
 		return &translatev1.UpdateMessagesRequest{
 			ServiceId: service.Id,
-			Messages:  randMessages(t, lang),
+			Messages:  randMessages(t, &translatev1.Messages{Language: lang}),
 		}
 	}
 

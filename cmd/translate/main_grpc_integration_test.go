@@ -423,12 +423,12 @@ func Test_ListServices_gRPC(t *testing.T) {
 
 // ------------------Messages------------------
 
-func randMessages(t *testing.T, langOverride string) *translatev1.Messages {
+func randMessages(t *testing.T, override *translatev1.Messages) *translatev1.Messages {
 	t.Helper()
 
 	lang := rand.Language().String()
-	if langOverride != "" {
-		lang = langOverride
+	if override != nil {
+		lang = override.Language
 	}
 
 	n := gofakeit.IntRange(1, 5)
@@ -475,7 +475,7 @@ func Test_CreateMessages_gRPC(t *testing.T) {
 			name: "Happy path, create messages",
 			request: &translatev1.CreateMessagesRequest{
 				ServiceId: service.Id,
-				Messages:  randMessages(t, langs[0].String()),
+				Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
 			},
 			expectedCode: codes.OK,
 		},
@@ -493,7 +493,7 @@ func Test_CreateMessages_gRPC(t *testing.T) {
 			name: "Not found, service not found",
 			request: &translatev1.CreateMessagesRequest{
 				ServiceId: gofakeit.UUID(),
-				Messages:  randMessages(t, ""),
+				Messages:  randMessages(t, nil),
 			},
 			expectedCode: codes.NotFound,
 		},
@@ -602,7 +602,7 @@ func Test_UpdateMessages_gRPC(t *testing.T) {
 
 	_, err := client.CreateMessages(ctx, &translatev1.CreateMessagesRequest{
 		ServiceId: service.Id,
-		Messages:  randMessages(t, langs[0].String()),
+		Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
 	})
 	require.NoError(t, err, "create test messages")
 
@@ -614,7 +614,7 @@ func Test_UpdateMessages_gRPC(t *testing.T) {
 
 		return &translatev1.UpdateMessagesRequest{
 			ServiceId: service.Id,
-			Messages:  randMessages(t, lang),
+			Messages:  randMessages(t, &translatev1.Messages{Language: lang}),
 		}
 	}
 
