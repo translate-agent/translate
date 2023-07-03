@@ -2,13 +2,60 @@ package convert
 
 import (
 	"fmt"
+	"math/rand"
+	"reflect"
 	"regexp"
+	"strings"
 	"testing"
+	"testing/quick"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
-	"golang.org/x/text/language"
+	"go.expect.digital/translate/pkg/testutil"
+	testutilrand "go.expect.digital/translate/pkg/testutil/rand"
 )
+
+func randXliff2(target bool, messages *model.Messages) []byte {
+	sb := strings.Builder{}
+
+	sb.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
+
+	if target {
+		fmt.Fprintf(
+			&sb,
+			"<xliff xmlns=\"urn:oasis:names:tc:xliff:document:2.0\" version=\"2.0\" srcLang=\"und\" trgLang=\"%s\">",
+			messages.Language)
+	} else {
+		fmt.Fprintf(
+			&sb,
+			"<xliff xmlns=\"urn:oasis:names:tc:xliff:document:2.0\" version=\"2.0\" srcLang=\"%s\" trgLang=\"und\">",
+			messages.Language)
+	}
+
+	sb.WriteString("<file>")
+
+	for _, msg := range messages.Messages {
+		fmt.Fprintf(&sb, "<unit id=\"%s\">", msg.ID)
+
+		if msg.Description != "" {
+			fmt.Fprintf(&sb, "<notes><note category=\"description\">%s</note></notes>", msg.Description)
+		}
+
+		if target {
+			fmt.Fprintf(&sb, "<segment><target>%s</target></segment>", msg.Message)
+		} else {
+			fmt.Fprintf(&sb, "<segment><source>%s</source></segment>", msg.Message)
+		}
+
+		sb.WriteString("</unit>")
+	}
+
+	sb.WriteString("</file>")
+	sb.WriteString("</xliff>")
+
+	return []byte(sb.String())
+}
 
 func assertEqualXml(t *testing.T, expected, actual []byte) bool { //nolint:unparam
 	t.Helper()
@@ -20,103 +67,45 @@ func assertEqualXml(t *testing.T, expected, actual []byte) bool { //nolint:unpar
 	return assert.Equal(t, expectedTrimmed, actualTrimmed)
 }
 
-func TestFromXliff2(t *testing.T) {
+func Test_FromXliff2(t *testing.T) {
 	t.Parallel()
 
+	msgOpts := []testutilrand.ModelMessageOption{
+		testutilrand.WithFuzzy(false), // Do not mark message as fuzzy, as this is not supported by XLIFF 2.0
+	}
+
+	testMessages := testutilrand.ModelMessagesSlice(2, 5, msgOpts)
+
 	tests := []struct {
-		name        string
-		expectedErr error
-		input       []byte
-		expected    model.Messages
+		name     string
+		expected *model.Messages
+		input    []byte
 	}{
 		{
-			name: "All OK",
-			input: []byte(`<?xml version="1.0" encoding="UTF-8"?>
-<xliff version="2.0" xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang="en" trgLang="fr">
-  <file id="ngi18n" original="ng.template">
-    <unit id="common.welcome">
-      <notes>
-        <note category="location">src/app/app.component.html:16</note>
-      </notes>
-      <segment>
-        <source>Welcome!</source>
-        <target>Bienvenue!</target>
-      </segment>
-    </unit>
-    <unit id="common.app.title">
-      <notes>
-        <note category="location">src/app/app.component.html:4</note>
-        <note category="description">App title</note>
-      </notes>
-      <segment>
-        <source>Diary</source>
-        <target>Agenda</target>
-      </segment>
-    </unit>
-  </file>
-</xliff>`),
-			expected: model.Messages{
-				Language: language.English,
-				Messages: []model.Message{
-					{
-						ID:      "common.welcome",
-						Message: "{Welcome!}",
-					},
-					{
-						ID:          "common.app.title",
-						Message:     "{Diary}",
-						Description: "App title",
-					},
-				},
-			},
-			expectedErr: nil,
+			name:     "Happy Path Untranslated",
+			input:    randXliff2(false, testMessages[0]),
+			expected: testMessages[0],
 		},
 		{
-			name: "Malformed language",
-			input: []byte(`<?xml version="1.0" encoding="UTF-8"?>
-<xliff version="2.0" xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang="xyz-ZY-Latn" trgLang="fr">
-  <file id="ngi18n" original="ng.template">
-    <unit id="common.welcome">
-      <notes>
-        <note category="location">src/app/app.component.html:16</note>
-      </notes>
-      <segment>
-        <source>Welcome!</source>
-        <target>Bienvenue!</target>
-      </segment>
-    </unit>
-    <unit id="common.app.title">
-      <notes>
-        <note category="location">src/app/app.component.html:4</note>
-        <note category="description">App title</note>
-      </notes>
-      <segment>
-        <source>Diary</source>
-        <target>Agenda</target>
-      </segment>
-    </unit>
-  </file>
-</xliff>`),
-			expectedErr: fmt.Errorf("language: subtag \"xyz\" is well-formed but unknown"),
+			name:     "Happy Path Translated",
+			input:    randXliff2(true, testMessages[1]),
+			expected: testMessages[1],
 		},
 	}
+
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			actual, err := FromXliff2(tt.input)
-			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
-				return
+			require.NoError(t, err)
+
+			for i := range actual.Messages {
+				actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
-
-			assert.Equal(t, tt.expected.Language, actual.Language)
-			assert.ElementsMatch(t, tt.expected.Messages, actual.Messages)
+			testutil.EqualMessages(t, tt.expected, &actual)
 		})
 	}
 }
@@ -124,79 +113,46 @@ func TestFromXliff2(t *testing.T) {
 func Test_ToXliff2(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		name        string
-		expected    []byte
-		expectedErr error
-		input       model.Messages
-	}{
-		{
-			name: "All OK",
-			expected: []byte(`<?xml version="1.0" encoding="UTF-8"?>
-<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en">
-  <file>
-    <unit id="Welcome">
-      <notes>
-        <note category="description">To welcome a new visitor</note>
-      </notes>
-      <segment>
-        <source>Welcome to our website!</source>
-      </segment>
-    </unit>
-    <unit id="Error">
-      <notes>
-        <note category="description">To inform the user of an error</note>
-      </notes>
-      <segment>
-        <source>Something went wrong. Please try again later.</source>
-      </segment>
-    </unit>
-    <unit id="Feedback">
-      <segment>
-        <source>We appreciate your feedback. Thank you for using our service.</source>
-      </segment>
-    </unit>
-  </file>
-</xliff>`),
-			expectedErr: nil,
-			input: model.Messages{
-				Language: language.English,
-				Messages: []model.Message{
-					{
-						ID:          "Welcome",
-						Message:     "{Welcome to our website!}",
-						Description: "To welcome a new visitor",
-					},
-					{
-						ID:          "Error",
-						Message:     "{Something went wrong. Please try again later.}",
-						Description: "To inform the user of an error",
-					},
-					{
-						ID:      "Feedback",
-						Message: "{We appreciate your feedback. Thank you for using our service.}",
-					},
-				},
-			},
+	msgOpts := []testutilrand.ModelMessageOption{
+		testutilrand.WithFuzzy(false), // Do not mark message as fuzzy, as this is not supported by XLIFF 2.0
+	}
+
+	messages := testutilrand.ModelMessages(4, msgOpts)
+	expected := randXliff2(false, messages)
+
+	actual, err := ToXliff2(*messages)
+	require.NoError(t, err)
+
+	assertEqualXml(t, expected, actual)
+}
+
+func Test_TransformXLIFF2(t *testing.T) {
+	t.Parallel()
+
+	msgOpts := []testutilrand.ModelMessageOption{
+		// Enclose message in curly braces, as ToXliff2() removes them, and FromXliff2() adds them again
+		testutilrand.WithMessageFormat(),
+		testutilrand.WithFuzzy(false), // Do not mark message as fuzzy, as this is not supported by XLIFF 1.2
+	}
+
+	conf := &quick.Config{
+		MaxCount: 100,
+		Values: func(values []reflect.Value, _ *rand.Rand) {
+			values[0] = reflect.ValueOf(testutilrand.ModelMessages(3, msgOpts)) // input generator
 		},
 	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 
-			actual, err := ToXliff2(tt.input)
+	f := func(expected *model.Messages) bool {
+		xliffData, err := ToXliff2(*expected)
+		require.NoError(t, err)
 
-			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
-				return
-			}
+		restoredMessages, err := FromXliff2(xliffData)
+		require.NoError(t, err)
 
-			if !assert.NoError(t, err) {
-				return
-			}
+		testutil.EqualMessages(t, expected, &restoredMessages)
 
-			assertEqualXml(t, tt.expected, actual)
-		})
+		return true
 	}
+
+	assert.NoError(t, quick.Check(f, conf))
 }
