@@ -7,8 +7,7 @@ env:
   EARTHLY_VERSION: 0.7.9
 
 jobs:
-  lint:
-    name: lint
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: earthly/actions-setup@v1
@@ -16,21 +15,23 @@ jobs:
           version: ${{ env.EARTHLY_VERSION }}
           use-cache: true
       - uses: actions/checkout@v3
+      # Check if Generated Go files are up to date
+      - name: GO proto up-to-date
+        run: |
+          earthly +proto
+          if ! git diff --quiet; then
+            echo "Generated Go files are not up to date"
+            git diff
+            exit 1
+          fi
+        # LINT
       - name: Proto
         run: earthly --ci +lint-proto
       - name: Migrate
         run: earthly --ci +lint-migrate
+        # TEST
       - name: GO
         run: earthly --ci +lint-go
-  test:
-    name: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: earthly/actions-setup@v1
-        with:
-          version: ${{ env.EARTHLY_VERSION }}
-          use-cache: true
-      - uses: actions/checkout@v3
       - name: Unit
         run: earthly --ci +test-unit
       - name: Integration
