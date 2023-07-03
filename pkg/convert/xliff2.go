@@ -117,7 +117,7 @@ func ToXliff2(messages model.Messages) ([]byte, error) {
 
 // helpers
 
-// positionsFromXliff2 extracts line positions from unit []notes.
+// positionsFromXliff2 extracts line positions from unit []note.
 func positionsFromXliff2(notes *[]note) model.Positions {
 	if notes == nil {
 		return nil
