@@ -56,26 +56,25 @@ func messagesToPipeline(m model.Messages) pipeline.Messages {
 
 // messagesFromPipeline converts a pipeline.Messages structure into a model.Messages structure.
 func messagesFromPipeline(m pipeline.Messages) model.Messages {
-	msg := model.Messages{
+	msgs := model.Messages{
 		Language: m.Language,
 		Messages: make([]model.Message, 0, len(m.Messages)),
 	}
 
 	for _, value := range m.Messages {
-		var pos model.Positions
-
-		if value.Position != "" {
-			pos = strings.Split(value.Position, ", ")
-		}
-
-		msg.Messages = append(msg.Messages, model.Message{
+		msg := model.Message{
 			ID:          value.ID[0],
 			Fuzzy:       value.Fuzzy,
 			Description: value.Meaning,
-			Positions:   pos,
 			Message:     convertToMessageFormatSingular(value.Message.Msg),
-		})
+		}
+
+		if value.Position != "" {
+			msg.Positions = strings.Split(value.Position, ", ")
+		}
+
+		msgs.Messages = append(msgs.Messages, msg)
 	}
 
-	return msg
+	return msgs
 }
