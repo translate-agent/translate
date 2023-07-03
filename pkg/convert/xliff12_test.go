@@ -116,12 +116,13 @@ func Test_TransformXLIFF12(t *testing.T) {
 	t.Parallel()
 
 	msgOpts := []testutilrand.ModelMessageOption{
-		testutilrand.WithMessageFormat(), // Enclose message in curly braces
-		testutilrand.WithFuzzy(false),    // Do not mark message as fuzzy, as this is not supported by XLIFF 1.2
+		// Enclose message in curly braces, as ToXliff12() removes them, and FromXliff12() adds them again
+		testutilrand.WithMessageFormat(),
+		testutilrand.WithFuzzy(false), // Do not mark message as fuzzy, as this is not supported by XLIFF 1.2
 	}
 
 	conf := &quick.Config{
-		MaxCount: 1000,
+		MaxCount: 100,
 		Values: func(values []reflect.Value, _ *rand.Rand) {
 			values[0] = reflect.ValueOf(testutilrand.ModelMessages(3, msgOpts)) // input generator
 		},

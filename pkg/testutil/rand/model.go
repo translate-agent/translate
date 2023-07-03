@@ -111,6 +111,7 @@ func WithFuzzy(fuzzy bool) ModelMessageOption {
 	}
 }
 
+// WithMessageFormat encloses the message in curly braces.
 func WithMessageFormat() ModelMessageOption {
 	return func(m *model.Message) {
 		m.Message = "{" + m.Message + "}"
