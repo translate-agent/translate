@@ -25,14 +25,14 @@ jobs:
             exit 1
           fi
         # LINT
-      - name: Proto
+      - name: Lint Proto
         run: earthly --ci +lint-proto
-      - name: Migrate
+      - name: Lint Migrate
         run: earthly --ci +lint-migrate
-      - name: GO
+      - name: Lint GO
         run: earthly --ci +lint-go
         # TEST
-      - name: Unit
+      - name: Test Unit
         run: earthly --ci +test-unit
-      - name: Integration
+      - name: Test Integration
         run: earthly --ci --allow-privileged --secret googletranslate_api_key=${{ secrets.GOOGLETRANSLATE_API_KEY }} +test-integration

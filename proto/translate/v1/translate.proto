@@ -149,3 +149,7 @@ service TranslateService {
     option (google.api.http) = {get: "/v1/services/{service_id}/files/{language}"};
   }
 }
+
+message toBeDELETED {
+  string deleteME = 1;
+}
