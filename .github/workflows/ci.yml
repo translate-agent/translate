@@ -20,7 +20,7 @@ jobs:
         run: |
           earthly +proto
           if ! git diff --quiet; then
-            echo "Generated Go files are not up to date" >&2
+            echo "Generated Go files are not up to date"
             git diff --stat
             exit 1
           fi
