@@ -84,7 +84,7 @@ func modelMessage() *model.Message {
 
 // ModelMessage generates a random model.Message using provided options.
 func ModelMessage(opts ...ModelMessageOption) *model.Message {
-	opts = append(opts, WithEmptyPluralID()) // PluralID is ignored as it is not used in the repo yet
+	opts = append(opts, WithPluralID("")) // PluralID is ignored as it is not used in the repo yet
 
 	return mdl(modelMessage, opts...)
 }
@@ -98,10 +98,22 @@ func ModelMessageSlice(n uint, opts ...ModelMessageOption) []*model.Message {
 
 type ModelMessageOption func(*model.Message)
 
-// WithEmptyPluralID sets the PluralID of the model.Message to "".
-func WithEmptyPluralID() ModelMessageOption {
+// WithPluralID sets the PluralID of the model.Message to "".
+func WithPluralID(pluralID string) ModelMessageOption {
 	return func(m *model.Message) {
-		m.PluralID = ""
+		m.PluralID = pluralID
+	}
+}
+
+func WithMessage(msg string) ModelMessageOption {
+	return func(m *model.Message) {
+		m.Message = msg
+	}
+}
+
+func WithFuzzy(fuzzy bool) ModelMessageOption {
+	return func(m *model.Message) {
+		m.Fuzzy = fuzzy
 	}
 }
 

@@ -1,4 +1,4 @@
-package translate
+package server
 
 import (
 	"errors"
@@ -8,7 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
 
@@ -19,7 +21,7 @@ func Test_ParseUploadParams(t *testing.T) {
 
 	randReq := func() *translatev1.UploadTranslationFileRequest {
 		return &translatev1.UploadTranslationFileRequest{
-			Language:  gofakeit.LanguageBCP(),
+			Language:  rand.Language().String(),
 			Data:      []byte(`{"key":"value"}`),
 			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
 			ServiceId: gofakeit.UUID(),
@@ -81,7 +83,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 
 	randParams := func() *uploadParams {
 		return &uploadParams{
-			languageTag: language.MustParse(gofakeit.LanguageBCP()),
+			languageTag: rand.Language(),
 			data:        []byte(`{"key":"value"}`),
 			schema:      translatev1.Schema(gofakeit.IntRange(1, 7)),
 			serviceID:   uuid.New(),
@@ -123,11 +125,6 @@ func Test_ValidateUploadParams(t *testing.T) {
 			expectedErr: errors.New("'schema' is required"),
 		},
 		{
-			name:        "Unspecified language",
-			params:      unspecifiedLangReq,
-			expectedErr: errors.New("'language' is required"),
-		},
-		{
 			name:        "Unspecified service ID",
 			params:      unspecifiedServiceIDReq,
 			expectedErr: errors.New("'service_id' is required"),
@@ -150,6 +147,96 @@ func Test_ValidateUploadParams(t *testing.T) {
 	}
 }
 
+func Test_GetLanguage(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		params   *uploadParams
+		messages *model.Messages
+	}
+
+	// Tests
+
+	messagesDefinedParamsUndefined := args{
+		params:   &uploadParams{languageTag: language.Und},
+		messages: rand.ModelMessages(3, nil),
+	}
+
+	messagesUndefinedParamsDefined := args{
+		params:   &uploadParams{languageTag: rand.Language()},
+		messages: rand.ModelMessages(3, nil, rand.WithLanguage(language.Und)),
+	}
+
+	sameLang := rand.Language()
+	bothDefinedSameLang := args{
+		params:   &uploadParams{languageTag: sameLang},
+		messages: rand.ModelMessages(3, nil, rand.WithLanguage(sameLang)),
+	}
+
+	undefinedBoth := args{
+		params:   &uploadParams{languageTag: language.Und},
+		messages: rand.ModelMessages(3, nil, rand.WithLanguage(language.Und)),
+	}
+
+	langs := rand.Languages(2)
+	langMismatch := args{
+		params:   &uploadParams{languageTag: langs[0]},
+		messages: rand.ModelMessages(3, nil, rand.WithLanguage(langs[1])),
+	}
+
+	tests := []struct {
+		expectedErr error
+		args        args
+		expected    language.Tag
+		name        string
+	}{
+		{
+			name:        "Messages language is defined/params undefined",
+			args:        messagesDefinedParamsUndefined,
+			expected:    messagesDefinedParamsUndefined.messages.Language,
+			expectedErr: nil,
+		},
+		{
+			name:        "Messages language is undefined/params defined",
+			args:        messagesUndefinedParamsDefined,
+			expected:    messagesUndefinedParamsDefined.params.languageTag,
+			expectedErr: nil,
+		},
+		{
+			name:        "Both defined, same language",
+			args:        bothDefinedSameLang,
+			expected:    bothDefinedSameLang.messages.Language,
+			expectedErr: nil,
+		},
+		{
+			name:        "Both undefined",
+			args:        undefinedBoth,
+			expectedErr: errors.New("no language is set"),
+		},
+		{
+			name:        "Language mismatch",
+			args:        langMismatch,
+			expectedErr: errors.New("languages are mismatched"),
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			actual, err := getLanguage(tt.args.params, tt.args.messages)
+
+			if tt.expectedErr != nil {
+				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, actual)
+		})
+	}
+}
+
 // -------------------Download-----------------------
 
 func Test_ParseDownloadParams(t *testing.T) {
@@ -157,7 +244,7 @@ func Test_ParseDownloadParams(t *testing.T) {
 
 	randReq := func() *translatev1.DownloadTranslationFileRequest {
 		return &translatev1.DownloadTranslationFileRequest{
-			Language:  gofakeit.LanguageBCP(),
+			Language:  rand.Language().String(),
 			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
 			ServiceId: gofakeit.UUID(),
 		}
@@ -219,7 +306,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 
 	randParams := func() *downloadParams {
 		return &downloadParams{
-			languageTag: language.MustParse(gofakeit.LanguageBCP()),
+			languageTag: rand.Language(),
 			schema:      translatev1.Schema(gofakeit.IntRange(1, 7)),
 			serviceID:   uuid.New(),
 		}

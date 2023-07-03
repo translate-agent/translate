@@ -1,11 +1,11 @@
 VERSION 0.7
 
-ARG --global USERARCH
+ARG --global USERARCH # Arch of the user running the build
 
 ARG --global go_version=1.20.5
-ARG --global golangci_lint_version=1.53.2
-ARG --global bufbuild_version=1.21.0
-ARG --global migrate_version=4.16.1
+ARG --global golangci_lint_version=1.53.3
+ARG --global bufbuild_version=1.22.0
+ARG --global migrate_version=4.16.2
 ARG --global sqlfluff_version=2.1.1
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
@@ -19,6 +19,7 @@ deps:
 
 go:
   FROM +deps
+  WORKDIR /translate
   COPY --dir cmd pkg .
   COPY --platform=linux/$USERARCH +proto/translate/v1/* pkg/pb/translate/v1
   SAVE ARTIFACT /translate 
@@ -48,6 +49,14 @@ proto:
   RUN rm gen/proto/go/translate/v1/translate.pb.gw.go.bak
   SAVE ARTIFACT . proto
   SAVE ARTIFACT gen/proto/go/translate/v1 translate/v1 AS LOCAL pkg/pb/translate/v1
+
+# buf-registry pushes BUF modules to the registry.
+buf-registry:
+  FROM bufbuild/buf:$bufbuild_version
+  WORKDIR proto
+  COPY +proto/proto .
+  RUN --secret BUF_USERNAME --secret BUF_API_TOKEN echo $BUF_API_TOKEN | buf registry login --username $BUF_USERNAME --token-stdin
+  RUN --push buf push
 
 # migrate runs DDL migration scripts against the given database.
 migrate:
@@ -97,7 +106,7 @@ lint:
 
 test-unit:
   FROM +go
-  RUN go test ./...
+  RUN --mount=type=cache,target=/go/pkg/mod go test ./...
 
 test-integration:
   FROM earthly/dind:alpine
@@ -105,7 +114,7 @@ test-integration:
   COPY +go/translate /translate
   COPY --dir migrate/mysql migrate
   WITH DOCKER --compose compose.yaml --service mysql --pull migrate/migrate:v$migrate_version --pull golang:$go_version-alpine
-    RUN \
+    RUN --no-cache --secret=googletranslate_api_key \
       --mount=type=cache,target=/go/pkg/mod \
       --mount=type=cache,target=/root/.cache/go-build \
 
@@ -128,6 +137,7 @@ test-integration:
         -e TRANSLATE_DB_MYSQL_PORT=3306 \
         -e TRANSLATE_DB_MYSQL_DATABASE=translate \
         -e TRANSLATE_DB_MYSQL_USER=root \
+        -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_API_KEY=$googletranslate_api_key \
         golang:$go_version-alpine go test -C /translate --tags=integration -count=1 ./...
   END
 
@@ -145,16 +155,18 @@ build:
   RUN \
   --mount=type=cache,target=/go/pkg/mod \
   --mount=type=cache,target=/root/.cache/go-build \
-    go build -o translate cmd/translate/main.go
-  SAVE ARTIFACT translate bin/translate
+    go build -o translate-service cmd/translate/main.go && \
+    go build -o translate cmd/client/main.go
+  SAVE ARTIFACT translate-service bin/translate-service # service
+  SAVE ARTIFACT translate bin/translate # client
 
 image:
   ARG TARGETARCH
   ARG --required registry
   ARG tag=latest
   FROM alpine
-  COPY --platform=linux/$USERARCH (+build/bin/translate --GOARCH=$TARGETARCH) /translate
-  ENTRYPOINT ["/translate"]
+  COPY --platform=linux/$USERARCH (+build/bin/translate-service --GOARCH=$TARGETARCH) /translate-service
+  ENTRYPOINT ["/translate-service"]
   SAVE IMAGE --push $registry/translate:$tag
 
 image-multiplatform:
@@ -163,3 +175,47 @@ image-multiplatform:
   --platform=linux/amd64 \
   --platform=linux/arm64 \
   +image --registry=$registry
+
+# -----------------------All-in-one image-----------------------
+
+# jeager is helper target for all-in-one image, it removes the need 
+# to download the correct jaeger image on every build
+jaeger:
+  FROM jaegertracing/all-in-one:1.46
+  SAVE ARTIFACT /go/bin/all-in-one-linux jaeger
+
+image-all-in-one:
+  ARG TARGETARCH
+  ARG --required registry
+  ARG tag=latest
+  FROM envoyproxy/envoy:v1.26-latest
+
+  # Install supervisor to run multiple processes in a single container
+  RUN apt-get update && apt-get install -y supervisor
+
+  WORKDIR app/
+
+  # Copy supervisord configuration and envoy configuration
+  COPY .earthly/supervisord.conf supervisord.conf
+  COPY .earthly/envoy.yaml envoy.yaml
+
+  # Copy binaries
+  COPY +jaeger/jaeger /usr/local/bin/jaeger
+  COPY --platform=linux/$USERARCH (+build/bin/translate-service --GOARCH=$TARGETARCH) /usr/local/bin/translate-service # service
+  COPY --platform=linux/$USERARCH (+build/bin/translate --GOARCH=$TARGETARCH) /usr/local/bin/translate # client
+
+  # Set required environment variables
+  ENV TRANSLATE_DB_BADGERDB_PATH=/tmp/badger
+  ENV OTEL_SERVICE_NAME=translate
+  ENV OTEL_EXPORTER_OTLP_INSECURE=true
+
+  ENTRYPOINT ["supervisord","-c","/app/supervisord.conf"]
+  SAVE IMAGE --push $registry/translate-agent-all-in-one:$tag
+
+image-all-in-one-multiplatform:
+  ARG --required registry
+  ARG tag=latest
+  BUILD \
+  --platform=linux/amd64 \
+  --platform=linux/arm64 \
+  +image-all-in-one --registry=$registry --tag=$tag
