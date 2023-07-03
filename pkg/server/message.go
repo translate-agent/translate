@@ -129,3 +129,79 @@ func (t *TranslateServiceServer) ListMessages(
 
 	return &translatev1.ListMessagesResponse{Messages: messagesSliceToProto(messages)}, nil
 }
+
+// ----------------------UpdateMessages-------------------------------
+
+type updateMessagesParams struct {
+	messages  *model.Messages
+	serviceID uuid.UUID
+}
+
+func parseUpdateMessagesRequestParams(req *translatev1.UpdateMessagesRequest) (*updateMessagesParams, error) {
+	var (
+		params updateMessagesParams
+		err    error
+	)
+
+	if params.serviceID, err = uuidFromProto(req.ServiceId); err != nil {
+		return nil, fmt.Errorf("parse service_id: %w", err)
+	}
+
+	if params.messages, err = messagesFromProto(req.Messages); err != nil {
+		return nil, fmt.Errorf("parse messages: %w", err)
+	}
+
+	return &params, nil
+}
+
+func (u *updateMessagesParams) validate() error {
+	if u.serviceID == uuid.Nil {
+		return errors.New("'service_id' is required")
+	}
+
+	if u.messages == nil {
+		return errors.New("'messages' is nil")
+	}
+
+	if u.messages.Language == language.Und {
+		return errors.New("'language' is required")
+	}
+
+	return nil
+}
+
+func (t *TranslateServiceServer) UpdateMessages(
+	ctx context.Context,
+	req *translatev1.UpdateMessagesRequest,
+) (*translatev1.Messages, error) {
+	params, err := parseUpdateMessagesRequestParams(req)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	if err = params.validate(); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	msgs, err := t.repo.LoadMessages(
+		ctx,
+		params.serviceID,
+		common.LoadMessagesOpts{FilterLanguages: []language.Tag{params.messages.Language}})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "")
+	}
+
+	if len(msgs) == 0 {
+		return nil, status.Errorf(codes.NotFound, "messages not found for language: '%s'", params.messages.Language)
+	}
+
+	err = t.repo.SaveMessages(ctx, params.serviceID, params.messages)
+	switch {
+	default:
+		return messagesToProto(params.messages), nil
+	case errors.Is(err, common.ErrNotFound):
+		return nil, status.Errorf(codes.NotFound, "service not found")
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "")
+	}
+}

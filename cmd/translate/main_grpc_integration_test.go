@@ -590,3 +590,89 @@ func Test_ListMessages_gRPC(t *testing.T) {
 		})
 	}
 }
+
+func Test_UpdateMessages_gRPC(t *testing.T) {
+	t.Parallel()
+
+	ctx, subtest := testutil.Trace(t)
+
+	// Prepare
+	service := createService(ctx, t)
+	langs := rand.Languages(2)
+
+	_, err := client.CreateMessages(ctx, &translatev1.CreateMessagesRequest{
+		ServiceId: service.Id,
+		Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+	})
+	require.NoError(t, err, "create test messages")
+
+	// helper for update request generation
+	randUpdateMessageReq := func(lang string) *translatev1.UpdateMessagesRequest {
+		if lang == "" {
+			lang = rand.Language().String()
+		}
+
+		return &translatev1.UpdateMessagesRequest{
+			ServiceId: service.Id,
+			Messages:  randMessages(t, &translatev1.Messages{Language: lang}),
+		}
+	}
+
+	happyReq := randUpdateMessageReq(langs[0].String()) // uploaded messages language
+
+	notFoundMessagesReq := randUpdateMessageReq(langs[1].String()) // different language without messages
+
+	notFoundServiceID := randUpdateMessageReq("")
+	notFoundServiceID.ServiceId = gofakeit.UUID()
+
+	invalidArgumentNilMessagesReq := randUpdateMessageReq("")
+	invalidArgumentNilMessagesReq.Messages = nil
+
+	invalidArgumentUndMessagesLanguageReq := randUpdateMessageReq("")
+	invalidArgumentUndMessagesLanguageReq.Messages.Language = ""
+
+	tests := []struct {
+		request      *translatev1.UpdateMessagesRequest
+		name         string
+		expectedCode codes.Code
+	}{
+		{
+			name:         "Happy Path",
+			request:      happyReq,
+			expectedCode: codes.OK,
+		},
+		{
+			name:         "Message does not exists",
+			request:      notFoundMessagesReq,
+			expectedCode: codes.NotFound,
+		},
+		{
+			name:         "Service does not exists",
+			request:      notFoundServiceID,
+			expectedCode: codes.NotFound,
+		},
+		{
+			name:         "Invalid argument nil messages",
+			request:      invalidArgumentNilMessagesReq,
+			expectedCode: codes.InvalidArgument,
+		},
+		{
+			name:         "Invalid argument und messages.language",
+			request:      invalidArgumentUndMessagesLanguageReq,
+			expectedCode: codes.InvalidArgument,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			resp, err := client.UpdateMessages(ctx, tt.request)
+
+			if err == nil {
+				require.NotNil(t, resp)
+			}
+
+			assert.Equal(t, tt.expectedCode, status.Code(err))
+		})
+	}
+}
