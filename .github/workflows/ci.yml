@@ -29,9 +29,9 @@ jobs:
         run: earthly --ci +lint-proto
       - name: Migrate
         run: earthly --ci +lint-migrate
-        # TEST
       - name: GO
         run: earthly --ci +lint-go
+        # TEST
       - name: Unit
         run: earthly --ci +test-unit
       - name: Integration
