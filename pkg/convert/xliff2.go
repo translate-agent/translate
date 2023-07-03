@@ -8,6 +8,8 @@ import (
 	"golang.org/x/text/language"
 )
 
+// TODO: For now we can only import XLIFF 2.0 files, export is not working correctly yet.
+
 // XLIFF 2 Specification: https://docs.oasis-open.org/xliff/xliff-core/v2.0/os/xliff-core-v2.0-os.html
 // XLIFF 2 Example: https://localizely.com/xliff-file/?tab=xliff-20
 
@@ -15,6 +17,7 @@ type xliff2 struct {
 	XMLName xml.Name     `xml:"urn:oasis:names:tc:xliff:document:2.0 xliff"`
 	Version string       `xml:"version,attr"`
 	SrcLang language.Tag `xml:"srcLang,attr"`
+	TrgLang language.Tag `xml:"trgLang,attr"`
 	File    xliff2File   `xml:"file"`
 }
 type xliff2File struct {
@@ -22,24 +25,37 @@ type xliff2File struct {
 }
 
 type unit struct {
-	ID     string  `xml:"id,attr"`
-	Notes  *[]note `xml:"notes>note"` // Set as pointer to avoid empty <notes></notes> when marshalling.
-	Source string  `xml:"segment>source"`
+	ID     string  `xml:"id,attr"`                  // messages.messages[n].ID
+	Notes  *[]note `xml:"notes>note"`               // Set as pointer to avoid empty <notes></notes> when marshalling.
+	Source string  `xml:"segment>source"`           // messages.messages[n].Message (if no target language is set)
+	Target string  `xml:"segment>target,omitempty"` // messages.messages[n].Message (if target language is set)
+	// No unified standard about storing fuzzy values
 }
 
 type note struct {
 	Category string `xml:"category,attr"`
-	Content  string `xml:",chardata"`
+	Content  string `xml:",chardata"` // messages.messages[n].Description (if Category == "description")
 }
 
 // FromXliff2 converts serialized data from the XML data in the XLIFF 2 format into a model.Messages struct.
 func FromXliff2(data []byte) (model.Messages, error) {
 	var xlf xliff2
 	if err := xml.Unmarshal(data, &xlf); err != nil {
-		return model.Messages{}, fmt.Errorf("unmarshal XLIFF 2 formatted XML into xliff2 struct: %w", err)
+		return model.Messages{}, fmt.Errorf("unmarshal xliff2: %w", err)
 	}
 
-	messages := model.Messages{Language: xlf.SrcLang, Messages: make([]model.Message, 0, len(xlf.File.Units))}
+	messages := model.Messages{
+		Language: xlf.SrcLang,
+		Messages: make([]model.Message, 0, len(xlf.File.Units)),
+	}
+
+	getMessage := func(u unit) string { return u.Source }
+
+	// Check if a target language is set
+	if xlf.TrgLang != language.Und {
+		messages.Language = xlf.TrgLang
+		getMessage = func(u unit) string { return u.Target }
+	}
 
 	findDescription := func(u unit) string {
 		for _, note := range *u.Notes {
@@ -54,7 +70,7 @@ func FromXliff2(data []byte) (model.Messages, error) {
 	for _, unit := range xlf.File.Units {
 		messages.Messages = append(messages.Messages, model.Message{
 			ID:          unit.ID,
-			Message:     convertToMessageFormatSingular(unit.Source),
+			Message:     convertToMessageFormatSingular(getMessage(unit)),
 			Description: findDescription(unit),
 			Positions:   positionsFromXliff2(unit.Notes),
 		})
@@ -93,12 +109,10 @@ func ToXliff2(messages model.Messages) ([]byte, error) {
 
 	data, err := xml.Marshal(&xlf)
 	if err != nil {
-		return nil, fmt.Errorf("marshal xliff2 struct to XLIFF 2 formatted XML: %w", err)
+		return nil, fmt.Errorf("marshal xliff2: %w", err)
 	}
 
-	dataWithHeader := append([]byte(xml.Header), data...) // prepend generic XML header
-
-	return dataWithHeader, nil
+	return append([]byte(xml.Header), data...), nil
 }
 
 // helpers
