@@ -617,6 +617,103 @@ func Test_CreateMessages_REST(t *testing.T) {
 	}
 }
 
+func Test_UpdateMessages_REST(t *testing.T) {
+	t.Parallel()
+
+	ctx, subtest := testutil.Trace(t)
+
+	// Prepare
+	service := createService(ctx, t)
+	langs := rand.Languages(2)
+
+	_, err := client.CreateMessages(ctx, &translatev1.CreateMessagesRequest{
+		ServiceId: service.Id,
+		Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+	})
+	require.NoError(t, err, "create test messages")
+
+	// helper for update request generation
+	randUpdateMessageReq := func(lang string) *translatev1.UpdateMessagesRequest {
+		if lang == "" {
+			lang = rand.Language().String()
+		}
+
+		return &translatev1.UpdateMessagesRequest{
+			ServiceId: service.Id,
+			Messages:  randMessages(t, &translatev1.Messages{Language: lang}),
+		}
+	}
+
+	happyReq := randUpdateMessageReq(langs[0].String()) // uploaded messages language
+
+	notFoundMessagesReq := randUpdateMessageReq(langs[1].String()) // different language without messages
+
+	notFoundServiceID := randUpdateMessageReq("")
+	notFoundServiceID.ServiceId = gofakeit.UUID()
+
+	invalidArgumentNilMessagesReq := randUpdateMessageReq("")
+	invalidArgumentNilMessagesReq.Messages = nil
+
+	invalidArgumentUndMessagesLanguageReq := randUpdateMessageReq("")
+	invalidArgumentUndMessagesLanguageReq.Messages.Language = ""
+
+	tests := []struct {
+		request      *translatev1.UpdateMessagesRequest
+		name         string
+		expectedCode uint
+	}{
+		{
+			name:         "Happy Path",
+			request:      happyReq,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Message does not exists",
+			request:      notFoundMessagesReq,
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			name:         "Service does not exists",
+			request:      notFoundServiceID,
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			name:         "Invalid argument nil messages",
+			request:      invalidArgumentNilMessagesReq,
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "Invalid argument und messages.language",
+			request:      invalidArgumentUndMessagesLanguageReq,
+			expectedCode: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+			body, err := json.Marshal(tt.request.Messages)
+			require.NoError(t, err, "marshal messages")
+
+			u := url.URL{
+				Scheme: "http",
+				Host:   host + ":" + port,
+				Path:   "v1/services/" + tt.request.ServiceId + "/messages",
+			}
+
+			req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(body))
+			require.NoError(t, err, "create request")
+
+			resp, err := otelhttp.DefaultClient.Do(req)
+			require.NoError(t, err, "do request")
+
+			defer resp.Body.Close()
+
+			assert.Equal(t, int(tt.expectedCode), resp.StatusCode)
+		})
+	}
+}
+
 // GET.
 func Test_GetMessages_REST(t *testing.T) {
 	t.Parallel()
