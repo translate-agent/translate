@@ -49,18 +49,12 @@ func FromXliff12(data []byte) (model.Messages, error) {
 		Messages: make([]model.Message, 0, len(xlf.File.Body.TransUnits)),
 	}
 
-	// Check if file has a target language set
-	isTranslated := xlf.File.TargetLanguage != language.Und
-	if isTranslated {
+	getMessage := func(t transUnit) string { return t.Source }
+
+	// Check if a target language is set
+	if xlf.File.TargetLanguage != language.Und {
 		messages.Language = xlf.File.TargetLanguage
-	}
-
-	getMessage := func(t transUnit) string {
-		if isTranslated {
-			return t.Target
-		}
-
-		return t.Source
+		getMessage = func(t transUnit) string { return t.Target }
 	}
 
 	for _, unit := range xlf.File.Body.TransUnits {
