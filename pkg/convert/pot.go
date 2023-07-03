@@ -271,10 +271,12 @@ func writeMessage(b *bytes.Buffer, index int, message model.Message) error {
 	}
 
 	for _, pos := range message.Positions {
-		if pos != "" {
-			if _, err := fmt.Fprintf(b, "#: %s\n", pos); err != nil {
-				return fmt.Errorf("write positions: %w", err)
-			}
+		if pos == "" {
+			continue
+		}
+
+		if _, err := fmt.Fprintf(b, "#: %s\n", pos); err != nil {
+			return fmt.Errorf("write positions: %w", err)
 		}
 	}
 

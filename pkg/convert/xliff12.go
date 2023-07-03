@@ -31,7 +31,7 @@ type transUnit struct {
 	ID            string         `xml:"id,attr"`
 	Source        string         `xml:"source"`
 	Note          string         `xml:"note,omitempty"`
-	ContextGroups []contextGroup `xml:"context-group"`
+	ContextGroups []contextGroup `xml:"context-group,omitempty"`
 }
 
 type contextGroup struct {
@@ -57,14 +57,12 @@ func FromXliff12(data []byte) (model.Messages, error) {
 	}
 
 	for _, unit := range xlf.File.Body.TransUnits {
-		msg := model.Message{
+		messages.Messages = append(messages.Messages, model.Message{
 			ID:          unit.ID,
 			Message:     convertToMessageFormatSingular(unit.Source),
 			Description: unit.Note,
 			Positions:   positionsFromXliff12(unit.ContextGroups),
-		}
-
-		messages.Messages = append(messages.Messages, msg)
+		})
 	}
 
 	return messages, nil
