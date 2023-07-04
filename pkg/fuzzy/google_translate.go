@@ -103,7 +103,7 @@ func (g *GoogleTranslate) Translate(
 	}
 
 	if len(messages.Messages) == 0 {
-		return &model.Messages{Language: targetLang}, nil
+		return &model.Messages{Language: targetLang, Original: messages.Original}, nil
 	}
 
 	// Extract the strings to be send to the Google Translate API.
@@ -125,6 +125,7 @@ func (g *GoogleTranslate) Translate(
 
 	translatedMessages := model.Messages{
 		Language: targetLang,
+		Original: messages.Original,
 		Messages: make([]model.Message, 0, len(translations)),
 	}
 

@@ -14,10 +14,10 @@ func Test_FromArb(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		expected    model.Messages
 		expectedErr error
 		name        string
 		input       []byte
+		expected    model.Messages
 	}{
 		{
 			name: "Combination of messages",
