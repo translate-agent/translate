@@ -78,6 +78,15 @@ func (t *TranslateServiceServer) CreateMessages(
 		return nil, status.Errorf(codes.AlreadyExists, "messages already exist for language: '%s'", params.messages.Language)
 	}
 
+	if !params.messages.Original {
+		var err error
+
+		params.messages, err = t.translator.Translate(ctx, params.messages, params.messages.Language)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "")
+		}
+	}
+
 	if err := t.repo.SaveMessages(ctx, params.serviceID, params.messages); errors.Is(err, common.ErrNotFound) {
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	} else if err != nil {
