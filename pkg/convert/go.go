@@ -3,7 +3,6 @@ package convert
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/message/pipeline"
@@ -79,7 +78,7 @@ func messagesFromPipeline(m pipeline.Messages) model.Messages {
 		}
 
 		if value.Position != "" {
-			msg.Positions = strings.Split(value.Position, ", ")
+			msg.Positions = []string{value.Position}
 		}
 
 		msgs.Messages = append(msgs.Messages, msg)
