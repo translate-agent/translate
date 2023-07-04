@@ -16,6 +16,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
+//nolint:gocognit
 func newUploadCmd() *cobra.Command {
 	var schemaFlag schema
 
