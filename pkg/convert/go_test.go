@@ -9,30 +9,27 @@ import (
 	"golang.org/x/text/language"
 )
 
-var modelMsg = model.Messages{
-	Language: language.English,
-	Messages: []model.Message{
-		{
-			ID:          "1",
-			Message:     "{message1}",
-			Description: "description1",
-			Positions: []string{
-				"src/config.go:10",
-				"src/config.go:20",
-			},
-			Fuzzy: true,
-		},
-		{
-			ID:          "2",
-			Message:     "{message2}",
-			Description: "description2",
-			Fuzzy:       false,
-		},
-	},
-}
-
 func TestToGo(t *testing.T) {
 	t.Parallel()
+
+	modelMsg := model.Messages{
+		Language: language.English,
+		Messages: []model.Message{
+			{
+				ID:          "1",
+				Message:     "{message1}",
+				Description: "description1",
+				Positions:   []string{"src/config.go:10", "src/config.go:20"},
+				Fuzzy:       true,
+			},
+			{
+				ID:          "2",
+				Message:     "{message2}",
+				Description: "description2",
+				Fuzzy:       false,
+			},
+		},
+	}
 
 	expected := []byte(`
 	{
@@ -43,7 +40,15 @@ func TestToGo(t *testing.T) {
 				"meaning":"description1",
 				"message":"",
 				"translation":"message1",
-				"position": "src/config.go:10, src/config.go:20",
+				"position": "src/config.go:10",
+				"fuzzy":true
+			},
+			{
+				"id":"1",
+				"meaning":"description1",
+				"message":"",
+				"translation":"message1",
+				"position": "src/config.go:20",
 				"fuzzy":true
 			},
 			{
@@ -66,6 +71,32 @@ func TestToGo(t *testing.T) {
 func TestFromGo(t *testing.T) {
 	t.Parallel()
 
+	modelMsg := model.Messages{
+		Language: language.English,
+		Messages: []model.Message{
+			{
+				ID:          "1",
+				Message:     "{message1}",
+				Description: "description1",
+				Positions:   []string{"src/config.go:10"},
+				Fuzzy:       true,
+			},
+			{
+				ID:          "1",
+				Message:     "{message1}",
+				Description: "description1",
+				Positions:   []string{"src/config.go:20"},
+				Fuzzy:       true,
+			},
+			{
+				ID:          "2",
+				Message:     "{message2}",
+				Description: "description2",
+				Fuzzy:       false,
+			},
+		},
+	}
+
 	input := []byte(`
 	{
 		"language":"en",
@@ -75,7 +106,15 @@ func TestFromGo(t *testing.T) {
 				"meaning":"description1",
 				"message":"message1",
 				"translation":"",
-				"position": "src/config.go:10, src/config.go:20",
+				"position": "src/config.go:10",
+				"fuzzy":true
+			},
+			{
+				"id":"1",
+				"meaning":"description1",
+				"message":"message1",
+				"translation":"",
+				"position": "src/config.go:20",
 				"fuzzy":true
 			},
 			{
