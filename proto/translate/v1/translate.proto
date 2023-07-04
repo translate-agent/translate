@@ -26,7 +26,8 @@ message Message {
 
 message Messages {
   string language = 1;
-  repeated Message messages = 2;
+  bool original = 2;
+  repeated Message messages = 3;
 }
 
 message Service {
