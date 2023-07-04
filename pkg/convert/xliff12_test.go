@@ -139,11 +139,11 @@ func Test_TransformXLIFF12(t *testing.T) {
 		restoredMessages, err := FromXliff12(xliffData)
 		require.NoError(t, err)
 
-		testutil.EqualMessages(t, expected, &restoredMessages)
-
 		// TODO: for now restore the flag to the expected
 		// remove this as XLIFF is the format were we can implicitly determine if file is translated or not
 		restoredMessages.Original = expected.Original
+
+		testutil.EqualMessages(t, expected, &restoredMessages)
 
 		return true
 	}
