@@ -117,23 +117,30 @@ func positionsFromXliff12(contextGroups []contextGroup) model.Positions {
 	var positions model.Positions
 
 	for _, cg := range contextGroups {
-		if cg.Purpose == "location" {
-			var pos strings.Builder
+		switch cg.Purpose {
+		default:
+			continue
+		case "location":
+			if len(cg.Contexts) == 0 || len(cg.Contexts) > 2 {
+				continue
+			}
+
+			var sourceFile, lineNumber string
 
 			for _, c := range cg.Contexts {
 				switch c.Type {
 				case "sourcefile":
-					if pos.Len() > 0 {
-						pos.WriteString(", " + c.Content)
-					} else {
-						pos.WriteString(c.Content)
-					}
+					sourceFile = c.Content
 				case "linenumber":
-					pos.WriteString(":" + c.Content)
+					lineNumber = c.Content
 				}
 			}
 
-			positions = append(positions, strings.Split(pos.String(), ", ")...)
+			if sourceFile != "" && lineNumber != "" {
+				positions = append(positions, sourceFile+":"+lineNumber)
+			} else if sourceFile != "" {
+				positions = append(positions, sourceFile)
+			}
 		}
 	}
 

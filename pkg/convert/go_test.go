@@ -17,8 +17,8 @@ var modelMsg = model.Messages{
 			Message:     "{message1}",
 			Description: "description1",
 			Positions: []string{
-				"src/config.ts:10",
-				"src/config.ts:20",
+				"src/config.go:10",
+				"src/config.go:20",
 			},
 			Fuzzy: true,
 		},
@@ -43,7 +43,7 @@ func TestToGo(t *testing.T) {
 				"meaning":"description1",
 				"message":"",
 				"translation":"message1",
-				"position": "src/config.ts:10, src/config.ts:20",
+				"position": "src/config.go:10, src/config.go:20",
 				"fuzzy":true
 			},
 			{
@@ -75,7 +75,7 @@ func TestFromGo(t *testing.T) {
 				"meaning":"description1",
 				"message":"message1",
 				"translation":"",
-				"position": "src/config.ts:10, src/config.ts:20",
+				"position": "src/config.go:10, src/config.go:20",
 				"fuzzy":true
 			},
 			{

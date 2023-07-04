@@ -1,10 +1,9 @@
 package model
 
 import (
-	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
-	"strings"
 
 	"golang.org/x/text/language"
 )
@@ -27,30 +26,31 @@ type Positions []string
 
 // Value implements driver.Valuer interface.
 func (p Positions) Value() (driver.Value, error) {
-	switch {
-	case p == nil:
+	if len(p) == 0 {
 		return nil, nil
-	case len(p) == 0:
-		return "", nil
-	default:
-		return strings.Join(p, ", "), nil
 	}
+
+	b, err := json.Marshal(p)
+	if err != nil {
+		return nil, fmt.Errorf("json marshal positions: %w", err)
+	}
+
+	return b, nil
 }
 
 // Scan implements sql.Scanner interface.
 func (p *Positions) Scan(value interface{}) error {
-	var positions sql.NullString
-	if err := positions.Scan(value); err != nil {
-		return fmt.Errorf("scan positions: %w", err)
-	}
-
-	if positions.Valid {
-		if len(positions.String) > 0 {
-			*p = strings.Split(positions.String, ", ")
-		} else {
-			*p = Positions{}
+	switch v := value.(type) {
+	default:
+		return fmt.Errorf("unknown type %+v, expected []byte", v)
+	case nil:
+		*p = nil
+		return nil
+	case []byte:
+		if err := json.Unmarshal(v, &p); err != nil {
+			return fmt.Errorf("json unmarshal positions: %w", err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
