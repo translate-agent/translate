@@ -25,6 +25,7 @@ func Test_ParseUploadParams(t *testing.T) {
 			Data:      []byte(`{"key":"value"}`),
 			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
 			ServiceId: gofakeit.UUID(),
+			Original:  gofakeit.Bool(),
 		}
 	}
 

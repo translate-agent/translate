@@ -16,16 +16,16 @@ import (
 )
 
 // randXliff12 dynamically generates a random XLIFF 1.2 file from the given messages.
-func randXliff12(target bool, messages *model.Messages) []byte {
+func randXliff12(messages *model.Messages) []byte {
 	sb := strings.Builder{}
 
 	sb.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
 	sb.WriteString("<xliff xmlns=\"urn:oasis:names:tc:xliff:document:1.2\" version=\"1.2\">")
 
-	if target {
-		fmt.Fprintf(&sb, "<file source-language=\"und\" target-language=\"%s\">", messages.Language)
-	} else {
+	if messages.Original {
 		fmt.Fprintf(&sb, "<file source-language=\"%s\" target-language=\"und\">", messages.Language)
+	} else {
+		fmt.Fprintf(&sb, "<file source-language=\"und\" target-language=\"%s\">", messages.Language)
 	}
 
 	sb.WriteString("<body>")
@@ -33,10 +33,10 @@ func randXliff12(target bool, messages *model.Messages) []byte {
 	for _, msg := range messages.Messages {
 		fmt.Fprintf(&sb, "<trans-unit id=\"%s\">", msg.ID)
 
-		if target {
-			fmt.Fprintf(&sb, "<target>%s</target>", msg.Message)
-		} else {
+		if messages.Original {
 			fmt.Fprintf(&sb, "<source>%s</source>", msg.Message)
+		} else {
+			fmt.Fprintf(&sb, "<target>%s</target>", msg.Message)
 		}
 
 		if msg.Description != "" {
@@ -60,7 +60,8 @@ func Test_FromXliff12(t *testing.T) {
 		testutilrand.WithFuzzy(false), // Do not mark message as fuzzy, as this is not supported by XLIFF 1.2
 	}
 
-	testMessages := testutilrand.ModelMessagesSlice(2, 5, msgOpts)
+	sourceMessages := testutilrand.ModelMessages(3, msgOpts, testutilrand.WithOriginal(true))
+	translatedMessages := testutilrand.ModelMessages(3, msgOpts, testutilrand.WithOriginal(false))
 
 	tests := []struct {
 		name     string
@@ -69,13 +70,13 @@ func Test_FromXliff12(t *testing.T) {
 	}{
 		{
 			name:     "Happy Path Untranslated",
-			input:    randXliff12(false, testMessages[0]),
-			expected: testMessages[0],
+			input:    randXliff12(sourceMessages),
+			expected: sourceMessages,
 		},
 		{
 			name:     "Happy Path Translated",
-			input:    randXliff12(true, testMessages[1]),
-			expected: testMessages[1],
+			input:    randXliff12(translatedMessages),
+			expected: translatedMessages,
 		},
 	}
 
@@ -91,10 +92,6 @@ func Test_FromXliff12(t *testing.T) {
 				actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
 			}
 
-			// TODO: for now restore the flag to the expected
-			// remove this as XLIFF is the format were we can implicitly determine if file is translated or not
-			actual.Original = tt.expected.Original
-
 			testutil.EqualMessages(t, tt.expected, &actual)
 		})
 	}
@@ -107,8 +104,8 @@ func Test_ToXliff12(t *testing.T) {
 		testutilrand.WithFuzzy(false), // Do not mark message as fuzzy, as this is not supported by XLIFF 1.2
 	}
 
-	messages := testutilrand.ModelMessages(4, msgOpts)
-	expected := randXliff12(false, messages)
+	messages := testutilrand.ModelMessages(4, msgOpts, testutilrand.WithOriginal(true))
+	expected := randXliff12(messages)
 
 	actual, err := ToXliff12(*messages)
 	require.NoError(t, err)
@@ -128,7 +125,8 @@ func Test_TransformXLIFF12(t *testing.T) {
 	conf := &quick.Config{
 		MaxCount: 100,
 		Values: func(values []reflect.Value, _ *rand.Rand) {
-			values[0] = reflect.ValueOf(testutilrand.ModelMessages(3, msgOpts)) // input generator
+			values[0] = reflect.ValueOf(
+				testutilrand.ModelMessages(3, msgOpts, testutilrand.WithOriginal(true))) // input generator
 		},
 	}
 
@@ -138,10 +136,6 @@ func Test_TransformXLIFF12(t *testing.T) {
 
 		restoredMessages, err := FromXliff12(xliffData)
 		require.NoError(t, err)
-
-		// TODO: for now restore the flag to the expected
-		// remove this as XLIFF is the format were we can implicitly determine if file is translated or not
-		restoredMessages.Original = expected.Original
 
 		testutil.EqualMessages(t, expected, &restoredMessages)
 
