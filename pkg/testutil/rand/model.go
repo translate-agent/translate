@@ -183,3 +183,11 @@ func WithOriginal(original bool) ModelMessagesOption {
 		m.Original = original
 	}
 }
+
+func WithSameIDs(m *model.Messages) ModelMessagesOption {
+	return func(m2 *model.Messages) {
+		for i := range m2.Messages {
+			m2.Messages[i].ID = m.Messages[i].ID
+		}
+	}
+}

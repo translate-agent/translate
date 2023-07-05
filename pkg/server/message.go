@@ -9,6 +9,7 @@ import (
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo/common"
+	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -222,32 +223,32 @@ func (t *TranslateServiceServer) populateTranslatedMessages(
 	ctx context.Context,
 	serviceID uuid.UUID,
 	originalMessages *model.Messages,
-	translatedMessages []model.Messages,
+	allMessages []model.Messages,
 ) error {
 	// Iterate over the existing messages
-	for _, msgs := range translatedMessages {
+	for _, messages := range allMessages {
 		// Skip if Original is true
-		if msgs.Original {
+		if messages.Original {
 			continue
 		}
 
 		// Create a map to store the IDs of the translated messages
-		translatedMessageIDs := make(map[string]struct{}, len(msgs.Messages))
-		for _, m := range msgs.Messages {
+		translatedMessageIDs := make(map[string]struct{}, len(messages.Messages))
+		for _, m := range messages.Messages {
 			translatedMessageIDs[m.ID] = struct{}{}
 		}
 
 		// Iterate over the original messages and add any missing messages to the translated messages
 		for _, m := range originalMessages.Messages {
 			if _, ok := translatedMessageIDs[m.ID]; !ok {
-				msgs.Messages = append(msgs.Messages, m)
+				messages.Messages = append(messages.Messages, m)
 			}
 		}
 
 		// Save the updated translated messages
-		switch err := t.repo.SaveMessages(ctx, serviceID, &msgs); {
+		switch err := t.repo.SaveMessages(ctx, serviceID, &messages); {
 		default:
-			return nil
+			// noop
 		case errors.Is(err, common.ErrNotFound):
 			return status.Errorf(codes.NotFound, "service not found")
 		case err != nil:
@@ -260,10 +261,7 @@ func (t *TranslateServiceServer) populateTranslatedMessages(
 
 // langExists returns true if the provided language exists in the provided model.Messages slice.
 func langExists(msgs []model.Messages, lang language.Tag) bool {
-	for _, msg := range msgs {
-		if msg.Language == lang {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(msgs, func(m model.Messages) bool {
+		return m.Language == lang
+	})
 }
