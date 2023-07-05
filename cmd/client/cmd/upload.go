@@ -57,6 +57,11 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: get cli parameter 'original': %w", err)
 			}
 
+			populateTranslations, err := cmd.Flags().GetBool("populate_translations")
+			if err != nil {
+				return fmt.Errorf("upload file: get cli parameter 'populate_translations': %w", err)
+			}
+
 			var data []byte
 
 			if strings.HasPrefix(filePath, "http://") || strings.HasPrefix(filePath, "https://") {
@@ -76,7 +81,12 @@ func newUploadCmd() *cobra.Command {
 
 			if _, err = translatev1.NewTranslateServiceClient(client).UploadTranslationFile(ctx,
 				&translatev1.UploadTranslationFileRequest{
-					Language: language, Data: data, Schema: translateSchema, ServiceId: serviceID, Original: original,
+					Language:             language,
+					Data:                 data,
+					Schema:               translateSchema,
+					ServiceId:            serviceID,
+					Original:             original,
+					PopulateTranslations: populateTranslations,
 				}); err != nil {
 				return fmt.Errorf("upload file: send GRPC request: %w", err)
 			}
@@ -96,6 +106,7 @@ func newUploadCmd() *cobra.Command {
 	uploadFlags.Var(&schemaFlag, "schema",
 		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)
 	uploadFlags.Bool("original", false, "file's language is an original language")
+	uploadFlags.Bool("populate_translations", true, "populate translation messages from original file")
 
 	if err := uploadCmd.MarkFlagRequired("service"); err != nil {
 		log.Panicf("upload file cmd: set field 'service' as required: %v", err)
