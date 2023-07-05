@@ -104,13 +104,9 @@ func Test_PopulateTranslatedMessages(t *testing.T) {
 
 // helpers
 
-// prepareMessages creates a service, and inserts it with the original and translated messages into the repository.
+// prepareMessages creates a service, and inserts it together with the original and translated messages into the repository.
 func prepareMessages(t *testing.T, originalMessages *model.Messages, translatedMessages []model.Messages) (service *model.Service) {
-	// Create a mock context
 	ctx := context.Background()
-
-	// prepare
-	// service
 	service = rand.ModelService()
 
 	err := translateSrv.repo.SaveService(ctx, service)
