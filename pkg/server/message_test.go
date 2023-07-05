@@ -18,6 +18,12 @@ import (
 
 var translateSrv *TranslateServiceServer
 
+type mockTranslator struct{}
+
+func (m *mockTranslator) Translate(ctx context.Context, messages *model.Messages, targetLang language.Tag) (*model.Messages, error) {
+	return messages, nil
+}
+
 func TestMain(m *testing.M) {
 	viper.SetEnvPrefix("translate")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
@@ -29,7 +35,7 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 
-	translateSrv = NewTranslateServiceServer(repository)
+	translateSrv = NewTranslateServiceServer(repository, &mockTranslator{})
 	os.Exit(m.Run())
 }
 
