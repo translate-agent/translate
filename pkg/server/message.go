@@ -82,7 +82,7 @@ func (t *TranslateServiceServer) CreateMessages(
 	if !params.messages.Original {
 		var err error
 
-		params.messages, err = t.translator.Translate(ctx, params.messages, params.messages.Language)
+		params.messages, err = t.translator.Translate(ctx, params.messages)
 		if err != nil {
 			return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
 		}
@@ -264,7 +264,7 @@ func (t *TranslateServiceServer) populateTranslatedMessages(
 		}
 
 		// Translate the messages
-		translated, err := t.translator.Translate(ctx, toBeTranslated, messages.Language)
+		translated, err := t.translator.Translate(ctx, toBeTranslated)
 		if err != nil {
 			return status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
 		}

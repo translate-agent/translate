@@ -20,8 +20,19 @@ var translateSrv *TranslateServiceServer
 
 type mockTranslator struct{}
 
-func (m *mockTranslator) Translate(ctx context.Context, messages *model.Messages, targetLang language.Tag) (*model.Messages, error) {
-	return messages, nil
+func (m *mockTranslator) Translate(ctx context.Context, messages *model.Messages) (*model.Messages, error) {
+	newMessages := &model.Messages{
+		Language: messages.Language,
+		Messages: messages.Messages,
+		Original: messages.Original,
+	}
+
+	for i := range newMessages.Messages {
+		newMessages.Messages[i].Message = "{Translated}"
+		newMessages.Messages[i].Fuzzy = true
+	}
+
+	return newMessages, nil
 }
 
 func TestMain(m *testing.M) {

@@ -45,7 +45,7 @@ func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
 	return func(g *GoogleTranslate) error {
 		var err error
 
-		apiKey := viper.GetString("translate_services.google_translate.api_key")
+		apiKey := viper.GetString("other.google_translate.api_key")
 		if apiKey == "" {
 			return fmt.Errorf("with default client: google translate api key is not set")
 		}
@@ -96,14 +96,13 @@ func NewGoogleTranslate(
 func (g *GoogleTranslate) Translate(
 	ctx context.Context,
 	messages *model.Messages,
-	targetLang language.Tag,
 ) (*model.Messages, error) {
 	if messages == nil {
 		return nil, nil
 	}
 
 	if len(messages.Messages) == 0 {
-		return &model.Messages{Language: targetLang, Original: messages.Original}, nil
+		return &model.Messages{Language: messages.Language, Original: messages.Original}, nil
 	}
 
 	// Extract the strings to be send to the Google Translate API.
@@ -112,19 +111,13 @@ func (g *GoogleTranslate) Translate(
 		targetTexts = append(targetTexts, m.Message)
 	}
 
-	// Set source language if defined, otherwise let Google Translate detect it.
-	opts := &translate.Options{}
-	if messages.Language != language.Und {
-		opts = &translate.Options{Source: messages.Language}
-	}
-
-	translations, err := g.client.Translate(ctx, targetTexts, targetLang, opts)
+	translations, err := g.client.Translate(ctx, targetTexts, messages.Language, nil)
 	if err != nil {
 		return nil, fmt.Errorf("google translate client: translate: %w", err)
 	}
 
 	translatedMessages := model.Messages{
-		Language: targetLang,
+		Language: messages.Language,
 		Original: messages.Original,
 		Messages: make([]model.Message, 0, len(translations)),
 	}
