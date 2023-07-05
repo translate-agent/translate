@@ -130,7 +130,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	// If the uploaded file is original, populate the translated messages.
+	// If the uploaded file is original and populateTranslations flag is true, populate the translated messages.
 	if messages.Original && params.populateTranslations {
 		allMessages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
 		if err != nil {

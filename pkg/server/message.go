@@ -207,7 +207,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	// If updating the original messages, update all translated messages as well.
+	// If updating the original messages and populateTranslations flag is true, update all translated messages as well.
 	if params.messages.Original && params.populateTranslations {
 		if err := t.populateTranslatedMessages(ctx, params.serviceID, params.messages, msgs); err != nil {
 			return nil, err
