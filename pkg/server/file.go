@@ -18,17 +18,23 @@ import (
 // ----------------------UploadTranslationFile-------------------------------
 
 type uploadParams struct {
-	languageTag language.Tag
-	original    bool
-	data        []byte
-	schema      translatev1.Schema
-	serviceID   uuid.UUID
+	languageTag          language.Tag
+	original             bool
+	data                 []byte
+	schema               translatev1.Schema
+	serviceID            uuid.UUID
+	populateTranslations bool
 }
 
 func parseUploadTranslationFileRequestParams(req *translatev1.UploadTranslationFileRequest) (*uploadParams, error) {
 	var (
-		params = &uploadParams{data: req.GetData(), schema: req.GetSchema(), original: req.GetOriginal()}
-		err    error
+		params = &uploadParams{
+			data:                 req.GetData(),
+			schema:               req.GetSchema(),
+			original:             req.GetOriginal(),
+			populateTranslations: req.GetPopulateTranslations(),
+		}
+		err error
 	)
 
 	params.languageTag, err = languageFromProto(req.GetLanguage())
@@ -124,8 +130,8 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	// If the uploaded file is not original, populate the translated messages.
-	if messages.Original {
+	// If the uploaded file is original, populate the translated messages.
+	if messages.Original && params.populateTranslations {
 		allMessages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")

@@ -134,13 +134,14 @@ func (t *TranslateServiceServer) ListMessages(
 // ----------------------UpdateMessages-------------------------------
 
 type updateMessagesParams struct {
-	messages  *model.Messages
-	serviceID uuid.UUID
+	messages             *model.Messages
+	serviceID            uuid.UUID
+	populateTranslations bool
 }
 
 func parseUpdateMessagesRequestParams(req *translatev1.UpdateMessagesRequest) (*updateMessagesParams, error) {
 	var (
-		params updateMessagesParams
+		params = updateMessagesParams{populateTranslations: req.GetPopulateTranslations()}
 		err    error
 	)
 
@@ -207,7 +208,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 	}
 
 	// If updating the original messages, update all translated messages as well.
-	if params.messages.Original {
+	if params.messages.Original && params.populateTranslations {
 		if err := t.populateTranslatedMessages(ctx, params.serviceID, params.messages, msgs); err != nil {
 			return nil, err
 		}
