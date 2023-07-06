@@ -24,9 +24,9 @@ message Message {
   Status status = 4;
 
   enum Status {
-    STATUS_UNTRANSLATED = 0;
-    STATUS_FUZZY = 1;
-    STATUS_TRANSLATED = 2;
+    UNTRANSLATED = 0;
+    FUZZY = 1;
+    TRANSLATED = 2;
   }
 }
 
