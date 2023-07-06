@@ -73,7 +73,7 @@ VALUES
 ON DUPLICATE KEY UPDATE
 	message = VALUES(message),
 	description = VALUES(description),
-	fuzzy = VALUES(status)`,
+	status = VALUES(status)`,
 	)
 	if err != nil {
 		return fmt.Errorf("repo: prepare stmt to insert message_message: %w", err)
