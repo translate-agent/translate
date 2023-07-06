@@ -6,6 +6,7 @@ Running latest all in one image
 docker run -d --name translate-all-in-one \
   -p 8080:8080 \
   -p 16686:16686 \
+  -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_API_KEY={GoogleTranslate API key} \
   -v /tmp/badger:/tmp/badger \
   expectdigital/translate-agent-all-in-one:latest
 ```
@@ -14,6 +15,7 @@ Remove existing, pull latest and run
 docker rm -f translate-all-in-one 2> /dev/null; docker pull expectdigital/translate-agent-all-in-one; docker run -d --name translate-all-in-one \
   -p 8080:8080 \
   -p 16686:16686 \
+  -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_API_KEY={GoogleTranslate API key} \
   -v /tmp/badger:/tmp/badger \
   expectdigital/translate-agent-all-in-one
 ```
