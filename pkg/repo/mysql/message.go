@@ -63,17 +63,17 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 
 	// Insert into message_message table,
 	// on duplicate message_message.id and message_message.message_id,
-	// update message's message, description and fuzzy values.
+	// update message's message, description and status values.
 	stmt, err := tx.PrepareContext(
 		ctx,
 		`INSERT INTO message_message
-	(message_id, id, message, description, fuzzy)
+	(message_id, id, message, description, status)
 VALUES
 	(UUID_TO_BIN(?), ?, ?, ?, ?)
 ON DUPLICATE KEY UPDATE
 	message = VALUES(message),
 	description = VALUES(description),
-	fuzzy = VALUES(fuzzy)`,
+	fuzzy = VALUES(status)`,
 	)
 	if err != nil {
 		return fmt.Errorf("repo: prepare stmt to insert message_message: %w", err)
@@ -87,7 +87,7 @@ ON DUPLICATE KEY UPDATE
 			m.ID,
 			m.Message,
 			m.Description,
-			m.Fuzzy,
+			m.Status,
 		)
 		if err != nil {
 			return fmt.Errorf("repo: insert message_message: %w", err)
@@ -104,7 +104,7 @@ ON DUPLICATE KEY UPDATE
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts,
 ) ([]model.Messages, error) {
 	rows, err := sq.
-		Select("mm.id, mm.message, mm.description, mm.fuzzy, m.language").
+		Select("mm.id, mm.message, mm.description, mm.status, m.language").
 		From("message_message mm").
 		Join("message m ON m.id = mm.message_id").
 		Where("m.service_id = UUID_TO_BIN(?)", serviceID).
@@ -125,7 +125,7 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 			lang string
 		)
 
-		if err := rows.Scan(&msg.ID, &msg.Message, &msg.Description, &msg.Fuzzy, &lang); err != nil {
+		if err := rows.Scan(&msg.ID, &msg.Message, &msg.Description, &msg.Status, &lang); err != nil {
 			return nil, fmt.Errorf("repo: scan message: %w", err)
 		}
 

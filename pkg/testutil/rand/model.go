@@ -72,7 +72,7 @@ func modelMessage() *model.Message {
 		PluralID:    gofakeit.SentenceSimple(),
 		Message:     gofakeit.SentenceSimple(),
 		Description: gofakeit.SentenceSimple(),
-		Fuzzy:       gofakeit.Bool(),
+		Status:      model.MessageStatus(gofakeit.IntRange(0, 2)), //nolint:gomnd
 	}
 }
 
@@ -105,9 +105,9 @@ func WithMessage(msg string) ModelMessageOption {
 	}
 }
 
-func WithFuzzy(fuzzy bool) ModelMessageOption {
+func WithStatus(status model.MessageStatus) ModelMessageOption {
 	return func(m *model.Message) {
-		m.Fuzzy = fuzzy
+		m.Status = status
 	}
 }
 

@@ -71,11 +71,11 @@ func Test_TranslateMock(t *testing.T) {
 				for i, m := range translatedMsgs.Messages {
 					// Check the translated messages are not empty and are marked as fuzzy.
 					require.NotEmpty(t, m.Message)
-					require.True(t, m.Fuzzy)
+					require.Equal(t, model.MessageStatusFuzzy, m.Status)
 
 					// Reset the message to empty and fuzzy to original values, for the last check for side effects.
 					translatedMsgs.Messages[i].Message = tt.messages.Messages[i].Message
-					translatedMsgs.Messages[i].Fuzzy = tt.messages.Messages[i].Fuzzy
+					translatedMsgs.Messages[i].Status = tt.messages.Messages[i].Status
 				}
 
 				// Check the translated messages are the same as the input messages. (Check for side effects)
@@ -146,7 +146,7 @@ func allMocks(t *testing.T, f func(t *testing.T, mock Translator)) {
 // randMessages returns a random messages model with the given count of messages and source language.
 // The messages will not be fuzzy.
 func randMessages(msgCount uint, srcLang language.Tag) *model.Messages {
-	msgOpts := []rand.ModelMessageOption{rand.WithFuzzy(false)}
+	msgOpts := []rand.ModelMessageOption{rand.WithStatus(model.MessageStatusUntranslated)}
 	msgsOpts := []rand.ModelMessagesOption{rand.WithLanguage(srcLang)}
 
 	return rand.ModelMessages(msgCount, msgOpts, msgsOpts...)

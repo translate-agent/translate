@@ -134,7 +134,7 @@ func (g *GoogleTranslate) Translate(
 			PluralID:    messages.Messages[i].PluralID,
 			Description: messages.Messages[i].Description,
 			Message:     t.Text,
-			Fuzzy:       true,
+			Status:      model.MessageStatusFuzzy,
 		})
 	}
 

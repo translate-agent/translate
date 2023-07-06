@@ -130,11 +130,11 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 		err := repository.SaveMessages(testCtx, service.ID, expectedMessages)
 		require.NoError(t, err, "Save messages")
 
-		// Update Message, Description and Fuzzy values, while keeping the ID
+		// Update Message, Description and Status values, while keeping the ID
 		for i := range expectedMessages.Messages {
 			expectedMessages.Messages[i].Message = gofakeit.SentenceSimple()
 			expectedMessages.Messages[i].Description = gofakeit.SentenceSimple()
-			expectedMessages.Messages[i].Fuzzy = gofakeit.Bool()
+			expectedMessages.Messages[i].Status = model.MessageStatus(gofakeit.IntRange(0, 2))
 		}
 
 		// Save updated messages

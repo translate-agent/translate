@@ -16,8 +16,8 @@ CREATE TABLE message_message (
   id TEXT NOT NULL,
   message TEXT NOT NULL,
   description TEXT,
-  fuzzy TINYINT(1),
-
+  status ENUM('UNTRANSLATED', 'FUZZY', 'TRANSLATED') NOT NULL,
+  
   UNIQUE ((SHA1(id)), message_id),
   FOREIGN KEY (message_id) REFERENCES message (id)
 );

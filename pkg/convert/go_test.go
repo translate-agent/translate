@@ -16,13 +16,13 @@ var modelMsg = model.Messages{
 			ID:          "1",
 			Message:     "{message1}",
 			Description: "description1",
-			Fuzzy:       true,
+			Status:      model.MessageStatusFuzzy,
 		},
 		{
 			ID:          "2",
 			Message:     "{message2}",
 			Description: "description2",
-			Fuzzy:       false,
+			Status:      model.MessageStatusUntranslated,
 		},
 	},
 }

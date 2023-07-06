@@ -443,7 +443,7 @@ func randMessages(t *testing.T, override *translatev1.Messages) *translatev1.Mes
 			Id:          gofakeit.SentenceSimple(),
 			Message:     gofakeit.SentenceSimple(),
 			Description: gofakeit.SentenceSimple(),
-			Fuzzy:       gofakeit.Bool(),
+			Status:      translatev1.Message_Status(gofakeit.IntRange(0, 2)),
 		}
 
 		msgs.Messages = append(msgs.Messages, message)
