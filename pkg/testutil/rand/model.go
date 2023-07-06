@@ -88,7 +88,7 @@ func ModelMessageSlice(n uint, opts ...ModelMessageOption) []*model.Message {
 	return slice(n, ModelMessage, opts...)
 }
 
-// modelMessage returns a random model.MessageStatus.
+// MessageStatus returns a random model.MessageStatus.
 func MessageStatus() model.MessageStatus {
 	return model.MessageStatus(gofakeit.IntRange(0, 2)) //nolint:gomnd
 }
