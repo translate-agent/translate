@@ -72,7 +72,7 @@ func modelMessage() *model.Message {
 		PluralID:    gofakeit.SentenceSimple(),
 		Message:     gofakeit.SentenceSimple(),
 		Description: gofakeit.SentenceSimple(),
-		Status:      model.MessageStatus(gofakeit.IntRange(0, 2)), //nolint:gomnd
+		Status:      MessageStatus(),
 	}
 }
 
@@ -86,6 +86,11 @@ func ModelMessage(opts ...ModelMessageOption) *model.Message {
 // ModelMessageSlice generates a slice of random model.Message using the provided options for each message.
 func ModelMessageSlice(n uint, opts ...ModelMessageOption) []*model.Message {
 	return slice(n, ModelMessage, opts...)
+}
+
+// modelMessage returns a random model.MessageStatus.
+func MessageStatus() model.MessageStatus {
+	return model.MessageStatus(gofakeit.IntRange(0, 2)) //nolint:gomnd
 }
 
 // ------------------Message Opts------------------

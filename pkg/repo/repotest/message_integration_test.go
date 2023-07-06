@@ -134,7 +134,7 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 		for i := range expectedMessages.Messages {
 			expectedMessages.Messages[i].Message = gofakeit.SentenceSimple()
 			expectedMessages.Messages[i].Description = gofakeit.SentenceSimple()
-			expectedMessages.Messages[i].Status = model.MessageStatus(gofakeit.IntRange(0, 2))
+			expectedMessages.Messages[i].Status = rand.MessageStatus()
 		}
 
 		// Save updated messages
