@@ -14,6 +14,11 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.expect.digital/translate/pkg/fuzzy"
+	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/server"
+	"go.expect.digital/translate/pkg/tracer"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/net/http2"
@@ -21,11 +26,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-
-	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/repo"
-	"go.expect.digital/translate/pkg/server"
-	"go.expect.digital/translate/pkg/tracer"
 )
 
 var cfgFile string
@@ -78,7 +78,18 @@ var rootCmd = &cobra.Command{
 			log.Panicf("create new repo: %v", err)
 		}
 
-		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo))
+		googleTranslate, closeTranslate, err := fuzzy.NewGoogleTranslate(ctx, fuzzy.WithDefaultClient(ctx))
+		if err != nil {
+			log.Fatalf("create new google translate client: %v\n", err)
+		}
+
+		defer func() {
+			if closeErr := closeTranslate(); closeErr != nil {
+				log.Printf("Failed to close GoogleTranslate client: %v\n", closeErr)
+			}
+		}()
+
+		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, googleTranslate))
 
 		// gRPC Server Reflection provides information about publicly-accessible gRPC services on a server,
 		// and assists clients at runtime to construct RPC requests and responses without precompiled service information.

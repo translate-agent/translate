@@ -11,6 +11,7 @@ import (
 type Messages struct {
 	Language language.Tag
 	Messages []Message
+	Original bool
 }
 
 type Message struct {

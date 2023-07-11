@@ -27,7 +27,8 @@ message Message {
 
 message Messages {
   string language = 1;
-  repeated Message messages = 2;
+  bool original = 2;
+  repeated Message messages = 3;
 }
 
 message Service {
@@ -42,6 +43,8 @@ message UploadTranslationFileRequest {
   bytes data = 2;
   Schema schema = 3;
   string service_id = 4;
+  bool original = 5;
+  bool populate_translations = 6;
 }
 
 message DownloadTranslationFileRequest {
@@ -71,7 +74,8 @@ message ListMessagesResponse {
 
 message UpdateMessagesRequest {
   string service_id = 1;
-  Messages messages = 2;
+  bool populate_translations = 2;
+  Messages messages = 3;
 }
 
 // -----------------Service requests/responses-----------------------

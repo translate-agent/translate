@@ -48,10 +48,11 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 
 		if _, err = tx.ExecContext(
 			ctx,
-			`INSERT INTO message (id, service_id, language) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?)`,
+			`INSERT INTO message (id, service_id, language, original) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
 			messageID,
 			serviceID,
 			messages.Language.String(),
+			messages.Original,
 		); err != nil {
 			return fmt.Errorf("repo: insert message: %w", err)
 		}
@@ -106,7 +107,7 @@ ON DUPLICATE KEY UPDATE
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts,
 ) ([]model.Messages, error) {
 	rows, err := sq.
-		Select("mm.id, mm.message, mm.description, mm.positions, mm.fuzzy, m.language").
+		Select("mm.id, mm.message, mm.description, mm.positions, mm.fuzzy, m.language, m.original").
 		From("message_message mm").
 		Join("message m ON m.id = mm.message_id").
 		Where("m.service_id = UUID_TO_BIN(?)", serviceID).
@@ -119,35 +120,52 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 
 	defer rows.Close()
 
-	messagesLookup := make(map[string][]model.Message)
+	messagesLookup := make(map[string]*model.Messages)
 
 	for rows.Next() {
 		var (
-			msg  model.Message
-			lang string
+			msg      model.Message
+			lang     string
+			original bool
 		)
 
-		if err := rows.Scan(&msg.ID, &msg.Message, &msg.Description, &msg.Positions, &msg.Fuzzy, &lang); err != nil {
+		if err := rows.Scan(
+			&msg.ID,
+			&msg.Message,
+			&msg.Description,
+			&msg.Positions,
+			&msg.Fuzzy,
+			&lang,
+			&original,
+		); err != nil {
 			return nil, fmt.Errorf("repo: scan message: %w", err)
 		}
 
-		messagesLookup[lang] = append(messagesLookup[lang], msg)
+		// Lookup message by language
+		messages, ok := messagesLookup[lang]
+		// If not found, create a new one
+		if !ok {
+			messages = &model.Messages{
+				Language: language.MustParse(lang),
+				Original: original,
+			}
+			// Add to lookup
+			messagesLookup[lang] = messages
+		}
+		// Add scanned message to messages
+		messages.Messages = append(messages.Messages, msg)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("repo: scan messages: %w", err)
 	}
 
-	messages := make([]model.Messages, 0, len(messagesLookup))
-
-	for lang, msgs := range messagesLookup {
-		messages = append(messages, model.Messages{
-			Language: language.MustParse(lang),
-			Messages: msgs,
-		})
+	allMessages := make([]model.Messages, 0, len(messagesLookup))
+	for _, msgs := range messagesLookup {
+		allMessages = append(allMessages, *msgs)
 	}
 
-	return messages, nil
+	return allMessages, nil
 }
 
 // helpers

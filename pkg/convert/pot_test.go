@@ -17,8 +17,8 @@ func Test_ToPot(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		input    model.Messages
 		expected []byte
+		input    model.Messages
 	}{
 		{
 			name: "all values are provided",
@@ -605,10 +605,10 @@ func TestFromPot(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name        string
-		expected    model.Messages
 		expectedErr error
 		input       []byte
+		name        string
+		expected    model.Messages
 	}{
 		{
 			name: "valid input",
