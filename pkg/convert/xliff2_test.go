@@ -44,8 +44,18 @@ func randXliff2(messages *model.Messages) []byte {
 	for _, msg := range messages.Messages {
 		fmt.Fprintf(b, "<unit id=\"%s\">", msg.ID)
 
-		if msg.Description != "" {
-			fmt.Fprintf(b, "<notes><note category=\"description\">%s</note></notes>", msg.Description)
+		if msg.Description != "" || len(msg.Positions) > 0 {
+			fmt.Fprintf(b, "<notes>")
+
+			for _, pos := range msg.Positions {
+				fmt.Fprintf(b, "<note category=\"location\">%s</note>", pos)
+			}
+
+			if msg.Description != "" {
+				fmt.Fprintf(b, "<note category=\"description\">%s</note>", msg.Description)
+			}
+
+			fmt.Fprintf(b, "</notes>")
 		}
 
 		writeMsg(msg.Message)

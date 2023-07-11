@@ -22,6 +22,7 @@ message Message {
   string message = 2;
   string description = 3;
   Status status = 4;
+  repeated string positions = 5;
 
   enum Status {
     UNTRANSLATED = 0;

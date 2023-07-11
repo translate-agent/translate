@@ -129,6 +129,7 @@ func (g *GoogleTranslate) Translate(
 			Description: messages.Messages[i].Description,
 			Message:     t.Text,
 			Status:      model.MessageStatusFuzzy,
+			Positions:   messages.Messages[i].Positions,
 		})
 	}
 

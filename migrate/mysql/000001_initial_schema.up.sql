@@ -18,6 +18,8 @@ CREATE TABLE message_message (
   message TEXT NOT NULL,
   description TEXT,
   status ENUM('UNTRANSLATED', 'FUZZY', 'TRANSLATED') NOT NULL,
+  positions JSON,
+
   UNIQUE ((SHA1(id)), message_id),
   FOREIGN KEY (message_id) REFERENCES message (id)
 );

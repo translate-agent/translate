@@ -67,13 +67,19 @@ func WithID(id uuid.UUID) ModelServiceOption {
 
 // modelMessage generates a random model.Message.
 func modelMessage() *model.Message {
-	return &model.Message{
+	msg := &model.Message{
 		ID:          gofakeit.SentenceSimple(),
 		PluralID:    gofakeit.SentenceSimple(),
 		Message:     gofakeit.SentenceSimple(),
 		Description: gofakeit.SentenceSimple(),
 		Status:      MessageStatus(),
 	}
+
+	if gofakeit.Bool() {
+		gofakeit.Slice(&msg.Positions)
+	}
+
+	return msg
 }
 
 // ModelMessage generates a random model.Message using provided options.

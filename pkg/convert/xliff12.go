@@ -3,6 +3,7 @@ package convert
 import (
 	"encoding/xml"
 	"fmt"
+	"strings"
 
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
@@ -30,11 +31,22 @@ type bodyElement struct {
 }
 
 type transUnit struct {
-	ID     string `xml:"id,attr"`          // messages.messages[n].ID
-	Source string `xml:"source"`           // messages.messages[n].Message (if no target language is set)
-	Target string `xml:"target,omitempty"` // messages.messages[n].Message (if target language is set)
-	Note   string `xml:"note,omitempty"`   // messages.messages[n].Description
+	ID            string         `xml:"id,attr"`          // messages.messages[n].ID
+	Source        string         `xml:"source"`           // messages.messages[n].Message (if no target language is set)
+	Target        string         `xml:"target,omitempty"` // messages.messages[n].Message (if target language is set)
+	Note          string         `xml:"note,omitempty"`   // messages.messages[n].Description
+	ContextGroups []contextGroup `xml:"context-group,omitempty"`
 	// No unified standard about storing fuzzy values
+}
+
+type contextGroup struct {
+	Purpose  string    `xml:"purpose,attr"`
+	Contexts []context `xml:"context,omitempty"`
+}
+
+type context struct {
+	Type    string `xml:"context-type,attr"`
+	Content string `xml:",chardata"`
 }
 
 // FromXliff12 converts serialized data from the XML data in the XLIFF 1.2 format into a model.Messages struct.
@@ -63,6 +75,7 @@ func FromXliff12(data []byte) (model.Messages, error) {
 			ID:          unit.ID,
 			Message:     convertToMessageFormatSingular(getMessage(unit)),
 			Description: unit.Note,
+			Positions:   positionsFromXliff12(unit.ContextGroups),
 		})
 	}
 
@@ -83,9 +96,10 @@ func ToXliff12(messages model.Messages) ([]byte, error) {
 
 	for _, msg := range messages.Messages {
 		xlf.File.Body.TransUnits = append(xlf.File.Body.TransUnits, transUnit{
-			ID:     msg.ID,
-			Source: removeEnclosingBrackets(msg.Message),
-			Note:   msg.Description,
+			ID:            msg.ID,
+			Source:        removeEnclosingBrackets(msg.Message),
+			Note:          msg.Description,
+			ContextGroups: positionsToXliff12(msg.Positions),
 		})
 	}
 
@@ -95,4 +109,67 @@ func ToXliff12(messages model.Messages) ([]byte, error) {
 	}
 
 	return append([]byte(xml.Header), data...), nil
+}
+
+// helpers
+
+// positionsFromXliff12 extracts line positions from []contextGroup.
+func positionsFromXliff12(contextGroups []contextGroup) model.Positions {
+	var positions model.Positions
+
+	for _, cg := range contextGroups {
+		switch cg.Purpose {
+		default:
+			continue
+		case "location":
+			if len(cg.Contexts) == 0 {
+				continue
+			}
+
+			var sourceFile, lineNumber string
+
+			for _, c := range cg.Contexts {
+				switch c.Type {
+				case "sourcefile":
+					sourceFile = c.Content
+				case "linenumber":
+					lineNumber = c.Content
+				}
+			}
+
+			if sourceFile != "" && lineNumber != "" {
+				positions = append(positions, sourceFile+":"+lineNumber)
+			} else if sourceFile != "" {
+				positions = append(positions, sourceFile)
+			}
+		}
+	}
+
+	return positions
+}
+
+// positionsToXliff12 transforms model.Positions to location []contextGroup.
+func positionsToXliff12(positions model.Positions) []contextGroup {
+	contextGroups := make([]contextGroup, 0, len(positions))
+
+	for _, pos := range positions {
+		cg := contextGroup{Purpose: "location"}
+		parts := strings.Split(pos, ":")
+
+		switch len(parts) {
+		default:
+			continue
+		case 1:
+			cg.Contexts = []context{{Type: "sourcefile", Content: parts[0]}}
+		case 2: //nolint:gomnd
+			cg.Contexts = []context{
+				{Type: "sourcefile", Content: parts[0]},
+				{Type: "linenumber", Content: parts[1]},
+			}
+		}
+
+		contextGroups = append(contextGroups, cg)
+	}
+
+	return contextGroups
 }

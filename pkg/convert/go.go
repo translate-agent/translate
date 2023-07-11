@@ -41,12 +41,22 @@ func messagesToPipeline(m model.Messages) pipeline.Messages {
 	}
 
 	for _, value := range m.Messages {
-		pipelineMsg.Messages = append(pipelineMsg.Messages, pipeline.Message{
+		msg := pipeline.Message{
 			ID:          pipeline.IDList{value.ID},
 			Translation: pipeline.Text{Msg: removeEnclosingBrackets(value.Message)},
 			Meaning:     value.Description,
 			Fuzzy:       value.Status == model.MessageStatusFuzzy,
-		})
+		}
+
+		switch len(value.Positions) {
+		default:
+			for _, pos := range value.Positions {
+				msg.Position = pos
+				pipelineMsg.Messages = append(pipelineMsg.Messages, msg)
+			}
+		case 0:
+			pipelineMsg.Messages = append(pipelineMsg.Messages, msg)
+		}
 	}
 
 	return pipelineMsg
@@ -68,6 +78,10 @@ func messagesFromPipeline(m pipeline.Messages) model.Messages {
 
 		if value.Fuzzy {
 			msg.Status = model.MessageStatusFuzzy
+		}
+
+		if value.Position != "" {
+			msg.Positions = []string{value.Position}
 		}
 
 		msgs.Messages = append(msgs.Messages, msg)
