@@ -19,10 +19,10 @@ import (
 
 type uploadParams struct {
 	languageTag          language.Tag
-	original             bool
 	data                 []byte
 	schema               translatev1.Schema
 	serviceID            uuid.UUID
+	original             bool
 	populateTranslations bool
 }
 

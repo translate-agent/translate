@@ -21,8 +21,14 @@ message Message {
   string id = 1;
   string message = 2;
   string description = 3;
-  repeated string positions = 4;
-  bool fuzzy = 5;
+  Status status = 4;
+  repeated string positions = 5;
+
+  enum Status {
+    UNTRANSLATED = 0;
+    FUZZY = 1;
+    TRANSLATED = 2;
+  }
 }
 
 message Messages {

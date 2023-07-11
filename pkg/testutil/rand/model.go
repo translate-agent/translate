@@ -72,7 +72,7 @@ func modelMessage() *model.Message {
 		PluralID:    gofakeit.SentenceSimple(),
 		Message:     gofakeit.SentenceSimple(),
 		Description: gofakeit.SentenceSimple(),
-		Fuzzy:       gofakeit.Bool(),
+		Status:      MessageStatus(),
 	}
 
 	if gofakeit.Bool() {
@@ -94,6 +94,11 @@ func ModelMessageSlice(n uint, opts ...ModelMessageOption) []*model.Message {
 	return slice(n, ModelMessage, opts...)
 }
 
+// MessageStatus returns a random model.MessageStatus.
+func MessageStatus() model.MessageStatus {
+	return model.MessageStatus(gofakeit.IntRange(0, 2)) //nolint:gomnd
+}
+
 // ------------------Message Opts------------------
 
 type ModelMessageOption func(*model.Message)
@@ -111,9 +116,9 @@ func WithMessage(msg string) ModelMessageOption {
 	}
 }
 
-func WithFuzzy(fuzzy bool) ModelMessageOption {
+func WithStatus(status model.MessageStatus) ModelMessageOption {
 	return func(m *model.Message) {
-		m.Fuzzy = fuzzy
+		m.Status = status
 	}
 }
 

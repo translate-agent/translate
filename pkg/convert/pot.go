@@ -62,7 +62,10 @@ func FromPot(b []byte) (model.Messages, error) {
 			PluralID:    node.MsgIdPlural,
 			Description: strings.Join(node.ExtractedComment, "\n "),
 			Positions:   node.References,
-			Fuzzy:       strings.Contains(node.Flag, "fuzzy"),
+		}
+
+		if strings.Contains(node.Flag, "fuzzy") {
+			message.Status = model.MessageStatusFuzzy
 		}
 
 		switch {
@@ -276,7 +279,7 @@ func writeMessage(b *bytes.Buffer, index int, message model.Message) error {
 		}
 	}
 
-	if message.Fuzzy {
+	if message.Status == model.MessageStatusFuzzy {
 		if _, err := fmt.Fprint(b, "#, fuzzy\n"); err != nil {
 			return fmt.Errorf("write fuzzy: %w", err)
 		}

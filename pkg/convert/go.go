@@ -45,7 +45,7 @@ func messagesToPipeline(m model.Messages) pipeline.Messages {
 			ID:          pipeline.IDList{value.ID},
 			Translation: pipeline.Text{Msg: removeEnclosingBrackets(value.Message)},
 			Meaning:     value.Description,
-			Fuzzy:       value.Fuzzy,
+			Fuzzy:       value.Status == model.MessageStatusFuzzy,
 		}
 
 		switch len(value.Positions) {
@@ -72,9 +72,12 @@ func messagesFromPipeline(m pipeline.Messages) model.Messages {
 	for _, value := range m.Messages {
 		msg := model.Message{
 			ID:          value.ID[0],
-			Fuzzy:       value.Fuzzy,
 			Description: value.Meaning,
 			Message:     convertToMessageFormatSingular(value.Message.Msg),
+		}
+
+		if value.Fuzzy {
+			msg.Status = model.MessageStatusFuzzy
 		}
 
 		if value.Position != "" {

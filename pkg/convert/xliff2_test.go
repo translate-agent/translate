@@ -83,7 +83,8 @@ func Test_FromXliff2(t *testing.T) {
 	t.Parallel()
 
 	msgOpts := []testutilrand.ModelMessageOption{
-		testutilrand.WithFuzzy(false), // Do not mark message as fuzzy, as this is not supported by XLIFF 2.0
+		// Do not mark message as fuzzy, as this is not supported by XLIFF 2.0
+		testutilrand.WithStatus(model.MessageStatusUntranslated),
 	}
 
 	sourceMessages := testutilrand.ModelMessages(3, msgOpts, testutilrand.WithOriginal(true))
@@ -131,7 +132,8 @@ func Test_ToXliff2(t *testing.T) {
 	t.Parallel()
 
 	msgOpts := []testutilrand.ModelMessageOption{
-		testutilrand.WithFuzzy(false), // Do not mark message as fuzzy, as this is not supported by XLIFF 2.0
+		// Do not mark message as fuzzy, as this is not supported by XLIFF 2.0
+		testutilrand.WithStatus(model.MessageStatusUntranslated),
 	}
 
 	messages := testutilrand.ModelMessages(4, msgOpts, testutilrand.WithOriginal(true))
@@ -149,7 +151,8 @@ func Test_TransformXLIFF2(t *testing.T) {
 	msgOpts := []testutilrand.ModelMessageOption{
 		// Enclose message in curly braces, as ToXliff2() removes them, and FromXliff2() adds them again
 		testutilrand.WithMessageFormat(),
-		testutilrand.WithFuzzy(false), // Do not mark message as fuzzy, as this is not supported by XLIFF 1.2
+		// Do not mark message as fuzzy, as this is not supported by XLIFF 1.2
+		testutilrand.WithStatus(model.MessageStatusUntranslated),
 	}
 
 	conf := &quick.Config{

@@ -17,8 +17,8 @@ CREATE TABLE message_message (
   id TEXT NOT NULL,
   message TEXT NOT NULL,
   description TEXT,
+  status ENUM('UNTRANSLATED', 'FUZZY', 'TRANSLATED') NOT NULL,
   positions JSON,
-  fuzzy TINYINT(1),
 
   UNIQUE ((SHA1(id)), message_id),
   FOREIGN KEY (message_id) REFERENCES message (id)

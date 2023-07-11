@@ -141,8 +141,8 @@ func messageToProto(m *model.Message) *translatev1.Message {
 		Id:          m.ID,
 		Message:     m.Message,
 		Description: m.Description,
+		Status:      translatev1.Message_Status(m.Status),
 		Positions:   m.Positions,
-		Fuzzy:       m.Fuzzy,
 	}
 }
 
@@ -156,8 +156,8 @@ func messageFromProto(m *translatev1.Message) (*model.Message, error) {
 		ID:          m.Id,
 		Message:     m.Message,
 		Description: m.Description,
+		Status:      model.MessageStatus(m.Status),
 		Positions:   m.Positions,
-		Fuzzy:       m.Fuzzy,
 	}, nil
 }
 

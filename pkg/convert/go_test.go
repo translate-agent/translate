@@ -20,13 +20,11 @@ func TestToGo(t *testing.T) {
 				Message:     "{message1}",
 				Description: "description1",
 				Positions:   []string{"src/config.go:10", "src/config.go:20"},
-				Fuzzy:       true,
 			},
 			{
 				ID:          "2",
 				Message:     "{message2}",
 				Description: "description2",
-				Fuzzy:       false,
 			},
 		},
 	}
@@ -79,20 +77,17 @@ func TestFromGo(t *testing.T) {
 				Message:     "{message1}",
 				Description: "description1",
 				Positions:   []string{"src/config.go:10"},
-				Fuzzy:       true,
 			},
 			{
 				ID:          "1",
 				Message:     "{message1}",
 				Description: "description1",
 				Positions:   []string{"src/config.go:20"},
-				Fuzzy:       true,
 			},
 			{
 				ID:          "2",
 				Message:     "{message2}",
 				Description: "description2",
-				Fuzzy:       false,
 			},
 		},
 	}
