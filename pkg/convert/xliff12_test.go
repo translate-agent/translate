@@ -1,6 +1,7 @@
 package convert
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -17,40 +18,41 @@ import (
 
 // randXliff12 dynamically generates a random XLIFF 1.2 file from the given messages.
 func randXliff12(messages *model.Messages) []byte {
-	sb := strings.Builder{}
+	b := new(bytes.Buffer)
 
-	sb.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
-	sb.WriteString("<xliff xmlns=\"urn:oasis:names:tc:xliff:document:1.2\" version=\"1.2\">")
+	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
+	b.WriteString("<xliff xmlns=\"urn:oasis:names:tc:xliff:document:1.2\" version=\"1.2\">")
 
 	if messages.Original {
-		fmt.Fprintf(&sb, "<file source-language=\"%s\" target-language=\"und\">", messages.Language)
+		fmt.Fprintf(b, "<file source-language=\"%s\" target-language=\"und\">", messages.Language)
 	} else {
-		fmt.Fprintf(&sb, "<file source-language=\"und\" target-language=\"%s\">", messages.Language)
+		fmt.Fprintf(b, "<file source-language=\"und\" target-language=\"%s\">", messages.Language)
 	}
 
-	sb.WriteString("<body>")
+	b.WriteString("<body>")
+
+	writeMsg := func(s string) { fmt.Fprintf(b, "<target>%s</target>", s) }
+	if messages.Original {
+		writeMsg = func(s string) { fmt.Fprintf(b, "<source>%s</source>", s) }
+	}
 
 	for _, msg := range messages.Messages {
-		fmt.Fprintf(&sb, "<trans-unit id=\"%s\">", msg.ID)
+		fmt.Fprintf(b, "<trans-unit id=\"%s\">", msg.ID)
 
-		if messages.Original {
-			fmt.Fprintf(&sb, "<source>%s</source>", msg.Message)
-		} else {
-			fmt.Fprintf(&sb, "<target>%s</target>", msg.Message)
-		}
+		writeMsg(msg.Message)
 
 		if msg.Description != "" {
-			fmt.Fprintf(&sb, "<note>%s</note>", msg.Description)
+			fmt.Fprintf(b, "<note>%s</note>", msg.Description)
 		}
 
-		sb.WriteString("</trans-unit>")
+		b.WriteString("</trans-unit>")
 	}
 
-	sb.WriteString("</body>")
-	sb.WriteString("</file>")
-	sb.WriteString("</xliff>")
+	b.WriteString("</body>")
+	b.WriteString("</file>")
+	b.WriteString("</xliff>")
 
-	return []byte(sb.String())
+	return b.Bytes()
 }
 
 func Test_FromXliff12(t *testing.T) {
