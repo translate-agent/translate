@@ -23,9 +23,9 @@ func Test_Translate(t *testing.T) {
 
 	allTranslators(t, func(t *testing.T, translator Translator, subTest testutil.SubtestFn) {
 		subTest("Multiple messages", func(ctx context.Context, t *testing.T) {
-			messages := randMessages(3, language.English)
+			messages := randMessages(3, language.Latvian)
 
-			translatedMsgs, err := translator.Translate(ctx, messages, language.Latvian)
+			translatedMsgs, err := translator.Translate(ctx, messages)
 			require.NoError(t, err)
 
 			// Check the number of translated messages is the same as the number of input messages.

@@ -20,30 +20,25 @@ func Test_TranslateMock(t *testing.T) {
 
 	allMocks(t, func(t *testing.T, mock Translator) {
 		tests := []struct {
-			targetLang  language.Tag
 			expectedErr error
 			messages    *model.Messages
 			name        string
 		}{
 			{
-				name:       "One message",
-				messages:   randMessages(1, language.English),
-				targetLang: language.Latvian,
+				name:     "One message",
+				messages: randMessages(1, language.Latvian),
 			},
 			{
-				name:       "Multiple messages",
-				messages:   randMessages(5, language.Latvian),
-				targetLang: language.German,
+				name:     "Multiple messages",
+				messages: randMessages(5, language.German),
 			},
 			{
-				name:       "Undefined messages language",
-				messages:   randMessages(5, language.Und),
-				targetLang: language.English,
+				name:     "Undefined messages language",
+				messages: randMessages(5, language.Und),
 			},
 			{
 				name:        "Unsupported target language",
-				messages:    randMessages(5, language.German),
-				targetLang:  language.Afrikaans,
+				messages:    randMessages(5, language.Afrikaans),
 				expectedErr: errors.New("unsupported language"),
 			},
 		}
@@ -53,7 +48,7 @@ func Test_TranslateMock(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
-				translatedMsgs, err := mock.Translate(context.Background(), tt.messages, tt.targetLang)
+				translatedMsgs, err := mock.Translate(context.Background(), tt.messages)
 
 				if tt.expectedErr != nil {
 					require.ErrorContains(t, err, tt.expectedErr.Error())
@@ -63,7 +58,7 @@ func Test_TranslateMock(t *testing.T) {
 				require.NoError(t, err)
 
 				// Check the that the translated messages have the correct language.
-				require.Equal(t, tt.targetLang, translatedMsgs.Language)
+				require.Equal(t, tt.messages.Language, translatedMsgs.Language)
 
 				// Check that length matches.
 				require.Len(t, translatedMsgs.Messages, len(tt.messages.Messages))

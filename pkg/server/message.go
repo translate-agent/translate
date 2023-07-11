@@ -78,6 +78,16 @@ func (t *TranslateServiceServer) CreateMessages(
 		return nil, status.Errorf(codes.AlreadyExists, "messages already exist for language: '%s'", params.messages.Language)
 	}
 
+	// If the messages are not the original messages, translate them.
+	if !params.messages.Original {
+		var err error
+
+		params.messages, err = t.translator.Translate(ctx, params.messages)
+		if err != nil {
+			return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
+		}
+	}
+
 	if err := t.repo.SaveMessages(ctx, params.serviceID, params.messages); errors.Is(err, common.ErrNotFound) {
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	} else if err != nil {
@@ -239,12 +249,28 @@ func (t *TranslateServiceServer) populateTranslatedMessages(
 			translatedMessageIDs[m.ID] = struct{}{}
 		}
 
-		// Iterate over the original messages and add any missing messages to the translated messages
+		// Create a new messages to store the messages that need to be translated
+		toBeTranslated := &model.Messages{
+			Language: messages.Language,
+			Original: messages.Original,
+			Messages: make([]model.Message, 0, len(originalMessages.Messages)),
+		}
+
+		// Iterate over the original messages and add any missing messages to the toBeTranslated.Messages slice
 		for _, m := range originalMessages.Messages {
 			if _, ok := translatedMessageIDs[m.ID]; !ok {
-				messages.Messages = append(messages.Messages, m)
+				toBeTranslated.Messages = append(toBeTranslated.Messages, m)
 			}
 		}
+
+		// Translate the messages
+		translated, err := t.translator.Translate(ctx, toBeTranslated)
+		if err != nil {
+			return status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
+		}
+
+		// Append the translated messages to the existing messages
+		messages.Messages = append(messages.Messages, translated.Messages...)
 
 		// Save the updated translated messages
 		switch err := t.repo.SaveMessages(ctx, serviceID, &messages); {
