@@ -19,6 +19,7 @@ import (
 
 type uploadParams struct {
 	languageTag language.Tag
+	original    bool
 	data        []byte
 	schema      translatev1.Schema
 	serviceID   uuid.UUID
@@ -26,7 +27,7 @@ type uploadParams struct {
 
 func parseUploadTranslationFileRequestParams(req *translatev1.UploadTranslationFileRequest) (*uploadParams, error) {
 	var (
-		params = &uploadParams{data: req.GetData(), schema: req.GetSchema()}
+		params = &uploadParams{data: req.GetData(), schema: req.GetSchema(), original: req.GetOriginal()}
 		err    error
 	)
 
@@ -100,6 +101,13 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	messages, err := MessagesFromData(params.schema, params.data)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
+
+	// If after converting original is false, override it with the value from the request.
+	// For now, only XLIFF formats can determine if the file is original or not.
+	// All other format's converts marks this flag as false.
+	if !messages.Original {
+		messages.Original = params.original
 	}
 
 	messages.Language, err = getLanguage(params, messages)

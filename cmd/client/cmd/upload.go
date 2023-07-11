@@ -16,6 +16,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
+//nolint:gocognit
 func newUploadCmd() *cobra.Command {
 	var schemaFlag schema
 
@@ -51,6 +52,11 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: get cli parameter 'file': %w", err)
 			}
 
+			original, err := cmd.Flags().GetBool("original")
+			if err != nil {
+				return fmt.Errorf("upload file: get cli parameter 'original': %w", err)
+			}
+
 			var data []byte
 
 			if strings.HasPrefix(filePath, "http://") || strings.HasPrefix(filePath, "https://") {
@@ -70,7 +76,7 @@ func newUploadCmd() *cobra.Command {
 
 			if _, err = translatev1.NewTranslateServiceClient(client).UploadTranslationFile(ctx,
 				&translatev1.UploadTranslationFileRequest{
-					Language: language, Data: data, Schema: translateSchema, ServiceId: serviceID,
+					Language: language, Data: data, Schema: translateSchema, ServiceId: serviceID, Original: original,
 				}); err != nil {
 				return fmt.Errorf("upload file: send GRPC request: %w", err)
 			}
@@ -89,6 +95,7 @@ func newUploadCmd() *cobra.Command {
 	uploadFlags.String("language", "", "translation language")
 	uploadFlags.Var(&schemaFlag, "schema",
 		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)
+	uploadFlags.Bool("original", false, "file's language is an original language")
 
 	if err := uploadCmd.MarkFlagRequired("service"); err != nil {
 		log.Panicf("upload file cmd: set field 'service' as required: %v", err)
