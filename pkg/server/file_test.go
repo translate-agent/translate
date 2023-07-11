@@ -25,6 +25,7 @@ func Test_ParseUploadParams(t *testing.T) {
 			Data:      []byte(`{"key":"value"}`),
 			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
 			ServiceId: gofakeit.UUID(),
+			Original:  gofakeit.Bool(),
 		}
 	}
 
@@ -83,10 +84,12 @@ func Test_ValidateUploadParams(t *testing.T) {
 
 	randParams := func() *uploadParams {
 		return &uploadParams{
-			languageTag: rand.Language(),
-			data:        []byte(`{"key":"value"}`),
-			schema:      translatev1.Schema(gofakeit.IntRange(1, 7)),
-			serviceID:   uuid.New(),
+			languageTag:          rand.Language(),
+			data:                 []byte(`{"key":"value"}`),
+			schema:               translatev1.Schema(gofakeit.IntRange(1, 7)),
+			serviceID:            uuid.New(),
+			original:             gofakeit.Bool(),
+			populateTranslations: gofakeit.Bool(),
 		}
 	}
 
@@ -98,11 +101,8 @@ func Test_ValidateUploadParams(t *testing.T) {
 	unspecifiedSchemaParams := randParams()
 	unspecifiedSchemaParams.schema = translatev1.Schema_UNSPECIFIED
 
-	unspecifiedLangReq := randParams()
-	unspecifiedLangReq.languageTag = language.Und
-
-	unspecifiedServiceIDReq := randParams()
-	unspecifiedServiceIDReq.serviceID = uuid.Nil
+	unspecifiedServiceIDParams := randParams()
+	unspecifiedServiceIDParams.serviceID = uuid.Nil
 
 	tests := []struct {
 		params      *uploadParams
@@ -126,7 +126,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 		},
 		{
 			name:        "Unspecified service ID",
-			params:      unspecifiedServiceIDReq,
+			params:      unspecifiedServiceIDParams,
 			expectedErr: errors.New("'service_id' is required"),
 		},
 	}

@@ -44,6 +44,7 @@ func randUploadRequest(t *testing.T, serviceID string) *translatev1.UploadTransl
 	return &translatev1.UploadTranslationFileRequest{
 		ServiceId: serviceID,
 		Language:  lang.String(),
+		Original:  gofakeit.Bool(),
 		Data:      data,
 		Schema:    schema,
 	}

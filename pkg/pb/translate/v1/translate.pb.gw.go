@@ -441,6 +441,10 @@ func local_request_TranslateService_CreateMessages_0(ctx context.Context, marsha
 
 }
 
+var (
+	filter_TranslateService_UpdateMessages_0 = &utilities.DoubleArray{Encoding: map[string]int{"messages": 0, "service_id": 1, "serviceId": 2}, Base: []int{1, 2, 3, 4, 0, 0, 0, 0}, Check: []int{0, 1, 1, 1, 2, 2, 3, 4}}
+)
+
 func request_TranslateService_UpdateMessages_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq UpdateMessagesRequest
 	var metadata runtime.ServerMetadata
@@ -468,6 +472,13 @@ func request_TranslateService_UpdateMessages_0(ctx context.Context, marshaler ru
 	protoReq.ServiceId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "service_id", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TranslateService_UpdateMessages_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.UpdateMessages(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -502,6 +513,13 @@ func local_request_TranslateService_UpdateMessages_0(ctx context.Context, marsha
 	protoReq.ServiceId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "service_id", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TranslateService_UpdateMessages_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.UpdateMessages(ctx, &protoReq)

@@ -179,6 +179,7 @@ func messagesToProto(m *model.Messages) *translatev1.Messages {
 
 	return &translatev1.Messages{
 		Language: languageToProto(m.Language),
+		Original: m.Original,
 		Messages: messageSliceToProto(m.Messages),
 	}
 }
@@ -191,7 +192,7 @@ func messagesFromProto(m *translatev1.Messages) (*model.Messages, error) {
 
 	var (
 		err  error
-		msgs = &model.Messages{}
+		msgs = &model.Messages{Original: m.Original}
 	)
 
 	if msgs.Language, err = languageFromProto(m.Language); err != nil {

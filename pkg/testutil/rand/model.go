@@ -128,7 +128,11 @@ func WithMessageFormat() ModelMessageOption {
 // modelMessages generates a random model.Messages with the given
 // count of Messages.messages and using the provided options for each message.
 func modelMessages(msgCount uint, msgOpts ...ModelMessageOption) *model.Messages {
-	messages := &model.Messages{Language: Language(), Messages: make([]model.Message, msgCount)}
+	messages := &model.Messages{
+		Language: Language(),
+		Original: gofakeit.Bool(),
+		Messages: make([]model.Message, msgCount),
+	}
 
 	if msgCount == 0 {
 		return messages
@@ -175,5 +179,20 @@ type ModelMessagesOption func(*model.Messages)
 func WithLanguage(lang language.Tag) ModelMessagesOption {
 	return func(m *model.Messages) {
 		m.Language = lang
+	}
+}
+
+// WithOriginal sets the original flag of the model.Messages.
+func WithOriginal(original bool) ModelMessagesOption {
+	return func(m *model.Messages) {
+		m.Original = original
+	}
+}
+
+func WithSameIDs(m *model.Messages) ModelMessagesOption {
+	return func(m2 *model.Messages) {
+		for i := range m2.Messages {
+			m2.Messages[i].ID = m.Messages[i].ID
+		}
 	}
 }

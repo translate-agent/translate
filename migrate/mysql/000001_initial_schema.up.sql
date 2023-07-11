@@ -7,6 +7,7 @@ CREATE TABLE message (
   id BINARY(16) PRIMARY KEY,
   service_id BINARY(16) NOT NULL,
   language VARCHAR(20) NOT NULL,
+  original BOOLEAN NOT NULL DEFAULT false,
 
   FOREIGN KEY (service_id) REFERENCES service (id)
 );
