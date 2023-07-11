@@ -4,6 +4,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -447,8 +449,10 @@ func randMessages(t *testing.T, override *translatev1.Messages) *translatev1.Mes
 			Fuzzy:       gofakeit.Bool(),
 		}
 
-		if gofakeit.Bool() {
-			gofakeit.Slice(message.Positions)
+		for j := 0; j < gofakeit.Number(0, 2); j++ {
+			v, _ := url.Parse(gofakeit.URL())
+			lineNumber := gofakeit.Number(0, 10_000)
+			message.Positions = append(message.Positions, fmt.Sprintf("%s:%d", v.Path, lineNumber))
 		}
 
 		msgs.Messages = append(msgs.Messages, message)

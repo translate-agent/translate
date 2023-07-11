@@ -122,7 +122,7 @@ func positionsFromXliff12(contextGroups []contextGroup) model.Positions {
 		default:
 			continue
 		case "location":
-			if len(cg.Contexts) == 0 || len(cg.Contexts) > 2 {
+			if len(cg.Contexts) == 0 {
 				continue
 			}
 
