@@ -1,6 +1,7 @@
 package convert
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -17,44 +18,45 @@ import (
 )
 
 func randXliff2(messages *model.Messages) []byte {
-	sb := strings.Builder{}
+	b := new(bytes.Buffer)
 
-	sb.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
+	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
 
 	if messages.Original {
 		fmt.Fprintf(
-			&sb,
+			b,
 			"<xliff xmlns=\"urn:oasis:names:tc:xliff:document:2.0\" version=\"2.0\" srcLang=\"%s\" trgLang=\"und\">",
 			messages.Language)
 	} else {
 		fmt.Fprintf(
-			&sb,
+			b,
 			"<xliff xmlns=\"urn:oasis:names:tc:xliff:document:2.0\" version=\"2.0\" srcLang=\"und\" trgLang=\"%s\">",
 			messages.Language)
 	}
 
-	sb.WriteString("<file>")
+	b.WriteString("<file>")
 
-	for _, msg := range messages.Messages {
-		fmt.Fprintf(&sb, "<unit id=\"%s\">", msg.ID)
-
-		if msg.Description != "" {
-			fmt.Fprintf(&sb, "<notes><note category=\"description\">%s</note></notes>", msg.Description)
-		}
-
-		if messages.Original {
-			fmt.Fprintf(&sb, "<segment><source>%s</source></segment>", msg.Message)
-		} else {
-			fmt.Fprintf(&sb, "<segment><target>%s</target></segment>", msg.Message)
-		}
-
-		sb.WriteString("</unit>")
+	writeMsg := func(s string) { fmt.Fprintf(b, "<segment><target>%s</target></segment>", s) }
+	if messages.Original {
+		writeMsg = func(s string) { fmt.Fprintf(b, "<segment><source>%s</source></segment>", s) }
 	}
 
-	sb.WriteString("</file>")
-	sb.WriteString("</xliff>")
+	for _, msg := range messages.Messages {
+		fmt.Fprintf(b, "<unit id=\"%s\">", msg.ID)
 
-	return []byte(sb.String())
+		if msg.Description != "" {
+			fmt.Fprintf(b, "<notes><note category=\"description\">%s</note></notes>", msg.Description)
+		}
+
+		writeMsg(msg.Message)
+
+		b.WriteString("</unit>")
+	}
+
+	b.WriteString("</file>")
+	b.WriteString("</xliff>")
+
+	return b.Bytes()
 }
 
 func assertEqualXml(t *testing.T, expected, actual []byte) bool { //nolint:unparam
