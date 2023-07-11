@@ -68,12 +68,13 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 	stmt, err := tx.PrepareContext(
 		ctx,
 		`INSERT INTO message_message
-	(message_id, id, message, description, fuzzy)
+	(message_id, id, message, description, positions, fuzzy)
 VALUES
-	(UUID_TO_BIN(?), ?, ?, ?, ?)
+	(UUID_TO_BIN(?), ?, ?, ?, ?, ?)
 ON DUPLICATE KEY UPDATE
 	message = VALUES(message),
 	description = VALUES(description),
+	positions = VALUES(positions),
 	fuzzy = VALUES(fuzzy)`,
 	)
 	if err != nil {
@@ -88,6 +89,7 @@ ON DUPLICATE KEY UPDATE
 			m.ID,
 			m.Message,
 			m.Description,
+			m.Positions,
 			m.Fuzzy,
 		)
 		if err != nil {
@@ -105,7 +107,7 @@ ON DUPLICATE KEY UPDATE
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts,
 ) ([]model.Messages, error) {
 	rows, err := sq.
-		Select("mm.id, mm.message, mm.description, mm.fuzzy, m.language, m.original").
+		Select("mm.id, mm.message, mm.description, mm.positions, mm.fuzzy, m.language, m.original").
 		From("message_message mm").
 		Join("message m ON m.id = mm.message_id").
 		Where("m.service_id = UUID_TO_BIN(?)", serviceID).
@@ -127,7 +129,15 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 			original bool
 		)
 
-		if err := rows.Scan(&msg.ID, &msg.Message, &msg.Description, &msg.Fuzzy, &lang, &original); err != nil {
+		if err := rows.Scan(
+			&msg.ID,
+			&msg.Message,
+			&msg.Description,
+			&msg.Positions,
+			&msg.Fuzzy,
+			&lang,
+			&original,
+		); err != nil {
 			return nil, fmt.Errorf("repo: scan message: %w", err)
 		}
 

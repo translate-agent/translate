@@ -17,6 +17,7 @@ CREATE TABLE message_message (
   id TEXT NOT NULL,
   message TEXT NOT NULL,
   description TEXT,
+  positions JSON,
   fuzzy TINYINT(1),
 
   UNIQUE ((SHA1(id)), message_id),

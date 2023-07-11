@@ -128,6 +128,7 @@ func (g *GoogleTranslate) Translate(
 			PluralID:    messages.Messages[i].PluralID,
 			Description: messages.Messages[i].Description,
 			Message:     t.Text,
+			Positions:   messages.Messages[i].Positions,
 			Fuzzy:       true,
 		})
 	}

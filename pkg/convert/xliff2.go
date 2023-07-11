@@ -73,6 +73,7 @@ func FromXliff2(data []byte) (model.Messages, error) {
 			ID:          unit.ID,
 			Message:     convertToMessageFormatSingular(getMessage(unit)),
 			Description: findDescription(unit),
+			Positions:   positionsFromXliff2(unit.Notes),
 		})
 	}
 
@@ -90,16 +91,21 @@ func ToXliff2(messages model.Messages) ([]byte, error) {
 	}
 
 	for _, msg := range messages.Messages {
-		var notes *[]note
-		if msg.Description != "" {
-			notes = &[]note{{Category: "description", Content: msg.Description}}
-		}
-
-		xlf.File.Units = append(xlf.File.Units, unit{
+		u := unit{
 			ID:     msg.ID,
 			Source: removeEnclosingBrackets(msg.Message),
-			Notes:  notes,
-		})
+			Notes:  positionsToXliff2(msg.Positions),
+		}
+
+		if msg.Description != "" {
+			if u.Notes == nil {
+				u.Notes = &[]note{{Category: "description", Content: msg.Description}}
+			} else {
+				*u.Notes = append(*u.Notes, note{Category: "description", Content: msg.Description})
+			}
+		}
+
+		xlf.File.Units = append(xlf.File.Units, u)
 	}
 
 	data, err := xml.Marshal(&xlf)
@@ -108,4 +114,38 @@ func ToXliff2(messages model.Messages) ([]byte, error) {
 	}
 
 	return append([]byte(xml.Header), data...), nil
+}
+
+// helpers
+
+// positionsFromXliff2 extracts line positions from unit []note.
+func positionsFromXliff2(notes *[]note) model.Positions {
+	if notes == nil {
+		return nil
+	}
+
+	var positions model.Positions
+
+	for _, note := range *notes {
+		if note.Category == "location" {
+			positions = append(positions, note.Content)
+		}
+	}
+
+	return positions
+}
+
+// positionsFromXliff2 transforms line positions to location []note.
+func positionsToXliff2(positions model.Positions) *[]note {
+	if len(positions) == 0 {
+		return nil
+	}
+
+	notes := make([]note, 0, len(positions))
+
+	for _, pos := range positions {
+		notes = append(notes, note{Category: "location", Content: pos})
+	}
+
+	return &notes
 }

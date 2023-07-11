@@ -41,12 +41,22 @@ func messagesToPipeline(m model.Messages) pipeline.Messages {
 	}
 
 	for _, value := range m.Messages {
-		pipelineMsg.Messages = append(pipelineMsg.Messages, pipeline.Message{
+		msg := pipeline.Message{
 			ID:          pipeline.IDList{value.ID},
 			Translation: pipeline.Text{Msg: removeEnclosingBrackets(value.Message)},
 			Meaning:     value.Description,
 			Fuzzy:       value.Fuzzy,
-		})
+		}
+
+		switch len(value.Positions) {
+		default:
+			for _, pos := range value.Positions {
+				msg.Position = pos
+				pipelineMsg.Messages = append(pipelineMsg.Messages, msg)
+			}
+		case 0:
+			pipelineMsg.Messages = append(pipelineMsg.Messages, msg)
+		}
 	}
 
 	return pipelineMsg
@@ -54,19 +64,25 @@ func messagesToPipeline(m model.Messages) pipeline.Messages {
 
 // messagesFromPipeline converts a pipeline.Messages structure into a model.Messages structure.
 func messagesFromPipeline(m pipeline.Messages) model.Messages {
-	msg := model.Messages{
+	msgs := model.Messages{
 		Language: m.Language,
 		Messages: make([]model.Message, 0, len(m.Messages)),
 	}
 
 	for _, value := range m.Messages {
-		msg.Messages = append(msg.Messages, model.Message{
+		msg := model.Message{
 			ID:          value.ID[0],
 			Fuzzy:       value.Fuzzy,
 			Description: value.Meaning,
 			Message:     convertToMessageFormatSingular(value.Message.Msg),
-		})
+		}
+
+		if value.Position != "" {
+			msg.Positions = []string{value.Position}
+		}
+
+		msgs.Messages = append(msgs.Messages, msg)
 	}
 
-	return msg
+	return msgs
 }

@@ -45,6 +45,20 @@ func randXliff12(messages *model.Messages) []byte {
 			fmt.Fprintf(b, "<note>%s</note>", msg.Description)
 		}
 
+		for _, pos := range msg.Positions {
+			b.WriteString(`<context-group purpose="location">`)
+
+			if strings.Contains(pos, ":") {
+				p := strings.Split(pos, ":")
+				fmt.Fprintf(b, `<context context-type="sourcefile">%s</context>`, p[0])
+				fmt.Fprintf(b, `<context context-type="linenumber">%s</context>`, p[1])
+			} else {
+				fmt.Fprintf(b, `<context context-type="sourcefile">%s</context>`, pos)
+			}
+
+			b.WriteString(`</context-group>`)
+		}
+
 		b.WriteString("</trans-unit>")
 	}
 

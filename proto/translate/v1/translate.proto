@@ -21,7 +21,8 @@ message Message {
   string id = 1;
   string message = 2;
   string description = 3;
-  bool fuzzy = 4;
+  repeated string positions = 4;
+  bool fuzzy = 5;
 }
 
 message Messages {
