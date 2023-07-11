@@ -9,6 +9,7 @@ import (
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo/common"
+	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -133,13 +134,14 @@ func (t *TranslateServiceServer) ListMessages(
 // ----------------------UpdateMessages-------------------------------
 
 type updateMessagesParams struct {
-	messages  *model.Messages
-	serviceID uuid.UUID
+	messages             *model.Messages
+	serviceID            uuid.UUID
+	populateTranslations bool
 }
 
 func parseUpdateMessagesRequestParams(req *translatev1.UpdateMessagesRequest) (*updateMessagesParams, error) {
 	var (
-		params updateMessagesParams
+		params = updateMessagesParams{populateTranslations: req.GetPopulateTranslations()}
 		err    error
 	)
 
@@ -186,22 +188,81 @@ func (t *TranslateServiceServer) UpdateMessages(
 	msgs, err := t.repo.LoadMessages(
 		ctx,
 		params.serviceID,
-		common.LoadMessagesOpts{FilterLanguages: []language.Tag{params.messages.Language}})
+		common.LoadMessagesOpts{FilterLanguages: []language.Tag{}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if len(msgs) == 0 {
+	if len(msgs) == 0 || !langExists(msgs, params.messages.Language) {
 		return nil, status.Errorf(codes.NotFound, "messages not found for language: '%s'", params.messages.Language)
 	}
 
 	err = t.repo.SaveMessages(ctx, params.serviceID, params.messages)
 	switch {
 	default:
-		return messagesToProto(params.messages), nil
+		// noop
 	case errors.Is(err, common.ErrNotFound):
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "")
 	}
+
+	// If updating the original messages and populateTranslations flag is true, update all translated messages as well.
+	if params.messages.Original && params.populateTranslations {
+		if err := t.populateTranslatedMessages(ctx, params.serviceID, params.messages, msgs); err != nil {
+			return nil, err
+		}
+	}
+
+	return messagesToProto(params.messages), nil
+}
+
+// helpers
+
+// populateTranslatedMessages adds any missing messages from the original messages to all translated messages.
+func (t *TranslateServiceServer) populateTranslatedMessages(
+	ctx context.Context,
+	serviceID uuid.UUID,
+	originalMessages *model.Messages,
+	allMessages []model.Messages,
+) error {
+	// Iterate over the existing messages
+	for _, messages := range allMessages {
+		// Skip if Original is true
+		if messages.Original {
+			continue
+		}
+
+		// Create a map to store the IDs of the translated messages
+		translatedMessageIDs := make(map[string]struct{}, len(messages.Messages))
+		for _, m := range messages.Messages {
+			translatedMessageIDs[m.ID] = struct{}{}
+		}
+
+		// Iterate over the original messages and add any missing messages to the translated messages
+		for _, m := range originalMessages.Messages {
+			if _, ok := translatedMessageIDs[m.ID]; !ok {
+				messages.Messages = append(messages.Messages, m)
+			}
+		}
+
+		// Save the updated translated messages
+		switch err := t.repo.SaveMessages(ctx, serviceID, &messages); {
+		default:
+			// noop
+		case errors.Is(err, common.ErrNotFound):
+			return status.Errorf(codes.NotFound, "service not found")
+		case err != nil:
+			return status.Errorf(codes.Internal, "")
+		}
+	}
+
+	return nil
+}
+
+// langExists returns true if the provided language exists in the provided model.Messages slice.
+func langExists(msgs []model.Messages, lang language.Tag) bool {
+	return slices.ContainsFunc(msgs, func(m model.Messages) bool {
+		return m.Language == lang
+	})
 }

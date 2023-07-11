@@ -187,6 +187,37 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		assert.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
+	t.Run("OK, with local file, original=true populate=false", func(t *testing.T) {
+		ctx, _ := testutil.Trace(t)
+
+		service := createService(ctx, t)
+		require.NotNil(t, service)
+
+		file, err := os.CreateTemp(t.TempDir(), "test")
+		require.NoError(t, err)
+
+		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
+
+		_, err = file.Write(data)
+		require.NoError(t, err)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
+			"service", "upload",
+			"--address", addr,
+			"--insecure", "true",
+
+			"--language", lang.String(),
+			"--original", "true",
+			"--file", file.Name(),
+			"--schema", "json_ng_localize",
+			"--service", service.Id,
+			"--populate_translations", "false",
+		})
+
+		require.NoError(t, err)
+		assert.Equal(t, "File uploaded successfully.\n", string(res))
+	})
+
 	t.Run("OK, file from URL", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
@@ -275,11 +306,11 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 		_, err = file.Write([]byte(`
 		{
-		  "locale": "xyz-ZY-Latn",
-		  "translations": {
+			"locale": "xyz-ZY-Latn",
+			"translations": {
 			"Hello": "Bonjour",
 			"Welcome": "Bienvenue"
-		  }
+			}
 		}`))
 
 		require.NoError(t, err)

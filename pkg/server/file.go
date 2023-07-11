@@ -18,17 +18,23 @@ import (
 // ----------------------UploadTranslationFile-------------------------------
 
 type uploadParams struct {
-	languageTag language.Tag
-	original    bool
-	data        []byte
-	schema      translatev1.Schema
-	serviceID   uuid.UUID
+	languageTag          language.Tag
+	original             bool
+	data                 []byte
+	schema               translatev1.Schema
+	serviceID            uuid.UUID
+	populateTranslations bool
 }
 
 func parseUploadTranslationFileRequestParams(req *translatev1.UploadTranslationFileRequest) (*uploadParams, error) {
 	var (
-		params = &uploadParams{data: req.GetData(), schema: req.GetSchema(), original: req.GetOriginal()}
-		err    error
+		params = &uploadParams{
+			data:                 req.GetData(),
+			schema:               req.GetSchema(),
+			original:             req.GetOriginal(),
+			populateTranslations: req.GetPopulateTranslations(),
+		}
+		err error
 	)
 
 	params.languageTag, err = languageFromProto(req.GetLanguage())
@@ -117,12 +123,26 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 
 	switch err := t.repo.SaveMessages(ctx, params.serviceID, messages); {
 	default:
-		return &emptypb.Empty{}, nil
+		// noop
 	case errors.Is(err, common.ErrNotFound):
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "")
 	}
+
+	// If the uploaded file is original and populateTranslations flag is true, populate the translated messages.
+	if messages.Original && params.populateTranslations {
+		allMessages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "")
+		}
+
+		if err = t.populateTranslatedMessages(ctx, params.serviceID, messages, allMessages); err != nil {
+			return nil, err
+		}
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
 // ----------------------DownloadTranslationFile-------------------------------
