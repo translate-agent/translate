@@ -6,6 +6,9 @@ require (
 	cloud.google.com/go/translate v1.8.1
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/XSAM/otelsql v0.23.0
+	github.com/aws/aws-sdk-go-v2/config v1.18.27
+	github.com/aws/aws-sdk-go-v2/credentials v1.13.26
+	github.com/aws/aws-sdk-go-v2/service/translate v1.18.2
 	github.com/brianvoe/gofakeit/v6 v6.22.0
 	github.com/dgraph-io/badger/v3 v3.2103.5
 	github.com/fatih/color v1.15.0
@@ -34,9 +37,10 @@ require (
 )
 
 require (
+	cloud.google.com/go v0.110.3 // indirect
+	cloud.google.com/go/compute v1.20.1 // indirect
+	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.18.1 // indirect
-	github.com/aws/aws-sdk-go-v2/config v1.18.27 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.13.26 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.13.4 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.34 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.28 // indirect
@@ -45,16 +49,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.12.12 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.12 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.19.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/translate v1.18.2 // indirect
 	github.com/aws/smithy-go v1.13.5 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
-)
-
-require (
-	cloud.google.com/go v0.110.3 // indirect
-	cloud.google.com/go/compute v1.20.1 // indirect
-	cloud.google.com/go/compute/metadata v0.2.3 // indirect
-	github.com/aws/aws-sdk-go v1.44.299
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

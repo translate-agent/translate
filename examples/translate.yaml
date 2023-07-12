@@ -16,3 +16,7 @@ db:
 other:
   google_translate:
     api_key: ""
+  aws_translate:
+    access_key: ""
+    secret_key: ""
+    region: ""
