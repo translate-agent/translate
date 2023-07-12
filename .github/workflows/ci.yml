@@ -35,4 +35,8 @@ jobs:
       - name: Test Unit
         run: earthly --ci +test-unit
       - name: Test Integration
-        run: earthly --ci --allow-privileged --secret googletranslate_api_key=${{ secrets.GOOGLETRANSLATE_API_KEY }} +test-integration
+        env:
+          EARTHLY_ACCOUNT_TOKEN: ${{ secrets.EARTHLY_ACCOUNT_TOKEN }}
+        run: |
+          earthly account login --token "$EARTHLY_ACCOUNT_TOKEN"
+          earthly --ci --allow-privileged +test-integration

@@ -129,7 +129,8 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts commo
 			original bool
 		)
 
-		if err := rows.Scan(&msg.ID, &msg.Message, &msg.Description, &msg.Status, &lang, &original); err != nil {
+		if err := rows.Scan(
+			&msg.ID, &msg.Message, &msg.Description, &msg.Positions, &msg.Status, &lang, &original); err != nil {
 			return nil, fmt.Errorf("repo: scan message: %w", err)
 		}
 

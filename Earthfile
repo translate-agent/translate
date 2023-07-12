@@ -1,4 +1,5 @@
 VERSION 0.7
+PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
 

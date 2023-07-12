@@ -20,6 +20,7 @@ func TestToGo(t *testing.T) {
 				Message:     "{message1}",
 				Description: "description1",
 				Positions:   []string{"src/config.go:10", "src/config.go:20"},
+				Status:      model.MessageStatusFuzzy,
 			},
 			{
 				ID:          "2",
@@ -77,12 +78,14 @@ func TestFromGo(t *testing.T) {
 				Message:     "{message1}",
 				Description: "description1",
 				Positions:   []string{"src/config.go:10"},
+				Status:      model.MessageStatusFuzzy,
 			},
 			{
 				ID:          "1",
 				Message:     "{message1}",
 				Description: "description1",
 				Positions:   []string{"src/config.go:20"},
+				Status:      model.MessageStatusFuzzy,
 			},
 			{
 				ID:          "2",
