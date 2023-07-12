@@ -6,7 +6,7 @@ import (
 	"go.expect.digital/translate/pkg/model"
 )
 
-var SupportedServices = []string{"GoogleTranslate"}
+var SupportedServices = []string{"GoogleTranslate", "AWSTranslate"}
 
 type Translator interface {
 	Translate(ctx context.Context, messages *model.Messages) (*model.Messages, error)
