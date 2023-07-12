@@ -8,20 +8,23 @@ import (
 	"fmt"
 	"net/http"
 
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	awscreds "github.com/aws/aws-sdk-go-v2/credentials"
-	awst "github.com/aws/aws-sdk-go-v2/service/translate"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/translate"
 	"github.com/aws/aws-sdk-go-v2/service/translate/types"
 
 	"github.com/spf13/viper"
-
 	"go.expect.digital/translate/pkg/model"
 )
 
 // --------------------Definitions--------------------
 
 type awsClient interface {
-	TranslateDocument(ctx context.Context, params *awst.TranslateDocumentInput, optFns ...func(*awst.Options)) (*awst.TranslateDocumentOutput, error)
+	TranslateDocument(
+		ctx context.Context,
+		params *translate.TranslateDocumentInput,
+		optFns ...func(*translate.Options),
+	) (*translate.TranslateDocumentOutput, error)
 }
 
 // Translate implements the Translator interface.
@@ -53,16 +56,16 @@ func WithDefaultClient(ctx context.Context) TranslateOption {
 		}
 
 		// Create a new AWS SDK config
-		cfg, err := awsconfig.LoadDefaultConfig(ctx,
-			awsconfig.WithHTTPClient(http.DefaultClient),
-			awsconfig.WithRegion(viper.GetString("other.aws_translate.region")),
-			awsconfig.WithCredentialsProvider(awscreds.NewStaticCredentialsProvider(accessKey, secretKey, "")),
+		cfg, err := config.LoadDefaultConfig(ctx,
+			config.WithHTTPClient(http.DefaultClient),
+			config.WithRegion(viper.GetString("other.aws_translate.region")),
+			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
 		)
 		if err != nil {
 			return fmt.Errorf("failed to load default AWS SDK configuration: %w", err)
 		}
 
-		tr.client = awst.NewFromConfig(cfg)
+		tr.client = translate.NewFromConfig(cfg)
 
 		return nil
 	}
@@ -79,7 +82,7 @@ func NewTranslate(ctx context.Context, opts ...TranslateOption) (*Translate, err
 	}
 
 	// Ping the AWS Translate API to ensure that the client is working.
-	_, err := tr.client.TranslateDocument(ctx, &awst.TranslateDocumentInput{
+	_, err := tr.client.TranslateDocument(ctx, &translate.TranslateDocumentInput{
 		SourceLanguageCode: ptr("en"),
 		TargetLanguageCode: ptr("lv"),
 		Document: &types.Document{
@@ -128,7 +131,7 @@ func (tr *Translate) Translate(ctx context.Context, messages *model.Messages) (*
 
 	for i := range bufs {
 		translateOutput, err := tr.client.TranslateDocument(ctx,
-			&awst.TranslateDocumentInput{
+			&translate.TranslateDocumentInput{
 				SourceLanguageCode: ptr("en"),
 				TargetLanguageCode: ptr("lv"),
 				Document: &types.Document{
