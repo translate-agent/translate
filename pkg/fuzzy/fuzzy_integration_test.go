@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
+	awstranslate "go.expect.digital/translate/pkg/fuzzy/aws"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
@@ -46,6 +47,19 @@ func Test_Translate(t *testing.T) {
 // translators is a map of all possible translation services, e.g. Google Translate, DeepL, etc.
 var translators = map[string]Translator{
 	"GoogleTranslate": nil,
+	"AWSTranslate":    nil,
+}
+
+// initAWSTranslate creates a new AWS Translate service and adds it to the translators map.
+func initAWSTranslate(ctx context.Context) error {
+	at, err := awstranslate.NewTranslate(ctx, awstranslate.WithDefaultClient(ctx))
+	if err != nil {
+		return fmt.Errorf("create new AWS Translate: %w", err)
+	}
+
+	translators["AWSTranslate"] = at
+
+	return nil
 }
 
 // initGoogleTranslate creates a new Google Translate service and adds it to the translators map.
@@ -76,6 +90,17 @@ func testMain(m *testing.M) int {
 		// If the Google Translate API key is not set, skip the Google Translate tests.
 		if strings.Contains(err.Error(), "api key is not set") {
 			log.Println("Google Translate API key is not set. Skipping Google Translate tests.")
+		} else {
+			// All other errors are fatal.
+			log.Fatal(err)
+		}
+	}
+
+	// AWS Translate
+	if err = initAWSTranslate(ctx); err != nil {
+		// If the AWS Translate access or secret key is not set, skip the AWS Translate tests.
+		if strings.Contains(err.Error(), "key is not set") {
+			log.Printf("%s. Skipping AWS Translate tests.", err)
 		} else {
 			// All other errors are fatal.
 			log.Fatal(err)

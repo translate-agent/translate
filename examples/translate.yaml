@@ -19,4 +19,6 @@ other:
   aws_translate:
     access_key: ""
     secret_key: ""
+    # List of supported regions for Amazon Comprehend (auto detect message langauge):
+    # https://docs.aws.amazon.com/general/latest/gr/comprehend.html
     region: ""

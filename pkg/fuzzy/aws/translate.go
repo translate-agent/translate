@@ -1,17 +1,16 @@
 package awstranslate
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/translate"
-	"github.com/aws/aws-sdk-go-v2/service/translate/types"
 
 	"github.com/spf13/viper"
 	"go.expect.digital/translate/pkg/model"
@@ -20,11 +19,11 @@ import (
 // --------------------Definitions--------------------
 
 type awsClient interface {
-	TranslateDocument(
+	TranslateText(
 		ctx context.Context,
-		params *translate.TranslateDocumentInput,
+		params *translate.TranslateTextInput,
 		optFns ...func(*translate.Options),
-	) (*translate.TranslateDocumentOutput, error)
+	) (*translate.TranslateTextOutput, error)
 }
 
 // Translate implements the Translator interface.
@@ -55,10 +54,15 @@ func WithDefaultClient(ctx context.Context) TranslateOption {
 			return fmt.Errorf("with default client: aws translate secret key is not set")
 		}
 
+		region := viper.GetString("other.aws_translate.region")
+		if region == "" {
+			return fmt.Errorf("with default client: aws translate region is not set")
+		}
+
 		// Create a new AWS SDK config
 		cfg, err := config.LoadDefaultConfig(ctx,
+			config.WithRegion(region),
 			config.WithHTTPClient(http.DefaultClient),
-			config.WithRegion(viper.GetString("other.aws_translate.region")),
 			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
 		)
 		if err != nil {
@@ -82,13 +86,10 @@ func NewTranslate(ctx context.Context, opts ...TranslateOption) (*Translate, err
 	}
 
 	// Ping the AWS Translate API to ensure that the client is working.
-	_, err := tr.client.TranslateDocument(ctx, &translate.TranslateDocumentInput{
+	_, err := tr.client.TranslateText(ctx, &translate.TranslateTextInput{
 		SourceLanguageCode: ptr("en"),
 		TargetLanguageCode: ptr("lv"),
-		Document: &types.Document{
-			Content:     []byte("Hello World!"),
-			ContentType: ptr("text/plain"),
-		},
+		Text:               ptr("Hello World!"),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("aws translate client: ping aws translate: %w", err)
@@ -97,8 +98,8 @@ func NewTranslate(ctx context.Context, opts ...TranslateOption) (*Translate, err
 	return tr, nil
 }
 
-// Maximum text size limit accepted by the AWS Translate API - 100KB.
-const inputTextSizeLimit = 100 * 1024
+// Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
+const inputTextSizeLimit = 10_000
 
 // --------------------Methods--------------------
 
@@ -117,9 +118,9 @@ func (tr *Translate) Translate(ctx context.Context, messages *model.Messages) (*
 	)
 
 	for _, m := range messages.Messages {
-		if buf.Cap()+len(m.Message) > inputTextSizeLimit {
+		if buf.Len()+len(m.Message) > inputTextSizeLimit {
 			bufs = append(bufs, buf)
-			buf.Reset()
+			buf = bytes.Buffer{}
 		}
 
 		fmt.Fprintln(&buf, m.Message)
@@ -129,36 +130,42 @@ func (tr *Translate) Translate(ctx context.Context, messages *model.Messages) (*
 
 	translatedTexts := make([]string, 0, len(messages.Messages))
 
+	// skip locale part if region is not a country,
+	// AWS only supports ISO 3166 2-digit country codes.
+	targetLanguage := messages.Language.String()
+
+	if region, _ := messages.Language.Region(); !region.IsCountry() {
+		baseLang, _ := messages.Language.Base()
+		targetLanguage = baseLang.String()
+	}
+
 	for i := range bufs {
-		translateOutput, err := tr.client.TranslateDocument(ctx,
-			&translate.TranslateDocumentInput{
-				SourceLanguageCode: ptr("en"),
-				TargetLanguageCode: ptr("lv"),
-				Document: &types.Document{
-					Content:     bufs[i].Bytes(),
-					ContentType: ptr("text/plain"),
-				},
+		translateOutput, err := tr.client.TranslateText(ctx,
+			&translate.TranslateTextInput{
+				// Amazon Translate supports text translation between the languages listed in the following table.
+				// The language code column uses ISO 639-1 two-digit language codes.
+				// For a country variant of a language, the table follows the RFC 5646 format of appending a dash
+				// followed by an ISO 3166 2-digit country code.
+				// For example, the language code for the Mexican variant of Spanish is es-MX.
+				// List of supported languages - https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
+				TargetLanguageCode: ptr(targetLanguage),
+
+				// NOTE: replace auto with source language.
+				// If you specify auto , you must send the TranslateText request in a region that supports Amazon Comprehend
+				SourceLanguageCode: ptr("auto"),
+				Text:               ptr(bufs[i].String()),
 			})
 		if err != nil {
-			return nil, fmt.Errorf("make translate content request: %w", err)
+			return nil, fmt.Errorf("translate text: %w", err)
 		}
 
-		scanner := bufio.NewScanner(
-			bytes.NewBuffer(translateOutput.TranslatedDocument.Content),
-		)
-
-		for scanner.Scan() {
-			line := scanner.Text()
-			translatedTexts = append(translatedTexts, line)
-		}
-
-		if err := scanner.Err(); err != nil {
-			return nil, fmt.Errorf("scan translated texts from buffer: %w", err)
-		}
+		// remove trailing newline.
+		*translateOutput.TranslatedText = strings.TrimSuffix(*translateOutput.TranslatedText, "\n")
+		translatedTexts = append(translatedTexts, strings.Split(*translateOutput.TranslatedText, "\n")...)
 	}
 
 	if len(messages.Messages) != len(translatedTexts) {
-		return nil, errors.New("translated texts count doesn't match input message count")
+		return nil, errors.New("aws translated message count doesn't match input message count")
 	}
 
 	translatedMessages := model.Messages{

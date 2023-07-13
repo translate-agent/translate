@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.expect.digital/translate/pkg/fuzzy"
+	awstranslate "go.expect.digital/translate/pkg/fuzzy/aws"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/server"
@@ -83,6 +84,11 @@ var rootCmd = &cobra.Command{
 			log.Fatalf("create new google translate client: %v\n", err)
 		}
 
+		awsTranslate, err := awstranslate.NewTranslate(ctx, awstranslate.WithDefaultClient(ctx))
+		if err != nil {
+			log.Fatalf("create new aws translate client: %v\n", err)
+		}
+
 		defer func() {
 			if closeErr := closeTranslate(); closeErr != nil {
 				log.Printf("Failed to close GoogleTranslate client: %v\n", closeErr)
@@ -90,6 +96,7 @@ var rootCmd = &cobra.Command{
 		}()
 
 		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, googleTranslate))
+		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, awsTranslate))
 
 		// gRPC Server Reflection provides information about publicly-accessible gRPC services on a server,
 		// and assists clients at runtime to construct RPC requests and responses without precompiled service information.
