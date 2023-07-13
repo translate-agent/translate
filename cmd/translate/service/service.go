@@ -14,6 +14,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.expect.digital/translate/pkg/fuzzy"
 	awstranslate "go.expect.digital/translate/pkg/fuzzy/aws"
 	googletranslate "go.expect.digital/translate/pkg/fuzzy/google"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
@@ -79,25 +80,29 @@ var rootCmd = &cobra.Command{
 			log.Panicf("create new repo: %v", err)
 		}
 
-		googleTranslate, closeTranslate, err := googletranslate.NewGoogleTranslate(
-			ctx, googletranslate.WithDefaultClient(ctx))
-		if err != nil {
-			log.Fatalf("create new google translate client: %v\n", err)
-		}
-
-		awsTranslate, err := awstranslate.NewAWSTranslate(ctx, awstranslate.WithDefaultClient(ctx))
-		if err != nil {
-			log.Fatalf("create new aws translate client: %v\n", err)
-		}
-
-		defer func() {
-			if closeErr := closeTranslate(); closeErr != nil {
-				log.Printf("Failed to close GoogleTranslate client: %v\n", closeErr)
+		switch viper.GetString("service.translator") {
+		case "AWSTranslate":
+			awsTranslate, awsErr := awstranslate.NewAWSTranslate(ctx, awstranslate.WithDefaultClient(ctx))
+			if awsErr != nil {
+				log.Fatalf("create new aws translate client: %v\n", awsErr)
 			}
-		}()
 
-		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, googleTranslate))
-		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, awsTranslate))
+			translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, awsTranslate))
+		default:
+			googleTranslate, closeTranslate, googleErr := googletranslate.NewGoogleTranslate(
+				ctx, googletranslate.WithDefaultClient(ctx))
+			if googleErr != nil {
+				log.Fatalf("create new google translate client: %v\n", googleErr)
+			}
+
+			defer func() {
+				if closeErr := closeTranslate(); closeErr != nil {
+					log.Printf("Failed to close GoogleTranslate client: %v\n", closeErr)
+				}
+			}()
+
+			translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, googleTranslate))
+		}
 
 		// gRPC Server Reflection provides information about publicly-accessible gRPC services on a server,
 		// and assists clients at runtime to construct RPC requests and responses without precompiled service information.
@@ -147,6 +152,7 @@ func init() {
 	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
 	rootCmd.PersistentFlags().String("host", "0.0.0.0", "host to run service on")
 	rootCmd.PersistentFlags().String("db", "badgerdb", repo.Usage())
+	rootCmd.PersistentFlags().String("translator", "GoogleTranslate", fuzzy.Usage())
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -177,5 +183,10 @@ func initConfig() {
 	err = viper.BindPFlag("service.db", rootCmd.Flags().Lookup("db"))
 	if err != nil {
 		log.Panicf("bind db flag: %v", err)
+	}
+
+	err = viper.BindPFlag("service.translator", rootCmd.Flags().Lookup("translator"))
+	if err != nil {
+		log.Panicf("bind translator flag: %v", err)
 	}
 }
