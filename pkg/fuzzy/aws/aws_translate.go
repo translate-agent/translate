@@ -26,24 +26,24 @@ type awsClient interface {
 	) (*translate.TranslateTextOutput, error)
 }
 
-// Translate implements the Translator interface.
-type Translate struct {
+// AWSTranslate implements the Translator interface.
+type AWSTranslate struct {
 	client awsClient
 }
 
-type TranslateOption func(*Translate) error
+type AWSTranslateOption func(*AWSTranslate) error
 
 // WithClient sets the AWS Translate client.
-func WithClient(ac awsClient) TranslateOption {
-	return func(tr *Translate) error {
-		tr.client = ac
+func WithClient(awsc awsClient) AWSTranslateOption {
+	return func(awst *AWSTranslate) error {
+		awst.client = awsc
 		return nil
 	}
 }
 
 // WithDefaultClient creates a new AWS Translate client with credentials from the viper.
-func WithDefaultClient(ctx context.Context) TranslateOption {
-	return func(tr *Translate) error {
+func WithDefaultClient(ctx context.Context) AWSTranslateOption {
+	return func(tr *AWSTranslate) error {
 		accessKey := viper.GetString("other.aws_translate.access_key")
 		if accessKey == "" {
 			return fmt.Errorf("with default client: aws translate access key is not set")
@@ -75,9 +75,9 @@ func WithDefaultClient(ctx context.Context) TranslateOption {
 	}
 }
 
-// NewTranslate creates a new AWS Translate service.
-func NewTranslate(ctx context.Context, opts ...TranslateOption) (*Translate, error) {
-	tr := &Translate{}
+// NewAWSTranslate creates a new AWS Translate service.
+func NewAWSTranslate(ctx context.Context, opts ...AWSTranslateOption) (*AWSTranslate, error) {
+	tr := &AWSTranslate{}
 
 	for _, opt := range opts {
 		if optErr := opt(tr); optErr != nil {
@@ -103,7 +103,7 @@ const inputTextSizeLimit = 10_000
 
 // --------------------Methods--------------------
 
-func (tr *Translate) Translate(ctx context.Context, messages *model.Messages) (*model.Messages, error) {
+func (tr *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) (*model.Messages, error) {
 	if messages == nil {
 		return nil, nil
 	}
@@ -159,7 +159,7 @@ func (tr *Translate) Translate(ctx context.Context, messages *model.Messages) (*
 			return nil, fmt.Errorf("translate text: %w", err)
 		}
 
-		// remove trailing newline.
+		// remove trailing newline character.
 		*translateOutput.TranslatedText = strings.TrimSuffix(*translateOutput.TranslatedText, "\n")
 		translatedTexts = append(translatedTexts, strings.Split(*translateOutput.TranslatedText, "\n")...)
 	}
