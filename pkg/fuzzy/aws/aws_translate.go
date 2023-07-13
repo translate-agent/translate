@@ -49,17 +49,17 @@ func WithDefaultClient(ctx context.Context) AWSTranslateOption {
 	return func(awst *AWSTranslate) error {
 		accessKey := viper.GetString("other.aws_translate.access_key")
 		if accessKey == "" {
-			return fmt.Errorf("with default client: aws translate access key is not set")
+			return fmt.Errorf("with default client: AWS translate access key is not set")
 		}
 
 		secretKey := viper.GetString("other.aws_translate.secret_key")
 		if secretKey == "" {
-			return fmt.Errorf("with default client: aws translate secret key is not set")
+			return fmt.Errorf("with default client: AWS translate secret key is not set")
 		}
 
 		region := viper.GetString("other.aws_translate.region")
 		if region == "" {
-			return fmt.Errorf("with default client: aws translate region is not set")
+			return fmt.Errorf("with default client: AWS translate region is not set")
 		}
 
 		// Create a new AWS SDK config
@@ -95,7 +95,7 @@ func NewAWSTranslate(ctx context.Context, opts ...AWSTranslateOption) (*AWSTrans
 		Text:               ptr("Hello World!"),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("aws translate client: ping aws translate: %w", err)
+		return nil, fmt.Errorf("AWS translate client: ping AWS translate: %w", err)
 	}
 
 	return awst, nil
@@ -160,7 +160,7 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 				Text:               ptr(bufs[i].String()),
 			})
 		if err != nil {
-			return nil, fmt.Errorf("translate text: %w", err)
+			return nil, fmt.Errorf("AWS translate text: %w", err)
 		}
 
 		// remove trailing newline character.
@@ -169,7 +169,7 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 	}
 
 	if len(translatedTexts) != len(messages.Messages) {
-		return nil, errors.New("translated text count doesn't match untranslated text count")
+		return nil, errors.New("AWS translated text count doesn't match untranslated text count")
 	}
 
 	translatedMessages := model.Messages{
