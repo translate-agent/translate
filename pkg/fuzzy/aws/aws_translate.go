@@ -43,7 +43,7 @@ func WithClient(awsc awsClient) AWSTranslateOption {
 
 // WithDefaultClient creates a new AWS Translate client with credentials from the viper.
 func WithDefaultClient(ctx context.Context) AWSTranslateOption {
-	return func(tr *AWSTranslate) error {
+	return func(awst *AWSTranslate) error {
 		accessKey := viper.GetString("other.aws_translate.access_key")
 		if accessKey == "" {
 			return fmt.Errorf("with default client: aws translate access key is not set")
@@ -69,7 +69,7 @@ func WithDefaultClient(ctx context.Context) AWSTranslateOption {
 			return fmt.Errorf("failed to load default AWS SDK configuration: %w", err)
 		}
 
-		tr.client = translate.NewFromConfig(cfg)
+		awst.client = translate.NewFromConfig(cfg)
 
 		return nil
 	}
@@ -77,16 +77,16 @@ func WithDefaultClient(ctx context.Context) AWSTranslateOption {
 
 // NewAWSTranslate creates a new AWS Translate service.
 func NewAWSTranslate(ctx context.Context, opts ...AWSTranslateOption) (*AWSTranslate, error) {
-	tr := &AWSTranslate{}
+	awst := &AWSTranslate{}
 
 	for _, opt := range opts {
-		if optErr := opt(tr); optErr != nil {
+		if optErr := opt(awst); optErr != nil {
 			return nil, fmt.Errorf("apply opt: %w", optErr)
 		}
 	}
 
 	// Ping the AWS Translate API to ensure that the client is working.
-	_, err := tr.client.TranslateText(ctx, &translate.TranslateTextInput{
+	_, err := awst.client.TranslateText(ctx, &translate.TranslateTextInput{
 		SourceLanguageCode: ptr("en"),
 		TargetLanguageCode: ptr("lv"),
 		Text:               ptr("Hello World!"),
@@ -95,7 +95,7 @@ func NewAWSTranslate(ctx context.Context, opts ...AWSTranslateOption) (*AWSTrans
 		return nil, fmt.Errorf("aws translate client: ping aws translate: %w", err)
 	}
 
-	return tr, nil
+	return awst, nil
 }
 
 // Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
@@ -103,7 +103,7 @@ const inputTextSizeLimit = 10_000
 
 // --------------------Methods--------------------
 
-func (tr *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) (*model.Messages, error) {
+func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) (*model.Messages, error) {
 	if messages == nil {
 		return nil, nil
 	}
@@ -140,7 +140,7 @@ func (tr *AWSTranslate) Translate(ctx context.Context, messages *model.Messages)
 	}
 
 	for i := range bufs {
-		translateOutput, err := tr.client.TranslateText(ctx,
+		translateOutput, err := a.client.TranslateText(ctx,
 			&translate.TranslateTextInput{
 				// Amazon Translate supports text translation between the languages listed in the following table.
 				// The language code column uses ISO 639-1 two-digit language codes.
@@ -150,7 +150,7 @@ func (tr *AWSTranslate) Translate(ctx context.Context, messages *model.Messages)
 				// List of supported languages - https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
 				TargetLanguageCode: ptr(targetLanguage),
 
-				// NOTE: replace auto with source language.
+				// TODO: replace auto detect with messages source language.
 				// If you specify auto , you must send the TranslateText request in a region that supports Amazon Comprehend
 				SourceLanguageCode: ptr("auto"),
 				Text:               ptr(bufs[i].String()),
@@ -164,8 +164,8 @@ func (tr *AWSTranslate) Translate(ctx context.Context, messages *model.Messages)
 		translatedTexts = append(translatedTexts, strings.Split(*translateOutput.TranslatedText, "\n")...)
 	}
 
-	if len(messages.Messages) != len(translatedTexts) {
-		return nil, errors.New("aws translated message count doesn't match input message count")
+	if len(translatedTexts) != len(messages.Messages) {
+		return nil, errors.New("translated text count doesn't match untranslated text count")
 	}
 
 	translatedMessages := model.Messages{
