@@ -79,7 +79,8 @@ var rootCmd = &cobra.Command{
 			log.Panicf("create new repo: %v", err)
 		}
 
-		googleTranslate, closeTranslate, err := googletranslate.NewGoogleTranslate(ctx, googletranslate.WithDefaultClient(ctx))
+		googleTranslate, closeTranslate, err := googletranslate.NewGoogleTranslate(
+			ctx, googletranslate.WithDefaultClient(ctx))
 		if err != nil {
 			log.Fatalf("create new google translate client: %v\n", err)
 		}
