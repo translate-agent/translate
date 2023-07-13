@@ -139,6 +139,9 @@ test-integration:
         -e TRANSLATE_DB_MYSQL_DATABASE=translate \
         -e TRANSLATE_DB_MYSQL_USER=root \
         -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_API_KEY=$googletranslate_api_key \
+        -e TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY=$awstranslate_access_key \
+        -e TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_KEY=$awstranslate_secret_key \
+        -e TRANSLATE_OTHER_AWS_TRANSLATE_REGION=$awstranslate_region \
         golang:$go_version-alpine go test -C /translate --tags=integration -count=1 ./...
   END
 

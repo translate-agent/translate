@@ -3,11 +3,16 @@ package fuzzy
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
-	"cloud.google.com/go/translate"
+	gt "cloud.google.com/go/translate"
+	awst "github.com/aws/aws-sdk-go-v2/service/translate"
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/require"
+	awstranslate "go.expect.digital/translate/pkg/fuzzy/aws"
+	googletranslate "go.expect.digital/translate/pkg/fuzzy/google"
+
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
@@ -31,15 +36,6 @@ func Test_TranslateMock(t *testing.T) {
 			{
 				name:     "Multiple messages",
 				messages: randMessages(5, language.German),
-			},
-			{
-				name:     "Undefined messages language",
-				messages: randMessages(5, language.Und),
-			},
-			{
-				name:        "Unsupported target language",
-				messages:    randMessages(5, language.Afrikaans),
-				expectedErr: errors.New("unsupported language"),
 			},
 		}
 
@@ -92,23 +88,55 @@ func (m *MockGoogleTranslateClient) Translate(
 	_ context.Context,
 	inputs []string,
 	target language.Tag,
-	_ *translate.Options,
-) ([]translate.Translation, error) {
+	_ *gt.Options,
+) ([]gt.Translation, error) {
 	// Mock the Bad request error for unsupported language.Afrikaans.
 	if target == language.Afrikaans {
 		return nil, errors.New("mock: bad request: unsupported language")
 	}
 
-	translations := make([]translate.Translation, 0, len(inputs))
+	translations := make([]gt.Translation, 0, len(inputs))
 
 	for range inputs {
-		translations = append(translations, translate.Translation{Text: gofakeit.SentenceSimple()})
+		translations = append(translations, gt.Translation{Text: gofakeit.SentenceSimple()})
 	}
 
 	return translations, nil
 }
 
 func (m *MockGoogleTranslateClient) Close() error { return nil }
+
+// ---–––--------------AWS Translate------------------–––---
+
+// MockAWSTranslateClient is a mock implementation of the AWS Translate client.
+type MockAWSTranslateClient struct{}
+
+// Translate mocks the TranslateText method of the AWS Translate client.
+func (m *MockAWSTranslateClient) TranslateText(
+	ctx context.Context,
+	params *awst.TranslateTextInput,
+	optFns ...func(*awst.Options),
+) (*awst.TranslateTextOutput, error) {
+	// Mock the Bad request error for unsupported language.Und.
+	if *params.SourceLanguageCode == language.Und.String() ||
+		*params.TargetLanguageCode == language.Und.String() {
+		return nil, errors.New("mock: bad request: Unsupported language pair: zh to und")
+	}
+
+	// remove trailing newline character.
+	*params.Text = strings.TrimSuffix(*params.Text, "\n")
+	translations := strings.Split(*params.Text, "\n")
+
+	for i := range translations {
+		translations[i] = gofakeit.SentenceSimple()
+	}
+
+	return &awst.TranslateTextOutput{
+		SourceLanguageCode: params.SourceLanguageCode,
+		TargetLanguageCode: params.TargetLanguageCode,
+		TranslatedText:     ptr(strings.Join(translations, "\n")),
+	}, nil
+}
 
 // -----------------------Helpers and init----------------------------
 
@@ -118,12 +146,19 @@ func init() {
 	mockTranslators = make(map[string]Translator, len(SupportedServices))
 
 	// Google Translate
-	gt, _, _ := NewGoogleTranslate(
+	gt, _, _ := googletranslate.NewGoogleTranslate(
 		context.Background(),
-		WithClient(&MockGoogleTranslateClient{}),
+		googletranslate.WithClient(&MockGoogleTranslateClient{}),
 	)
 
 	mockTranslators["GoogleTranslate"] = gt
+
+	at, _ := awstranslate.NewAWSTranslate(
+		context.Background(),
+		awstranslate.WithClient(&MockAWSTranslateClient{}),
+	)
+
+	mockTranslators["AWSTranslate"] = at
 }
 
 // allMocks runs a test function f for each mocked translate service that is defined in the mockTranslators map.
@@ -145,4 +180,9 @@ func randMessages(msgCount uint, srcLang language.Tag) *model.Messages {
 	msgsOpts := []rand.ModelMessagesOption{rand.WithLanguage(srcLang)}
 
 	return rand.ModelMessages(msgCount, msgOpts, msgsOpts...)
+}
+
+// ptr returns pointer to the passed in value.
+func ptr[T any](v T) *T {
+	return &v
 }

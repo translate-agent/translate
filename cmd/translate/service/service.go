@@ -14,8 +14,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"go.expect.digital/translate/pkg/fuzzy"
 	awstranslate "go.expect.digital/translate/pkg/fuzzy/aws"
+	googletranslate "go.expect.digital/translate/pkg/fuzzy/google"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/server"
@@ -79,12 +79,12 @@ var rootCmd = &cobra.Command{
 			log.Panicf("create new repo: %v", err)
 		}
 
-		googleTranslate, closeTranslate, err := fuzzy.NewGoogleTranslate(ctx, fuzzy.WithDefaultClient(ctx))
+		googleTranslate, closeTranslate, err := googletranslate.NewGoogleTranslate(ctx, googletranslate.WithDefaultClient(ctx))
 		if err != nil {
 			log.Fatalf("create new google translate client: %v\n", err)
 		}
 
-		awsTranslate, err := awstranslate.NewTranslate(ctx, awstranslate.WithDefaultClient(ctx))
+		awsTranslate, err := awstranslate.NewAWSTranslate(ctx, awstranslate.WithDefaultClient(ctx))
 		if err != nil {
 			log.Fatalf("create new aws translate client: %v\n", err)
 		}

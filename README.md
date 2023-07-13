@@ -7,6 +7,9 @@ docker run -d --name translate-all-in-one \
   -p 8080:8080 \
   -p 16686:16686 \
   -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_API_KEY={GoogleTranslate API key} \
+  -e TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY={AWSTranslate API access key} \
+  -e TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_KEY={AWSTranslate API secret key} \
+  -e TRANSLATE_OTHER_AWS_TRANSLATE_REGION={AWSTranslate server region} \
   -v /tmp/badger:/tmp/badger \
   expectdigital/translate-agent-all-in-one:latest
 ```
@@ -16,18 +19,24 @@ docker rm -f translate-all-in-one 2> /dev/null; docker pull expectdigital/transl
   -p 8080:8080 \
   -p 16686:16686 \
   -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_API_KEY={GoogleTranslate API key} \
+  -e TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY={AWSTranslate API access key} \
+  -e TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_KEY={AWSTranslate API secret key} \
+  -e TRANSLATE_OTHER_AWS_TRANSLATE_REGION={AWSTranslate server region} \
   -v /tmp/badger:/tmp/badger \
   expectdigital/translate-agent-all-in-one
 ```
 
 ### All-in-one image docker run arguments description
-| Argument                                                                | Description                                            |
-| ----------------------------------------------------------------------- | ------------------------------------------------------ |
-| `-p 8080:8080`                                                          | Translate service port                                 |
-| `-p 16686:16686`                                                        | Jaeger UI port                                         |
-| `-e TRANSLATE_OTHER_GOOGLE_TRANSLATE_API_KEY={GoogleTranslate API key}` | Google Translate API key                               |
-| `-v path/to/badger-dir:/tmp/badger`                                     | Path for BadgerDB db for data persistency *(Optional)* |
-| `-v path/to/envoy.yaml:/app/envoy.yaml`                                 | Path to custom envoy.yaml *(Optional)*                 |
+| Argument                                                                    | Description                                            |
+| ----------------------------------------------------------------------------| ------------------------------------------------------ |
+| `-p 8080:8080`                                                              | Translate service port                                 |
+| `-p 16686:16686`                                                            | Jaeger UI port                                         |
+| `-e TRANSLATE_OTHER_GOOGLE_TRANSLATE_API_KEY={GoogleTranslate API key}`     | Google Translate API key                               |
+| `-e TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY={AWSTranslate API access key}` | AWS Translate API access key                           |
+| `-e TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_KEY={AWSTranslate API secret key}` | AWS Translate API secret key                           |
+| `-e TRANSLATE_OTHER_AWS_TRANSLATE_REGION={AWSTranslate server region}`      | AWS Translate server region                            |
+| `-v path/to/badger-dir:/tmp/badger`                                         | Path for BadgerDB db for data persistency *(Optional)* |
+| `-v path/to/envoy.yaml:/app/envoy.yaml`                                     | Path to custom envoy.yaml *(Optional)*                 |
 
 ## TypeScript client
 

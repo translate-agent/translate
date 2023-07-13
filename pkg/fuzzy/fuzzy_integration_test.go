@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	awstranslate "go.expect.digital/translate/pkg/fuzzy/aws"
+	googletranslate "go.expect.digital/translate/pkg/fuzzy/google"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
@@ -52,7 +53,7 @@ var translators = map[string]Translator{
 
 // initAWSTranslate creates a new AWS Translate service and adds it to the translators map.
 func initAWSTranslate(ctx context.Context) error {
-	at, err := awstranslate.NewTranslate(ctx, awstranslate.WithDefaultClient(ctx))
+	at, err := awstranslate.NewAWSTranslate(ctx, awstranslate.WithDefaultClient(ctx))
 	if err != nil {
 		return fmt.Errorf("create new AWS Translate: %w", err)
 	}
@@ -64,7 +65,7 @@ func initAWSTranslate(ctx context.Context) error {
 
 // initGoogleTranslate creates a new Google Translate service and adds it to the translators map.
 func initGoogleTranslate(ctx context.Context) (func() error, error) {
-	gt, closer, err := NewGoogleTranslate(ctx, WithDefaultClient(ctx))
+	gt, closer, err := googletranslate.NewGoogleTranslate(ctx, googletranslate.WithDefaultClient(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("create new Google Translate: %w", err)
 	}

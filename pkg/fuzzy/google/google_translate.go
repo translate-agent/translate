@@ -1,4 +1,4 @@
-package fuzzy
+package googletranslate
 
 import (
 	"context"
