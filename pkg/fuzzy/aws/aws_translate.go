@@ -18,6 +18,9 @@ import (
 
 // --------------------Definitions--------------------
 
+// Interface that defines some of the methods of the AWS Translate client.
+// This interface helps to mock the AWS Translate client in unit tests.
+// https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/translate#Client
 type awsClient interface {
 	TranslateText(
 		ctx context.Context,
