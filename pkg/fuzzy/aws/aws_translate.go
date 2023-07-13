@@ -132,6 +132,7 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 
 	// skip locale part if region is not a country,
 	// AWS only supports ISO 3166 2-digit country codes.
+	// https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
 	targetLanguage := messages.Language.String()
 
 	if region, _ := messages.Language.Region(); !region.IsCountry() {
@@ -151,7 +152,7 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 				TargetLanguageCode: ptr(targetLanguage),
 
 				// TODO: replace auto detect with messages source language.
-				// If you specify auto , you must send the TranslateText request in a region that supports Amazon Comprehend
+				// If you specify auto , you must send the TranslateText request in a region that supports Amazon Comprehend.
 				SourceLanguageCode: ptr("auto"),
 				Text:               ptr(bufs[i].String()),
 			})
