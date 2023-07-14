@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/translate"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/spf13/viper"
 	"go.expect.digital/translate/pkg/model"
@@ -65,7 +66,7 @@ func WithDefaultClient(ctx context.Context) AWSTranslateOption {
 		// Create a new AWS SDK config
 		cfg, err := config.LoadDefaultConfig(ctx,
 			config.WithRegion(region),
-			config.WithHTTPClient(http.DefaultClient),
+			config.WithHTTPClient(&http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}),
 			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
 		)
 		if err != nil {
