@@ -24,3 +24,4 @@ translate.yaml
 # vendor/
 
 .go-version
+.DS_Store

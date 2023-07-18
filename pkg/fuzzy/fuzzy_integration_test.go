@@ -10,16 +10,19 @@ import (
 	"strings"
 	"testing"
 
+	translatev3 "cloud.google.com/go/translate/apiv3"
+	"cloud.google.com/go/translate/apiv3/translatepb"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
+	"google.golang.org/api/option"
 )
 
 // ---–––--------------Actual Tests------------------–––---
 
-func Test_Translate(t *testing.T) {
+func Test_TranslateText(t *testing.T) {
 	t.Parallel()
 
 	allTranslators(t, func(t *testing.T, translator Translator, subTest testutil.SubtestFn) {
@@ -71,26 +74,28 @@ func testMain(m *testing.M) int {
 	// Initialize all translation services.
 
 	// Google Translate
-	gtCloser, err := initGoogleTranslate(ctx)
+	client, err := translatev3.NewTranslationClient(ctx, option.WithAPIKey(viper.GetString("GOOGLE_TRANSLATE_API_KEY")))
 	if err != nil {
-		// If the Google Translate API key is not set, skip the Google Translate tests.
-		if strings.Contains(err.Error(), "api key is not set") {
-			log.Println("Google Translate API key is not set. Skipping Google Translate tests.")
-		} else {
-			// All other errors are fatal.
-			log.Fatal(err)
-		}
+		log.Fatalf("Failed to create client: %v", err)
+	}
+	defer client.Close()
+
+	// Construct a request.
+	req := &translatepb.TranslateTextRequest{
+		Parent:             fmt.Sprintf("projects/%s/locations/%s", viper.GetString("GOOGLE_PROJECT_ID"), viper.GetString("GOOGLE_LOCATION")),
+		Contents:           []string{"hello, world!"},
+		MimeType:           "text/plain", // Mime types: "text/plain", "text/html"
+		SourceLanguageCode: "en-US",
+		TargetLanguageCode: "fr-FR",
 	}
 
-	// Close all connections
+	response, err := client.TranslateText(ctx, req)
+	if err != nil {
+		log.Fatalf("Failed to translate text: %v", err)
+	}
 
-	// Close the Google Translate client.
-	if gtCloser != nil {
-		defer func() {
-			if err := gtCloser(); err != nil {
-				log.Printf("close Google Translate: %v", err)
-			}
-		}()
+	for _, translation := range response.Translations {
+		fmt.Printf("Translated text: %v\n", translation.GetTranslatedText())
 	}
 
 	return m.Run()

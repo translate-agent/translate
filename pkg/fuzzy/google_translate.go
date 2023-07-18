@@ -3,14 +3,15 @@ package fuzzy
 import (
 	"context"
 	"fmt"
-	"io"
+	"github.com/googleapis/gax-go/v2"
 	"net/http"
+	"strings"
 
-	"cloud.google.com/go/translate"
+	translatev3 "cloud.google.com/go/translate/apiv3"
+	"cloud.google.com/go/translate/apiv3/translatepb"
 	"github.com/spf13/viper"
 	"go.expect.digital/translate/pkg/model"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"golang.org/x/text/language"
 	"google.golang.org/api/option"
 	htransport "google.golang.org/api/transport/http"
 )
@@ -18,11 +19,9 @@ import (
 // --------------------Definitions--------------------
 
 // Interface that defines some of the methods of the Google Translate client.
-// This interface helps to mock the Google Translate client in unit tests.
-// https://pkg.go.dev/cloud.google.com/go/translate#Client
 type googleClient interface {
-	Translate(context.Context, []string, language.Tag, *translate.Options) ([]translate.Translation, error)
-	io.Closer
+	TranslateText(ctx context.Context, req *translatepb.TranslateTextRequest, opts ...gax.CallOption) (*translatepb.TranslateTextResponse, error)
+	Close() error
 }
 
 // GoogleTranslate implements the Translator interface.
@@ -60,7 +59,7 @@ func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
 			return fmt.Errorf("with default client: new transport: %w", err)
 		}
 
-		g.client, err = translate.NewClient(ctx, option.WithHTTPClient(&http.Client{Transport: trans}))
+		g.client, err = translatev3.NewTranslationClient(ctx, option.WithHTTPClient(&http.Client{Transport: trans}))
 		if err != nil {
 			return fmt.Errorf("with default client: new google translate client: %w", err)
 		}
@@ -83,7 +82,12 @@ func NewGoogleTranslate(
 	}
 
 	// Ping the Google Translate API to ensure that the client is working.
-	_, err = gt.client.Translate(ctx, []string{"Hello World!"}, language.Latvian, nil)
+	_, err = gt.client.TranslateText(ctx, &translatepb.TranslateTextRequest{
+		SourceLanguageCode: "en",
+		TargetLanguageCode: "lv",
+		Contents:           []string{"Hello World!"},
+		Parent:             fmt.Sprintf("projects/%s/locations/%s", viper.GetString("other.google_translate.project_id"), "global"),
+	})
 	if err != nil {
 		return nil, nil, fmt.Errorf("google translate client: ping google translate: %w", err)
 	}
@@ -111,7 +115,12 @@ func (g *GoogleTranslate) Translate(
 		targetTexts = append(targetTexts, m.Message)
 	}
 
-	translations, err := g.client.Translate(ctx, targetTexts, messages.Language, nil)
+	resp, err := g.client.TranslateText(ctx, &translatepb.TranslateTextRequest{
+		SourceLanguageCode: "en", // specify your source language if it's not English
+		TargetLanguageCode: strings.ToLower(messages.Language.String()),
+		Contents:           targetTexts,
+		Parent:             fmt.Sprintf("projects/%s/locations/%s", viper.GetString("other.google_translate.project_id"), "global"),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("google translate client: translate: %w", err)
 	}
@@ -119,15 +128,15 @@ func (g *GoogleTranslate) Translate(
 	translatedMessages := model.Messages{
 		Language: messages.Language,
 		Original: messages.Original,
-		Messages: make([]model.Message, 0, len(translations)),
+		Messages: make([]model.Message, 0, len(resp.GetTranslations())),
 	}
 
-	for i, t := range translations {
+	for i, t := range resp.GetTranslations() {
 		translatedMessages.Messages = append(translatedMessages.Messages, model.Message{
 			ID:          messages.Messages[i].ID,
 			PluralID:    messages.Messages[i].PluralID,
 			Description: messages.Messages[i].Description,
-			Message:     t.Text,
+			Message:     t.GetTranslatedText(),
 			Status:      model.MessageStatusFuzzy,
 			Positions:   messages.Messages[i].Positions,
 		})
