@@ -88,7 +88,7 @@ func Test_TranslateMock(t *testing.T) {
 // MockGoogleTranslateClient is a mock implementation of the Google Translate client.
 type MockGoogleTranslateClient struct{}
 
-// Translate mocks the Translate method of the Google Translate client.
+// TranslateText mocks the Translate method of the Google Translate client.
 func (m *MockGoogleTranslateClient) TranslateText(
 	ctx context.Context,
 	req *translatepb.TranslateTextRequest,
