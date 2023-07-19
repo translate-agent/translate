@@ -4,15 +4,16 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 
-	"cloud.google.com/go/translate"
+	translate "cloud.google.com/go/translate/apiv3"
+	"cloud.google.com/go/translate/apiv3/translatepb"
+	"github.com/googleapis/gax-go/v2"
 	"github.com/spf13/viper"
 	"go.expect.digital/translate/pkg/model"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/text/language"
 	"google.golang.org/api/option"
-	htransport "google.golang.org/api/transport/http"
+	"google.golang.org/grpc"
 )
 
 // --------------------Definitions--------------------
@@ -21,7 +22,11 @@ import (
 // This interface helps to mock the Google Translate client in unit tests.
 // https://pkg.go.dev/cloud.google.com/go/translate#Client
 type googleClient interface {
-	Translate(context.Context, []string, language.Tag, *translate.Options) ([]translate.Translation, error)
+	TranslateText(
+		ctx context.Context,
+		req *translatepb.TranslateTextRequest,
+		opts ...gax.CallOption,
+	) (*translatepb.TranslateTextResponse, error)
 	io.Closer
 }
 
@@ -45,24 +50,14 @@ func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
 	return func(g *GoogleTranslate) error {
 		var err error
 
-		apiKey := viper.GetString("other.google_translate.api_key")
-		if apiKey == "" {
-			return fmt.Errorf("with default client: google translate api key is not set")
-		}
-
 		// Create new Google Cloud service transport with the base of OpenTelemetry HTTP transport.
-		trans, err := htransport.NewTransport(
-			ctx,
-			otelhttp.NewTransport(http.DefaultTransport),
-			option.WithAPIKey(apiKey),
+		g.client, err = translate.NewTranslationClient(ctx,
+			option.WithCredentialsFile(viper.GetString("other.google_translate.account_key")),
+			option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
+			option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 		)
 		if err != nil {
-			return fmt.Errorf("with default client: new transport: %w", err)
-		}
-
-		g.client, err = translate.NewClient(ctx, option.WithHTTPClient(&http.Client{Transport: trans}))
-		if err != nil {
-			return fmt.Errorf("with default client: new google translate client: %w", err)
+			return fmt.Errorf("init Google translate client: %w", err)
 		}
 
 		return nil
@@ -83,7 +78,13 @@ func NewGoogleTranslate(
 	}
 
 	// Ping the Google Translate API to ensure that the client is working.
-	_, err = gt.client.Translate(ctx, []string{"Hello World!"}, language.Latvian, nil)
+	req := &translatepb.TranslateTextRequest{
+		Parent:             parent(),
+		TargetLanguageCode: language.Latvian.String(),
+		Contents:           []string{"Hello World!"},
+	}
+
+	_, err = gt.client.TranslateText(ctx, req)
 	if err != nil {
 		return nil, nil, fmt.Errorf("google translate client: ping google translate: %w", err)
 	}
@@ -111,7 +112,13 @@ func (g *GoogleTranslate) Translate(
 		targetTexts = append(targetTexts, m.Message)
 	}
 
-	translations, err := g.client.Translate(ctx, targetTexts, messages.Language, nil)
+	req := &translatepb.TranslateTextRequest{
+		Parent:             parent(),
+		TargetLanguageCode: messages.Language.String(),
+		Contents:           targetTexts,
+	}
+
+	res, err := g.client.TranslateText(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("google translate client: translate: %w", err)
 	}
@@ -119,19 +126,27 @@ func (g *GoogleTranslate) Translate(
 	translatedMessages := model.Messages{
 		Language: messages.Language,
 		Original: messages.Original,
-		Messages: make([]model.Message, 0, len(translations)),
+		Messages: make([]model.Message, 0, len(res.Translations)),
 	}
 
-	for i, t := range translations {
+	for i, t := range res.Translations {
 		translatedMessages.Messages = append(translatedMessages.Messages, model.Message{
 			ID:          messages.Messages[i].ID,
 			PluralID:    messages.Messages[i].PluralID,
 			Description: messages.Messages[i].Description,
-			Message:     t.Text,
+			Message:     t.TranslatedText,
 			Status:      model.MessageStatusFuzzy,
 			Positions:   messages.Messages[i].Positions,
 		})
 	}
 
 	return &translatedMessages, nil
+}
+
+// parent returns path to Google project and location.
+func parent() string {
+	projectId := viper.GetString("other.google_translate.project_id")
+	location := viper.GetString("other.google_translate.location")
+
+	return fmt.Sprintf("projects/%s/locations/%s", projectId, location)
 }

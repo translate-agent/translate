@@ -26,5 +26,8 @@
   "files.readonlyInclude": {
     "**/bin/*": true,
     "**/pkg/pb/**": true
-  }
+  },
+  "go.formatTool": "gofumpt",
+  "go.lintOnSave": "workspace",
+  "go.lintTool": "golangci-lint"
 }
