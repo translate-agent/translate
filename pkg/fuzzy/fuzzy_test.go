@@ -6,9 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	gt "cloud.google.com/go/translate"
+	"cloud.google.com/go/translate/apiv3/translatepb"
 	awst "github.com/aws/aws-sdk-go-v2/service/translate"
 	"github.com/brianvoe/gofakeit/v6"
+	"github.com/googleapis/gax-go/v2"
 	"github.com/stretchr/testify/require"
 	awstranslate "go.expect.digital/translate/pkg/fuzzy/aws"
 	googletranslate "go.expect.digital/translate/pkg/fuzzy/google"
@@ -83,25 +84,26 @@ func Test_TranslateMock(t *testing.T) {
 // MockGoogleTranslateClient is a mock implementation of the Google Translate client.
 type MockGoogleTranslateClient struct{}
 
-// Translate mocks the Translate method of the Google Translate client.
-func (m *MockGoogleTranslateClient) Translate(
-	_ context.Context,
-	inputs []string,
-	target language.Tag,
-	_ *gt.Options,
-) ([]gt.Translation, error) {
+// TranslateText mocks the Translate method of the Google Translate client.
+func (m *MockGoogleTranslateClient) TranslateText(
+	ctx context.Context,
+	req *translatepb.TranslateTextRequest,
+	opts ...gax.CallOption,
+) (*translatepb.TranslateTextResponse, error) {
 	// Mock the Bad request error for unsupported language.Afrikaans.
-	if target == language.Afrikaans {
+	if req.TargetLanguageCode == language.Afrikaans.String() {
 		return nil, errors.New("mock: bad request: unsupported language")
 	}
 
-	translations := make([]gt.Translation, 0, len(inputs))
-
-	for range inputs {
-		translations = append(translations, gt.Translation{Text: gofakeit.SentenceSimple()})
+	res := &translatepb.TranslateTextResponse{
+		Translations: make([]*translatepb.Translation, 0, len(req.Contents)),
 	}
 
-	return translations, nil
+	for range req.Contents {
+		res.Translations = append(res.Translations, &translatepb.Translation{TranslatedText: gofakeit.SentenceSimple()})
+	}
+
+	return res, nil
 }
 
 func (m *MockGoogleTranslateClient) Close() error { return nil }
