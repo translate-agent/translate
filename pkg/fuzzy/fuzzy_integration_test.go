@@ -88,9 +88,9 @@ func testMain(m *testing.M) int {
 	// Google Translate
 	gtCloser, err := initGoogleTranslate(ctx)
 	if err != nil {
-		// If the Google Translate API key is not set, skip the Google Translate tests.
-		if strings.Contains(err.Error(), "api key is not set") {
-			log.Println("Google Translate API key is not set. Skipping Google Translate tests.")
+		// If the Google Translate API credentials are not set, skip the Google Translate tests.
+		if strings.Contains(err.Error(), "could not find default credentials") {
+			log.Println("Google Translate API credentials are not set. Skipping Google Translate tests.")
 		} else {
 			// All other errors are fatal.
 			log.Fatal(err)
