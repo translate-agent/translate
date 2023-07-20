@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"go.expect.digital/translate/pkg/model"
+	"golang.org/x/text/language"
 )
 
 var SupportedServices = []string{"GoogleTranslate", "AWSTranslate"}
@@ -16,7 +17,8 @@ func Usage() string {
 }
 
 type Translator interface {
-	Translate(ctx context.Context, messages *model.Messages) (*model.Messages, error)
+	// TODO: only translate messages with untranslated status
+	Translate(ctx context.Context, source *model.Messages, targetLanguage language.Tag) (*model.Messages, error)
 	// XXX: Method to return supported languages? e.g. SupportedLanguages() map[language.Tag]bool
 }
 

@@ -97,6 +97,7 @@ func NewGoogleTranslate(
 func (g *GoogleTranslate) Translate(
 	ctx context.Context,
 	messages *model.Messages,
+	targetLanguage language.Tag,
 ) (*model.Messages, error) {
 	if messages == nil {
 		return nil, nil
@@ -114,7 +115,8 @@ func (g *GoogleTranslate) Translate(
 
 	req := &translatepb.TranslateTextRequest{
 		Parent:             parent(),
-		TargetLanguageCode: messages.Language.String(),
+		SourceLanguageCode: messages.Language.String(),
+		TargetLanguageCode: targetLanguage.String(),
 		Contents:           targetTexts,
 	}
 
@@ -124,7 +126,7 @@ func (g *GoogleTranslate) Translate(
 	}
 
 	translatedMessages := model.Messages{
-		Language: messages.Language,
+		Language: targetLanguage,
 		Original: messages.Original,
 		Messages: make([]model.Message, 0, len(res.Translations)),
 	}

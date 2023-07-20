@@ -68,6 +68,9 @@ func (t *TranslateServiceServer) CreateMessages(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
+	// TODO: Validate all message IDs that they match original message IDs present in database.
+
+	// TODO: to improve performance should be replaced with CheckMessagesExist db function.
 	msgs, err := t.repo.LoadMessages(ctx, params.serviceID,
 		common.LoadMessagesOpts{FilterLanguages: []language.Tag{params.messages.Language}})
 	if err != nil {
@@ -78,13 +81,31 @@ func (t *TranslateServiceServer) CreateMessages(
 		return nil, status.Errorf(codes.AlreadyExists, "messages already exist for language: '%s'", params.messages.Language)
 	}
 
-	// If the messages are not the original messages, translate them.
+	// Translate messages when messages are not original and original language is known.
 	if !params.messages.Original {
-		var err error
-
-		params.messages, err = t.translator.Translate(ctx, params.messages)
+		// Retrieve language from original messages.
+		var originalLanguage *language.Tag
+		// TODO: to improve performance should be replaced with CheckMessagesExist db function.
+		msgs, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
 		if err != nil {
-			return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
+			return nil, status.Errorf(codes.Internal, "")
+		}
+
+		for _, v := range msgs {
+			if v.Original {
+				originalLanguage = &v.Language
+			}
+		}
+
+		if originalLanguage != nil {
+			// Translate messages -
+			// untranslated text in incoming messages will be translated from original to target language.
+			targetLanguage := params.messages.Language
+			params.messages.Language = *originalLanguage
+			params.messages, err = t.translator.Translate(ctx, params.messages, targetLanguage)
+			if err != nil {
+				return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
+			}
 		}
 	}
 
@@ -263,8 +284,11 @@ func (t *TranslateServiceServer) populateTranslatedMessages(
 			}
 		}
 
-		// Translate the messages
-		translated, err := t.translator.Translate(ctx, toBeTranslated)
+		// Translate messages -
+		// untranslated text in toBeTranslated messages will be translated from original to target language.
+		targetLanguage := toBeTranslated.Language
+		toBeTranslated.Language = originalMessages.Language
+		translated, err := t.translator.Translate(ctx, toBeTranslated, targetLanguage)
 		if err != nil {
 			return status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
 		}

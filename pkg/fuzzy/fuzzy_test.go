@@ -41,8 +41,9 @@ func Test_TranslateMock(t *testing.T) {
 			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
-
-				translatedMsgs, err := mock.Translate(context.Background(), tt.messages)
+				msgs := tt.messages
+				msgs.Language = language.English // set original language
+				translatedMsgs, err := mock.Translate(context.Background(), msgs, tt.messages.Language)
 
 				if tt.expectedErr != nil {
 					require.ErrorContains(t, err, tt.expectedErr.Error())
