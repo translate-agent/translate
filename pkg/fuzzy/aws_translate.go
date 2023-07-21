@@ -9,10 +9,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/translate"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-
 	"github.com/spf13/viper"
 	"go.expect.digital/translate/pkg/model"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // --------------------Definitions--------------------
