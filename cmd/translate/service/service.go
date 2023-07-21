@@ -87,7 +87,7 @@ var rootCmd = &cobra.Command{
 
 		switch translatorString {
 		case "":
-			// noop - translator is optional
+			translator = &fuzzy.NoopTranslate{}
 		case "AWSTranslate":
 			translator, errTranslator = fuzzy.NewAWSTranslate(ctx, fuzzy.WithDefaultAWSClient(ctx))
 		case "GoogleTranslate":
