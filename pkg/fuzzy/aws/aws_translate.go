@@ -1,12 +1,10 @@
 package awstranslate
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -102,9 +100,6 @@ func NewAWSTranslate(ctx context.Context, opts ...AWSTranslateOption) (*AWSTrans
 	return awst, nil
 }
 
-// Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
-const inputTextSizeLimit = 10_000
-
 // --------------------Methods--------------------
 
 func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) (*model.Messages, error) {
@@ -116,24 +111,6 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 		return &model.Messages{Language: messages.Language, Original: messages.Original}, nil
 	}
 
-	var (
-		buf  bytes.Buffer
-		bufs []bytes.Buffer
-	)
-
-	for _, m := range messages.Messages {
-		if buf.Len()+len(m.Message) > inputTextSizeLimit {
-			bufs = append(bufs, buf)
-			buf = bytes.Buffer{}
-		}
-
-		fmt.Fprintln(&buf, m.Message)
-	}
-
-	bufs = append(bufs, buf)
-
-	translatedTexts := make([]string, 0, len(messages.Messages))
-
 	// skip locale part if region is not a country,
 	// AWS only supports ISO 3166 2-digit country codes.
 	// https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
@@ -144,7 +121,9 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 		targetLanguage = baseLang.String()
 	}
 
-	for i := range bufs {
+	translatedTexts := make([]string, 0, len(messages.Messages))
+
+	for _, m := range messages.Messages {
 		translateOutput, err := a.client.TranslateText(ctx,
 			&translate.TranslateTextInput{
 				// Amazon Translate supports text translation between the languages listed in the following table.
@@ -158,15 +137,14 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 				// TODO: replace auto detect with messages source language.
 				// If you specify auto , you must send the TranslateText request in a region that supports Amazon Comprehend.
 				SourceLanguageCode: ptr("auto"),
-				Text:               ptr(bufs[i].String()),
+				// Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
+				Text: ptr(m.Message),
 			})
 		if err != nil {
-			return nil, fmt.Errorf("AWS translate text: %w", err)
+			return nil, fmt.Errorf("AWS translate text, message id '%s': %w", m.ID, err)
 		}
 
-		// remove trailing newline character.
-		*translateOutput.TranslatedText = strings.TrimSuffix(*translateOutput.TranslatedText, "\n")
-		translatedTexts = append(translatedTexts, strings.Split(*translateOutput.TranslatedText, "\n")...)
+		translatedTexts = append(translatedTexts, *translateOutput.TranslatedText)
 	}
 
 	if len(translatedTexts) != len(messages.Messages) {
