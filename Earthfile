@@ -3,11 +3,11 @@ PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
 
-ARG --global go_version=1.20.5
+ARG --global go_version=1.20.6
 ARG --global golangci_lint_version=1.53.3
-ARG --global bufbuild_version=1.22.0
+ARG --global bufbuild_version=1.25.0
 ARG --global migrate_version=4.16.2
-ARG --global sqlfluff_version=2.1.1
+ARG --global sqlfluff_version=2.1.3
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
 
@@ -187,7 +187,7 @@ image-multiplatform:
 # jeager is helper target for all-in-one image, it removes the need 
 # to download the correct jaeger image on every build
 jaeger:
-  FROM jaegertracing/all-in-one:1.46
+  FROM jaegertracing/all-in-one:1.47
   SAVE ARTIFACT /go/bin/all-in-one-linux jaeger
 
 image-all-in-one:
