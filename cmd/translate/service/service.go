@@ -78,29 +78,37 @@ var rootCmd = &cobra.Command{
 			log.Panicf("create new repo: %v", err)
 		}
 
-		switch viper.GetString("service.translator") {
-		case "AWSTranslate":
-			awsTranslate, awsErr := fuzzy.NewAWSTranslate(ctx, fuzzy.WithDefaultAWSClient(ctx))
-			if awsErr != nil {
-				log.Fatalf("create new aws translate client: %v\n", awsErr)
-			}
+		var (
+			translator    fuzzy.Translator
+			errTranslator error
+		)
 
-			translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, awsTranslate))
-		default:
-			googleTranslate, closeTranslate, googleErr := fuzzy.NewGoogleTranslate(
+		translatorString := viper.GetString("service.translator")
+
+		switch translatorString {
+		case "":
+			// noop - translator is optional
+		case "AWSTranslate":
+			translator, errTranslator = fuzzy.NewAWSTranslate(ctx, fuzzy.WithDefaultAWSClient(ctx))
+		case "GoogleTranslate":
+			var closeTranslate func() error
+			translator, closeTranslate, errTranslator = fuzzy.NewGoogleTranslate(
 				ctx, fuzzy.WithDefaultGoogleClient(ctx))
-			if googleErr != nil {
-				log.Fatalf("create new google translate client: %v\n", googleErr)
-			}
 
 			defer func() {
 				if closeErr := closeTranslate(); closeErr != nil {
 					log.Printf("Failed to close GoogleTranslate client: %v\n", closeErr)
 				}
 			}()
-
-			translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, googleTranslate))
+		default:
+			log.Fatalf("unsupported translator: %s\n", translatorString)
 		}
+
+		if errTranslator != nil {
+			log.Fatalf("create new %s client: %v\n", translatorString, errTranslator)
+		}
+
+		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, translator))
 
 		// gRPC Server Reflection provides information about publicly-accessible gRPC services on a server,
 		// and assists clients at runtime to construct RPC requests and responses without precompiled service information.
