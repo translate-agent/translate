@@ -94,6 +94,7 @@ func (t *TranslateServiceServer) CreateMessages(
 		for _, v := range msgs {
 			if v.Original {
 				originalLanguage = &v.Language
+				break
 			}
 		}
 
