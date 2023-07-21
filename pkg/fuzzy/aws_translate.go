@@ -1,4 +1,4 @@
-package awstranslate
+package fuzzy
 
 import (
 	"context"
@@ -35,16 +35,16 @@ type AWSTranslate struct {
 
 type AWSTranslateOption func(*AWSTranslate) error
 
-// WithClient sets the AWS Translate client.
-func WithClient(awsc awsClient) AWSTranslateOption {
+// WithAWSClient sets the AWS Translate client.
+func WithAWSClient(awsc awsClient) AWSTranslateOption {
 	return func(awst *AWSTranslate) error {
 		awst.client = awsc
 		return nil
 	}
 }
 
-// WithDefaultClient creates a new AWS Translate client with credentials from the viper.
-func WithDefaultClient(ctx context.Context) AWSTranslateOption {
+// WithDefaultAWSClient creates a new AWS Translate client with credentials from the viper.
+func WithDefaultAWSClient(ctx context.Context) AWSTranslateOption {
 	return func(awst *AWSTranslate) error {
 		accessKey := viper.GetString("other.aws_translate.access_key")
 		if accessKey == "" {

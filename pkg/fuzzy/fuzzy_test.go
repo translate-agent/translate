@@ -11,8 +11,6 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/googleapis/gax-go/v2"
 	"github.com/stretchr/testify/require"
-	awstranslate "go.expect.digital/translate/pkg/fuzzy/aws"
-	googletranslate "go.expect.digital/translate/pkg/fuzzy/google"
 
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil/rand"
@@ -148,16 +146,16 @@ func init() {
 	mockTranslators = make(map[string]Translator, len(SupportedServices))
 
 	// Google Translate
-	gt, _, _ := googletranslate.NewGoogleTranslate(
+	gt, _, _ := NewGoogleTranslate(
 		context.Background(),
-		googletranslate.WithClient(&MockGoogleTranslateClient{}),
+		WithGoogleClient(&MockGoogleTranslateClient{}),
 	)
 
 	mockTranslators["GoogleTranslate"] = gt
 
-	at, _ := awstranslate.NewAWSTranslate(
+	at, _ := NewAWSTranslate(
 		context.Background(),
-		awstranslate.WithClient(&MockAWSTranslateClient{}),
+		WithAWSClient(&MockAWSTranslateClient{}),
 	)
 
 	mockTranslators["AWSTranslate"] = at
@@ -182,9 +180,4 @@ func randMessages(msgCount uint, srcLang language.Tag) *model.Messages {
 	msgsOpts := []rand.ModelMessagesOption{rand.WithLanguage(srcLang)}
 
 	return rand.ModelMessages(msgCount, msgOpts, msgsOpts...)
-}
-
-// ptr returns pointer to the passed in value.
-func ptr[T any](v T) *T {
-	return &v
 }

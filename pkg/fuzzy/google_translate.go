@@ -1,4 +1,4 @@
-package googletranslate
+package fuzzy
 
 import (
 	"context"
@@ -37,16 +37,16 @@ type GoogleTranslate struct {
 
 type GoogleTranslateOption func(*GoogleTranslate) error
 
-// WithClient sets the Google Translate client.
-func WithClient(c googleClient) GoogleTranslateOption {
+// WithGoogleClient sets the Google Translate client.
+func WithGoogleClient(c googleClient) GoogleTranslateOption {
 	return func(g *GoogleTranslate) error {
 		g.client = c
 		return nil
 	}
 }
 
-// WithDefaultClient creates a new Google Translate client with the API key from the viper.
-func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
+// WithDefaultGoogleClient creates a new Google Translate client with the API key from the viper.
+func WithDefaultGoogleClient(ctx context.Context) GoogleTranslateOption {
 	return func(g *GoogleTranslate) error {
 		var err error
 

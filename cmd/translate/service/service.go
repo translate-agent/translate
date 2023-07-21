@@ -15,8 +15,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.expect.digital/translate/pkg/fuzzy"
-	awstranslate "go.expect.digital/translate/pkg/fuzzy/aws"
-	googletranslate "go.expect.digital/translate/pkg/fuzzy/google"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/server"
@@ -82,15 +80,15 @@ var rootCmd = &cobra.Command{
 
 		switch viper.GetString("service.translator") {
 		case "AWSTranslate":
-			awsTranslate, awsErr := awstranslate.NewAWSTranslate(ctx, awstranslate.WithDefaultClient(ctx))
+			awsTranslate, awsErr := fuzzy.NewAWSTranslate(ctx, fuzzy.WithDefaultAWSClient(ctx))
 			if awsErr != nil {
 				log.Fatalf("create new aws translate client: %v\n", awsErr)
 			}
 
 			translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, awsTranslate))
 		default:
-			googleTranslate, closeTranslate, googleErr := googletranslate.NewGoogleTranslate(
-				ctx, googletranslate.WithDefaultClient(ctx))
+			googleTranslate, closeTranslate, googleErr := fuzzy.NewGoogleTranslate(
+				ctx, fuzzy.WithDefaultGoogleClient(ctx))
 			if googleErr != nil {
 				log.Fatalf("create new google translate client: %v\n", googleErr)
 			}
