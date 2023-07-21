@@ -187,7 +187,7 @@ image-multiplatform:
 # jeager is helper target for all-in-one image, it removes the need 
 # to download the correct jaeger image on every build
 jaeger:
-  FROM jaegertracing/all-in-one:1.46
+  FROM jaegertracing/all-in-one:1.47
   SAVE ARTIFACT /go/bin/all-in-one-linux jaeger
 
 image-all-in-one:
