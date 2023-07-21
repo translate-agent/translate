@@ -3,11 +3,11 @@ PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
 
-ARG --global go_version=1.20.5
+ARG --global go_version=1.20.6
 ARG --global golangci_lint_version=1.53.3
-ARG --global bufbuild_version=1.22.0
+ARG --global bufbuild_version=1.25.0
 ARG --global migrate_version=4.16.2
-ARG --global sqlfluff_version=2.1.1
+ARG --global sqlfluff_version=2.1.3
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
 
@@ -115,7 +115,7 @@ test-integration:
   COPY +go/translate /translate
   COPY --dir migrate/mysql migrate
   WITH DOCKER --compose compose.yaml --service mysql --pull migrate/migrate:v$migrate_version --pull golang:$go_version-alpine
-    RUN --no-cache \
+    RUN \
       --secret=googletranslate_account_key \
       --mount=type=cache,target=/go/pkg/mod \
       --mount=type=cache,target=/root/.cache/go-build \
