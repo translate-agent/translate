@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mysql:8.0.33
+    image: mysql:8.0.34
     container_name: mysql
     hostname: mysql
     networks:
@@ -17,7 +17,7 @@ services:
       retries: 10
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:1.47
     container_name: jaeger
     hostname: jaeger
     networks:
