@@ -132,6 +132,7 @@ init:
   END
   LOCALLY
   RUN sed -i '' "s#google_account_key.json#$(PWD)/google_account_key.json#g" .env.test
+  RUN sed -i '' "s/127.0.0.1/$(ipconfig getifaddr en0)/g" .arg
 
 # -----------------------Linting-----------------------
 
