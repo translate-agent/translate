@@ -78,45 +78,61 @@ check:
   BUILD +test
 
 init:
-  RUN --no-cache \
-    --secret googletranslate_account_key \
-    echo $googletranslate_account_key | base64 -d > google_account_key.json
-  RUN --no-cache \
-    --secret=aws_translate_access_key \
-    --secret=aws_translate_account_key \
-    --secret=googletranslate_account_key \
-    echo "# OpenTelemetry" > .env.test && \
-    echo "OTEL_SERVICE_NAME=translate" >> .env.test && \
-    echo "OTEL_EXPORTER_OTLP_INSECURE=true" >> .env.test && \
-    echo "OTEL_RESOURCE_ATTRIBUTES=deployment.environment=test" >> .env.test && \
-    echo "" >> .env.test && \
-    echo "# Translate Service" >> .env.test && \
-    echo "TRANSLATE_SERVICE_PORT=8080" >> .env.test && \
-    echo "TRANSLATE_SERVICE_HOST=0.0.0.0" >> .env.test && \
-    echo "TRANSLATE_SERVICE_DB=badgerdb" >> .env.test && \
-    echo "TRANSLATE_SERVICE_TRANSLATOR=GoogleTranslate" >> .env.test && \
-    echo "" >> .env.test && \
-    echo "# MySQL" >> .env.test && \
-    echo "TRANSLATE_DB_MYSQL_HOST=0.0.0.0" >> .env.test && \
-    echo "TRANSLATE_DB_MYSQL_PORT=3306" >> .env.test && \
-    echo "TRANSLATE_DB_MYSQL_USER=root" >> .env.test && \
-    echo "TRANSLATE_DB_MYSQL_PASSWORD=" >> .env.test && \
-    echo "TRANSLATE_DB_MYSQL_DATABASE=translate" >> .env.test && \
-    echo "" >> .env.test && \
-    echo "# BadgerDB" >> .env.test && \
-    echo "TRANSLATE_DB_BADGERDB_PATH=" >> .env.test && \
-    echo "" >> .env.test && \
-    echo "# Google Translate API" >> .env.test && \
-    echo "TRANSLATE_OTHER_GOOGLE_TRANSLATE_PROJECT_ID=expect-digital" >> .env.test && \
-    echo "TRANSLATE_OTHER_GOOGLE_TRANSLATE_LOCATION=global" >> .env.test && \
-    echo "TRANSLATE_OTHER_GOOGLE_TRANSLATE_ACCOUNT_KEY=/google_account_key.json" >> .env.test && \
-    echo "" >> .env.test && \
-    echo "# AWS Translate API" >> .env.test && \
-    echo "TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY=$aws_translate_access_key" >> .env.test && \
-    echo "TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_KEY=$aws_translate_account_key" >> .env.test && \
-    echo "TRANSLATE_OTHER_AWS_TRANSLATE_REGION=eu-west-2" >> .env.test
-  SAVE ARTIFACT .env.test AS LOCAL .env.test
-  SAVE ARTIFACT google_account_key.json AS LOCAL google_account_key.json
+  WAIT
+    RUN --push \
+      --no-cache \
+      --secret googletranslate_account_key \
+      echo $googletranslate_account_key | base64 -d > google_account_key.json
+    RUN --push \
+      --no-cache \
+      --secret=aws_translate_access_key \
+      --secret=aws_translate_account_key \
+      --secret=googletranslate_account_key \
+      echo "# OpenTelemetry" > .env.test && \
+      echo "OTEL_SERVICE_NAME=translate" >> .env.test && \
+      echo "OTEL_EXPORTER_OTLP_INSECURE=true" >> .env.test && \
+      echo "OTEL_RESOURCE_ATTRIBUTES=deployment.environment=test" >> .env.test && \
+      echo "" >> .env.test && \
+      echo "# Translate Service" >> .env.test && \
+      echo "TRANSLATE_SERVICE_PORT=8080" >> .env.test && \
+      echo "TRANSLATE_SERVICE_HOST=0.0.0.0" >> .env.test && \
+      echo "TRANSLATE_SERVICE_DB=badgerdb" >> .env.test && \
+      echo "TRANSLATE_SERVICE_TRANSLATOR=GoogleTranslate" >> .env.test && \
+      echo "" >> .env.test && \
+      echo "# MySQL" >> .env.test && \
+      echo "TRANSLATE_DB_MYSQL_HOST=0.0.0.0" >> .env.test && \
+      echo "TRANSLATE_DB_MYSQL_PORT=3306" >> .env.test && \
+      echo "TRANSLATE_DB_MYSQL_USER=root" >> .env.test && \
+      echo "TRANSLATE_DB_MYSQL_PASSWORD=" >> .env.test && \
+      echo "TRANSLATE_DB_MYSQL_DATABASE=translate" >> .env.test && \
+      echo "" >> .env.test && \
+      echo "# BadgerDB" >> .env.test && \
+      echo "TRANSLATE_DB_BADGERDB_PATH=" >> .env.test && \
+      echo "" >> .env.test && \
+      echo "# Google Translate API" >> .env.test && \
+      echo "TRANSLATE_OTHER_GOOGLE_TRANSLATE_PROJECT_ID=expect-digital" >> .env.test && \
+      echo "TRANSLATE_OTHER_GOOGLE_TRANSLATE_LOCATION=global" >> .env.test && \
+      echo "TRANSLATE_OTHER_GOOGLE_TRANSLATE_ACCOUNT_KEY=google_account_key.json" >> .env.test && \
+      echo "" >> .env.test && \
+      echo "# AWS Translate API" >> .env.test && \
+      echo "TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY=$aws_translate_account_key" >> .env.test && \
+      echo "TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_KEY=$aws_translate_access_key" >> .env.test && \
+      echo "TRANSLATE_OTHER_AWS_TRANSLATE_REGION=eu-west-2" >> .env.test
+    RUN --push \
+      echo "db=mysql" > .arg && \
+      echo "db_host=127.0.0.1" >> .arg && \
+      echo "db_port=3306" >> .arg && \
+      echo "db_user=root" >> .arg && \
+      echo "db_schema=translate" >> .arg
+    RUN --push --no-cache \
+      echo "db_password=" >> .secret
+    SAVE ARTIFACT .env.test AS LOCAL .env.test
+    SAVE ARTIFACT .arg AS LOCAL .arg
+    SAVE ARTIFACT .secret AS LOCAL .secret
+    SAVE ARTIFACT google_account_key.json AS LOCAL google_account_key.json
+  END
+  LOCALLY
+  RUN sed -i '' "s#google_account_key.json#$(PWD)/google_account_key.json#g" .env.test
 
 # -----------------------Linting-----------------------
 
