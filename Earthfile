@@ -81,13 +81,12 @@ init:
   WAIT
     RUN --push \
       --no-cache \
-      --secret googletranslate_account_key \
-      echo $googletranslate_account_key | base64 -d > google_account_key.json
+      --secret google_translate_account_key \
+      echo $google_translate_account_key > google_account_key.json
     RUN --push \
       --no-cache \
       --secret=aws_translate_access_key_id \
       --secret=aws_translate_secret_access_key \
-      --secret=googletranslate_account_key \
       echo "# OpenTelemetry" > .env.test && \
       echo "OTEL_SERVICE_NAME=translate" >> .env.test && \
       echo "OTEL_EXPORTER_OTLP_INSECURE=true" >> .env.test && \
