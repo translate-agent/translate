@@ -85,8 +85,8 @@ init:
       echo $googletranslate_account_key | base64 -d > google_account_key.json
     RUN --push \
       --no-cache \
-      --secret=aws_translate_access_key \
-      --secret=aws_translate_account_key \
+      --secret=aws_translate_access_key_id \
+      --secret=aws_translate_secret_access_key \
       --secret=googletranslate_account_key \
       echo "# OpenTelemetry" > .env.test && \
       echo "OTEL_SERVICE_NAME=translate" >> .env.test && \
@@ -115,8 +115,8 @@ init:
       echo "TRANSLATE_OTHER_GOOGLE_TRANSLATE_ACCOUNT_KEY=google_account_key.json" >> .env.test && \
       echo "" >> .env.test && \
       echo "# AWS Translate API" >> .env.test && \
-      echo "TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY=$aws_translate_account_key" >> .env.test && \
-      echo "TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_KEY=$aws_translate_access_key" >> .env.test && \
+      echo "TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY_ID=$aws_translate_access_key_id" >> .env.test && \
+      echo "TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_ACCESS_KEY=$aws_translate_secret_access_key" >> .env.test && \
       echo "TRANSLATE_OTHER_AWS_TRANSLATE_REGION=eu-west-2" >> .env.test
     RUN --push \
       echo "db=mysql" > .arg && \
@@ -173,8 +173,8 @@ test-integration:
   COPY --dir migrate/mysql migrate
   WITH DOCKER --compose compose.yaml --service mysql --pull migrate/migrate:v$migrate_version --pull golang:$go_version-alpine
     RUN --no-cache \
-      --secret=aws_translate_access_key \
-      --secret=aws_translate_account_key \
+      --secret=aws_translate_access_key_id \
+      --secret=aws_translate_secret_access_key \
       --secret=googletranslate_account_key \
       --mount=type=cache,target=/go/pkg/mod \
       --mount=type=cache,target=/root/.cache/go-build \
@@ -200,14 +200,11 @@ test-integration:
         -e TRANSLATE_DB_MYSQL_PORT=3306 \
         -e TRANSLATE_DB_MYSQL_DATABASE=translate \
         -e TRANSLATE_DB_MYSQL_USER=root \
-        -e TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY=$awstranslate_access_key \
-        -e TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_KEY=$awstranslate_secret_key \
-        -e TRANSLATE_OTHER_AWS_TRANSLATE_REGION=$awstranslate_region \
+        -e TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY_ID=$aws_translate_access_key_id \
+        -e TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_ACCESS_KEY=$aws_translate_secret_access_key \
+        -e TRANSLATE_OTHER_AWS_TRANSLATE_REGION=eu-west-2 \
         -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_PROJECT_ID=expect-digital \
         -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_LOCATION=global \
-        -e TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY=$aws_translate_access_key \
-        -e TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_KEY=$aws_translate_account_key \
-        -e TRANSLATE_OTHER_AWS_TRANSLATE_REGION=eu-west-2 \
         -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_ACCOUNT_KEY=/translate/google_account_key.json \
         golang:$go_version-alpine go test -C /translate --tags=integration -count=1 ./...
   END
