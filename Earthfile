@@ -172,10 +172,10 @@ test-integration:
   COPY +go/translate /translate
   COPY --dir migrate/mysql migrate
   WITH DOCKER --compose compose.yaml --service mysql --pull migrate/migrate:v$migrate_version --pull golang:$go_version-alpine
-    RUN --no-cache \
+    RUN \
       --secret=aws_translate_access_key_id \
       --secret=aws_translate_secret_access_key \
-      --secret=googletranslate_account_key \
+      --mount=type=secret,target=/translate/google_account_key.json,id=google_translate_account_key \
       --mount=type=cache,target=/go/pkg/mod \
       --mount=type=cache,target=/root/.cache/go-build \
 
@@ -187,8 +187,6 @@ test-integration:
         -path /migrations \
         -database "mysql://root@tcp(127.0.0.1:3306)/translate" \
         up && \
-
-      echo $googletranslate_account_key | base64 -d > /translate/google_account_key.json && \
 
       # Run integration tests
       docker run \ 
