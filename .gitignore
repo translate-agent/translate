@@ -25,3 +25,4 @@ translate.yaml
 .go-version
 .env.test
 google_account_key.json
+.DS_Store
