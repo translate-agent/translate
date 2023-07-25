@@ -8,8 +8,6 @@
 *.so
 *.dylib
 
-!.env.test
-
 translate.yaml
 
 # earthly
