@@ -78,21 +78,16 @@ var rootCmd = &cobra.Command{
 			log.Panicf("create new repo: %v", err)
 		}
 
-		var (
-			translator    fuzzy.Translator
-			errTranslator error
-		)
+		var translator fuzzy.Translator
 
-		translatorString := viper.GetString("service.translator")
-
-		switch translatorString {
+		switch viper.GetString("service.translator") {
 		case "":
 			translator = &fuzzy.NoopTranslate{}
 		case "AWSTranslate":
-			translator, errTranslator = fuzzy.NewAWSTranslate(ctx, fuzzy.WithDefaultAWSClient(ctx))
+			translator, err = fuzzy.NewAWSTranslate(ctx, fuzzy.WithDefaultAWSClient(ctx))
 		case "GoogleTranslate":
 			var closeTranslate func() error
-			translator, closeTranslate, errTranslator = fuzzy.NewGoogleTranslate(
+			translator, closeTranslate, err = fuzzy.NewGoogleTranslate(
 				ctx, fuzzy.WithDefaultGoogleClient(ctx))
 
 			defer func() {
@@ -101,11 +96,11 @@ var rootCmd = &cobra.Command{
 				}
 			}()
 		default:
-			log.Fatalf("unsupported translator: %s\n", translatorString)
+			log.Fatalf("unsupported translator: %s\n", viper.GetString("service.translator"))
 		}
 
-		if errTranslator != nil {
-			log.Fatalf("create new %s client: %v\n", translatorString, errTranslator)
+		if err != nil {
+			log.Fatalf("create new %s client: %v\n", viper.GetString("service.translator"), err)
 		}
 
 		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, translator))

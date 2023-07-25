@@ -67,7 +67,7 @@ func WithDefaultAWSClient(ctx context.Context) AWSTranslateOption {
 			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
 		)
 		if err != nil {
-			return fmt.Errorf("failed to load default AWS SDK configuration: %w", err)
+			return fmt.Errorf("load default AWS SDK configuration: %w", err)
 		}
 
 		awst.client = translate.NewFromConfig(cfg)
@@ -120,7 +120,11 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 		targetLanguage = baseLang.String()
 	}
 
-	translatedTexts := make([]string, 0, len(messages.Messages))
+	translatedMessages := model.Messages{
+		Language: messages.Language,
+		Original: messages.Original,
+		Messages: make([]model.Message, 0, len(messages.Messages)),
+	}
 
 	for _, m := range messages.Messages {
 		translateOutput, err := a.client.TranslateText(ctx,
@@ -143,28 +147,19 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 			return nil, fmt.Errorf("AWS translate text, message id '%s': %w", m.ID, err)
 		}
 
-		translatedTexts = append(translatedTexts, *translateOutput.TranslatedText)
-	}
-
-	if len(translatedTexts) != len(messages.Messages) {
-		return nil, errors.New("AWS translated text count doesn't match untranslated text count")
-	}
-
-	translatedMessages := model.Messages{
-		Language: messages.Language,
-		Original: messages.Original,
-		Messages: make([]model.Message, 0, len(translatedTexts)),
-	}
-
-	for i := range translatedTexts {
 		translatedMessages.Messages = append(translatedMessages.Messages, model.Message{
-			ID:          messages.Messages[i].ID,
-			PluralID:    messages.Messages[i].PluralID,
-			Description: messages.Messages[i].Description,
-			Message:     translatedTexts[i],
+			ID:          m.ID,
+			PluralID:    m.PluralID,
+			Description: m.Description,
+			Message:     *translateOutput.TranslatedText,
 			Status:      model.MessageStatusFuzzy,
-			Positions:   messages.Messages[i].Positions,
-		})
+			Positions:   m.Positions,
+		},
+		)
+	}
+
+	if len(translatedMessages.Messages) != len(messages.Messages) {
+		return nil, errors.New("AWS translated text count doesn't match untranslated text count")
 	}
 
 	return &translatedMessages, nil
