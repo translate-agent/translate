@@ -79,7 +79,7 @@ check:
 
 init:
   LOCALLY
-  RUN earthly secret --org expect.digital --project translate-agent get google_translate_account_key > google_account_key.json
+  RUN earthly secret --org expect.digital --project translate-agent get google_account_key > google_account_key.json
   RUN \
     echo "# OpenTelemetry" > .env.test && \
     echo "OTEL_SERVICE_NAME=translate" >> .env.test && \
@@ -103,14 +103,14 @@ init:
     echo "TRANSLATE_DB_BADGERDB_PATH=" >> .env.test && \
     echo "" >> .env.test && \
     echo "# Google Translate API" >> .env.test && \
-    echo "TRANSLATE_OTHER_GOOGLE_TRANSLATE_PROJECT_ID=expect-digital" >> .env.test && \
-    echo "TRANSLATE_OTHER_GOOGLE_TRANSLATE_LOCATION=global" >> .env.test && \
-    echo "TRANSLATE_OTHER_GOOGLE_TRANSLATE_ACCOUNT_KEY=$(pwd)/google_account_key.json" >> .env.test && \
+    echo "TRANSLATE_OTHER_GOOGLE_PROJECT_ID=expect-digital" >> .env.test && \
+    echo "TRANSLATE_OTHER_GOOGLE_LOCATION=global" >> .env.test && \
+    echo "TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY=$(pwd)/google_account_key.json" >> .env.test && \
     echo "" >> .env.test && \
     echo "# AWS Translate API" >> .env.test && \
-    echo "TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY_ID=$(earthly secret --org expect.digital --project translate-agent get aws_translate_access_key_id)" >> .env.test && \
-    echo "TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_ACCESS_KEY=$(earthly secret --org expect.digital --project translate-agent get aws_translate_secret_access_key)" >> .env.test && \
-    echo "TRANSLATE_OTHER_AWS_TRANSLATE_REGION=eu-west-2" >> .env.test
+    echo "TRANSLATE_OTHER_AWS_ACCESS_KEY_ID=$(earthly secret --org expect.digital --project translate-agent get aws_access_key_id)" >> .env.test && \
+    echo "TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY=$(earthly secret --org expect.digital --project translate-agent get aws_secret_access_key)" >> .env.test && \
+    echo "TRANSLATE_OTHER_AWS_REGION=eu-west-2" >> .env.test
   RUN \
     echo "db=mysql" > .arg && \
     echo "db_host=host.docker.internal" >> .arg && \

@@ -45,17 +45,17 @@ func WithAWSClient(awsc awsClient) AWSTranslateOption {
 // WithDefaultAWSClient creates a new AWS Translate client with credentials from the viper.
 func WithDefaultAWSClient(ctx context.Context) AWSTranslateOption {
 	return func(awst *AWSTranslate) error {
-		accessKey := viper.GetString("other.aws_translate.access_key")
+		accessKey := viper.GetString("other.aws.access_key_id")
 		if accessKey == "" {
 			return fmt.Errorf("with default client: AWS translate access key is not set")
 		}
 
-		secretKey := viper.GetString("other.aws_translate.secret_key")
+		secretKey := viper.GetString("other.aws.secret_access_key")
 		if secretKey == "" {
 			return fmt.Errorf("with default client: AWS translate secret key is not set")
 		}
 
-		region := viper.GetString("other.aws_translate.region")
+		region := viper.GetString("other.aws.region")
 		if region == "" {
 			return fmt.Errorf("with default client: AWS translate region is not set")
 		}
