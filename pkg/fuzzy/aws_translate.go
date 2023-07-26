@@ -2,7 +2,6 @@ package fuzzy
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
