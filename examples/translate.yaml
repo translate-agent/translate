@@ -2,6 +2,7 @@ service:
   port: 8080
   host: "0.0.0.0"
   db: "mysql"
+  translator: ""
 
 db:
   mysql:
@@ -15,4 +16,12 @@ db:
 
 other:
   google_translate:
-    api_key: ""
+    project_id: ""
+    location: ""
+    account_key: ""
+  aws_translate:
+    access_key: ""
+    secret_key: ""
+    # List of supported regions for Amazon Comprehend (auto detect message langauge):
+    # https://docs.aws.amazon.com/general/latest/gr/comprehend.html
+    region: ""

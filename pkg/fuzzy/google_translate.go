@@ -37,22 +37,22 @@ type GoogleTranslate struct {
 
 type GoogleTranslateOption func(*GoogleTranslate) error
 
-// WithClient sets the Google Translate client.
-func WithClient(c googleClient) GoogleTranslateOption {
+// WithGoogleClient sets the Google Translate client.
+func WithGoogleClient(c googleClient) GoogleTranslateOption {
 	return func(g *GoogleTranslate) error {
 		g.client = c
 		return nil
 	}
 }
 
-// WithDefaultClient creates a new Google Translate client with the API key from the viper.
-func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
+// WithDefaultGoogleClient creates a new Google Translate client with the API key from the viper.
+func WithDefaultGoogleClient(ctx context.Context) GoogleTranslateOption {
 	return func(g *GoogleTranslate) error {
 		var err error
 
 		// Create new Google Cloud service transport with the base of OpenTelemetry HTTP transport.
 		g.client, err = translate.NewTranslationClient(ctx,
-			option.WithCredentialsFile(viper.GetString("other.google_translate.account_key")),
+			option.WithCredentialsFile(viper.GetString("other.google.account_key")),
 			option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
 			option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 		)
@@ -145,8 +145,8 @@ func (g *GoogleTranslate) Translate(
 
 // parent returns path to Google project and location.
 func parent() string {
-	projectId := viper.GetString("other.google_translate.project_id")
-	location := viper.GetString("other.google_translate.location")
+	projectId := viper.GetString("other.google.project_id")
+	location := viper.GetString("other.google.location")
 
 	return fmt.Sprintf("projects/%s/locations/%s", projectId, location)
 }

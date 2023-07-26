@@ -46,11 +46,24 @@ func Test_Translate(t *testing.T) {
 // translators is a map of all possible translation services, e.g. Google Translate, DeepL, etc.
 var translators = map[string]Translator{
 	"GoogleTranslate": nil,
+	"AWSTranslate":    nil,
+}
+
+// initAWSTranslate creates a new AWS Translate service and adds it to the translators map.
+func initAWSTranslate(ctx context.Context) error {
+	at, err := NewAWSTranslate(ctx, WithDefaultAWSClient(ctx))
+	if err != nil {
+		return fmt.Errorf("create new AWS Translate: %w", err)
+	}
+
+	translators["AWSTranslate"] = at
+
+	return nil
 }
 
 // initGoogleTranslate creates a new Google Translate service and adds it to the translators map.
 func initGoogleTranslate(ctx context.Context) (func() error, error) {
-	gt, closer, err := NewGoogleTranslate(ctx, WithDefaultClient(ctx))
+	gt, closer, err := NewGoogleTranslate(ctx, WithDefaultGoogleClient(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("create new Google Translate: %w", err)
 	}
@@ -73,13 +86,12 @@ func testMain(m *testing.M) int {
 	// Google Translate
 	gtCloser, err := initGoogleTranslate(ctx)
 	if err != nil {
-		// If the Google Translate API key is not set, skip the Google Translate tests.
-		if strings.Contains(err.Error(), "api key is not set") {
-			log.Println("Google Translate API key is not set. Skipping Google Translate tests.")
-		} else {
-			// All other errors are fatal.
-			log.Fatal(err)
-		}
+		log.Fatal(err)
+	}
+
+	// AWS Translate
+	if err = initAWSTranslate(ctx); err != nil {
+		log.Fatal(err)
 	}
 
 	// Close all connections

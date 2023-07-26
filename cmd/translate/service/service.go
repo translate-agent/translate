@@ -78,18 +78,32 @@ var rootCmd = &cobra.Command{
 			log.Panicf("create new repo: %v", err)
 		}
 
-		googleTranslate, closeTranslate, err := fuzzy.NewGoogleTranslate(ctx, fuzzy.WithDefaultClient(ctx))
-		if err != nil {
-			log.Fatalf("create new google translate client: %v\n", err)
+		var translator fuzzy.Translator
+
+		switch viper.GetString("service.translator") {
+		case "":
+			translator = &fuzzy.NoopTranslate{}
+		case "AWSTranslate":
+			translator, err = fuzzy.NewAWSTranslate(ctx, fuzzy.WithDefaultAWSClient(ctx))
+		case "GoogleTranslate":
+			var closeTranslate func() error
+			translator, closeTranslate, err = fuzzy.NewGoogleTranslate(
+				ctx, fuzzy.WithDefaultGoogleClient(ctx))
+
+			defer func() {
+				if closeErr := closeTranslate(); closeErr != nil {
+					log.Printf("close GoogleTranslate client: %v\n", closeErr)
+				}
+			}()
+		default:
+			log.Fatalf("unsupported translator: %s\n", viper.GetString("service.translator"))
 		}
 
-		defer func() {
-			if closeErr := closeTranslate(); closeErr != nil {
-				log.Printf("Failed to close GoogleTranslate client: %v\n", closeErr)
-			}
-		}()
+		if err != nil {
+			log.Fatalf("create new %s client: %v\n", viper.GetString("service.translator"), err)
+		}
 
-		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, googleTranslate))
+		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, translator))
 
 		// gRPC Server Reflection provides information about publicly-accessible gRPC services on a server,
 		// and assists clients at runtime to construct RPC requests and responses without precompiled service information.
@@ -139,6 +153,7 @@ func init() {
 	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
 	rootCmd.PersistentFlags().String("host", "0.0.0.0", "host to run service on")
 	rootCmd.PersistentFlags().String("db", "badgerdb", repo.Usage())
+	rootCmd.PersistentFlags().String("translator", "", fuzzy.Usage())
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -169,5 +184,10 @@ func initConfig() {
 	err = viper.BindPFlag("service.db", rootCmd.Flags().Lookup("db"))
 	if err != nil {
 		log.Panicf("bind db flag: %v", err)
+	}
+
+	err = viper.BindPFlag("service.translator", rootCmd.Flags().Lookup("translator"))
+	if err != nil {
+		log.Panicf("bind translator flag: %v", err)
 	}
 }

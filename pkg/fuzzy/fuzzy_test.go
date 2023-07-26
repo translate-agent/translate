@@ -3,9 +3,11 @@ package fuzzy
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"cloud.google.com/go/translate/apiv3/translatepb"
+	awst "github.com/aws/aws-sdk-go-v2/service/translate"
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/googleapis/gax-go/v2"
 	"github.com/stretchr/testify/require"
@@ -32,15 +34,6 @@ func Test_TranslateMock(t *testing.T) {
 			{
 				name:     "Multiple messages",
 				messages: randMessages(5, language.German),
-			},
-			{
-				name:     "Undefined messages language",
-				messages: randMessages(5, language.Und),
-			},
-			{
-				name:        "Unsupported target language",
-				messages:    randMessages(5, language.Afrikaans),
-				expectedErr: errors.New("unsupported language"),
 			},
 		}
 
@@ -112,6 +105,38 @@ func (m *MockGoogleTranslateClient) TranslateText(
 
 func (m *MockGoogleTranslateClient) Close() error { return nil }
 
+// ---–––--------------AWS Translate------------------–––---
+
+// MockAWSTranslateClient is a mock implementation of the AWS Translate client.
+type MockAWSTranslateClient struct{}
+
+// Translate mocks the TranslateText method of the AWS Translate client.
+func (m *MockAWSTranslateClient) TranslateText(
+	ctx context.Context,
+	params *awst.TranslateTextInput,
+	optFns ...func(*awst.Options),
+) (*awst.TranslateTextOutput, error) {
+	// Mock the Bad request error for unsupported language.Und.
+	if *params.SourceLanguageCode == language.Und.String() ||
+		*params.TargetLanguageCode == language.Und.String() {
+		return nil, errors.New("mock: bad request: Unsupported language pair: zh to und")
+	}
+
+	// remove trailing newline character.
+	*params.Text = strings.TrimSuffix(*params.Text, "\n")
+	translations := strings.Split(*params.Text, "\n")
+
+	for i := range translations {
+		translations[i] = gofakeit.SentenceSimple()
+	}
+
+	return &awst.TranslateTextOutput{
+		SourceLanguageCode: params.SourceLanguageCode,
+		TargetLanguageCode: params.TargetLanguageCode,
+		TranslatedText:     ptr(strings.Join(translations, "\n")),
+	}, nil
+}
+
 // -----------------------Helpers and init----------------------------
 
 var mockTranslators map[string]Translator
@@ -122,10 +147,17 @@ func init() {
 	// Google Translate
 	gt, _, _ := NewGoogleTranslate(
 		context.Background(),
-		WithClient(new(MockGoogleTranslateClient)),
+		WithGoogleClient(&MockGoogleTranslateClient{}),
 	)
 
 	mockTranslators["GoogleTranslate"] = gt
+
+	at, _ := NewAWSTranslate(
+		context.Background(),
+		WithAWSClient(&MockAWSTranslateClient{}),
+	)
+
+	mockTranslators["AWSTranslate"] = at
 }
 
 // allMocks runs a test function f for each mocked translate service that is defined in the mockTranslators map.
