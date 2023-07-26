@@ -8,8 +8,8 @@ docker run -d --name translate-all-in-one \
   -p 16686:16686 \
   -e TRANSLATE_OTHER_GOOGLE_PROJECT_ID={Google project id} \
   -e TRANSLATE_OTHER_GOOGLE_LOCATION={Google location} \
-  -e TRANSLATE_OTHER_AWS_ACCESS_KEY_ID={AWS API access key id} \
-  -e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY={AWS API secret access key} \
+  -e TRANSLATE_OTHER_AWS_ACCESS_KEY_ID={AWS access key id} \
+  -e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY={AWS secret access key} \
   -e TRANSLATE_OTHER_AWS_REGION={AWS region} \
   -v path/to/google_account_key.json:/app/google_account_key.json \
   -v /tmp/badger:/tmp/badger \
@@ -22,8 +22,8 @@ docker rm -f translate-all-in-one 2> /dev/null; docker pull expectdigital/transl
   -p 16686:16686 \
   -e TRANSLATE_OTHER_GOOGLE_PROJECT_ID={Google project id} \
   -e TRANSLATE_OTHER_GOOGLE_LOCATION={Google location} \
-  -e TRANSLATE_OTHER_AWS_ACCESS_KEY_ID={AWS API access key id} \
-  -e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY={AWS API secret access key} \
+  -e TRANSLATE_OTHER_AWS_ACCESS_KEY_ID={AWS access key id} \
+  -e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY={AWS secret access key} \
   -e TRANSLATE_OTHER_AWS_REGION={AWS region} \
   -v path/to/google_account_key.json:/app/google_account_key.json \
   -v /tmp/badger:/tmp/badger \
@@ -37,8 +37,8 @@ docker rm -f translate-all-in-one 2> /dev/null; docker pull expectdigital/transl
 | `-p 16686:16686`                                                      | Jaeger UI port                                         |
 | `-e TRANSLATE_OTHER_GOOGLE_PROJECT_ID={Google project id}`            | Google project id                                      |
 | `-e TRANSLATE_OTHER_GOOGLE_LOCATION={Google location}`                | Google  location                                       |
-| `-e TRANSLATE_OTHER_AWS_ACCESS_KEY_ID={AWS API access key id}`        | AWS  API access key                                    |
-| `-e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY={AWS API secret access key} | AWS  API secret key                                    |
+| `-e TRANSLATE_OTHER_AWS_ACCESS_KEY_ID={AWS access key id}`            | AWS access key id                                      |
+| `-e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY={AWS secret access key}     | AWS secret access key                                  |
 | `-e TRANSLATE_OTHER_AWS_REGION={AWS region}`                          | AWS region                                             |
 | `-v path/to/google_account_key.json:/app/google_account_key.json`     | Path to Google account key                             |
 | `-v path/to/badger-dir:/tmp/badger`                                   | Path for BadgerDB db for data persistency *(Optional)* |
