@@ -11,6 +11,48 @@ ARG --global sqlfluff_version=2.1.3
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
 
+init:
+  LOCALLY
+  RUN earthly secret --org expect.digital --project translate-agent get google_account_key > google_account_key.json
+  RUN \
+    echo "# OpenTelemetry" > .env.test && \
+    echo "OTEL_SERVICE_NAME=translate" >> .env.test && \
+    echo "OTEL_EXPORTER_OTLP_INSECURE=true" >> .env.test && \
+    echo "OTEL_RESOURCE_ATTRIBUTES=deployment.environment=test" >> .env.test && \
+    echo "" >> .env.test && \
+    echo "# Translate Service" >> .env.test && \
+    echo "TRANSLATE_SERVICE_PORT=8080" >> .env.test && \
+    echo "TRANSLATE_SERVICE_HOST=0.0.0.0" >> .env.test && \
+    echo "TRANSLATE_SERVICE_DB=badgerdb" >> .env.test && \
+    echo "TRANSLATE_SERVICE_TRANSLATOR=GoogleTranslate" >> .env.test && \
+    echo "" >> .env.test && \
+    echo "# MySQL" >> .env.test && \
+    echo "TRANSLATE_DB_MYSQL_HOST=0.0.0.0" >> .env.test && \
+    echo "TRANSLATE_DB_MYSQL_PORT=3306" >> .env.test && \
+    echo "TRANSLATE_DB_MYSQL_USER=root" >> .env.test && \
+    echo "TRANSLATE_DB_MYSQL_PASSWORD=" >> .env.test && \
+    echo "TRANSLATE_DB_MYSQL_DATABASE=translate" >> .env.test && \
+    echo "" >> .env.test && \
+    echo "# BadgerDB" >> .env.test && \
+    echo "TRANSLATE_DB_BADGERDB_PATH=" >> .env.test && \
+    echo "" >> .env.test && \
+    echo "# Google Translate API" >> .env.test && \
+    echo "TRANSLATE_OTHER_GOOGLE_PROJECT_ID=expect-digital" >> .env.test && \
+    echo "TRANSLATE_OTHER_GOOGLE_LOCATION=global" >> .env.test && \
+    echo "TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY=$(pwd)/google_account_key.json" >> .env.test && \
+    echo "" >> .env.test && \
+    echo "# AWS Translate API" >> .env.test && \
+    echo "TRANSLATE_OTHER_AWS_ACCESS_KEY_ID=$(earthly secret --org expect.digital --project translate-agent get aws_access_key_id)" >> .env.test && \
+    echo "TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY=$(earthly secret --org expect.digital --project translate-agent get aws_secret_access_key)" >> .env.test && \
+    echo "TRANSLATE_OTHER_AWS_REGION=eu-west-2" >> .env.test
+  RUN \
+    echo "db=mysql" > .arg && \
+    echo "db_host=host.docker.internal" >> .arg && \
+    echo "db_port=3306" >> .arg && \
+    echo "db_user=root" >> .arg && \
+    echo "db_schema=translate" >> .arg
+  RUN echo "db_password=" >> .secret
+
 deps:
   WORKDIR /translate
   COPY go.mod go.sum .
@@ -76,48 +118,6 @@ migrate:
 check:
   BUILD +lint
   BUILD +test
-
-init:
-  LOCALLY
-  RUN earthly secret --org expect.digital --project translate-agent get google_account_key > google_account_key.json
-  RUN \
-    echo "# OpenTelemetry" > .env.test && \
-    echo "OTEL_SERVICE_NAME=translate" >> .env.test && \
-    echo "OTEL_EXPORTER_OTLP_INSECURE=true" >> .env.test && \
-    echo "OTEL_RESOURCE_ATTRIBUTES=deployment.environment=test" >> .env.test && \
-    echo "" >> .env.test && \
-    echo "# Translate Service" >> .env.test && \
-    echo "TRANSLATE_SERVICE_PORT=8080" >> .env.test && \
-    echo "TRANSLATE_SERVICE_HOST=0.0.0.0" >> .env.test && \
-    echo "TRANSLATE_SERVICE_DB=badgerdb" >> .env.test && \
-    echo "TRANSLATE_SERVICE_TRANSLATOR=GoogleTranslate" >> .env.test && \
-    echo "" >> .env.test && \
-    echo "# MySQL" >> .env.test && \
-    echo "TRANSLATE_DB_MYSQL_HOST=0.0.0.0" >> .env.test && \
-    echo "TRANSLATE_DB_MYSQL_PORT=3306" >> .env.test && \
-    echo "TRANSLATE_DB_MYSQL_USER=root" >> .env.test && \
-    echo "TRANSLATE_DB_MYSQL_PASSWORD=" >> .env.test && \
-    echo "TRANSLATE_DB_MYSQL_DATABASE=translate" >> .env.test && \
-    echo "" >> .env.test && \
-    echo "# BadgerDB" >> .env.test && \
-    echo "TRANSLATE_DB_BADGERDB_PATH=" >> .env.test && \
-    echo "" >> .env.test && \
-    echo "# Google Translate API" >> .env.test && \
-    echo "TRANSLATE_OTHER_GOOGLE_PROJECT_ID=expect-digital" >> .env.test && \
-    echo "TRANSLATE_OTHER_GOOGLE_LOCATION=global" >> .env.test && \
-    echo "TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY=$(pwd)/google_account_key.json" >> .env.test && \
-    echo "" >> .env.test && \
-    echo "# AWS Translate API" >> .env.test && \
-    echo "TRANSLATE_OTHER_AWS_ACCESS_KEY_ID=$(earthly secret --org expect.digital --project translate-agent get aws_access_key_id)" >> .env.test && \
-    echo "TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY=$(earthly secret --org expect.digital --project translate-agent get aws_secret_access_key)" >> .env.test && \
-    echo "TRANSLATE_OTHER_AWS_REGION=eu-west-2" >> .env.test
-  RUN \
-    echo "db=mysql" > .arg && \
-    echo "db_host=host.docker.internal" >> .arg && \
-    echo "db_port=3306" >> .arg && \
-    echo "db_user=root" >> .arg && \
-    echo "db_schema=translate" >> .arg
-  RUN echo "db_password=" >> .secret
 
 # -----------------------Linting-----------------------
 
