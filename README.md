@@ -6,6 +6,7 @@ Running latest all in one image
 docker run -d --name translate-all-in-one \
   -p 8080:8080 \
   -p 16686:16686 \
+  -v path/to/google_account_key.json:/app/google_account_key.json \
   -e TRANSLATE_OTHER_GOOGLE_PROJECT_ID={GoogleTranslate project id} \
   -e TRANSLATE_OTHER_GOOGLE_LOCATION={GoogleTranslate location} \
   -e TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY={GoogleTranslate account key} \
@@ -20,6 +21,7 @@ Remove existing, pull latest and run
 docker rm -f translate-all-in-one 2> /dev/null; docker pull expectdigital/translate-agent-all-in-one; docker run -d --name translate-all-in-one \
   -p 8080:8080 \
   -p 16686:16686 \
+  -v path/to/google_account_key.json:/app/google_account_key.json \
   -e TRANSLATE_OTHER_GOOGLE_PROJECT_ID={GoogleTranslate project id} \
   -e TRANSLATE_OTHER_GOOGLE_LOCATION={GoogleTranslate location} \
   -e TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY={GoogleTranslate account key} \

@@ -23,7 +23,7 @@ go:
   WORKDIR /translate
   COPY --dir cmd pkg .
   COPY --platform=linux/$USERARCH +proto/translate/v1/* pkg/pb/translate/v1
-    SAVE ARTIFACT /translate
+  SAVE ARTIFACT /translate
 
 proto:
   FROM bufbuild/buf:$bufbuild_version
