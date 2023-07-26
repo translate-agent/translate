@@ -158,10 +158,6 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 		)
 	}
 
-	if len(translatedMessages.Messages) != len(messages.Messages) {
-		return nil, errors.New("AWS translated text count doesn't match untranslated text count")
-	}
-
 	return &translatedMessages, nil
 }
 
