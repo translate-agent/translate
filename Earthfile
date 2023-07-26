@@ -215,6 +215,11 @@ image-all-in-one:
   ENV OTEL_SERVICE_NAME=translate
   ENV OTEL_EXPORTER_OTLP_INSECURE=true
 
+  ENV TRANSLATE_OTHER_GOOGLE_TRANSLATE_PROJECT_ID=expect-digital
+  ENV TRANSLATE_OTHER_GOOGLE_TRANSLATE_LOCATION=global
+  ENV TRANSLATE_OTHER_GOOGLE_TRANSLATE_ACCOUNT_KEY=/app/google_account_key.json
+
+
   ENTRYPOINT ["supervisord","-c","/app/supervisord.conf"]
   SAVE IMAGE --push $registry/translate-agent-all-in-one:$tag
 
