@@ -6,13 +6,12 @@ Running latest all in one image
 docker run -d --name translate-all-in-one \
   -p 8080:8080 \
   -p 16686:16686 \
-  -v path/to/google_account_key.json:/app/google_account_key.json \
   -e TRANSLATE_OTHER_GOOGLE_PROJECT_ID={GoogleTranslate project id} \
   -e TRANSLATE_OTHER_GOOGLE_LOCATION={GoogleTranslate location} \
-  -e TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY={GoogleTranslate account key} \
   -e TRANSLATE_OTHER_AWS_ACCESS_KEY={AWSTranslate API access key} \
   -e TRANSLATE_OTHER_AWS_SECRET_KEY={AWSTranslate API secret key} \
   -e TRANSLATE_OTHER_AWS_REGION={AWSTranslate server region} \
+  -v path/to/google_account_key.json:/app/google_account_key.json \
   -v /tmp/badger:/tmp/badger \
   expectdigital/translate-agent-all-in-one:latest
 ```
@@ -21,30 +20,29 @@ Remove existing, pull latest and run
 docker rm -f translate-all-in-one 2> /dev/null; docker pull expectdigital/translate-agent-all-in-one; docker run -d --name translate-all-in-one \
   -p 8080:8080 \
   -p 16686:16686 \
-  -v path/to/google_account_key.json:/app/google_account_key.json \
   -e TRANSLATE_OTHER_GOOGLE_PROJECT_ID={GoogleTranslate project id} \
   -e TRANSLATE_OTHER_GOOGLE_LOCATION={GoogleTranslate location} \
-  -e TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY={GoogleTranslate account key} \
   -e TRANSLATE_OTHER_AWS_ACCESS_KEY={AWSTranslate API access key} \
   -e TRANSLATE_OTHER_AWS_SECRET_KEY={AWSTranslate API secret key} \
   -e TRANSLATE_OTHER_AWS_REGION={AWSTranslate server region} \
+  -v path/to/google_account_key.json:/app/google_account_key.json \
   -v /tmp/badger:/tmp/badger \
   expectdigital/translate-agent-all-in-one
 ```
 
 ### All-in-one image docker run arguments description
-| Argument                                                                       | Description                                            |
-| -------------------------------------------------------------------------------| ------------------------------------------------------ |
-| `-p 8080:8080`                                                                 | Translate service port                                 |
-| `-p 16686:16686`                                                               | Jaeger UI port                                         |
-| `-e TRANSLATE_OTHER_GOOGLE_PROJECT_ID={GoogleTranslate project id}`            | Google Translate project id                            |
-| `-e TRANSLATE_OTHER_GOOGLE_LOCATION={GoogleTranslate location}`                | Google Translate location                              |
-| `-e TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY={GoogleTranslate account key}`          | Google Translate account key                           |
-| `-e TRANSLATE_OTHER_AWS_ACCESS_KEY={AWSTranslate API access key}`              | AWS Translate API access key                           |
-| `-e TRANSLATE_OTHER_AWS_SECRET_KEY={AWSTranslate API secret key}`              | AWS Translate API secret key                           |
-| `-e TRANSLATE_OTHER_AWS_REGION={AWSTranslate server region}`                   | AWS Translate server region                            |
-| `-v path/to/badger-dir:/tmp/badger`                                            | Path for BadgerDB db for data persistency *(Optional)* |
-| `-v path/to/envoy.yaml:/app/envoy.yaml`                                        | Path to custom envoy.yaml *(Optional)*                 |
+| Argument                                                            | Description                                            |
+| ------------------------------------------------------------------- | ------------------------------------------------------ |
+| `-p 8080:8080`                                                      | Translate service port                                 |
+| `-p 16686:16686`                                                    | Jaeger UI port                                         |
+| `-e TRANSLATE_OTHER_GOOGLE_PROJECT_ID={GoogleTranslate project id}` | Google Translate project id                            |
+| `-e TRANSLATE_OTHER_GOOGLE_LOCATION={GoogleTranslate location}`     | Google Translate location                              |
+| `-e TRANSLATE_OTHER_AWS_ACCESS_KEY={AWSTranslate API access key}`   | AWS Translate API access key                           |
+| `-e TRANSLATE_OTHER_AWS_SECRET_KEY={AWSTranslate API secret key}`   | AWS Translate API secret key                           |
+| `-e TRANSLATE_OTHER_AWS_REGION={AWSTranslate server region}`        | AWS Translate server region                            |
+| `-v path/to/google_account_key.json:/app/google_account_key.json`   | Path to Google Translate account key                   |
+| `-v path/to/badger-dir:/tmp/badger`                                 | Path for BadgerDB db for data persistency *(Optional)* |
+| `-v path/to/envoy.yaml:/app/envoy.yaml`                             | Path to custom envoy.yaml *(Optional)*                 |
 
 ## TypeScript client
 
