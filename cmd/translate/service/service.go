@@ -92,7 +92,7 @@ var rootCmd = &cobra.Command{
 
 			defer func() {
 				if closeErr := closeTranslate(); closeErr != nil {
-					log.Printf("Failed to close GoogleTranslate client: %v\n", closeErr)
+					log.Printf("close GoogleTranslate client: %v\n", closeErr)
 				}
 			}()
 		default:

@@ -23,7 +23,7 @@ go:
   WORKDIR /translate
   COPY --dir cmd pkg .
   COPY --platform=linux/$USERARCH +proto/translate/v1/* pkg/pb/translate/v1
-  SAVE ARTIFACT /translate 
+    SAVE ARTIFACT /translate
 
 proto:
   FROM bufbuild/buf:$bufbuild_version
@@ -174,7 +174,7 @@ test-integration:
         up && \
 
       # Run integration tests
-      docker run \ 
+      docker run \
         --network=host \
         -v /go/pkg/mod:/go/pkg/mod \
         -v /root/.cache/go-build:/root/.cache/go-build \
@@ -183,12 +183,12 @@ test-integration:
         -e TRANSLATE_DB_MYSQL_PORT=3306 \
         -e TRANSLATE_DB_MYSQL_DATABASE=translate \
         -e TRANSLATE_DB_MYSQL_USER=root \
-        -e TRANSLATE_OTHER_AWS_TRANSLATE_ACCESS_KEY_ID=$aws_translate_access_key_id \
-        -e TRANSLATE_OTHER_AWS_TRANSLATE_SECRET_ACCESS_KEY=$aws_translate_secret_access_key \
-        -e TRANSLATE_OTHER_AWS_TRANSLATE_REGION=eu-west-2 \
-        -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_PROJECT_ID=expect-digital \
-        -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_LOCATION=global \
-        -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_ACCOUNT_KEY=/translate/google_account_key.json \
+        -e TRANSLATE_OTHER_AWS_ACCESS_KEY_ID=$aws_access_key_id \
+        -e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY=$aws_secret_access_key \
+        -e TRANSLATE_OTHER_AWS_REGION=eu-west-2 \
+        -e TRANSLATE_OTHER_GOOGLE_PROJECT_ID=expect-digital \
+        -e TRANSLATE_OTHER_GOOGLE_LOCATION=global \
+        -e TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY=/translate/google_account_key.json \
         golang:$go_version-alpine go test -C /translate --tags=integration -count=1 ./...
   END
 
@@ -200,7 +200,7 @@ test:
 
 build:
   ARG GOARCH=$USERARCH
-  ENV CGO_ENABLED=0 
+  ENV CGO_ENABLED=0
   COPY --platform=linux/$USERARCH +go/translate translate
   WORKDIR translate
   RUN \
@@ -229,7 +229,7 @@ image-multiplatform:
 
 # -----------------------All-in-one image-----------------------
 
-# jeager is helper target for all-in-one image, it removes the need 
+# jeager is helper target for all-in-one image, it removes the need
 # to download the correct jaeger image on every build
 jaeger:
   FROM jaegertracing/all-in-one:1.47
