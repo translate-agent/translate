@@ -158,9 +158,9 @@ test-integration:
   COPY --dir migrate/mysql migrate
   WITH DOCKER --compose compose.yaml --service mysql --pull migrate/migrate:v$migrate_version --pull golang:$go_version-alpine
     RUN \
-      --secret=aws_translate_access_key_id \
-      --secret=aws_translate_secret_access_key \
-      --mount=type=secret,target=/translate/google_account_key.json,id=google_translate_account_key \
+      --secret=aws_access_key_id \
+      --secret=aws_secret_access_key \
+      --mount=type=secret,target=/translate/google_account_key.json,id=google_account_key \
       --mount=type=cache,target=/go/pkg/mod \
       --mount=type=cache,target=/root/.cache/go-build \
 
