@@ -3,8 +3,9 @@ package fuzzy
 import (
 	"context"
 	"fmt"
-	"golang.org/x/text/language"
 	"net/http"
+
+	"golang.org/x/text/language"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -101,7 +102,10 @@ func NewAWSTranslate(ctx context.Context, opts ...AWSTranslateOption) (*AWSTrans
 
 // --------------------Methods--------------------
 
-func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages, targetLanguage language.Tag) (*model.Messages, error) {
+func (a *AWSTranslate) Translate(ctx context.Context,
+	messages *model.Messages,
+	targetLanguage language.Tag,
+) (*model.Messages, error) {
 	if messages == nil {
 		return nil, nil
 	}
@@ -114,13 +118,8 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages, 
 	// AWS only supports ISO 3166 2-digit country codes.
 	// https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
 
-	//if region, _ := messages.Language.Region(); !region.IsCountry() {
-	//	baseLang, _ := messages.Language.Base()
-	//	targetLanguage = baseLang.String()
-	//}
-
 	translatedMessages := model.Messages{
-		Language: messages.Language,
+		Language: targetLanguage,
 		Original: messages.Original,
 		Messages: make([]model.Message, 0, len(messages.Messages)),
 	}
@@ -171,9 +170,11 @@ func ptr[T any](v T) *T {
 // https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
 func awsLanguage(language language.Tag) *string {
 	lang := language.String()
+
 	if region, _ := language.Region(); !region.IsCountry() {
 		baseLanguage, _ := language.Base()
 		lang = baseLanguage.String()
 	}
+
 	return &lang
 }
