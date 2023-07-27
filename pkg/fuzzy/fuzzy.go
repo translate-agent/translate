@@ -3,10 +3,10 @@ package fuzzy
 import (
 	"context"
 	"fmt"
-	"golang.org/x/text/language"
 	"strings"
 
 	"go.expect.digital/translate/pkg/model"
+	"golang.org/x/text/language"
 )
 
 var SupportedServices = []string{"GoogleTranslate", "AWSTranslate"}

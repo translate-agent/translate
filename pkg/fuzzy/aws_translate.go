@@ -3,7 +3,6 @@ package fuzzy
 import (
 	"context"
 	"fmt"
-	"golang.org/x/text/language"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -12,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 	"go.expect.digital/translate/pkg/model"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"golang.org/x/text/language"
 )
 
 // --------------------Definitions--------------------
