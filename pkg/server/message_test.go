@@ -20,9 +20,9 @@ var translateSrv *TranslateServiceServer
 
 type mockTranslator struct{}
 
-func (m *mockTranslator) Translate(ctx context.Context, messages *model.Messages) (*model.Messages, error) {
+func (m *mockTranslator) Translate(ctx context.Context, messages *model.Messages, targetLanguage language.Tag) (*model.Messages, error) {
 	newMessages := &model.Messages{
-		Language: messages.Language,
+		Language: targetLanguage,
 		Messages: messages.Messages,
 		Original: messages.Original,
 	}
