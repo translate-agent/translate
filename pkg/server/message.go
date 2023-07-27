@@ -68,9 +68,6 @@ func (t *TranslateServiceServer) CreateMessages(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	// TODO: Validate all message IDs that they match original message IDs present in database.
-
-	// TODO: to improve performance should be replaced with CheckMessagesExist db function.
 	msgs, err := t.repo.LoadMessages(ctx, params.serviceID,
 		common.LoadMessagesOpts{FilterLanguages: []language.Tag{params.messages.Language}})
 	if err != nil {

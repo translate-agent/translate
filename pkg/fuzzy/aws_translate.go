@@ -3,6 +3,7 @@ package fuzzy
 import (
 	"context"
 	"fmt"
+	"golang.org/x/text/language"
 	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -100,7 +101,7 @@ func NewAWSTranslate(ctx context.Context, opts ...AWSTranslateOption) (*AWSTrans
 
 // --------------------Methods--------------------
 
-func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) (*model.Messages, error) {
+func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages, targetLanguage language.Tag) (*model.Messages, error) {
 	if messages == nil {
 		return nil, nil
 	}
@@ -112,12 +113,11 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 	// skip locale part if region is not a country,
 	// AWS only supports ISO 3166 2-digit country codes.
 	// https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
-	targetLanguage := messages.Language.String()
 
-	if region, _ := messages.Language.Region(); !region.IsCountry() {
-		baseLang, _ := messages.Language.Base()
-		targetLanguage = baseLang.String()
-	}
+	//if region, _ := messages.Language.Region(); !region.IsCountry() {
+	//	baseLang, _ := messages.Language.Base()
+	//	targetLanguage = baseLang.String()
+	//}
 
 	translatedMessages := model.Messages{
 		Language: messages.Language,
@@ -134,11 +134,9 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 				// followed by an ISO 3166 2-digit country code.
 				// For example, the language code for the Mexican variant of Spanish is es-MX.
 				// List of supported languages - https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
-				TargetLanguageCode: ptr(targetLanguage),
 
-				// TODO: replace auto detect with messages source language.
-				// If you specify auto , you must send the TranslateText request in a region that supports Amazon Comprehend.
-				SourceLanguageCode: ptr("auto"),
+				TargetLanguageCode: awsLanguage(targetLanguage),
+				SourceLanguageCode: awsLanguage(messages.Language),
 				// Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
 				Text: ptr(m.Message),
 			})
@@ -165,4 +163,17 @@ func (a *AWSTranslate) Translate(ctx context.Context, messages *model.Messages) 
 // ptr returns pointer to the passed in value.
 func ptr[T any](v T) *T {
 	return &v
+}
+
+// awsLanguage normalizes language.Tag to be usable by AWS translate.
+// skips locale part if region is not a country,
+// AWS only supports ISO 3166 2-digit country codes.
+// https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
+func awsLanguage(language language.Tag) *string {
+	lang := language.String()
+	if region, _ := language.Region(); !region.IsCountry() {
+		baseLanguage, _ := language.Base()
+		lang = baseLanguage.String()
+	}
+	return &lang
 }

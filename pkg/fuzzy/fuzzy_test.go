@@ -41,6 +41,7 @@ func Test_TranslateMock(t *testing.T) {
 			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
+
 				msgs := tt.messages
 				msgs.Language = language.English // set original language
 				translatedMsgs, err := mock.Translate(context.Background(), msgs, tt.messages.Language)

@@ -3,10 +3,10 @@ package fuzzy
 import (
 	"context"
 	"fmt"
+	"golang.org/x/text/language"
 	"strings"
 
 	"go.expect.digital/translate/pkg/model"
-	"golang.org/x/text/language"
 )
 
 var SupportedServices = []string{"GoogleTranslate", "AWSTranslate"}
@@ -17,8 +17,7 @@ func Usage() string {
 }
 
 type Translator interface {
-	// TODO: only translate messages with untranslated status
-	Translate(ctx context.Context, source *model.Messages, targetLanguage language.Tag) (*model.Messages, error)
+	Translate(ctx context.Context, messages *model.Messages, targetLangugage language.Tag) (*model.Messages, error)
 	// XXX: Method to return supported languages? e.g. SupportedLanguages() map[language.Tag]bool
 }
 
@@ -26,10 +25,6 @@ type Translator interface {
 type NoopTranslate struct{}
 
 // Noop Translate returns unmodified incoming messages.
-func (n *NoopTranslate) Translate(
-	ctx context.Context,
-	messages *model.Messages,
-	targetLanguage language.Tag,
-) (*model.Messages, error) {
+func (n *NoopTranslate) Translate(ctx context.Context, messages *model.Messages, targetLangugage language.Tag) (*model.Messages, error) {
 	return messages, nil
 }
