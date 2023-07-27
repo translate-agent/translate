@@ -3,9 +3,8 @@ package fuzzy
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"golang.org/x/text/language"
+	"strings"
 
 	"go.expect.digital/translate/pkg/model"
 )

@@ -3,9 +3,8 @@ package fuzzy
 import (
 	"context"
 	"fmt"
-	"net/http"
-
 	"golang.org/x/text/language"
+	"net/http"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -113,10 +112,6 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 	if len(messages.Messages) == 0 {
 		return &model.Messages{Language: messages.Language, Original: messages.Original}, nil
 	}
-
-	// skip locale part if region is not a country,
-	// AWS only supports ISO 3166 2-digit country codes.
-	// https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
 
 	translatedMessages := model.Messages{
 		Language: targetLanguage,
