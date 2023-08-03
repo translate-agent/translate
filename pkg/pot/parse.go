@@ -48,13 +48,13 @@ func TokensToPo(tokens []Token) (Po, error) {
 	header := headerNode{}
 
 	for i, token := range tokens {
-		if token.Value == "" && token.Type == MsgStr {
+		if token.Value == "" && token.Type == TokenTypeMsgStr {
 			prevToken, err := previousToken(tokens, i)
 			if err != nil {
 				return Po{}, fmt.Errorf("get previous token: %w", err)
 			}
 			// Skip an empty default msgstr in the header if it exists
-			if prevToken.Type == MsgId && prevToken.Value == "" {
+			if prevToken.Type == TokenTypeMsgId && prevToken.Value == "" {
 				continue
 			}
 		}
@@ -63,47 +63,47 @@ func TokensToPo(tokens []Token) (Po, error) {
 		token.Value = replacer.Replace(token.Value)
 
 		switch token.Type {
-		case HeaderLanguage:
+		case TokenTypeHeaderLanguage:
 			headerLang, err := language.Parse(token.Value)
 			if err != nil {
 				return Po{}, fmt.Errorf("invalid language: %w", err)
 			}
 
 			header.Language = headerLang
-		case HeaderTranslator:
+		case TokenTypeHeaderTranslator:
 			header.Translator = token.Value
-		case HeaderPluralForms:
+		case TokenTypeHeaderPluralForms:
 			pf, err := parsePluralForms(token.Value)
 			if err != nil {
 				return Po{}, fmt.Errorf("invalid plural forms: %w", err)
 			}
 
 			header.PluralForms = pf
-		case MsgCtxt:
+		case TokenTypeMsgCtxt:
 			currentMessage.MsgCtxt = token.Value
-		case ExtractedComment:
+		case TokenTypeExtractedComment:
 			currentMessage.ExtractedComment = append(currentMessage.ExtractedComment, token.Value)
-		case Reference:
+		case TokenTypeReference:
 			currentMessage.References = append(currentMessage.References, token.Value)
-		case Flag:
+		case TokenTypeFlag:
 			currentMessage.Flag = token.Value
-		case TranslatorComment:
+		case TokenTypeTranslatorComment:
 			currentMessage.TranslatorComment = append(currentMessage.TranslatorComment, token.Value)
-		case MsgctxtPreviousContext:
+		case TokenTypeMsgctxtPreviousContext:
 			currentMessage.MsgCtxtPrevCtxt = token.Value
-		case MsgidPluralPrevUntStrPlural:
+		case TokenTypeMsgidPluralPrevUntStrPlural:
 			currentMessage.MsgIdPrevUntPluralStr = token.Value
-		case MsgidPrevUntStr:
+		case TokenTypeMsgidPrevUntStr:
 			currentMessage.MsgIdPrevUnt = token.Value
-		case MsgId:
+		case TokenTypeMsgId:
 			currentMessage.MsgId = token.Value
-		case PluralMsgId:
+		case TokenTypePluralMsgId:
 			currentMessage.MsgIdPlural = token.Value
-		case MsgStr:
+		case TokenTypeMsgStr:
 			currentMessage.MsgStr = []string{token.Value}
 			messages = append(messages, currentMessage)
 			currentMessage = messageNode{}
-		case PluralMsgStr:
+		case TokenTypePluralMsgStr:
 			switch {
 			case token.Index == 0:
 				currentMessage.MsgStr = []string{token.Value}
@@ -118,9 +118,16 @@ func TokensToPo(tokens []Token) (Po, error) {
 				currentMessage = messageNode{}
 			}
 			// In our model.Messages currently there are no place to store these headers/metadata about translation file.
-		case HeaderReportMsgidBugsTo, HeaderProjectIdVersion, HeaderPOTCreationDate, HeaderPORevisionDate,
-			HeaderLanguageTeam, HeaderLastTranslator, HeaderXGenerator, HeaderMIMEVersion, HeaderContentType,
-			HeaderContentTransferEncoding:
+		case TokenTypeHeaderReportMsgidBugsTo,
+			TokenTypeHeaderProjectIdVersion,
+			TokenTypeHeaderPOTCreationDate,
+			TokenTypeHeaderPORevisionDate,
+			TokenTypeHeaderLanguageTeam,
+			TokenTypeHeaderLastTranslator,
+			TokenTypeHeaderXGenerator,
+			TokenTypeHeaderMIMEVersion,
+			TokenTypeHeaderContentType,
+			TokenTypeHeaderContentTransferEncoding:
 			continue
 		}
 	}

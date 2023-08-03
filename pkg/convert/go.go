@@ -27,7 +27,7 @@ func FromGo(b []byte) (model.Messages, error) {
 	var pipelineMsgs pipeline.Messages
 
 	if err := json.Unmarshal(b, &pipelineMsgs); err != nil {
-		return model.Messages{}, fmt.Errorf("failed to decode JSON to pipeline.Messages: %w", err)
+		return model.Messages{}, fmt.Errorf("decode JSON to pipeline.Messages: %w", err)
 	}
 
 	return messagesFromPipeline(pipelineMsgs), nil
