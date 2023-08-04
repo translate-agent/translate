@@ -151,14 +151,11 @@ func (g *GoogleTranslate) Translate(
 		}
 
 		for i, t := range res.Translations {
-			translatedMessages.Messages[i] = model.Message{
-				ID:          messages.Messages[i].ID,
-				PluralID:    messages.Messages[i].PluralID,
-				Description: messages.Messages[i].Description,
-				Message:     t.TranslatedText,
-				Status:      model.MessageStatusFuzzy,
-				Positions:   messages.Messages[i].Positions,
-			}
+			m := messages.Messages[low+i]
+			m.Message = t.TranslatedText
+			m.Status = model.MessageStatusFuzzy
+
+			translatedMessages.Messages = append(translatedMessages.Messages, m)
 		}
 	}
 
