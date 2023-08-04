@@ -16,6 +16,18 @@ import (
 	"google.golang.org/grpc"
 )
 
+// googleTranslateRequestlimit limits the number of strings per translation request.
+//
+// google translate client: translate: rpc error:
+// code = InvalidArgument
+// desc = Number of strings in contents: 3830 exceeds the maximum limit of 1024
+// error details:
+//
+//	name = BadRequest
+//	field = contents
+//	desc = Number of sub-requests should not be more than 1024
+const googleTranslateRequestlimit = 1024
+
 // --------------------Definitions--------------------
 
 // Interface that defines some of the methods of the Google Translate client.
@@ -107,39 +119,47 @@ func (g *GoogleTranslate) Translate(
 		return &model.Messages{Language: messages.Language, Original: messages.Original}, nil
 	}
 
-	// Extract the strings to be send to the Google Translate API.
-	targetTexts := make([]string, 0, len(messages.Messages))
-	for _, m := range messages.Messages {
-		targetTexts = append(targetTexts, m.Message)
-	}
-
-	req := &translatepb.TranslateTextRequest{
-		Parent:             parent(),
-		SourceLanguageCode: messages.Language.String(),
-		TargetLanguageCode: targetLanguage.String(),
-		Contents:           targetTexts,
-	}
-
-	res, err := g.client.TranslateText(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("google translate client: translate: %w", err)
-	}
-
+	n := len(messages.Messages)
 	translatedMessages := model.Messages{
 		Language: targetLanguage,
 		Original: messages.Original,
-		Messages: make([]model.Message, 0, len(res.Translations)),
+		Messages: make([]model.Message, 0, n),
 	}
 
-	for i, t := range res.Translations {
-		translatedMessages.Messages = append(translatedMessages.Messages, model.Message{
-			ID:          messages.Messages[i].ID,
-			PluralID:    messages.Messages[i].PluralID,
-			Description: messages.Messages[i].Description,
-			Message:     t.TranslatedText,
-			Status:      model.MessageStatusFuzzy,
-			Positions:   messages.Messages[i].Positions,
-		})
+	for low := 0; low < n; low += googleTranslateRequestlimit {
+		high := low + googleTranslateRequestlimit
+
+		if high > n {
+			high = n
+		}
+
+		req := &translatepb.TranslateTextRequest{
+			Parent:             parent(),
+			SourceLanguageCode: messages.Language.String(),
+			TargetLanguageCode: targetLanguage.String(),
+			Contents:           make([]string, 0, high-low),
+		}
+
+		// Extract the strings to be translated by the Google Translate API.
+		for i := low; i < high; i++ {
+			req.Contents = append(req.Contents, messages.Messages[i].Message)
+		}
+
+		res, err := g.client.TranslateText(ctx, req)
+		if err != nil {
+			return nil, fmt.Errorf("google translate client: translate: %w", err)
+		}
+
+		for i, t := range res.Translations {
+			translatedMessages.Messages[i] = model.Message{
+				ID:          messages.Messages[i].ID,
+				PluralID:    messages.Messages[i].PluralID,
+				Description: messages.Messages[i].Description,
+				Message:     t.TranslatedText,
+				Status:      model.MessageStatusFuzzy,
+				Positions:   messages.Messages[i].Positions,
+			}
+		}
 	}
 
 	return &translatedMessages, nil
