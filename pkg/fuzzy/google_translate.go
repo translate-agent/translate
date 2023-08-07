@@ -98,7 +98,7 @@ func NewGoogleTranslate(
 
 	_, err = gt.client.TranslateText(ctx, req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("google translate client: ping google translate: %w", err)
+		return nil, nil, fmt.Errorf("google translate client: ping: %w", err)
 	}
 
 	return gt, gt.client.Close, nil
@@ -147,7 +147,7 @@ func (g *GoogleTranslate) Translate(
 
 		res, err := g.client.TranslateText(ctx, req)
 		if err != nil {
-			return nil, fmt.Errorf("google translate client: translate: %w", err)
+			return nil, fmt.Errorf("google translate client: translate text: %w", err)
 		}
 
 		for i, t := range res.Translations {
