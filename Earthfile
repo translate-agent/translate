@@ -11,6 +11,8 @@ ARG --global sqlfluff_version=2.1.3
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
 
+# Local dev flow
+
 init:
   LOCALLY
   RUN earthly secret --org expect.digital --project translate-agent get google_account_key > google_account_key.json
@@ -53,6 +55,17 @@ init:
     echo "db_schema=translate" >> .arg
   RUN echo "db_password=" >> .secret
 
+up:
+  LOCALLY
+  RUN docker compose --project-name=translate --project-directory=.earthly up --detach --wait --timeout 60
+  BUILD +migrate --db=mysql
+
+down:
+  LOCALLY
+  RUN docker compose --project-directory=.earthly down -v --remove-orphans
+
+# Others
+
 deps:
   WORKDIR /translate
   COPY go.mod go.sum .
@@ -66,7 +79,7 @@ go:
   COPY --dir cmd pkg .
   COPY --platform=linux/$USERARCH +proto/translate/v1/* pkg/pb/translate/v1
   SAVE ARTIFACT /translate
-
+  
 proto:
   FROM bufbuild/buf:$bufbuild_version
   ENV BUF_CACHE_DIR=/.cache/buf_cache
