@@ -11,10 +11,10 @@ services:
       - MYSQL_DATABASE=translate
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
     healthcheck:
-      test: "/etc/init.d/mysql status"
+      test: "mysqladmin status"
       interval: 1s
-      timeout: 10s
-      retries: 10
+      timeout: 60s
+      retries: 60
     restart: always
 
   jaeger:
