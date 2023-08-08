@@ -129,8 +129,8 @@ func (g *GoogleTranslate) Translate(
 
 	var codePointsInBatch int
 
-	batch := make([]string, 0)
-	batches := make([][]string, 0)
+	batch := make([]string, 0, googleTranslateRequestLimit)
+	batches := make([][]string, 0, 1)
 
 	for _, msgs := range messages.Messages {
 		codePointsInMsg := utf8.RuneCountInString(msgs.Message)
