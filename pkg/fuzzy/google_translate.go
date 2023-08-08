@@ -118,63 +118,60 @@ func (g *GoogleTranslate) Translate(
 		return &model.Messages{Language: messages.Language, Original: messages.Original}, nil
 	}
 
-	n := len(messages.Messages)
 	translatedMessages := model.Messages{
 		Language: targetLanguage,
 		Original: messages.Original,
-		Messages: make([]model.Message, 0, n),
+		Messages: make([]model.Message, 0, len(messages.Messages)),
 	}
 
-	for low := 0; low < n; low += googleTranslateRequestLimit {
-		high := low + googleTranslateRequestLimit
+	// Split text from messages into batches to avoid exceeding
+	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
 
-		if high > n {
-			high = n
+	var (
+		batches           [][]string
+		codePointsInBatch int
+	)
+
+	batch := make([]string, 0, googleTranslateRequestLimit)
+
+	for i, msgs := range messages.Messages {
+		codePointsInMsg := utf8.RuneCountInString(msgs.Message)
+
+		if i == googleTranslateRequestLimit || codePointsInBatch+codePointsInMsg > googleTranslateCodePointsLimit {
+			batches = append(batches, batch)
+			batch = []string{}
+			codePointsInBatch = 0
 		}
 
-		// Split text from messages into batches that do not exceed googleTranslateCodePointsLimit.
-		var (
-			batch             []string
-			batches           [][]string
-			codePointsInBatch int
-		)
+		batch = append(batch, msgs.Message)
+		codePointsInBatch += codePointsInMsg
+	}
 
-		for i := low; i < high; i++ {
-			codePointsInMsg := utf8.RuneCountInString(messages.Messages[i].Message)
+	batches = append(batches, batch)
 
-			if codePointsInBatch+codePointsInMsg > googleTranslateCodePointsLimit {
-				batches = append(batches, batch)
-				batch = []string{}
-				codePointsInBatch = 0
-			}
+	// Translate text batches using Google Translate client.
 
-			batch = append(batch, messages.Messages[i].Message)
-			codePointsInBatch += codePointsInMsg
+	var msgsIndex int
+
+	for i := range batches {
+		res, err := g.client.TranslateText(ctx, &translatepb.TranslateTextRequest{
+			Parent:             parent(),
+			SourceLanguageCode: messages.Language.String(),
+			TargetLanguageCode: targetLanguage.String(),
+			Contents:           batches[i],
+		})
+		if err != nil {
+			return nil, fmt.Errorf("google translate client: translate text from batch at index %d: %w", i, err)
 		}
 
-		batches = append(batches, batch)
-		msgIndex := low
+		for _, t := range res.Translations {
+			m := messages.Messages[msgsIndex]
+			m.Message = t.TranslatedText
+			m.Status = model.MessageStatusFuzzy
 
-		for i := range batches {
-			res, err := g.client.TranslateText(ctx, &translatepb.TranslateTextRequest{
-				Parent:             parent(),
-				SourceLanguageCode: messages.Language.String(),
-				TargetLanguageCode: targetLanguage.String(),
-				Contents:           batches[i],
-			})
-			if err != nil {
-				return nil, fmt.Errorf("google translate client: translate text from batch at index %d: %w", i, err)
-			}
+			translatedMessages.Messages = append(translatedMessages.Messages, m)
 
-			for _, t := range res.Translations {
-				m := messages.Messages[msgIndex]
-				m.Message = t.TranslatedText
-				m.Status = model.MessageStatusFuzzy
-
-				translatedMessages.Messages = append(translatedMessages.Messages, m)
-
-				msgIndex++
-			}
+			msgsIndex++
 		}
 	}
 
