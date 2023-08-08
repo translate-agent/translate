@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"unicode/utf8"
 
 	translate "cloud.google.com/go/translate/apiv3"
 	"cloud.google.com/go/translate/apiv3/translatepb"
@@ -16,17 +17,15 @@ import (
 	"google.golang.org/grpc"
 )
 
-// googleTranslateRequestlimit limits the number of strings per translation request.
-//
-// google translate client: translate: rpc error:
-// code = InvalidArgument
-// desc = Number of strings in contents: 3830 exceeds the maximum limit of 1024
-// error details:
-//
-//	name = BadRequest
-//	field = contents
-//	desc = Number of sub-requests should not be more than 1024
-const googleTranslateRequestlimit = 1024
+// List of the google request limits based on TranslateTextRequest.contents description:
+// https://github.com/googleapis/googleapis/blob/master/google/cloud/translate/v3/translation_service.proto
+const (
+	// googleTranslateRequestLimit limits the number of strings per translation request.
+	googleTranslateRequestLimit = 1024
+
+	// googleTranslateCodePointsLimit limits the number of Unicode codepoints per single translation request.
+	googleTranslateCodePointsLimit = 30_000
+)
 
 // --------------------Definitions--------------------
 
@@ -119,43 +118,59 @@ func (g *GoogleTranslate) Translate(
 		return &model.Messages{Language: messages.Language, Original: messages.Original}, nil
 	}
 
-	n := len(messages.Messages)
+	// Split text from messages into batches to avoid exceeding
+	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
+
+	var codePointsInBatch int
+
+	batch := make([]string, 0, googleTranslateRequestLimit)
+	batches := make([][]string, 0, 1)
+
+	for _, v := range messages.Messages {
+		codePointsInMsg := utf8.RuneCountInString(v.Message)
+
+		if len(batch) == googleTranslateRequestLimit || codePointsInBatch+codePointsInMsg > googleTranslateCodePointsLimit {
+			batches = append(batches, batch)
+			batch = make([]string, 0, googleTranslateRequestLimit)
+
+			codePointsInBatch = 0
+		}
+
+		batch = append(batch, v.Message)
+		codePointsInBatch += codePointsInMsg
+	}
+
+	batches = append(batches, batch)
+
+	// Translate text batches using Google Translate client.
+
+	var msgIndex int
+
 	translatedMessages := model.Messages{
 		Language: targetLanguage,
 		Original: messages.Original,
-		Messages: make([]model.Message, 0, n),
+		Messages: make([]model.Message, 0, len(messages.Messages)),
 	}
 
-	for low := 0; low < n; low += googleTranslateRequestlimit {
-		high := low + googleTranslateRequestlimit
-
-		if high > n {
-			high = n
-		}
-
-		req := &translatepb.TranslateTextRequest{
+	for i := range batches {
+		res, err := g.client.TranslateText(ctx, &translatepb.TranslateTextRequest{
 			Parent:             parent(),
 			SourceLanguageCode: messages.Language.String(),
 			TargetLanguageCode: targetLanguage.String(),
-			Contents:           make([]string, 0, high-low),
-		}
-
-		// Extract the strings to be translated by the Google Translate API.
-		for i := low; i < high; i++ {
-			req.Contents = append(req.Contents, messages.Messages[i].Message)
-		}
-
-		res, err := g.client.TranslateText(ctx, req)
+			Contents:           batches[i],
+		})
 		if err != nil {
-			return nil, fmt.Errorf("google translate client: translate text: %w", err)
+			return nil, fmt.Errorf("google translate client: translate texts from batch #%d: %w", i, err)
 		}
 
-		for i, t := range res.Translations {
-			m := messages.Messages[low+i]
+		for _, t := range res.Translations {
+			m := messages.Messages[msgIndex]
 			m.Message = t.TranslatedText
 			m.Status = model.MessageStatusFuzzy
 
 			translatedMessages.Messages = append(translatedMessages.Messages, m)
+
+			msgIndex++
 		}
 	}
 
