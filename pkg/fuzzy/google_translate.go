@@ -118,12 +118,6 @@ func (g *GoogleTranslate) Translate(
 		return &model.Messages{Language: messages.Language, Original: messages.Original}, nil
 	}
 
-	translatedMessages := model.Messages{
-		Language: targetLanguage,
-		Original: messages.Original,
-		Messages: make([]model.Message, 0, len(messages.Messages)),
-	}
-
 	// Split text from messages into batches to avoid exceeding
 	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
 
@@ -151,6 +145,12 @@ func (g *GoogleTranslate) Translate(
 	// Translate text batches using Google Translate client.
 
 	var msgsIndex int
+
+	translatedMessages := model.Messages{
+		Language: targetLanguage,
+		Original: messages.Original,
+		Messages: make([]model.Message, 0, len(messages.Messages)),
+	}
 
 	for i := range batches {
 		res, err := g.client.TranslateText(ctx, &translatepb.TranslateTextRequest{
