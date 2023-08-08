@@ -126,8 +126,8 @@ func (g *GoogleTranslate) Translate(
 	batch := make([]string, 0, googleTranslateRequestLimit)
 	batches := make([][]string, 0, 1)
 
-	for _, msgs := range messages.Messages {
-		codePointsInMsg := utf8.RuneCountInString(msgs.Message)
+	for _, v := range messages.Messages {
+		codePointsInMsg := utf8.RuneCountInString(v.Message)
 
 		if len(batch) == googleTranslateRequestLimit || codePointsInBatch+codePointsInMsg > googleTranslateCodePointsLimit {
 			batches = append(batches, batch)
@@ -136,7 +136,7 @@ func (g *GoogleTranslate) Translate(
 			codePointsInBatch = 0
 		}
 
-		batch = append(batch, msgs.Message)
+		batch = append(batch, v.Message)
 		codePointsInBatch += codePointsInMsg
 	}
 
@@ -144,7 +144,7 @@ func (g *GoogleTranslate) Translate(
 
 	// Translate text batches using Google Translate client.
 
-	var msgsIndex int
+	var msgIndex int
 
 	translatedMessages := model.Messages{
 		Language: targetLanguage,
@@ -164,13 +164,13 @@ func (g *GoogleTranslate) Translate(
 		}
 
 		for _, t := range res.Translations {
-			m := messages.Messages[msgsIndex]
+			m := messages.Messages[msgIndex]
 			m.Message = t.TranslatedText
 			m.Status = model.MessageStatusFuzzy
 
 			translatedMessages.Messages = append(translatedMessages.Messages, m)
 
-			msgsIndex++
+			msgIndex++
 		}
 	}
 
