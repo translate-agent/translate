@@ -17,19 +17,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-// googleTranslateRequestLimit limits the number of strings per translation request.
-//
-// google translate client: translate: rpc error:
-// code = InvalidArgument
-// desc = Number of strings in contents: 3830 exceeds the maximum limit of 1024
-// error details:
-//
-//	name = BadRequest
-//	field = contents
-//	desc = Number of sub-requests should not be more than 1024
 const (
+	// googleTranslateRequestLimit limits the number of strings per translation request.
+	//
+	// google translate client: translate: rpc error:
+	// code = InvalidArgument
+	// desc = Number of strings in contents: 3830 exceeds the maximum limit of 1024
+	// error details:
+	//
+	//	name = BadRequest
+	//	field = contents
+	//	desc = Number of sub-requests should not be more than 1024
 	googleTranslateRequestLimit = 1024
 	// googleTranslateCodePointsLimit limits the number of Unicode codepoints per single translation request.
+	// https://github.com/googleapis/googleapis/blob/master/google/cloud/translate/v3/translation_service.proto#L201
 	googleTranslateCodePointsLimit = 30_000
 )
 
@@ -138,19 +139,21 @@ func (g *GoogleTranslate) Translate(
 			high = n
 		}
 
-		// Split the messages into batches with less than googleTranslateCodePointsLimit
+		// Split text from messages into batches that do not exceed googleTranslateCodePointsLimit.
 
-		var codePointsInBatch int
+		var (
+			batch   []string
+			batches [][]string
 
-		batch := make([]string, 0)
-		batches := make([][]string, 0)
+			codePointsInBatch int
+		)
 
 		for i := low; i < high; i++ {
 			codePointsInMsg := utf8.RuneCountInString(messages.Messages[i].ID)
 
 			if codePointsInBatch+codePointsInMsg > googleTranslateCodePointsLimit {
 				batches = append(batches, batch)
-				batch = make([]string, 0)
+				batch = []string{}
 
 				codePointsInBatch = 0
 			}
