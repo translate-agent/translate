@@ -137,7 +137,7 @@ func (g *GoogleTranslate) Translate(
 
 		if len(batch) == googleTranslateRequestLimit || codePointsInBatch+codePointsInMsg > googleTranslateCodePointsLimit {
 			batches = append(batches, batch)
-			batch = make([]string, 0)
+			batch = make([]string, 0, googleTranslateRequestLimit)
 
 			codePointsInBatch = 0
 		}
