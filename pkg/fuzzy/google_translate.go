@@ -127,7 +127,7 @@ func (g *GoogleTranslate) Translate(
 	// Split text from messages into batches to avoid exceeding
 	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
 
-	var codePointsInBatch, msgsInBatch int
+	var codePointsInBatch int
 
 	batch := make([]string, 0)
 	batches := make([][]string, 0)
@@ -135,16 +135,15 @@ func (g *GoogleTranslate) Translate(
 	for _, msgs := range messages.Messages {
 		codePointsInMsg := utf8.RuneCountInString(msgs.Message)
 
-		if msgsInBatch == googleTranslateRequestLimit || codePointsInBatch+codePointsInMsg > googleTranslateCodePointsLimit {
+		if len(batch) == googleTranslateRequestLimit || codePointsInBatch+codePointsInMsg > googleTranslateCodePointsLimit {
 			batches = append(batches, batch)
 			batch = make([]string, 0)
 
-			codePointsInBatch, msgsInBatch = 0, 0
+			codePointsInBatch = 0
 		}
 
 		batch = append(batch, msgs.Message)
 		codePointsInBatch += codePointsInMsg
-		msgsInBatch++
 	}
 
 	batches = append(batches, batch)
