@@ -40,7 +40,7 @@ app_fr.arb
 */
 
 // Converts a serialized data in ARB file format into model.Messages.
-func FromArb(data []byte) (model.Messages, error) {
+func FromArb(data []byte, original bool) (model.Messages, error) {
 	var dst map[string]interface{}
 	if err := json.Unmarshal(data, &dst); err != nil {
 		return model.Messages{}, fmt.Errorf("unmarshal ARB serialized data: %w", err)
@@ -93,7 +93,7 @@ func FromArb(data []byte) (model.Messages, error) {
 		return model.Messages{}, fmt.Errorf("find locale: %w", err)
 	}
 
-	messages := model.Messages{Language: lang}
+	messages := model.Messages{Language: lang, Original: original}
 
 	for key, value := range dst {
 		// Ignore a key if it begins with '@' as it only supplies metadata for message not the message itself.

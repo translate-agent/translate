@@ -93,6 +93,7 @@ func TestFromGo(t *testing.T) {
 				Description: "description2",
 			},
 		},
+		Original: false,
 	}
 
 	input := []byte(`
@@ -124,7 +125,7 @@ func TestFromGo(t *testing.T) {
 		]
 	}`)
 
-	actual, err := FromGo(input)
+	actual, err := FromGo(input, false)
 	if !assert.NoError(t, err) {
 		return
 	}

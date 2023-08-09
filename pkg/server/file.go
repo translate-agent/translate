@@ -104,7 +104,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := MessagesFromData(params.schema, params.data)
+	messages, err := MessagesFromData(params)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
