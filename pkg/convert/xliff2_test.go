@@ -94,16 +94,19 @@ func Test_FromXliff2(t *testing.T) {
 		name     string
 		expected *model.Messages
 		input    []byte
+		original bool
 	}{
 		{
 			name:     "Happy Path Untranslated",
 			input:    randXliff2(sourceMessages),
 			expected: sourceMessages,
+			original: false,
 		},
 		{
 			name:     "Happy Path Translated",
 			input:    randXliff2(translatedMessages),
 			expected: translatedMessages,
+			original: false,
 		},
 	}
 
@@ -112,7 +115,7 @@ func Test_FromXliff2(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromXliff2(tt.input, false)
+			actual, err := FromXliff2(tt.input, tt.original)
 			require.NoError(t, err)
 
 			for i := range actual.Messages {
