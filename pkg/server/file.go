@@ -109,13 +109,6 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	// If after converting original is false, override it with the value from the request.
-	// For now, only XLIFF formats can determine if the file is original or not.
-	// All other format's converts marks this flag as false.
-	if !messages.Original {
-		messages.Original = params.original
-	}
-
 	messages.Language, err = getLanguage(params, messages)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())

@@ -17,7 +17,6 @@ func Test_FromNgLocalize(t *testing.T) {
 		input       []byte
 		name        string
 		expected    model.Messages
-		original    bool
 	}{
 		{
 			name: "All OK",
@@ -41,10 +40,8 @@ func Test_FromNgLocalize(t *testing.T) {
 						Message: "{Bienvenue}",
 					},
 				},
-				Original: false,
 			},
 			expectedErr: nil,
-			original:    false,
 		},
 		{
 			name: "Malformed language",
@@ -57,7 +54,6 @@ func Test_FromNgLocalize(t *testing.T) {
         }
       }`),
 			expectedErr: fmt.Errorf("language: subtag \"xyz\" is well-formed but unknown"),
-			original:    false,
 		},
 	}
 	for _, tt := range tests {
@@ -65,7 +61,7 @@ func Test_FromNgLocalize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromNgLocalize(tt.input, tt.original)
+			actual, err := FromNgLocalize(tt.input, false)
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())

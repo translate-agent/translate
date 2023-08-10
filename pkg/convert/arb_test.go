@@ -18,7 +18,6 @@ func Test_FromArb(t *testing.T) {
 		name        string
 		input       []byte
 		expected    model.Messages
-		original    bool
 	}{
 		{
 			name: "Combination of messages",
@@ -55,10 +54,8 @@ func Test_FromArb(t *testing.T) {
 						Message: "{Goodbye friend}",
 					},
 				},
-				Original: false,
 			},
 			expectedErr: nil,
-			original:    false,
 		},
 		{
 			name: "Message in curly braces",
@@ -95,10 +92,8 @@ func Test_FromArb(t *testing.T) {
 						Message: "{Goodbye friend}",
 					},
 				},
-				Original: false,
 			},
 			expectedErr: nil,
-			original:    false,
 		},
 		{
 			name: "Wrong value type for @title",
@@ -108,7 +103,6 @@ func Test_FromArb(t *testing.T) {
 				"@title": "Message to greet the World"
 			}`),
 			expectedErr: errors.New("expected a map, got 'string'"),
-			original:    false,
 		},
 		{
 			name: "Wrong value type for greeting key",
@@ -120,7 +114,6 @@ func Test_FromArb(t *testing.T) {
 				}
 			}`),
 			expectedErr: errors.New("unsupported value type 'map[string]interface {}' for key 'greeting'"),
-			original:    false,
 		},
 		{
 			name: "Wrong value type for description key",
@@ -134,7 +127,6 @@ func Test_FromArb(t *testing.T) {
 				}
 			}`),
 			expectedErr: errors.New("'Description' expected type 'string', got unconvertible type 'map[string]interface {}'"),
-			original:    false,
 		},
 		{
 			name: "With locale",
@@ -158,7 +150,6 @@ func Test_FromArb(t *testing.T) {
 				Original: false,
 			},
 			expectedErr: nil,
-			original:    false,
 		},
 		{
 			name: "With malformed locale",
@@ -171,7 +162,6 @@ func Test_FromArb(t *testing.T) {
         }
       }`),
 			expectedErr: fmt.Errorf("language: tag is not well-formed"),
-			original:    false,
 		},
 		{
 			name: "With wrong value type for locale",
@@ -186,7 +176,6 @@ func Test_FromArb(t *testing.T) {
         }
       }`),
 			expectedErr: fmt.Errorf("unsupported value type 'map[string]interface {}' for key '@@locale'"),
-			original:    false,
 		},
 	}
 	for _, tt := range tests {
@@ -194,7 +183,7 @@ func Test_FromArb(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromArb(tt.input, tt.original)
+			actual, err := FromArb(tt.input, false)
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return

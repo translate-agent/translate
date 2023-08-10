@@ -93,7 +93,6 @@ func TestFromGo(t *testing.T) {
 				Description: "description2",
 			},
 		},
-		Original: false,
 	}
 
 	input := []byte(`

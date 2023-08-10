@@ -16,7 +16,6 @@ func Test_FromNgxTranslate(t *testing.T) {
 		input       []byte
 		expectedErr error
 		expected    model.Messages
-		original    bool
 	}{
 		{
 			name:  "Not nested",
@@ -28,9 +27,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 						Message: "{example}",
 					},
 				},
-				Original: false,
 			},
-			original: false,
 		},
 		{
 			name:  "Nested normally",
@@ -42,9 +39,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 						Message: "{message1}",
 					},
 				},
-				Original: false,
 			},
-			original: false,
 		},
 		{
 			name:  "Nested with dot",
@@ -56,9 +51,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 						Message: "{message1}",
 					},
 				},
-				Original: false,
 			},
-			original: false,
 		},
 		{
 			name:  "Nested mixed",
@@ -74,23 +67,19 @@ func Test_FromNgxTranslate(t *testing.T) {
 						Message: "{message2}",
 					},
 				},
-				Original: false,
 			},
-			original: false,
 		},
 		{
 			name:        "Unsupported value type",
 			input:       []byte(`{"message": 1.0}`),
 			expectedErr: fmt.Errorf("traverse ngx-translate: unsupported value type %T for key %s", 1.0, "message"),
 			expected:    model.Messages{},
-			original:    false,
 		},
 		{
 			name:        "Invalid JSON",
 			input:       []byte(`{"message": "example"`),
 			expectedErr: fmt.Errorf("unmarshal from ngx-translate to model.Messages: unexpected end of JSON input"),
 			expected:    model.Messages{},
-			original:    false,
 		},
 	}
 
@@ -99,7 +88,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromNgxTranslate(tt.input, tt.original)
+			actual, err := FromNgxTranslate(tt.input, false)
 			if err != nil {
 				assert.Equal(t, tt.expectedErr, fmt.Errorf(err.Error()))
 				return
