@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/spf13/viper"
 )
 
@@ -23,6 +23,9 @@ func WithDefaultDB() option {
 		path := viper.GetString("db.badgerdb.path")
 		badgerOpts := badger.DefaultOptions(path)
 
+		// NOTE: The default value for in-memory storage of ValueThreshold is 1 MB.
+		// Currently increasing the maximum allowed value size using WithValueThreshold() results in
+		// panic 'Invalid ValueThreshold, must be less or equal to 1048576'.
 		if path == "" {
 			log.Println("Info: badger db path not provided: defaulting to in-memory storage")
 

@@ -71,9 +71,29 @@ var rootCmd = &cobra.Command{
 		// Gracefully stops GRPC server.
 		defer grpcServer.GracefulStop()
 
+		dbType := viper.GetString("service.db")
+		badgerDir := viper.GetString("db.badgerdb.path")
+
+		if dbType == repo.BadgerDB && badgerDir == "" {
+			log.Println("Info: badgerdb path not provided: using temporary storage directory")
+
+			badgerTmpDir, mkErr := os.MkdirTemp("", "badgerdb")
+			if mkErr != nil {
+				log.Panicf("create temporary storage directory for badgerdb: %v", mkErr)
+			}
+
+			viper.Set("db.badgerdb.path", badgerTmpDir)
+
+			defer func() {
+				if rmErr := os.RemoveAll(badgerTmpDir); rmErr != nil {
+					log.Printf("remove temporary storage directory for badgerdb: %v\n", rmErr)
+				}
+			}()
+		}
+
 		mux := runtime.NewServeMux()
 
-		repo, err := repo.NewRepo(ctx, viper.GetString("service.db"))
+		repo, err := repo.NewRepo(ctx, dbType)
 		if err != nil {
 			log.Panicf("create new repo: %v", err)
 		}
