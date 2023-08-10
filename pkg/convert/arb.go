@@ -39,7 +39,8 @@ app_fr.arb
 
 */
 
-// Converts a serialized data in ARB file format into model.Messages.
+// FromArb converts a serialized data in ARB file format into model.Messages.
+// For now original param is ignored.
 func FromArb(data []byte, original bool) (model.Messages, error) {
 	var dst map[string]interface{}
 	if err := json.Unmarshal(data, &dst); err != nil {

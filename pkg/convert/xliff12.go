@@ -50,6 +50,7 @@ type context struct {
 }
 
 // FromXliff12 converts serialized data from the XML data in the XLIFF 1.2 format into a model.Messages struct.
+// For now original param is ignored.
 func FromXliff12(data []byte, original bool) (model.Messages, error) {
 	var xlf xliff12
 	if err := xml.Unmarshal(data, &xlf); err != nil {

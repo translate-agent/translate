@@ -38,6 +38,7 @@ type note struct {
 }
 
 // FromXliff2 converts serialized data from the XML data in the XLIFF 2 format into a model.Messages struct.
+// For now original param is ignored.
 func FromXliff2(data []byte, original bool) (model.Messages, error) {
 	var xlf xliff2
 
