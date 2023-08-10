@@ -23,7 +23,6 @@ func ToGo(m model.Messages) ([]byte, error) {
 
 // FromGo takes a JSON-encoded byte slice, decodes it into a pipeline.Messages structure,
 // and then converts it into a model.Messages structure using the messagesFromPipeline function.
-// For now original param is ignored.
 func FromGo(b []byte, original bool) (model.Messages, error) {
 	var pipelineMsgs pipeline.Messages
 

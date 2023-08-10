@@ -10,7 +10,6 @@ import (
 // FromNgxTranslate  parses the JSON-encoded byte slice representing messages in the ngx-translate format,
 // recursively traverses the map, extracts the key-value pairs, converts the message strings,
 // and constructs a model.Messages structure.
-// For now original param is ignored.
 func FromNgxTranslate(b []byte, original bool) (messages model.Messages, err error) {
 	messages.Original = original
 
