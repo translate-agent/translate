@@ -91,6 +91,12 @@ func (t *TranslateServiceServer) CreateMessages(
 		for _, v := range msgs {
 			if v.Original {
 				originalLanguage = &v.Language
+
+				// if incoming messages are empty populate with original messages.
+				if params.messages.Messages == nil {
+					params.messages.Messages = v.Messages
+				}
+
 				break
 			}
 		}
