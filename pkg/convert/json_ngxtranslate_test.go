@@ -88,7 +88,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromNgxTranslate(tt.input)
+			actual, err := FromNgxTranslate(tt.input, false)
 			if err != nil {
 				assert.Equal(t, tt.expectedErr, fmt.Errorf(err.Error()))
 				return

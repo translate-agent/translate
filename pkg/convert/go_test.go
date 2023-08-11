@@ -124,7 +124,7 @@ func TestFromGo(t *testing.T) {
 		]
 	}`)
 
-	actual, err := FromGo(input)
+	actual, err := FromGo(input, false)
 	if !assert.NoError(t, err) {
 		return
 	}

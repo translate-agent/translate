@@ -621,6 +621,7 @@ func TestFromPot(t *testing.T) {
 		input       []byte
 		name        string
 		expected    model.Messages
+		original    bool
 	}{
 		{
 			name: "valid input",
@@ -636,6 +637,7 @@ func TestFromPot(t *testing.T) {
 							msgid "Goodbye"
 							msgstr "Goodbye, world!"
 			`),
+
 			expected: model.Messages{
 				Language: language.English,
 				Messages: []model.Message{
@@ -652,7 +654,9 @@ func TestFromPot(t *testing.T) {
 						Status:      model.MessageStatusFuzzy,
 					},
 				},
+				Original: false,
 			},
+			original: false,
 		},
 		{
 			name: "fuzzy param before empty id",
@@ -684,7 +688,9 @@ func TestFromPot(t *testing.T) {
 						Status:      model.MessageStatusUntranslated,
 					},
 				},
+				Original: false,
 			},
+			original: false,
 		},
 		{
 			name: "msgid and msgstr empty headers",
@@ -714,7 +720,9 @@ func TestFromPot(t *testing.T) {
 						Status:      model.MessageStatusUntranslated,
 					},
 				},
+				Original: false,
 			},
+			original: false,
 		},
 		{
 			name: "if empty msgstr missing",
@@ -744,7 +752,9 @@ func TestFromPot(t *testing.T) {
 						Status:      model.MessageStatusUntranslated,
 					},
 				},
+				Original: false,
 			},
+			original: false,
 		},
 		{
 			name: "multiline description",
@@ -779,7 +789,9 @@ func TestFromPot(t *testing.T) {
 						Status:      model.MessageStatusFuzzy,
 					},
 				},
+				Original: false,
 			},
+			original: false,
 		},
 		{
 			name: "multiline msgid",
@@ -803,7 +815,9 @@ func TestFromPot(t *testing.T) {
 						Status:      model.MessageStatusFuzzy,
 					},
 				},
+				Original: false,
 			},
+			original: false,
 		},
 		{
 			name: "all possible headers with plural messag",
@@ -870,7 +884,9 @@ when * {%s produits}
 						},
 					},
 				},
+				Original: false,
 			},
+			original: false,
 		},
 		{
 			name: "plural msgstr with simple msgstr",
@@ -905,7 +921,9 @@ when * {Il y a {$count} pommes.}
 						Message: "{ciao}",
 					},
 				},
+				Original: false,
 			},
+			original: false,
 		},
 		{
 			name: "plural msgstr",
@@ -933,7 +951,9 @@ when * {Il y a {$count} pommes.}
 						Status:      model.MessageStatusUntranslated,
 					},
 				},
+				Original: false,
 			},
+			original: false,
 		},
 		{
 			name: "plural msgstr with new line",
@@ -962,7 +982,9 @@ when * {Il y a {$count} pommes.}
 						Status:      model.MessageStatusUntranslated,
 					},
 				},
+				Original: false,
 			},
+			original: false,
 		},
 		{
 			name: "multiline msgid_plural and msgid",
@@ -990,7 +1012,63 @@ when * {Il y a {$count} pommes.}
 						Status:      model.MessageStatusUntranslated,
 					},
 				},
+				Original: false,
 			},
+			original: false,
+		},
+		{
+			name: "single msgstr with original lang",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							#. a greeting
+							msgid "Hello"
+							msgstr ""
+
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello",
+						Message:     "{Hello}",
+						Description: "a greeting",
+						Status:      model.MessageStatusUntranslated,
+					},
+				},
+				Original: true,
+			},
+			original: true,
+		},
+		{
+			name: "plural msgstr with original lang",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							#. apple counts
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] ""
+							msgstr[1] ""
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:       "There is %d apple.",
+						PluralID: "There are %d apples.",
+						Message: `match {$count :number}
+when 1 {There is {$count} apple.}
+when * {There are {$count} apples.}
+`,
+						Description: "apple counts",
+						Status:      model.MessageStatusUntranslated,
+					},
+				},
+				Original: true,
+			},
+			original: true,
 		},
 		{
 			name: "invalid input",
@@ -1000,6 +1078,7 @@ when * {Il y a {$count} pommes.}
 							#. a greeting
 							msgid 323344
 			`),
+			original:    false,
 			expectedErr: fmt.Errorf("convert tokens to pot.Po: invalid po file: no messages found"),
 		},
 		{
@@ -1014,6 +1093,7 @@ when * {Il y a {$count} pommes.}
 							msgid "Goodbye"
 							msgstr "Goodbye, world!"
 			`),
+			original:    false,
 			expectedErr: fmt.Errorf("convert tokens to pot.Po: get previous token: no previous token"),
 		},
 	}
@@ -1022,7 +1102,7 @@ when * {Il y a {$count} pommes.}
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			result, err := FromPot(tt.input)
+			result, err := FromPot(tt.input, tt.original)
 			if tt.expectedErr != nil {
 				assert.Errorf(t, err, tt.expectedErr.Error())
 				return
@@ -1047,6 +1127,7 @@ func Test_TransformMessage(t *testing.T) {
 	msg := model.Messages{
 		Language: lang,
 		Messages: make([]model.Message, 0, n),
+		Original: false,
 	}
 
 	for i := 0; i < n; i++ {
@@ -1060,7 +1141,7 @@ func Test_TransformMessage(t *testing.T) {
 	msgPot, err := ToPot(msg)
 	require.NoError(t, err)
 
-	restoredMsg, err := FromPot(msgPot)
+	restoredMsg, err := FromPot(msgPot, msg.Original)
 	require.NoError(t, err)
 
 	assert.Equal(t, msg, restoredMsg)
