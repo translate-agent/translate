@@ -62,7 +62,7 @@ up:
 
 down:
   LOCALLY
-  RUN docker compose --project-directory=.earthly down -v --remove-orphans
+  RUN docker compose --project-name=translate --project-directory=.earthly down -v --remove-orphans
 
 # Others
 
@@ -165,7 +165,7 @@ test-unit:
   RUN --mount=type=cache,target=/go/pkg/mod go test ./...
 
 test-integration:
-  FROM earthly/dind:alpine
+  FROM earthly/dind:alpine-3.18
   COPY .earthly/compose.yaml compose.yaml
   COPY +go/translate /translate
   COPY --dir migrate/mysql migrate

@@ -46,12 +46,12 @@ func Test_TokensToPo(t *testing.T) {
 				tokenMsgStr("message"),
 			},
 			expected: Po{
-				Header: headerNode{
+				Header: HeaderNode{
 					Language:    language.Make("en-US"),
 					Translator:  "John Doe",
 					PluralForms: pluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
 				},
-				Messages: []messageNode{
+				Messages: []MessageNode{
 					{
 						TranslatorComment:     []string{"translator comment", "translator comment2"},
 						ExtractedComment:      []string{"extracted comment", "extracted comment2"},
@@ -82,12 +82,12 @@ func Test_TokensToPo(t *testing.T) {
 				tokenMsgStr("message"),
 			},
 			expected: Po{
-				Header: headerNode{
+				Header: HeaderNode{
 					Language:    language.Make("en-US"),
 					Translator:  "John Doe",
 					PluralForms: pluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
 				},
-				Messages: []messageNode{
+				Messages: []MessageNode{
 					{
 						MsgId:  "message id",
 						MsgStr: []string{"message"},
@@ -107,12 +107,12 @@ func Test_TokensToPo(t *testing.T) {
 				tokenPluralMsgStr("Il y a %d pommes", 1),
 			},
 			expected: Po{
-				Header: headerNode{
+				Header: HeaderNode{
 					Language:    language.Make("en-US"),
 					Translator:  "John Doe",
 					PluralForms: pluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
 				},
-				Messages: []messageNode{
+				Messages: []MessageNode{
 					{
 						MsgId:       "There is 1 apple",
 						MsgIdPlural: "There is %d apples",
