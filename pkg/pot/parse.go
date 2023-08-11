@@ -9,7 +9,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-type headerNode struct {
+type HeaderNode struct {
 	Language    language.Tag
 	Translator  string
 	PluralForms pluralForm
@@ -20,7 +20,7 @@ type pluralForm struct {
 	NPlurals int
 }
 
-type messageNode struct {
+type MessageNode struct {
 	MsgCtxt               string
 	MsgId                 string
 	MsgIdPlural           string
@@ -35,17 +35,17 @@ type messageNode struct {
 }
 
 type Po struct {
-	Header   headerNode
-	Messages []messageNode
+	Header   HeaderNode
+	Messages []MessageNode
 }
 
 // TokensToPo function takes a slice of Token objects and converts them into a Po object representing
 // a PO (Portable Object) file. It returns the generated Po object and an error.
 func TokensToPo(tokens []Token) (Po, error) {
-	var messages []messageNode
+	var messages []MessageNode
 
-	currentMessage := messageNode{}
-	header := headerNode{}
+	currentMessage := MessageNode{}
+	header := HeaderNode{}
 
 	for i, token := range tokens {
 		if token.Value == "" && token.Type == TokenTypeMsgStr {
@@ -102,7 +102,7 @@ func TokensToPo(tokens []Token) (Po, error) {
 		case TokenTypeMsgStr:
 			currentMessage.MsgStr = []string{token.Value}
 			messages = append(messages, currentMessage)
-			currentMessage = messageNode{}
+			currentMessage = MessageNode{}
 		case TokenTypePluralMsgStr:
 			switch {
 			case token.Index == 0:
@@ -115,7 +115,7 @@ func TokensToPo(tokens []Token) (Po, error) {
 
 			if header.PluralForms.NPlurals == len(currentMessage.MsgStr) {
 				messages = append(messages, currentMessage)
-				currentMessage = messageNode{}
+				currentMessage = MessageNode{}
 			}
 			// In our model.Messages currently there are no place to store these headers/metadata about translation file.
 		case TokenTypeHeaderReportMsgidBugsTo,

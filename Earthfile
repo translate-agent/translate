@@ -62,7 +62,7 @@ up:
 
 down:
   LOCALLY
-  RUN docker compose --project-directory=.earthly down -v --remove-orphans
+  RUN docker compose --project-name=translate --project-directory=.earthly down -v --remove-orphans
 
 # Others
 

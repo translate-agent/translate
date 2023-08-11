@@ -147,6 +147,7 @@ func Test_FromArb(t *testing.T) {
 						Description: "Message to greet the World",
 					},
 				},
+				Original: false,
 			},
 			expectedErr: nil,
 		},
@@ -182,7 +183,7 @@ func Test_FromArb(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromArb(tt.input)
+			actual, err := FromArb(tt.input, false)
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
