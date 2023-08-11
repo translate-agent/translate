@@ -12,10 +12,10 @@ import (
 var errUnspecifiedSchema = errors.New("unspecified schema")
 
 // MessagesFromData converts in specific schema serialized data to model.Messages.
-func MessagesFromData(schema translatev1.Schema, data []byte) (*model.Messages, error) {
-	var from func([]byte) (model.Messages, error)
+func MessagesFromData(params *uploadParams) (*model.Messages, error) {
+	var from func([]byte, bool) (model.Messages, error)
 
-	switch schema {
+	switch params.schema {
 	case translatev1.Schema_ARB:
 		from = convert.FromArb
 	case translatev1.Schema_GO:
@@ -34,9 +34,9 @@ func MessagesFromData(schema translatev1.Schema, data []byte) (*model.Messages, 
 		return nil, errUnspecifiedSchema
 	}
 
-	messages, err := from(data)
+	messages, err := from(params.data, params.original)
 	if err != nil {
-		return nil, fmt.Errorf("convert from %s schema: %w", schema, err)
+		return nil, fmt.Errorf("convert from %s schema: %w", params.schema, err)
 	}
 
 	return &messages, nil

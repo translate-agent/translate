@@ -10,7 +10,9 @@ import (
 // FromNgxTranslate  parses the JSON-encoded byte slice representing messages in the ngx-translate format,
 // recursively traverses the map, extracts the key-value pairs, converts the message strings,
 // and constructs a model.Messages structure.
-func FromNgxTranslate(b []byte) (messages model.Messages, err error) {
+func FromNgxTranslate(b []byte, original bool) (messages model.Messages, err error) {
+	messages.Original = original
+
 	var dst map[string]interface{}
 
 	if err = json.Unmarshal(b, &dst); err != nil {
