@@ -55,7 +55,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func Test_UpdateAlteredMessageTexts(t *testing.T) {
+func Test_UpdateAlteredMessages(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
