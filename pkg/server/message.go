@@ -234,7 +234,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 	}
 
 	if params.messages.Original && len(allMessages) > 1 {
-		// TODO: optimize performance when populateTranslations param is true, currently saveMessages() would get called twice.
+		// TODO: optimize performance when populateTranslations param is true, currently saveMessages() will be called twice.
 
 		// find original messages where text has been altered then translate & update associated messages for all translations.
 		if err := t.updateAlteredMessages(ctx, params.serviceID, allMessages, params.messages); err != nil {
@@ -257,7 +257,8 @@ func (t *TranslateServiceServer) UpdateMessages(
 // updateAlteredMessages finds original messages where text has been altered,
 // translates & updates associated messages for all translations.
 func (t *TranslateServiceServer) updateAlteredMessages(
-	ctx context.Context, serviceID uuid.UUID,
+	ctx context.Context,
+	serviceID uuid.UUID,
 	allMessages []model.Messages,
 	newOriginalMessages *model.Messages,
 ) error {

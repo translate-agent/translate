@@ -117,12 +117,12 @@ func Test_UpdateAlteredMessageTexts(t *testing.T) {
 			require.NoError(t, err, "load updated translated messages")
 			require.ElementsMatch(t, allMessages, loadedMsgs)
 
+			// check that altered messages have been translated and marked as fuzzy for all translations.
 			for _, messages := range loadedMsgs {
 				if messages.Original {
 					continue
 				}
 
-				// check that altered messages have been translated and marked as fuzzy.
 				for _, message := range messages.Messages {
 					if _, ok := alteredMessageLookup[message.ID]; ok {
 						require.Equal(t, mockTranslation, message.Message)

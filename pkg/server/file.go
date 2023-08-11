@@ -136,7 +136,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	}
 
 	if messages.Original && len(allMessages) != 0 {
-		// TODO: optimize performance when populateTranslations param is true, currently saveMessages() would get called twice.
+		// TODO: optimize performance when populateTranslations param is true, currently saveMessages() will be called twice.
 
 		// find original messages where text has been altered then translate & update associated messages for all translations.
 		if err := t.updateAlteredMessages(ctx, params.serviceID, allMessages, messages); err != nil {
