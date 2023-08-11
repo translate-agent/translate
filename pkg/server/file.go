@@ -121,6 +121,11 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
+	allMessages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "")
+	}
+
 	switch err := t.repo.SaveMessages(ctx, params.serviceID, messages); {
 	default:
 		// noop
@@ -128,6 +133,22 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "")
+	}
+
+	if messages.Original && len(allMessages) != 0 {
+		// TODO: optimize performance when populateTranslations param is true, currently saveMessages() would get called twice.
+
+		// find original messages where text has been altered then translate & update associated messages for all translations.
+		if err := t.updateAlteredMessages(ctx, params.serviceID, allMessages, messages); err != nil {
+			return nil, err
+		}
+
+		// if populateTranslations flag is true, populate the translated messages.
+		if params.populateTranslations {
+			if err = t.populateTranslatedMessages(ctx, params.serviceID, messages, allMessages); err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	// If the uploaded file is original and populateTranslations flag is true, populate the translated messages.

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/brianvoe/gofakeit/v6"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
@@ -16,6 +17,8 @@ import (
 	"golang.org/x/text/language"
 )
 
+const mockTranslation = "{Translated}"
+
 var translateSrv *TranslateServiceServer
 
 type mockTranslator struct{}
@@ -23,9 +26,11 @@ type mockTranslator struct{}
 func (m *mockTranslator) Translate(ctx context.Context, messages *model.Messages, targetLanguage language.Tag) (*model.Messages, error) {
 	newMessages := &model.Messages{
 		Language: targetLanguage,
-		Messages: messages.Messages,
+		Messages: make([]model.Message, 0, len(messages.Messages)),
 		Original: messages.Original,
 	}
+
+	newMessages.Messages = append(newMessages.Messages, messages.Messages...)
 
 	for i := range newMessages.Messages {
 		newMessages.Messages[i].Message = "{Translated}"
@@ -48,6 +53,85 @@ func TestMain(m *testing.M) {
 
 	translateSrv = NewTranslateServiceServer(repository, &mockTranslator{})
 	os.Exit(m.Run())
+}
+
+func Test_UpdateAlteredMessageTexts(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	originalMessages1 := randOriginalMessages(3)
+	originalMessages2 := randOriginalMessages(10)
+
+	tests := []struct {
+		name               string
+		originalMessages   *model.Messages
+		translatedMessages []model.Messages
+		assertFunc         func(t *testing.T, originalMessages *model.Messages, translatedMessages []model.Messages)
+	}{
+		{
+			name:               "Update altered messages for one translation",
+			originalMessages:   originalMessages1,
+			translatedMessages: randTranslatedMessages(1, 3, originalMessages1),
+		},
+		{
+			name:               "Update altered messages for five translations",
+			originalMessages:   originalMessages2,
+			translatedMessages: randTranslatedMessages(5, 5, originalMessages2),
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Insert the original and translated messages into the repository
+			service := prepareMessages(t, tt.originalMessages, tt.translatedMessages)
+			allMessages := append(tt.translatedMessages, *tt.originalMessages)
+
+			newOriginalMessages := &model.Messages{
+				Language: tt.originalMessages.Language,
+				Messages: make([]model.Message, 0, len(tt.originalMessages.Messages)),
+				Original: true,
+			}
+
+			newOriginalMessages.Messages = append(newOriginalMessages.Messages, tt.originalMessages.Messages...)
+
+			// randomly alter messages in the original language
+			alteredMessageLookup := make(map[string]struct{})
+
+			for i, msg := range newOriginalMessages.Messages {
+				if gofakeit.Bool() {
+					newOriginalMessages.Messages[i].Message = gofakeit.BuzzWord()
+					alteredMessageLookup[msg.ID] = struct{}{}
+				}
+			}
+
+			err := translateSrv.updateAlteredMessages(ctx, service.ID, allMessages, newOriginalMessages)
+			require.NoError(t, err)
+
+			// Load updated translated messages
+			loadedMsgs, err := translateSrv.repo.LoadMessages(ctx, service.ID, common.LoadMessagesOpts{})
+
+			require.NoError(t, err, "load updated translated messages")
+			require.ElementsMatch(t, allMessages, loadedMsgs)
+
+			for _, messages := range loadedMsgs {
+				if messages.Original {
+					continue
+				}
+
+				// check that altered messages have been translated and marked as fuzzy.
+				for _, message := range messages.Messages {
+					if _, ok := alteredMessageLookup[message.ID]; ok {
+						require.Equal(t, mockTranslation, message.Message)
+						require.Equal(t, model.MessageStatusFuzzy, message.Status)
+					}
+				}
+			}
+		})
+	}
 }
 
 func Test_PopulateTranslatedMessages(t *testing.T) {
