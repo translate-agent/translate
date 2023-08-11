@@ -330,7 +330,7 @@ func (t *TranslateServiceServer) updateAlteredMessages(
 			}
 		}
 
-		// Save the updated messages
+		// save the updated messages
 		switch err := t.repo.SaveMessages(ctx, serviceID, &messages); {
 		default:
 			// noop

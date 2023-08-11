@@ -86,7 +86,7 @@ func Test_UpdateAlteredMessages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			// Insert the original and translated messages into the repository
+			// insert the original and translated messages into the repository
 			service := prepareMessages(t, tt.originalMessages, tt.translatedMessages)
 			allMessages := append(tt.translatedMessages, *tt.originalMessages)
 
@@ -111,7 +111,7 @@ func Test_UpdateAlteredMessages(t *testing.T) {
 			err := translateSrv.updateAlteredMessages(ctx, service.ID, allMessages, newOriginalMessages)
 			require.NoError(t, err)
 
-			// Load updated translated messages
+			// load updated translated messages
 			loadedMsgs, err := translateSrv.repo.LoadMessages(ctx, service.ID, common.LoadMessagesOpts{})
 
 			require.NoError(t, err, "load updated translated messages")
