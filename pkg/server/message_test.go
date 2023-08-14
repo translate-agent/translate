@@ -33,7 +33,7 @@ func (m *mockTranslator) Translate(ctx context.Context, messages *model.Messages
 	newMessages.Messages = append(newMessages.Messages, messages.Messages...)
 
 	for i := range newMessages.Messages {
-		newMessages.Messages[i].Message = "{Translated}"
+		newMessages.Messages[i].Message = mockTranslation
 		newMessages.Messages[i].Status = model.MessageStatusFuzzy
 	}
 
