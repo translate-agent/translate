@@ -233,18 +233,35 @@ func (t *TranslateServiceServer) UpdateMessages(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if params.messages.Original && len(allMessages) > 1 {
-		// TODO: optimize performance when populateTranslations param is true, currently saveMessages() will be called twice.
-
-		// find original messages where text has been altered then translate & update associated messages for all translations.
-		if err := t.updateAlteredMessages(ctx, params.serviceID, allMessages, params.messages); err != nil {
+	// When updating original messages, changes might affect translations - transform and update all translations.
+	if params.messages.Original {
+		// find original messages with altered text, translate & replace text in the associated messages for all translations.
+		newMessages, err := t.alterTranslations(ctx, allMessages, params.messages)
+		if err != nil {
 			return nil, err
 		}
 
-		// if populateTranslations flag is true, update all translated messages as well.
+		// if populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {
-			if err := t.populateTranslatedMessages(ctx, params.serviceID, params.messages, allMessages); err != nil {
+			if newMessages, err = t.populateTranslations(ctx, newMessages, params.messages); err != nil {
 				return nil, err
+			}
+		}
+
+		// update all translations
+		for i := range newMessages {
+			if newMessages[i].Original {
+				continue
+			}
+
+			err = t.repo.SaveMessages(ctx, params.serviceID, &newMessages[i])
+			switch {
+			default:
+				// noop
+			case errors.Is(err, common.ErrNotFound):
+				return nil, status.Errorf(codes.NotFound, "service not found")
+			case err != nil:
+				return nil, status.Errorf(codes.Internal, "")
 			}
 		}
 	}
@@ -254,31 +271,32 @@ func (t *TranslateServiceServer) UpdateMessages(
 
 // helpers
 
-// updateAlteredMessages finds original messages where text has been altered,
-// translates & updates associated messages for all translations.
-func (t *TranslateServiceServer) updateAlteredMessages(
+// alterTranslations translates & replaces text in messages for all translations
+// based on changes in the original messages text, returns messagesSlice containing altered translations.
+func (t *TranslateServiceServer) alterTranslations(
 	ctx context.Context,
-	serviceID uuid.UUID,
-	allMessages []model.Messages,
+	allMessages model.MessagesSlice,
 	newOriginalMessages *model.Messages,
-) error {
+) (model.MessagesSlice, error) {
+	newMessages := allMessages.GetCopy()
+
 	// return if only one language is present
-	if len(allMessages) == 1 {
-		return nil
+	if len(newMessages) == 1 {
+		return newMessages, nil
 	}
 
 	var originalMessages *model.Messages
 
-	for i := range allMessages {
-		if allMessages[i].Original {
-			originalMessages = &allMessages[i]
+	for i := range newMessages {
+		if newMessages[i].Original {
+			originalMessages = &newMessages[i]
 			break
 		}
 	}
 
 	// return if messages don't contain original language
 	if originalMessages == nil {
-		return nil
+		return newMessages, nil
 	}
 
 	// create lookup for original messages
@@ -303,18 +321,18 @@ func (t *TranslateServiceServer) updateAlteredMessages(
 	}
 
 	if len(alteredMessages.Messages) == 0 {
-		return nil
+		return newMessages, nil
 	}
 
 	// translate and update altered messages for all translations
-	for _, messages := range allMessages {
+	for _, messages := range newMessages {
 		if messages.Original {
 			continue
 		}
 
 		translated, err := t.translator.Translate(ctx, &alteredMessages, messages.Language)
 		if err != nil {
-			return status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
+			return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
 		}
 
 		translatedMessagesLookup := make(map[string]*model.Message, len(translated.Messages))
@@ -329,50 +347,42 @@ func (t *TranslateServiceServer) updateAlteredMessages(
 				messages.Messages[i].Status = model.MessageStatusFuzzy
 			}
 		}
-
-		// save the updated messages
-		switch err := t.repo.SaveMessages(ctx, serviceID, &messages); {
-		default:
-			// noop
-		case errors.Is(err, common.ErrNotFound):
-			return status.Errorf(codes.NotFound, "service not found")
-		case err != nil:
-			return status.Errorf(codes.Internal, "")
-		}
 	}
 
-	return nil
+	return newMessages, nil
 }
 
-// populateTranslatedMessages adds any missing messages from the original messages to all translated messages.
-func (t *TranslateServiceServer) populateTranslatedMessages(
+// populateTranslations adds any missing messages from the original messages to all translated messages,
+// returns messagesSlice containing populated translations.
+func (t *TranslateServiceServer) populateTranslations(
 	ctx context.Context,
-	serviceID uuid.UUID,
-	originalMessages *model.Messages,
-	allMessages []model.Messages,
-) error {
+	allMessages model.MessagesSlice,
+	newOriginalMessages *model.Messages,
+) ([]model.Messages, error) {
+	newMessages := allMessages.GetCopy()
+
 	// Iterate over the existing messages
-	for _, messages := range allMessages {
+	for i := range newMessages {
 		// Skip if Original is true
-		if messages.Original {
+		if newMessages[i].Original {
 			continue
 		}
 
 		// Create a map to store the IDs of the translated messages
-		translatedMessageIDs := make(map[string]struct{}, len(messages.Messages))
-		for _, m := range messages.Messages {
+		translatedMessageIDs := make(map[string]struct{}, len(newMessages[i].Messages))
+		for _, m := range newMessages[i].Messages {
 			translatedMessageIDs[m.ID] = struct{}{}
 		}
 
 		// Create a new messages to store the messages that need to be translated
 		toBeTranslated := &model.Messages{
-			Language: messages.Language,
-			Original: messages.Original,
-			Messages: make([]model.Message, 0, len(originalMessages.Messages)),
+			Language: newMessages[i].Language,
+			Original: newMessages[i].Original,
+			Messages: make([]model.Message, 0, len(newOriginalMessages.Messages)),
 		}
 
 		// Iterate over the original messages and add any missing messages to the toBeTranslated.Messages slice
-		for _, m := range originalMessages.Messages {
+		for _, m := range newOriginalMessages.Messages {
 			if _, ok := translatedMessageIDs[m.ID]; !ok {
 				toBeTranslated.Messages = append(toBeTranslated.Messages, m)
 			}
@@ -381,27 +391,17 @@ func (t *TranslateServiceServer) populateTranslatedMessages(
 		// Translate messages -
 		// untranslated text in toBeTranslated messages will be translated from original to target language.
 		targetLanguage := toBeTranslated.Language
-		toBeTranslated.Language = originalMessages.Language
+		toBeTranslated.Language = newOriginalMessages.Language
 		translated, err := t.translator.Translate(ctx, toBeTranslated, targetLanguage)
 		if err != nil {
-			return status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
+			return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
 		}
 
 		// Append the translated messages to the existing messages
-		messages.Messages = append(messages.Messages, translated.Messages...)
-
-		// Save the updated translated messages
-		switch err := t.repo.SaveMessages(ctx, serviceID, &messages); {
-		default:
-			// noop
-		case errors.Is(err, common.ErrNotFound):
-			return status.Errorf(codes.NotFound, "service not found")
-		case err != nil:
-			return status.Errorf(codes.Internal, "")
-		}
+		newMessages[i].Messages = append(newMessages[i].Messages, translated.Messages...)
 	}
 
-	return nil
+	return newMessages, nil
 }
 
 // langExists returns true if the provided language exists in the provided model.Messages slice.

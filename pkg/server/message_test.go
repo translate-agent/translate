@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo/badgerdb"
-	"go.expect.digital/translate/pkg/repo/common"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
@@ -55,7 +54,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func Test_UpdateAlteredMessages(t *testing.T) {
+func Test_alterTranslations(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -86,19 +85,18 @@ func Test_UpdateAlteredMessages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			// insert the original and translated messages into the repository
-			service := prepareMessages(t, tt.originalMessages, tt.translatedMessages)
 			allMessages := append(tt.translatedMessages, *tt.originalMessages)
+
+			// prepare new original messages with randomly altered message text
 
 			newOriginalMessages := &model.Messages{
 				Language: tt.originalMessages.Language,
-				Messages: make([]model.Message, 0, len(tt.originalMessages.Messages)),
+				Messages: make([]model.Message, len(tt.originalMessages.Messages)),
 				Original: true,
 			}
 
-			newOriginalMessages.Messages = append(newOriginalMessages.Messages, tt.originalMessages.Messages...)
+			copy(newOriginalMessages.Messages, tt.originalMessages.Messages)
 
-			// randomly alter messages in the original language
 			alteredMessageLookup := make(map[string]struct{})
 
 			for i, msg := range newOriginalMessages.Messages {
@@ -108,22 +106,18 @@ func Test_UpdateAlteredMessages(t *testing.T) {
 				}
 			}
 
-			err := translateSrv.updateAlteredMessages(ctx, service.ID, allMessages, newOriginalMessages)
+			newMessages, err := translateSrv.alterTranslations(ctx, allMessages, newOriginalMessages)
 			require.NoError(t, err)
 
-			// load updated translated messages
-			loadedMsgs, err := translateSrv.repo.LoadMessages(ctx, service.ID, common.LoadMessagesOpts{})
-
-			require.NoError(t, err, "load updated translated messages")
-			require.ElementsMatch(t, allMessages, loadedMsgs)
+			require.Len(t, newMessages, len(allMessages))
 
 			// check that altered messages have been translated and marked as fuzzy for all translations.
-			for _, messages := range loadedMsgs {
-				if messages.Original {
+			for _, m := range newMessages {
+				if m.Original {
 					continue
 				}
 
-				for _, message := range messages.Messages {
+				for _, message := range m.Messages {
 					if _, ok := alteredMessageLookup[message.ID]; ok {
 						require.Equal(t, mockTranslation, message.Message)
 						require.Equal(t, model.MessageStatusFuzzy, message.Status)
@@ -134,7 +128,7 @@ func Test_UpdateAlteredMessages(t *testing.T) {
 	}
 }
 
-func Test_PopulateTranslatedMessages(t *testing.T) {
+func Test_populateTranslations(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -178,24 +172,17 @@ func Test_PopulateTranslatedMessages(t *testing.T) {
 			tt.originalMessages.Messages = append(tt.originalMessages.Messages, *rand.ModelMessage())
 			tt.originalMessages.Messages = append(tt.originalMessages.Messages, *rand.ModelMessage())
 
-			// Insert the original and translated messages into the repository
-			service := prepareMessages(t, tt.originalMessages, tt.translatedMessages)
-
 			// Create a slice with all messages (Original + translated)
 			allMessages := append(tt.translatedMessages, *tt.originalMessages)
 
 			// Invoke populateTranslatedMessages
-			err := translateSrv.populateTranslatedMessages(ctx, service.ID, tt.originalMessages, allMessages)
+			newMessages, err := translateSrv.populateTranslations(ctx, allMessages, tt.originalMessages)
 			require.NoError(t, err)
 
-			// Load updated translated messages
-			loadedMsgs, err := translateSrv.repo.LoadMessages(ctx, service.ID, common.LoadMessagesOpts{})
-			require.NoError(t, err, "load updated translated messages")
-
 			// Assert that length of loaded messages is equal to the length of all messages. (one for original + count of translated messages)
-			require.Len(t, loadedMsgs, len(allMessages))
+			require.Len(t, newMessages, len(allMessages))
 			// Assert that the length of the messages in the loaded messages is equal to the length of the original messages.
-			for _, m := range loadedMsgs {
+			for _, m := range newMessages {
 				require.Len(t, m.Messages, len(tt.originalMessages.Messages))
 			}
 		})

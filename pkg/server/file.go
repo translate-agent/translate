@@ -121,11 +121,6 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	allMessages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "")
-	}
-
 	switch err := t.repo.SaveMessages(ctx, params.serviceID, messages); {
 	default:
 		// noop
@@ -135,18 +130,40 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if messages.Original && len(allMessages) != 0 {
-		// TODO: optimize performance when populateTranslations param is true, currently saveMessages() will be called twice.
+	// When updating original messages, changes might affect translations - transform and update all translations.
+	if messages.Original {
+		allMessages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "")
+		}
 
-		// find original messages where text has been altered then translate & update associated messages for all translations.
-		if err := t.updateAlteredMessages(ctx, params.serviceID, allMessages, messages); err != nil {
+		// find original messages with altered text, translate & replace text in the associated messages for all translations.
+		newMessages, err := t.alterTranslations(ctx, allMessages, messages)
+		if err != nil {
 			return nil, err
 		}
 
-		// if populateTranslations flag is true, populate the translated messages.
+		// if populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {
-			if err = t.populateTranslatedMessages(ctx, params.serviceID, messages, allMessages); err != nil {
+			if newMessages, err = t.populateTranslations(ctx, newMessages, messages); err != nil {
 				return nil, err
+			}
+		}
+
+		// update all translations
+		for i := range newMessages {
+			if newMessages[i].Original {
+				continue
+			}
+
+			err = t.repo.SaveMessages(ctx, params.serviceID, &newMessages[i])
+			switch {
+			default:
+				// noop
+			case errors.Is(err, common.ErrNotFound):
+				return nil, status.Errorf(codes.NotFound, "service not found")
+			case err != nil:
+				return nil, status.Errorf(codes.Internal, "")
 			}
 		}
 	}

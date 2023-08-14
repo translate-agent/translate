@@ -14,6 +14,29 @@ type Messages struct {
 	Original bool
 }
 
+type MessagesSlice []Messages
+
+// GetCopy() returns a deep copy of MessagesSlice.
+func (m MessagesSlice) GetCopy() MessagesSlice {
+	if m == nil {
+		return nil
+	}
+
+	msgs := make(MessagesSlice, len(m))
+
+	for i := range m {
+		msgs[i] = Messages{
+			Language: m[i].Language,
+			Messages: make([]Message, len(m[i].Messages)),
+			Original: m[i].Original,
+		}
+
+		copy(msgs[i].Messages, m[i].Messages)
+	}
+
+	return msgs
+}
+
 type Message struct {
 	ID          string
 	PluralID    string
