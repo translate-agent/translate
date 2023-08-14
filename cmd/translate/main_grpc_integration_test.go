@@ -623,7 +623,6 @@ func Test_UpdateMessages_gRPC(t *testing.T) {
 
 		return &translatev1.UpdateMessagesRequest{
 			ServiceId: service.Id,
-			Language:  lang,
 			Messages:  randMessages(t, &translatev1.Messages{Language: lang}),
 		}
 	}
@@ -638,14 +637,8 @@ func Test_UpdateMessages_gRPC(t *testing.T) {
 	invalidArgumentNilMessagesReq := randUpdateMessageReq("")
 	invalidArgumentNilMessagesReq.Messages = nil
 
-	invalidArgumentUndLanguageReq := randUpdateMessageReq("")
-	invalidArgumentUndLanguageReq.Language = ""
-
 	invalidArgumentUndMessagesLanguageReq := randUpdateMessageReq("")
 	invalidArgumentUndMessagesLanguageReq.Messages.Language = ""
-
-	invalidArgumentLanguageMismatchReq := randUpdateMessageReq(langs[0].String())
-	invalidArgumentLanguageMismatchReq.Messages.Language = langs[1].String()
 
 	tests := []struct {
 		request      *translatev1.UpdateMessagesRequest
@@ -673,18 +666,8 @@ func Test_UpdateMessages_gRPC(t *testing.T) {
 			expectedCode: codes.InvalidArgument,
 		},
 		{
-			name:         "Invalid argument und language",
-			request:      invalidArgumentUndLanguageReq,
-			expectedCode: codes.InvalidArgument,
-		},
-		{
 			name:         "Invalid argument und messages.language",
 			request:      invalidArgumentUndMessagesLanguageReq,
-			expectedCode: codes.InvalidArgument,
-		},
-		{
-			name:         "Invalid argument language doesn't match messages.language",
-			request:      invalidArgumentLanguageMismatchReq,
 			expectedCode: codes.InvalidArgument,
 		},
 	}

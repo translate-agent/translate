@@ -185,10 +185,6 @@ func parseUpdateMessagesRequestParams(req *translatev1.UpdateMessagesRequest) (*
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	if params.language, err = languageFromProto(req.Language); err != nil {
-		return nil, fmt.Errorf("parse language: %w", err)
-	}
-
 	if params.messages, err = messagesFromProto(req.Messages); err != nil {
 		return nil, fmt.Errorf("parse messages: %w", err)
 	}
@@ -205,16 +201,8 @@ func (u *updateMessagesParams) validate() error {
 		return errors.New("'messages' is nil")
 	}
 
-	if u.language == language.Und {
-		return errors.New("'language' is required")
-	}
-
 	if u.messages.Language == language.Und {
-		return errors.New("'messages.language' is required")
-	}
-
-	if u.language != u.messages.Language {
-		return fmt.Errorf("language '%s' does not match messages.Language '%s'", u.language, u.messages.Language)
+		return errors.New("'language' is required")
 	}
 
 	return nil

@@ -640,7 +640,6 @@ func Test_UpdateMessages_REST(t *testing.T) {
 
 		return &translatev1.UpdateMessagesRequest{
 			ServiceId: service.Id,
-			Language:  lang,
 			Messages:  randMessages(t, &translatev1.Messages{Language: lang}),
 		}
 	}
@@ -655,14 +654,8 @@ func Test_UpdateMessages_REST(t *testing.T) {
 	invalidArgumentNilMessagesReq := randUpdateMessageReq("")
 	invalidArgumentNilMessagesReq.Messages = nil
 
-	invalidArgumentUndLanguageReq := randUpdateMessageReq("")
-	invalidArgumentUndLanguageReq.Language = ""
-
 	invalidArgumentUndMessagesLanguageReq := randUpdateMessageReq("")
 	invalidArgumentUndMessagesLanguageReq.Messages.Language = ""
-
-	invalidArgumentLanguageMismatchReq := randUpdateMessageReq(langs[0].String())
-	invalidArgumentLanguageMismatchReq.Messages.Language = langs[1].String()
 
 	tests := []struct {
 		request      *translatev1.UpdateMessagesRequest
@@ -690,18 +683,8 @@ func Test_UpdateMessages_REST(t *testing.T) {
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name:         "Invalid argument und language",
-			request:      invalidArgumentUndLanguageReq,
-			expectedCode: http.StatusBadRequest,
-		},
-		{
 			name:         "Invalid argument und messages.language",
 			request:      invalidArgumentUndMessagesLanguageReq,
-			expectedCode: http.StatusBadRequest,
-		},
-		{
-			name:         "Invalid argument language doesn't match messages.language",
-			request:      invalidArgumentLanguageMismatchReq,
 			expectedCode: http.StatusBadRequest,
 		},
 	}
@@ -715,7 +698,7 @@ func Test_UpdateMessages_REST(t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.request.ServiceId + "/messages/" + tt.request.Language,
+				Path:   "v1/services/" + tt.request.ServiceId + "/messages/" + tt.request.Messages.Language,
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(body))
