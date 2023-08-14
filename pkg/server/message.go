@@ -171,7 +171,6 @@ func (t *TranslateServiceServer) ListMessages(
 type updateMessagesParams struct {
 	messages             *model.Messages
 	serviceID            uuid.UUID
-	language             language.Tag
 	populateTranslations bool
 }
 
