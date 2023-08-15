@@ -285,14 +285,7 @@ func (t *TranslateServiceServer) alterTranslations(
 		return newMessages, nil
 	}
 
-	var originalMessages *model.Messages
-
-	for i := range newMessages {
-		if newMessages[i].Original {
-			originalMessages = &newMessages[i]
-			break
-		}
-	}
+	originalMessages := allMessages.GetOriginal()
 
 	// return if messages don't contain original language
 	if originalMessages == nil {

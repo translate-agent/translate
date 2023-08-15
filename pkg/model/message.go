@@ -37,6 +37,21 @@ func (m MessagesSlice) GetCopy() MessagesSlice {
 	return msgs
 }
 
+// GetOriginal returns a pointer to original messages.
+func (m MessagesSlice) GetOriginal() *Messages {
+	if m == nil {
+		return nil
+	}
+
+	for i := range m {
+		if m[i].Original {
+			return &m[i]
+		}
+	}
+
+	return nil
+}
+
 type Message struct {
 	ID          string
 	PluralID    string
