@@ -306,10 +306,8 @@ func (t *TranslateServiceServer) alterTranslations(
 	}
 
 	for _, newMessage := range newOriginalMessages.Messages {
-		if message, ok := originalMessagesLookup[newMessage.ID]; ok {
-			if message.Message != newMessage.Message {
-				alteredMessages.Messages = append(alteredMessages.Messages, newMessage)
-			}
+		if message, ok := originalMessagesLookup[newMessage.ID]; ok && message.Message != newMessage.Message {
+			alteredMessages.Messages = append(alteredMessages.Messages, newMessage)
 		}
 	}
 
