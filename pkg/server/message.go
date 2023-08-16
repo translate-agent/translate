@@ -278,7 +278,7 @@ func (t *TranslateServiceServer) alterTranslations(
 	allMessages model.MessagesSlice,
 	newOriginalMessages *model.Messages,
 ) (model.MessagesSlice, error) {
-	newMessages := allMessages.GetCopy()
+	newMessages := allMessages.Clone()
 
 	// return if only one language is present
 	if len(newMessages) == 1 {
@@ -350,7 +350,7 @@ func (t *TranslateServiceServer) populateTranslations(
 	allMessages model.MessagesSlice,
 	newOriginalMessages *model.Messages,
 ) ([]model.Messages, error) {
-	newMessages := allMessages.GetCopy()
+	newMessages := allMessages.Clone()
 
 	// Iterate over the existing messages
 	for i := range newMessages {

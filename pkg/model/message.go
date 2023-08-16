@@ -16,12 +16,8 @@ type Messages struct {
 
 type MessagesSlice []Messages
 
-// GetCopy() returns a deep copy of MessagesSlice.
-func (m MessagesSlice) GetCopy() MessagesSlice {
-	if m == nil {
-		return nil
-	}
-
+// Clone() returns a deep copy of MessagesSlice.
+func (m MessagesSlice) Clone() MessagesSlice {
 	msgs := make(MessagesSlice, len(m))
 
 	for i := range m {
@@ -39,10 +35,6 @@ func (m MessagesSlice) GetCopy() MessagesSlice {
 
 // GetOriginal returns a pointer to original messages.
 func (m MessagesSlice) GetOriginal() *Messages {
-	if m == nil {
-		return nil
-	}
-
 	for i := range m {
 		if m[i].Original {
 			return &m[i]
