@@ -151,7 +151,7 @@ service TranslateService {
 
   rpc UpdateMessages(UpdateMessagesRequest) returns (Messages) {
     option (google.api.http) = {
-      put: "/v1/services/{service_id}/messages"
+      put: "/v1/services/{service_id}/messages/{messages.language}"
       body: "messages"
     };
   }
