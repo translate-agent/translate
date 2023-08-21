@@ -61,7 +61,7 @@ func Test_FromNgLocalize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromNgLocalize(tt.input)
+			actual, err := FromNgLocalize(tt.input, false)
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())

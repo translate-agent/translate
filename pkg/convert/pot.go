@@ -41,7 +41,7 @@ func ToPot(m model.Messages) ([]byte, error) {
 }
 
 // FromPot function parses a POT file by tokenizing and converting it into a pot.Po structure.
-func FromPot(b []byte) (model.Messages, error) {
+func FromPot(b []byte, original bool) (model.Messages, error) {
 	const pluralCountLimit = 2
 
 	tokens, err := pot.Lex(bytes.NewReader(b))
@@ -54,7 +54,31 @@ func FromPot(b []byte) (model.Messages, error) {
 		return model.Messages{}, fmt.Errorf("convert tokens to pot.Po: %w", err)
 	}
 
+	if po.Header.PluralForms.NPlurals > pluralCountLimit {
+		return model.Messages{}, errors.New("plural forms with more than 2 forms are not implemented yet")
+	}
+
 	messages := make([]model.Message, 0, len(po.Messages))
+
+	singularValue := func(v pot.MessageNode) string { return v.MsgStr[0] }
+	pluralValue := func(v pot.MessageNode) []string { return v.MsgStr }
+
+	if original {
+		singularValue = func(v pot.MessageNode) string { return v.MsgId }
+		pluralValue = func(v pot.MessageNode) []string { return []string{v.MsgId, v.MsgIdPlural} }
+	}
+
+	convert := func(v pot.MessageNode) string { return convertToMessageFormatSingular(singularValue(v)) }
+
+	if po.Header.PluralForms.NPlurals == pluralCountLimit {
+		convert = func(v pot.MessageNode) string {
+			if v.MsgIdPlural == "" {
+				return convertToMessageFormatSingular(singularValue(v))
+			}
+
+			return convertPluralsToMessageString(pluralValue(v))
+		}
+	}
 
 	for _, node := range po.Messages {
 		message := model.Message{
@@ -62,19 +86,11 @@ func FromPot(b []byte) (model.Messages, error) {
 			PluralID:    node.MsgIdPlural,
 			Description: strings.Join(node.ExtractedComment, "\n "),
 			Positions:   node.References,
+			Message:     convert(node),
 		}
 
 		if strings.Contains(node.Flag, "fuzzy") {
 			message.Status = model.MessageStatusFuzzy
-		}
-
-		switch {
-		case po.Header.PluralForms.NPlurals > pluralCountLimit:
-			return model.Messages{}, errors.New("plural forms with more than 2 forms are not implemented yet")
-		case po.Header.PluralForms.NPlurals == pluralCountLimit && node.MsgIdPlural != "":
-			message.Message = convertPluralsToMessageString(node.MsgStr)
-		default:
-			message.Message = convertToMessageFormatSingular(node.MsgStr[0])
 		}
 
 		messages = append(messages, message)
@@ -83,6 +99,7 @@ func FromPot(b []byte) (model.Messages, error) {
 	return model.Messages{
 		Language: po.Header.Language,
 		Messages: messages,
+		Original: original,
 	}, nil
 }
 

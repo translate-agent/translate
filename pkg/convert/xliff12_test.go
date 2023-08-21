@@ -102,7 +102,7 @@ func Test_FromXliff12(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromXliff12(tt.input)
+			actual, err := FromXliff12(tt.input, false)
 			require.NoError(t, err)
 
 			for i := range actual.Messages {
@@ -157,7 +157,7 @@ func Test_TransformXLIFF12(t *testing.T) {
 		xliffData, err := ToXliff12(*expected)
 		require.NoError(t, err)
 
-		restoredMessages, err := FromXliff12(xliffData)
+		restoredMessages, err := FromXliff12(xliffData, false)
 		require.NoError(t, err)
 
 		// TODO: for now restore the flag to the expected
