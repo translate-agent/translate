@@ -36,7 +36,7 @@ init:
     echo "TRANSLATE_DB_MYSQL_DATABASE=translate" >> .env.test && \
     echo "" >> .env.test && \
     echo "# BadgerDB" >> .env.test && \
-    echo "TRANSLATE_DB_BADGERDB_PATH=" >> .env.test && \
+    echo "TRANSLATE_DB_BADGERDB_PATH=$TMPDIR/badgerdb" >> .env.test && \
     echo "" >> .env.test && \
     echo "# Google Translate API" >> .env.test && \
     echo "TRANSLATE_OTHER_GOOGLE_PROJECT_ID=expect-digital" >> .env.test && \
@@ -53,7 +53,7 @@ init:
     echo "db_port=3306" >> .arg && \
     echo "db_user=root" >> .arg && \
     echo "db_schema=translate" >> .arg
-  RUN echo "db_password=" >> .secret
+  RUN echo "db_password=" > .secret
 
 up:
   LOCALLY
@@ -269,7 +269,7 @@ image-all-in-one:
   COPY --platform=linux/$USERARCH (+build/bin/translate --GOARCH=$TARGETARCH) /usr/local/bin/translate # client
 
   # Set required environment variables
-  ENV TRANSLATE_DB_BADGERDB_PATH=/tmp/badger
+  ENV TRANSLATE_DB_BADGERDB_PATH=/data/badgerdb
   ENV OTEL_SERVICE_NAME=translate
   ENV OTEL_EXPORTER_OTLP_INSECURE=true
   ENV TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY=/app/google_account_key.json

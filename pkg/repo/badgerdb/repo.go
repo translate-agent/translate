@@ -27,7 +27,7 @@ func WithDefaultDB() option {
 		// Currently increasing the maximum allowed value size using WithValueThreshold() results in
 		// panic 'Invalid ValueThreshold, must be less or equal to 1048576'.
 		if path == "" {
-			log.Println("Info: badger db path not provided: defaulting to in-memory storage")
+			log.Println("INFO: badger db path not provided: defaulting to in-memory storage")
 
 			badgerOpts = badgerOpts.WithInMemory(true)
 		}

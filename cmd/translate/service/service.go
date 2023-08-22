@@ -73,21 +73,17 @@ var rootCmd = &cobra.Command{
 
 		dbType := viper.GetString("service.db")
 		badgerDir := viper.GetString("db.badgerdb.path")
+		badgerTmpDir := os.TempDir() + "badgerdb"
 
-		if dbType == repo.BadgerDB && badgerDir == "" {
-			log.Println("Info: badgerdb path not provided: using temporary storage directory")
-
-			badgerTmpDir, mkErr := os.MkdirTemp("", "badgerdb")
-			if mkErr != nil {
-				log.Panicf("create temporary storage directory for badgerdb: %v", mkErr)
-			}
-
-			viper.Set("db.badgerdb.path", badgerTmpDir)
+		if dbType == repo.BadgerDB && badgerDir == badgerTmpDir {
+			log.Printf("INFO: Using temporary storage directory '%s' for badgerdb\n", badgerTmpDir)
 
 			defer func() {
-				if rmErr := os.RemoveAll(badgerTmpDir); rmErr != nil {
-					log.Printf("remove temporary storage directory for badgerdb: %v\n", rmErr)
+				if rmErr := os.RemoveAll(badgerDir); rmErr != nil {
+					log.Printf("WARNING: Removing temporary storage directory '%s' for badgerdb: %v\n", badgerTmpDir, rmErr)
+					return
 				}
+				log.Printf("INFO: Deleting temporary storage directory '%s' for badgerdb\n", badgerTmpDir)
 			}()
 		}
 
@@ -185,6 +181,9 @@ func initConfig() {
 	// Replace underscores with dots in environment variable names.
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
+
+	// Set default values
+	viper.SetDefault("db.badgerdb.path", "/data/badgerdb")
 
 	// Try to read config.
 	if err := viper.ReadInConfig(); err != nil && cfgFile != "translate.yaml" {
