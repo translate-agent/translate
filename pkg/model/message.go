@@ -18,30 +18,39 @@ type MessagesSlice []Messages
 
 // Clone() returns a deep copy of MessagesSlice.
 func (m MessagesSlice) Clone() MessagesSlice {
+	if len(m) == 0 {
+		return nil
+	}
+
 	msgs := make(MessagesSlice, len(m))
 
-	for i := range m {
-		msgs[i] = Messages{
-			Language: m[i].Language,
-			Messages: make([]Message, len(m[i].Messages)),
-			Original: m[i].Original,
-		}
+	copy(msgs, m)
 
+	for i := range m {
 		copy(msgs[i].Messages, m[i].Messages)
 	}
 
 	return msgs
 }
 
-// GetOriginal returns a pointer to original messages.
-func (m MessagesSlice) GetOriginal() *Messages {
+// SplitOriginal returns a pointer to the original and other messages.
+func (m MessagesSlice) SplitOriginal() (original *Messages, others MessagesSlice) {
+	others = m
+
 	for i := range m {
 		if m[i].Original {
-			return &m[i]
+			original = &m[i]
+
+			if len(m) > 2 { //nolint:gomnd
+				others[i] = others[len(m)-1]
+				others = others[:len(m)-1]
+			}
+
+			return
 		}
 	}
 
-	return nil
+	return
 }
 
 type Message struct {

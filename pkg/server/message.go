@@ -220,7 +220,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	allMessages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{FilterLanguages: []language.Tag{}})
+	allMessages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
@@ -291,7 +291,7 @@ func (t *TranslateServiceServer) alterTranslations(
 		return newMessages, nil
 	}
 
-	originalMessages := allMessages.GetOriginal()
+	originalMessages, otherMessages := newMessages.SplitOriginal()
 
 	// return if messages don't contain original language
 	if originalMessages == nil {
@@ -308,7 +308,6 @@ func (t *TranslateServiceServer) alterTranslations(
 	// find altered original messages
 	alteredMessages := model.Messages{
 		Language: newOriginalMessages.Language,
-		Original: true,
 	}
 
 	for _, newMessage := range newOriginalMessages.Messages {
@@ -322,11 +321,7 @@ func (t *TranslateServiceServer) alterTranslations(
 	}
 
 	// translate and update altered messages for all translations
-	for _, messages := range newMessages {
-		if messages.Original {
-			continue
-		}
-
+	for _, messages := range otherMessages {
 		translated, err := t.translator.Translate(ctx, &alteredMessages, messages.Language)
 		if err != nil {
 			return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
