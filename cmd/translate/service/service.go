@@ -72,19 +72,22 @@ var rootCmd = &cobra.Command{
 		defer grpcServer.GracefulStop()
 
 		dbType := viper.GetString("service.db")
-		badgerDir := viper.GetString("db.badgerdb.path")
-		badgerTmpDir := os.TempDir() + "badgerdb"
 
-		if dbType == repo.BadgerDB && badgerDir == badgerTmpDir {
-			log.Printf("INFO: Using temporary storage directory '%s' for badgerdb\n", badgerTmpDir)
+		if dbType == repo.BadgerDB {
+			badgerDir := viper.GetString("db.badgerdb.path")
+			badgerTmpDir := os.TempDir() + "badgerdb"
 
-			defer func() {
-				if rmErr := os.RemoveAll(badgerDir); rmErr != nil {
-					log.Printf("WARNING: Failed to remove temporary storage directory '%s' for badgerdb: %v\n", badgerTmpDir, rmErr)
-					return
-				}
-				log.Printf("INFO: Deleting temporary storage directory '%s' for badgerdb\n", badgerTmpDir)
-			}()
+			if badgerDir == badgerTmpDir {
+				log.Printf("INFO: Using temporary storage directory '%s' for badgerdb\n", badgerTmpDir)
+
+				defer func() {
+					if rmErr := os.RemoveAll(badgerDir); rmErr != nil {
+						log.Printf("WARNING: Failed to remove temporary storage directory '%s' for badgerdb: %v\n", badgerTmpDir, rmErr)
+						return
+					}
+					log.Printf("INFO: Deleting temporary storage directory '%s' for badgerdb\n", badgerTmpDir)
+				}()
+			}
 		}
 
 		mux := runtime.NewServeMux()
