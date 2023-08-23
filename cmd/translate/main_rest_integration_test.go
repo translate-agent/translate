@@ -695,10 +695,16 @@ func Test_UpdateMessages_REST(t *testing.T) {
 			body, err := json.Marshal(tt.request.Messages)
 			require.NoError(t, err, "marshal messages")
 
+			language := langs[0].String()
+
+			if tt.request.Messages != nil {
+				language = tt.request.Messages.Language
+			}
+
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.request.ServiceId + "/messages",
+				Path:   "v1/services/" + tt.request.ServiceId + "/messages/" + language,
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(body))
