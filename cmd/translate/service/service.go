@@ -80,7 +80,7 @@ var rootCmd = &cobra.Command{
 
 			defer func() {
 				if rmErr := os.RemoveAll(badgerDir); rmErr != nil {
-					log.Printf("WARNING: Removing temporary storage directory '%s' for badgerdb: %v\n", badgerTmpDir, rmErr)
+					log.Printf("WARNING: Failed to remove temporary storage directory '%s' for badgerdb: %v\n", badgerTmpDir, rmErr)
 					return
 				}
 				log.Printf("INFO: Deleting temporary storage directory '%s' for badgerdb\n", badgerTmpDir)
@@ -181,9 +181,6 @@ func initConfig() {
 	// Replace underscores with dots in environment variable names.
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
-
-	// Set default values
-	viper.SetDefault("db.badgerdb.path", "/data/badgerdb")
 
 	// Try to read config.
 	if err := viper.ReadInConfig(); err != nil && cfgFile != "translate.yaml" {

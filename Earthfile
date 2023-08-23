@@ -36,7 +36,7 @@ init:
     echo "TRANSLATE_DB_MYSQL_DATABASE=translate" >> .env.test && \
     echo "" >> .env.test && \
     echo "# BadgerDB" >> .env.test && \
-    echo "TRANSLATE_DB_BADGERDB_PATH=$TMPDIR/badgerdb" >> .env.test && \
+    echo "TRANSLATE_DB_BADGERDB_PATH=${TMPDIR%/}/badgerdb" >> .env.test && \
     echo "" >> .env.test && \
     echo "# Google Translate API" >> .env.test && \
     echo "TRANSLATE_OTHER_GOOGLE_PROJECT_ID=expect-digital" >> .env.test && \

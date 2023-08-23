@@ -12,7 +12,7 @@ docker run -d --name translate-all-in-one \
   -e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY={AWS secret access key} \
   -e TRANSLATE_OTHER_AWS_REGION={AWS region} \
   -v path/to/google_account_key.json:/app/google_account_key.json \
-  -v path/to/badger-dir:/data/badgerdb \
+  -v /data/badgerdb:/data/badgerdb \
   expectdigital/translate-agent-all-in-one:latest
 ```
 Remove existing, pull latest and run
@@ -26,7 +26,7 @@ docker rm -f translate-all-in-one 2> /dev/null; docker pull expectdigital/transl
   -e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY={AWS secret access key} \
   -e TRANSLATE_OTHER_AWS_REGION={AWS region} \
   -v path/to/google_account_key.json:/app/google_account_key.json \
-  -v path/to/badger-dir:/data/badgerdb \
+  -v /data/badgerdb:/data/badgerdb \
   expectdigital/translate-agent-all-in-one
 ```
 
