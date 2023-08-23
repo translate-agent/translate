@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
 )
 
@@ -27,7 +28,7 @@ func (m MessagesSlice) Clone() MessagesSlice {
 	copy(msgs, m)
 
 	for i := range m {
-		copy(msgs[i].Messages, m[i].Messages)
+		msgs[i].Messages = slices.Clone(m[i].Messages)
 	}
 
 	return msgs
