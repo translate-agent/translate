@@ -145,7 +145,7 @@ lint-go:
   WORKDIR translate
   COPY +go/translate .
   COPY .golangci.yml .
-  RUN --mount=type=cache,target=/root/.cache/golangci_lint golangci-lint run
+  RUN --mount=type=cache,target=/root/.cache/golangci_lint golangci-lint run --timeout 3m
 
 lint-proto:
   FROM bufbuild/buf:$bufbuild_version
