@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo/common"

@@ -9,7 +9,12 @@ import (
 	"go.expect.digital/translate/pkg/repo/mysql"
 )
 
-var SupportedDBs = []string{"mysql", "badgerdb"}
+const (
+	BadgerDB = "badgerdb"
+	MySQL    = "mysql"
+)
+
+var SupportedDBs = []string{MySQL, BadgerDB}
 
 // Usage returns a string describing the supported databases for CLI.
 func Usage() string {
