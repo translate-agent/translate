@@ -2,11 +2,14 @@ package repo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/repo/common"
+	"golang.org/x/text/language"
 )
+
+var ErrNotFound = errors.New("entity not found")
 
 type ServicesRepo interface {
 	// SaveService handles both Create and Update
@@ -16,10 +19,14 @@ type ServicesRepo interface {
 	DeleteService(ctx context.Context, serviceID uuid.UUID) error
 }
 
+type LoadMessagesOpts struct {
+	FilterLanguages []language.Tag
+}
+
 type MessagesRepo interface {
 	// SaveMessages handles both Create and Update
 	SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *model.Messages) error
-	LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts) ([]model.Messages, error)
+	LoadMessages(ctx context.Context, serviceID uuid.UUID, opts LoadMessagesOpts) ([]model.Messages, error)
 }
 
 type Repo interface {

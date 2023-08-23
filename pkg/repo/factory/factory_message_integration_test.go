@@ -1,6 +1,6 @@
 //go:build integration
 
-package repotest
+package factory
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
-	"go.expect.digital/translate/pkg/repo/common"
 	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
@@ -54,7 +53,7 @@ func Test_SaveMessages(t *testing.T) {
 				name:        "Missing service",
 				serviceID:   uuid.New(),
 				messages:    rand.ModelMessages(3, nil),
-				expectedErr: common.ErrNotFound,
+				expectedErr: repo.ErrNotFound,
 			},
 		}
 
@@ -73,7 +72,7 @@ func Test_SaveMessages(t *testing.T) {
 				// Assure that the messages were saved correctly.
 
 				actualMessages, err := repository.LoadMessages(ctx, tt.serviceID,
-					common.LoadMessagesOpts{FilterLanguages: []language.Tag{tt.messages.Language}})
+					repo.LoadMessagesOpts{FilterLanguages: []language.Tag{tt.messages.Language}})
 				require.NoError(t, err, "Load saved messages")
 
 				testutil.EqualMessages(t, tt.messages, &actualMessages[0])
@@ -109,7 +108,7 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 		// Assure that all messages are saved
 		for _, m := range messages {
 			actualMessages, err := repository.LoadMessages(testCtx, service.ID,
-				common.LoadMessagesOpts{FilterLanguages: []language.Tag{m.Language}})
+				repo.LoadMessagesOpts{FilterLanguages: []language.Tag{m.Language}})
 			require.NoError(t, err, "Load saved messages")
 
 			testutil.EqualMessages(t, m, &actualMessages[0])
@@ -145,7 +144,7 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 		// Assure that messages are updated
 
 		actualMessages, err := repository.LoadMessages(testCtx, service.ID,
-			common.LoadMessagesOpts{FilterLanguages: []language.Tag{expectedMessages.Language}})
+			repo.LoadMessagesOpts{FilterLanguages: []language.Tag{expectedMessages.Language}})
 		require.NoError(t, err, "Load updated messages")
 
 		testutil.EqualMessages(t, expectedMessages, &actualMessages[0])
@@ -203,7 +202,7 @@ func Test_LoadMessages(t *testing.T) {
 			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				actualMessages, err := repository.LoadMessages(ctx, tt.serviceID,
-					common.LoadMessagesOpts{FilterLanguages: []language.Tag{tt.language}})
+					repo.LoadMessagesOpts{FilterLanguages: []language.Tag{tt.language}})
 				require.NoError(t, err, "Load messages")
 
 				assert.ElementsMatch(t, tt.expected, actualMessages)
@@ -254,7 +253,7 @@ func Test_LoadAllMessagesForService(t *testing.T) {
 			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				actualMessages, err := repository.LoadMessages(ctx, tt.serviceID,
-					common.LoadMessagesOpts{FilterLanguages: tt.languages})
+					repo.LoadMessagesOpts{FilterLanguages: tt.languages})
 
 				require.NoError(t, err, "Load messages")
 				assert.ElementsMatch(t, actualMessages, tt.expectedMsgs)

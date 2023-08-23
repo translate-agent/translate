@@ -9,7 +9,7 @@ import (
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/repo/common"
+	"go.expect.digital/translate/pkg/repo"
 	"golang.org/x/text/language"
 )
 
@@ -104,7 +104,7 @@ ON DUPLICATE KEY UPDATE
 	return nil
 }
 
-func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts common.LoadMessagesOpts,
+func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts repo.LoadMessagesOpts,
 ) ([]model.Messages, error) {
 	rows, err := sq.
 		Select("mm.id, mm.message, mm.description, mm.positions, mm.status, m.language, m.original").

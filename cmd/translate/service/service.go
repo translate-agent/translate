@@ -16,7 +16,7 @@ import (
 	"github.com/spf13/viper"
 	"go.expect.digital/translate/pkg/fuzzy"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/repo"
+	"go.expect.digital/translate/pkg/repo/factory"
 	"go.expect.digital/translate/pkg/server"
 	"go.expect.digital/translate/pkg/tracer"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
@@ -73,7 +73,7 @@ var rootCmd = &cobra.Command{
 
 		mux := runtime.NewServeMux()
 
-		repo, err := repo.NewRepo(ctx, viper.GetString("service.db"))
+		repo, err := factory.NewRepo(ctx, viper.GetString("service.db"))
 		if err != nil {
 			log.Panicf("create new repo: %v", err)
 		}
@@ -152,7 +152,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "translate.yaml", "config file")
 	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
 	rootCmd.PersistentFlags().String("host", "0.0.0.0", "host to run service on")
-	rootCmd.PersistentFlags().String("db", "badgerdb", repo.Usage())
+	rootCmd.PersistentFlags().String("db", "badgerdb", factory.Usage())
 	rootCmd.PersistentFlags().String("translator", "", fuzzy.Usage())
 }
 
