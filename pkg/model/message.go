@@ -34,18 +34,13 @@ func (m MessagesSlice) Clone() MessagesSlice {
 
 // SplitOriginal returns a pointer to the original and other messages.
 func (m MessagesSlice) SplitOriginal() (original *Messages, others MessagesSlice) {
-	others = m
+	others = make(MessagesSlice, 0, len(m))
 
 	for i := range m {
-		if !m[i].Original {
-			continue
-		}
-
-		original = &m[i]
-
-		if len(m) > 1 {
-			others[i] = others[len(m)-1]
-			others = others[:len(m)-1]
+		if m[i].Original {
+			original = &m[i]
+		} else {
+			others = append(others, m[i])
 		}
 	}
 
