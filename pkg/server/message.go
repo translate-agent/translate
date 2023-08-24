@@ -327,15 +327,15 @@ func (t *TranslateServiceServer) alterTranslations(
 			return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
 		}
 
-		translatedMessagesLookup := make(map[string]*model.Message, len(translated.Messages))
+		translatedMessagesLookup := make(map[string]string, len(translated.Messages))
 
 		for i := range translated.Messages {
-			translatedMessagesLookup[translated.Messages[i].ID] = &translated.Messages[i]
+			translatedMessagesLookup[translated.Messages[i].ID] = translated.Messages[i].Message
 		}
 
 		for i := range messages.Messages {
 			if translatedMessage, ok := translatedMessagesLookup[messages.Messages[i].ID]; ok {
-				messages.Messages[i].Message = translatedMessage.Message
+				messages.Messages[i].Message = translatedMessage
 				messages.Messages[i].Status = model.MessageStatusFuzzy
 			}
 		}
