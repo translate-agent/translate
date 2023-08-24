@@ -369,7 +369,6 @@ func (t *TranslateServiceServer) populateTranslations(
 		// Create a new messages to store the messages that need to be translated
 		toBeTranslated := &model.Messages{
 			Language: newMessages[i].Language,
-			Original: newMessages[i].Original,
 			Messages: make([]model.Message, 0, len(newOriginalMessages.Messages)),
 		}
 

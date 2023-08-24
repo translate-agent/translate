@@ -23,9 +23,7 @@ func (m MessagesSlice) Clone() MessagesSlice {
 		return nil
 	}
 
-	msgs := make(MessagesSlice, len(m))
-
-	copy(msgs, m)
+	msgs := slices.Clone(m)
 
 	for i := range m {
 		msgs[i].Messages = slices.Clone(m[i].Messages)
@@ -39,15 +37,15 @@ func (m MessagesSlice) SplitOriginal() (original *Messages, others MessagesSlice
 	others = m
 
 	for i := range m {
-		if m[i].Original {
-			original = &m[i]
+		if !m[i].Original {
+			continue
+		}
 
-			if len(m) > 2 { //nolint:gomnd
-				others[i] = others[len(m)-1]
-				others = others[:len(m)-1]
-			}
+		original = &m[i]
 
-			return
+		if len(m) > 1 {
+			others[i] = others[len(m)-1]
+			others = others[:len(m)-1]
 		}
 	}
 
