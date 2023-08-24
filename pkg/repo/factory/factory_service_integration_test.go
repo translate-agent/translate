@@ -1,6 +1,6 @@
 //go:build integration
 
-package repotest
+package factory
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
-	"go.expect.digital/translate/pkg/repo/common"
 	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/rand"
 )
@@ -105,7 +104,7 @@ func Test_LoadService(t *testing.T) {
 				name:        "Not Found",
 				serviceID:   uuid.New(),
 				expected:    nil,
-				expectedErr: common.ErrNotFound,
+				expectedErr: repo.ErrNotFound,
 			},
 		}
 
@@ -170,7 +169,7 @@ func Test_DeleteService(t *testing.T) {
 			{
 				name:        "Nonexistent",
 				serviceID:   uuid.New(),
-				expectedErr: common.ErrNotFound,
+				expectedErr: repo.ErrNotFound,
 			},
 		}
 
@@ -182,7 +181,7 @@ func Test_DeleteService(t *testing.T) {
 
 				// check if really is deleted
 				_, err = repository.LoadService(ctx, tt.serviceID)
-				assert.ErrorIs(t, err, common.ErrNotFound)
+				assert.ErrorIs(t, err, repo.ErrNotFound)
 			})
 		}
 	})

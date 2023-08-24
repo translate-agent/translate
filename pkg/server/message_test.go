@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
+	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/repo/badgerdb"
-	"go.expect.digital/translate/pkg/repo/common"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
@@ -105,7 +105,7 @@ func Test_PopulateTranslatedMessages(t *testing.T) {
 			require.NoError(t, err)
 
 			// Load updated translated messages
-			loadedMsgs, err := translateSrv.repo.LoadMessages(ctx, service.ID, common.LoadMessagesOpts{})
+			loadedMsgs, err := translateSrv.repo.LoadMessages(ctx, service.ID, repo.LoadMessagesOpts{})
 			require.NoError(t, err, "load updated translated messages")
 
 			// Assert that length of loaded messages is equal to the length of all messages. (one for original + count of translated messages)

@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/repo/common"
+	"go.expect.digital/translate/pkg/repo"
 )
 
 func (r *Repo) SaveService(ctx context.Context, service *model.Service) error {
@@ -36,7 +36,7 @@ func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Ser
 	default:
 		return &service, nil
 	case errors.Is(err, sql.ErrNoRows):
-		return nil, common.ErrNotFound
+		return nil, repo.ErrNotFound
 	case err != nil:
 		return nil, fmt.Errorf("repo: select service: %w", err)
 	}
@@ -85,6 +85,6 @@ func (r *Repo) DeleteService(ctx context.Context, serviceID uuid.UUID) error {
 	case err != nil:
 		return fmt.Errorf("repo: delete service result: %w", err)
 	case count == 0:
-		return common.ErrNotFound
+		return repo.ErrNotFound
 	}
 }

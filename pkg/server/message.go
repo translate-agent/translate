@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/repo/common"
+	"go.expect.digital/translate/pkg/repo"
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
@@ -69,7 +69,7 @@ func (t *TranslateServiceServer) CreateMessages(
 	}
 
 	msgs, err := t.repo.LoadMessages(ctx, params.serviceID,
-		common.LoadMessagesOpts{FilterLanguages: []language.Tag{params.messages.Language}})
+		repo.LoadMessagesOpts{FilterLanguages: []language.Tag{params.messages.Language}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
@@ -83,7 +83,7 @@ func (t *TranslateServiceServer) CreateMessages(
 		// Retrieve language from original messages.
 		var originalLanguage *language.Tag
 		// TODO: to improve performance should be replaced with CheckMessagesExist db function.
-		msgs, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
+		msgs, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
@@ -113,7 +113,7 @@ func (t *TranslateServiceServer) CreateMessages(
 		}
 	}
 
-	if err := t.repo.SaveMessages(ctx, params.serviceID, params.messages); errors.Is(err, common.ErrNotFound) {
+	if err := t.repo.SaveMessages(ctx, params.serviceID, params.messages); errors.Is(err, repo.ErrNotFound) {
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	} else if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
@@ -158,7 +158,7 @@ func (t *TranslateServiceServer) ListMessages(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
+	messages, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
@@ -223,7 +223,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 	msgs, err := t.repo.LoadMessages(
 		ctx,
 		params.serviceID,
-		common.LoadMessagesOpts{FilterLanguages: []language.Tag{}})
+		repo.LoadMessagesOpts{FilterLanguages: []language.Tag{}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
@@ -236,7 +236,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 	switch {
 	default:
 		// noop
-	case errors.Is(err, common.ErrNotFound):
+	case errors.Is(err, repo.ErrNotFound):
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "")
@@ -304,7 +304,7 @@ func (t *TranslateServiceServer) populateTranslatedMessages(
 		switch err := t.repo.SaveMessages(ctx, serviceID, &messages); {
 		default:
 			// noop
-		case errors.Is(err, common.ErrNotFound):
+		case errors.Is(err, repo.ErrNotFound):
 			return status.Errorf(codes.NotFound, "service not found")
 		case err != nil:
 			return status.Errorf(codes.Internal, "")
