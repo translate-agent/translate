@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/repo/common"
+	"go.expect.digital/translate/pkg/repo"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -117,7 +117,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	switch err := t.repo.SaveMessages(ctx, params.serviceID, messages); {
 	default:
 		// noop
-	case errors.Is(err, common.ErrNotFound):
+	case errors.Is(err, repo.ErrNotFound):
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	case err != nil:
 		return nil, status.Errorf(codes.Internal, "")
@@ -125,7 +125,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 
 	// When updating original messages, changes might affect translations - transform and update all translations.
 	if messages.Original {
-		allMessages, err := t.repo.LoadMessages(ctx, params.serviceID, common.LoadMessagesOpts{})
+		allMessages, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
@@ -153,7 +153,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 			switch {
 			default:
 				// noop
-			case errors.Is(err, common.ErrNotFound):
+			case errors.Is(err, repo.ErrNotFound):
 				return nil, status.Errorf(codes.NotFound, "service not found")
 			case err != nil:
 				return nil, status.Errorf(codes.Internal, "")
@@ -224,7 +224,7 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 	}
 
 	messages, err := t.repo.LoadMessages(ctx, params.serviceID,
-		common.LoadMessagesOpts{FilterLanguages: []language.Tag{params.languageTag}})
+		repo.LoadMessagesOpts{FilterLanguages: []language.Tag{params.languageTag}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}

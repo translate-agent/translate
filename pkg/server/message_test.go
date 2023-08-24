@@ -186,7 +186,6 @@ func Test_populateTranslations(t *testing.T) {
 				require.Len(t, m.Messages, len(tt.originalMessages.Messages))
 			}
 		})
-
 	}
 }
 

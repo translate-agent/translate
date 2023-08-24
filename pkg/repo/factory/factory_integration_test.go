@@ -1,6 +1,6 @@
 //go:build integration
 
-package repotest
+package factory
 
 import (
 	"context"
@@ -53,7 +53,7 @@ func TestMain(m *testing.M) {
 	viper.AutomaticEnv()
 
 	// Initialize repos
-	repos = make(map[string]repo.Repo, len(repo.SupportedDBs))
+	repos = make(map[string]repo.Repo, len(SupportedDBs))
 
 	// MySQL
 	if err := initMysql(ctx); err != nil {
