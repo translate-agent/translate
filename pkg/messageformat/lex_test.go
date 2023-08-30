@@ -243,6 +243,16 @@ func Test_lex(t *testing.T) {
 				tokenEOF,
 			},
 		},
+		{
+			name:  "input with curly braces",
+			input: "{Chart [\\] was added to dashboard [\\]}",
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "Chart [\\] was added to dashboard [\\]"),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
 	} {
 		test := test
 

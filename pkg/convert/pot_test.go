@@ -1143,6 +1143,29 @@ when * {There are {$count} apples.}
 			original: true,
 		},
 		{
+			name: "msgid with slash inside",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							#. a greeting
+							msgid "+ \ hello"
+							msgstr ""
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "+ \\ hello",
+						Message:     "{+ \\\\ hello}",
+						Description: "a greeting",
+						Status:      model.MessageStatusUntranslated,
+					},
+				},
+				Original: true,
+			},
+			original: true,
+		},
+		{
 			name: "plural msgstr with curly braces",
 			input: []byte(`msgid ""
 							msgstr ""
@@ -1193,6 +1216,36 @@ when * {Il y a {$count} pommes \{tests\}.}
 						Message: `match {$count :number}
 when 1 {Il y a {$count} pomme \|.}
 when * {Il y a {$count} pommes \|.}
+`,
+						Description: "apple counts",
+						Status:      model.MessageStatusUntranslated,
+					},
+				},
+				Original: false,
+			},
+			original: false,
+		},
+		{
+			name: "plural msgstr with slash",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							#. apple counts
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] "Il y a %d pomme \."
+							msgstr[1] "Il y a %d pommes \."
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:       "There is %d apple.",
+						PluralID: "There are %d apples.",
+						Message: `match {$count :number}
+when 1 {Il y a {$count} pomme \\.}
+when * {Il y a {$count} pommes \\.}
 `,
 						Description: "apple counts",
 						Status:      model.MessageStatusUntranslated,

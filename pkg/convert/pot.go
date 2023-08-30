@@ -339,8 +339,9 @@ func convertPluralsToMessageString(plurals []string) string {
 	for i, plural := range plurals {
 		if strings.Contains(plural, "{") ||
 			strings.Contains(plural, "}") ||
-			strings.Contains(plural, "|") {
-			r := strings.NewReplacer("{", "\\{", "}", "\\}", "|", "\\|")
+			strings.Contains(plural, "|") ||
+			strings.Contains(plural, "\\") {
+			r := strings.NewReplacer("{", "\\{", "}", "\\}", "|", "\\|", "\\", "\\\\")
 			plural = r.Replace(plural)
 		}
 
