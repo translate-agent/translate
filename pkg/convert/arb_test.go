@@ -47,7 +47,7 @@ func Test_FromArb(t *testing.T) {
 					},
 					{
 						ID:      "greeting",
-						Message: "{Welcome {user}!}",
+						Message: "{Welcome \\{user\\}!}",
 					},
 					{
 						ID:      "farewell",
@@ -85,7 +85,7 @@ func Test_FromArb(t *testing.T) {
 					},
 					{
 						ID:      "greeting",
-						Message: "{Welcome {user}!}",
+						Message: "{Welcome \\{user\\}!}",
 					},
 					{
 						ID:      "farewell",

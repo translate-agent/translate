@@ -337,6 +337,13 @@ func convertPluralsToMessageString(plurals []string) string {
 	sb.WriteString("match {$count :number}\n")
 
 	for i, plural := range plurals {
+		if strings.Contains(plural, "{") ||
+			strings.Contains(plural, "}") ||
+			strings.Contains(plural, "|") {
+			r := strings.NewReplacer("{", "\\{", "}", "\\}", "|", "\\|")
+			plural = r.Replace(plural)
+		}
+
 		line := strings.ReplaceAll(strings.TrimSpace(plural), "%d", "{$count}")
 
 		var count string

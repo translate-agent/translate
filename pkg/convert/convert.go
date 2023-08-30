@@ -8,6 +8,13 @@ func convertToMessageFormatSingular(message string) string {
 		return ""
 	}
 
+	if strings.Contains(message, "{") ||
+		strings.Contains(message, "}") ||
+		strings.Contains(message, "|") {
+		r := strings.NewReplacer("{", "\\{", "}", "\\}", "|", "\\|")
+		message = r.Replace(message)
+	}
+
 	return "{" + message + "}"
 }
 
