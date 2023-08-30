@@ -1096,6 +1096,29 @@ when * {There are {$count} apples.}
 			original:    false,
 			expectedErr: fmt.Errorf("convert tokens to pot.Po: get previous token: no previous token"),
 		},
+		{
+			name: "msgid with curly braces inside",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							#. a greeting
+							msgid "+ {%s} hello"
+							msgstr ""
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "+ {%s} hello",
+						Message:     "{+ {%s} hello}",
+						Description: "a greeting",
+						Status:      model.MessageStatusUntranslated,
+					},
+				},
+				Original: true,
+			},
+			original: true,
+		},
 	}
 
 	for _, tt := range tests {

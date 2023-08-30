@@ -173,6 +173,10 @@ func lexText(l *lexer) stateFn {
 
 		text += string(v)
 
+		if v == '\\' {
+			text += string(l.next())
+		}
+
 		if l.peek() == '}' || l.peek() == '{' {
 			return l.emitToken(mkToken(tokenTypeText, text))
 		}
