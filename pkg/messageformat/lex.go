@@ -171,10 +171,15 @@ func lexText(l *lexer) stateFn {
 			return l.emitToken(mkTokenErrorf("unexpected EOF"))
 		}
 
-		text += string(v)
-
 		if v == '\\' {
-			text += string(l.next())
+			nextElement := l.next()
+
+			switch nextElement {
+			case '|', '{', '}', '\\':
+				text += string(nextElement)
+			}
+		} else {
+			text += string(v)
 		}
 
 		if l.peek() == '}' || l.peek() == '{' {

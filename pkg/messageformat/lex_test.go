@@ -228,24 +228,24 @@ func Test_lex(t *testing.T) {
 			input: "{Chart [\\{\\}] was added to dashboard [\\{\\}]}",
 			expected: []Token{
 				tokenSeparatorOpen,
-				mkToken(tokenTypeText, "Chart [\\{\\}] was added to dashboard [\\{\\}]"),
+				mkToken(tokenTypeText, "Chart [{}] was added to dashboard [{}]"),
 				tokenSeparatorClose,
 				tokenEOF,
 			},
 		},
 		{
-			name:  "input with curly braces",
+			name:  "input with pipes",
 			input: "{Chart [\\|] was added to dashboard [\\|]}",
 			expected: []Token{
 				tokenSeparatorOpen,
-				mkToken(tokenTypeText, "Chart [\\|] was added to dashboard [\\|]"),
+				mkToken(tokenTypeText, "Chart [|] was added to dashboard [|]"),
 				tokenSeparatorClose,
 				tokenEOF,
 			},
 		},
 		{
-			name:  "input with curly braces",
-			input: "{Chart [\\] was added to dashboard [\\]}",
+			name:  "input with slashes",
+			input: "{Chart [\\\\] was added to dashboard [\\\\]}",
 			expected: []Token{
 				tokenSeparatorOpen,
 				mkToken(tokenTypeText, "Chart [\\] was added to dashboard [\\]"),
