@@ -14,6 +14,7 @@ func convertToMessageFormatSingular(message string) string {
 }
 
 // escapeSpecialChars escapes special characters in a string.
+// https://github.com/unicode-org/message-format-wg/blob/main/spec/syntax.md#text
 func escapeSpecialChars(message string) string {
 	if strings.Contains(message, "{") ||
 		strings.Contains(message, "}") ||

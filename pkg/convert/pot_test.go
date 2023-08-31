@@ -93,18 +93,14 @@ msgstr "Bonjour le monde!"
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:          "Hello, world!",
-						Message:     `{Bonjour \{\} le monde!}`,
-						Description: "A simple greeting",
-						Status:      model.MessageStatusFuzzy,
+						ID:      "Hello, world!",
+						Message: `{Bonjour \{\} le monde!}`,
 					},
 				},
 			},
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
-#. A simple greeting
-#, fuzzy
 msgid "Hello, world!"
 msgstr "Bonjour {} le monde!"
 `),
@@ -115,18 +111,14 @@ msgstr "Bonjour {} le monde!"
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:          "Hello, world!",
-						Message:     `{Bonjour \\ le monde!}`,
-						Description: "A simple greeting",
-						Status:      model.MessageStatusFuzzy,
+						ID:      "Hello, world!",
+						Message: `{Bonjour \\ le monde!}`,
 					},
 				},
 			},
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
-#. A simple greeting
-#, fuzzy
 msgid "Hello, world!"
 msgstr "Bonjour \ le monde!"
 `),
@@ -137,18 +129,14 @@ msgstr "Bonjour \ le monde!"
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:          "Hello, world!",
-						Message:     `{Bonjour \| le monde!}`,
-						Description: "A simple greeting",
-						Status:      model.MessageStatusFuzzy,
+						ID:      "Hello, world!",
+						Message: `{Bonjour \| le monde!}`,
 					},
 				},
 			},
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
-#. A simple greeting
-#, fuzzy
 msgid "Hello, world!"
 msgstr "Bonjour | le monde!"
 `),
@@ -159,18 +147,14 @@ msgstr "Bonjour | le monde!"
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:          "Hello, world!",
-						Message:     `{Bonjour \|\| le monde!}`,
-						Description: "A simple greeting",
-						Status:      model.MessageStatusFuzzy,
+						ID:      "Hello, world!",
+						Message: `{Bonjour \|\| le monde!}`,
 					},
 				},
 			},
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
-#. A simple greeting
-#, fuzzy
 msgid "Hello, world!"
 msgstr "Bonjour || le monde!"
 `),
@@ -1189,7 +1173,6 @@ when * {There are {$count} apples.}
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
-							#. a greeting
 							msgid "+ {%s} hello"
 							msgstr ""
 			`),
@@ -1197,10 +1180,8 @@ when * {There are {$count} apples.}
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:          "+ {%s} hello",
-						Message:     `{+ \{%s\} hello}`,
-						Description: "a greeting",
-						Status:      model.MessageStatusUntranslated,
+						ID:      "+ {%s} hello",
+						Message: `{+ \{%s\} hello}`,
 					},
 				},
 				Original: true,
@@ -1212,7 +1193,6 @@ when * {There are {$count} apples.}
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
-							#. a greeting
 							msgid "+ | hello"
 							msgstr ""
 			`),
@@ -1220,10 +1200,8 @@ when * {There are {$count} apples.}
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:          "+ | hello",
-						Message:     `{+ \| hello}`,
-						Description: "a greeting",
-						Status:      model.MessageStatusUntranslated,
+						ID:      "+ | hello",
+						Message: `{+ \| hello}`,
 					},
 				},
 				Original: true,
@@ -1235,7 +1213,6 @@ when * {There are {$count} apples.}
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
-							#. a greeting
 							msgid "+ || hello"
 							msgstr ""
 			`),
@@ -1243,10 +1220,8 @@ when * {There are {$count} apples.}
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:          "+ || hello",
-						Message:     `{+ \|\| hello}`,
-						Description: "a greeting",
-						Status:      model.MessageStatusUntranslated,
+						ID:      "+ || hello",
+						Message: `{+ \|\| hello}`,
 					},
 				},
 				Original: true,
@@ -1258,7 +1233,6 @@ when * {There are {$count} apples.}
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
-							#. a greeting
 							msgid "+ \ hello"
 							msgstr ""
 			`),
@@ -1266,10 +1240,8 @@ when * {There are {$count} apples.}
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:          "+ \\ hello",
-						Message:     `{+ \\ hello}`,
-						Description: "a greeting",
-						Status:      model.MessageStatusUntranslated,
+						ID:      "+ \\ hello",
+						Message: `{+ \\ hello}`,
 					},
 				},
 				Original: true,
@@ -1282,7 +1254,6 @@ when * {There are {$count} apples.}
 							msgstr ""
 							"Language: en\n"
 							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-							#. apple counts
 							msgid "There is %d apple."
 							msgid_plural "There are %d apples."
 							msgstr[0] "Il y a %d pomme {test}."
@@ -1298,8 +1269,6 @@ when * {There are {$count} apples.}
 when 1 {Il y a {$count} pomme \{test\}.}
 when * {Il y a {$count} pommes \{tests\}.}
 `,
-						Description: "apple counts",
-						Status:      model.MessageStatusUntranslated,
 					},
 				},
 				Original: false,
@@ -1312,7 +1281,6 @@ when * {Il y a {$count} pommes \{tests\}.}
 							msgstr ""
 							"Language: en\n"
 							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-							#. apple counts
 							msgid "There is %d apple."
 							msgid_plural "There are %d apples."
 							msgstr[0] "Il y a %d pomme |."
@@ -1328,8 +1296,6 @@ when * {Il y a {$count} pommes \{tests\}.}
 when 1 {Il y a {$count} pomme \|.}
 when * {Il y a {$count} pommes \|.}
 `,
-						Description: "apple counts",
-						Status:      model.MessageStatusUntranslated,
 					},
 				},
 				Original: false,
@@ -1342,7 +1308,6 @@ when * {Il y a {$count} pommes \|.}
 							msgstr ""
 							"Language: en\n"
 							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-							#. apple counts
 							msgid "There is %d apple."
 							msgid_plural "There are %d apples."
 							msgstr[0] "Il y a %d pomme \."
@@ -1358,8 +1323,6 @@ when * {Il y a {$count} pommes \|.}
 when 1 {Il y a {$count} pomme \\.}
 when * {Il y a {$count} pommes \\.}
 `,
-						Description: "apple counts",
-						Status:      model.MessageStatusUntranslated,
 					},
 				},
 				Original: false,
