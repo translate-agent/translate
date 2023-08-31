@@ -154,28 +154,6 @@ msgstr "Bonjour | le monde!"
 `),
 		},
 		{
-			name: "msgstr with double pipe inside",
-			input: model.Messages{
-				Language: language.English,
-				Messages: []model.Message{
-					{
-						ID:          "Hello, world!",
-						Message:     "{Bonjour || le monde!}",
-						Description: "A simple greeting",
-						Status:      model.MessageStatusFuzzy,
-					},
-				},
-			},
-			expected: []byte(`msgid ""
-msgstr ""
-"Language: en\n"
-#. A simple greeting
-#, fuzzy
-msgid "Hello, world!"
-msgstr "Bonjour || le monde!"
-`),
-		},
-		{
 			name: "multiline description",
 			input: model.Messages{
 				Language: language.English,
@@ -1231,29 +1209,6 @@ when * {There are {$count} apples.}
 			original: true,
 		},
 		{
-			name: "msgid with double pipe inside",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							#. a greeting
-							msgid "+ || hello"
-							msgstr ""
-			`),
-			expected: model.Messages{
-				Language: language.English,
-				Messages: []model.Message{
-					{
-						ID:          "+ || hello",
-						Message:     "{+ || hello}",
-						Description: "a greeting",
-						Status:      model.MessageStatusUntranslated,
-					},
-				},
-				Original: true,
-			},
-			original: true,
-		},
-		{
 			name: "msgid with slash inside",
 			input: []byte(`msgid ""
 							msgstr ""
@@ -1268,6 +1223,29 @@ when * {There are {$count} apples.}
 					{
 						ID:          "+ \\ hello",
 						Message:     "{+ \\\\ hello}",
+						Description: "a greeting",
+						Status:      model.MessageStatusUntranslated,
+					},
+				},
+				Original: true,
+			},
+			original: true,
+		},
+		{
+			name: "msgid with pipe inside annotation",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							#. a greeting
+							msgid "The character | has to be paired or escaped: {&private | }"
+							msgstr ""
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "The character | has to be paired or escaped: {&private | }",
+						Message:     "{The character \\| has to be paired or escaped: \\{&private \\| \\}}",
 						Description: "a greeting",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -1357,36 +1335,6 @@ when * {Il y a {$count} pommes \|.}
 						Message: `match {$count :number}
 when 1 {Il y a {$count} pomme \\.}
 when * {Il y a {$count} pommes \\.}
-`,
-						Description: "apple counts",
-						Status:      model.MessageStatusUntranslated,
-					},
-				},
-				Original: false,
-			},
-			original: false,
-		},
-		{
-			name: "plural msgstr with double pipe",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-							#. apple counts
-							msgid "There is %d apple."
-							msgid_plural "There are %d apples."
-							msgstr[0] "Il y a %d pomme ||."
-							msgstr[1] "Il y a %d pommes ||."
-			`),
-			expected: model.Messages{
-				Language: language.English,
-				Messages: []model.Message{
-					{
-						ID:       "There is %d apple.",
-						PluralID: "There are %d apples.",
-						Message: `match {$count :number}
-when 1 {Il y a {$count} pomme ||.}
-when * {Il y a {$count} pommes ||.}
 `,
 						Description: "apple counts",
 						Status:      model.MessageStatusUntranslated,

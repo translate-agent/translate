@@ -20,7 +20,7 @@ func escapeSpecialChars(message string) string {
 		strings.Contains(message, "}") ||
 		strings.Contains(message, "\\") {
 		r := strings.NewReplacer("{", "\\{", "}", "\\}", "\\", "\\\\")
-		message = r.Replace(message)
+		return r.Replace(message)
 	}
 
 	return message
@@ -39,14 +39,7 @@ func escapePipe(input string) string {
 
 	for i := 0; i < len(input); i++ {
 		if input[i] == '|' {
-			// Check if the next character is also a '|'
-			if i < len(input)-1 && input[i+1] == '|' {
-				output.WriteByte('|')
-				output.WriteByte('|')
-				i++ // Skip the next '|'
-			} else {
-				output.WriteString("\\|")
-			}
+			output.WriteString("\\|")
 		} else {
 			output.WriteByte(input[i])
 		}
