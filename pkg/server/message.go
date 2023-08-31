@@ -241,20 +241,25 @@ func (t *TranslateServiceServer) UpdateMessages(
 
 	// When updating original messages, changes might affect translations - transform and update all translations.
 	if params.messages.Original {
-		// find original messages with altered text, translate & replace text in the associated messages for all translations.
+		// Find original messages with altered text, then replace text in associated messages for all translations.
 		newMessages, err := t.alterTranslations(ctx, allMessages, params.messages)
 		if err != nil {
 			return nil, err
 		}
 
-		// if populateMessages is true - populate missing messages for all translations.
+		// If populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {
 			if newMessages, err = t.populateTranslations(ctx, newMessages, params.messages); err != nil {
 				return nil, err
 			}
 		}
 
-		// update all translations
+		// Fuzzy translate untranslated messages for all translations
+		if newMessages, err = t.refreshTranslations(ctx, newMessages, params.messages); err != nil {
+			return nil, err
+		}
+
+		// Update messages for all translations
 		for i := range newMessages {
 			if newMessages[i].Original {
 				continue
@@ -277,7 +282,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 
 // helpers
 
-// alterTranslations translates & replaces text in messages for all translations
+// alterTranslations replaces text in messages for all translations
 // based on changes in the original messages text, returns messagesSlice containing altered translations.
 func (t *TranslateServiceServer) alterTranslations(
 	ctx context.Context,
@@ -286,57 +291,43 @@ func (t *TranslateServiceServer) alterTranslations(
 ) (model.MessagesSlice, error) {
 	newMessages := allMessages.Clone()
 
-	// return if only one language is present
+	// Return if only one language is present
 	if len(newMessages) == 1 {
 		return newMessages, nil
 	}
 
 	originalMessages, otherMessages := newMessages.SplitOriginal()
 
-	// return if messages don't contain original language
+	// Return if messages don't contain original language
 	if originalMessages == nil {
 		return newMessages, nil
 	}
 
-	// create lookup for original messages
+	// Create lookup for original messages
 	originalMessagesLookup := make(map[string]*model.Message, len(originalMessages.Messages))
 
 	for i := range originalMessages.Messages {
 		originalMessagesLookup[originalMessages.Messages[i].ID] = &originalMessages.Messages[i]
 	}
 
-	// find altered original messages
-	alteredMessages := model.Messages{
-		Language: newOriginalMessages.Language,
-	}
+	alteredMessagesLookup := make(map[string]string)
 
-	for _, newMessage := range newOriginalMessages.Messages {
+	for i, newMessage := range newOriginalMessages.Messages {
 		if message, ok := originalMessagesLookup[newMessage.ID]; ok && message.Message != newMessage.Message {
-			alteredMessages.Messages = append(alteredMessages.Messages, newMessage)
+			alteredMessagesLookup[newMessage.ID] = newOriginalMessages.Messages[i].Message
 		}
 	}
 
-	if len(alteredMessages.Messages) == 0 {
+	if len(alteredMessagesLookup) == 0 {
 		return newMessages, nil
 	}
 
-	// translate and update altered messages for all translations
+	// Update altered messages for all translations
 	for _, messages := range otherMessages {
-		translated, err := t.translator.Translate(ctx, &alteredMessages, messages.Language)
-		if err != nil {
-			return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
-		}
-
-		translatedMessagesLookup := make(map[string]string, len(translated.Messages))
-
-		for i := range translated.Messages {
-			translatedMessagesLookup[translated.Messages[i].ID] = translated.Messages[i].Message
-		}
-
 		for i := range messages.Messages {
-			if translatedMessage, ok := translatedMessagesLookup[messages.Messages[i].ID]; ok {
-				messages.Messages[i].Message = translatedMessage
-				messages.Messages[i].Status = model.MessageStatusFuzzy
+			if alteredMessage, ok := alteredMessagesLookup[messages.Messages[i].ID]; ok {
+				messages.Messages[i].Message = alteredMessage
+				messages.Messages[i].Status = model.MessageStatusUntranslated
 			}
 		}
 	}
@@ -360,36 +351,29 @@ func (t *TranslateServiceServer) populateTranslations(
 			continue
 		}
 
-		// Create a map to store the IDs of the translated messages
-		translatedMessageIDs := make(map[string]struct{}, len(newMessages[i].Messages))
+		// Create a map to store the IDs of the missing messages
+		missingMessageIDs := make(map[string]struct{}, len(newMessages[i].Messages))
 		for _, m := range newMessages[i].Messages {
-			translatedMessageIDs[m.ID] = struct{}{}
+			missingMessageIDs[m.ID] = struct{}{}
 		}
 
-		// Create a new messages to store the messages that need to be translated
-		toBeTranslated := &model.Messages{
+		// Create a new messages to store missing messages
+		missingMessages := &model.Messages{
 			Language: newMessages[i].Language,
 			Messages: make([]model.Message, 0, len(newOriginalMessages.Messages)),
 		}
 
 		// Iterate over the original messages and add any missing messages to the toBeTranslated.Messages slice
-		for _, m := range newOriginalMessages.Messages {
-			if _, ok := translatedMessageIDs[m.ID]; !ok {
-				toBeTranslated.Messages = append(toBeTranslated.Messages, m)
+		for _, message := range newOriginalMessages.Messages {
+			if _, ok := missingMessageIDs[message.ID]; !ok {
+				m := message
+				m.Status = model.MessageStatusUntranslated
+				missingMessages.Messages = append(missingMessages.Messages, m)
 			}
 		}
 
-		// Translate messages -
-		// untranslated text in toBeTranslated messages will be translated from original to target language.
-		targetLanguage := toBeTranslated.Language
-		toBeTranslated.Language = newOriginalMessages.Language
-		translated, err := t.translator.Translate(ctx, toBeTranslated, targetLanguage)
-		if err != nil {
-			return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
-		}
-
-		// Append the translated messages to the existing messages
-		newMessages[i].Messages = append(newMessages[i].Messages, translated.Messages...)
+		// Append the missing messages to the existing messages
+		newMessages[i].Messages = append(newMessages[i].Messages, missingMessages.Messages...)
 	}
 
 	return newMessages, nil
@@ -400,4 +384,57 @@ func langExists(msgs []model.Messages, lang language.Tag) bool {
 	return slices.ContainsFunc(msgs, func(m model.Messages) bool {
 		return m.Language == lang
 	})
+}
+
+// refreshTranslations fuzzy translates any untranslated messages,
+// returns messagesSlice containing refreshed translations.
+func (t *TranslateServiceServer) refreshTranslations(
+	ctx context.Context,
+	allMessages model.MessagesSlice,
+	newOriginalMessages *model.Messages,
+) ([]model.Messages, error) {
+	newMessages := allMessages.Clone()
+
+	for i := range newMessages {
+		if newMessages[i].Original {
+			continue
+		}
+
+		// Create a map to store pointers to untranslated messages
+		untranslatedMessagesLookup := make(map[string]*model.Message)
+
+		// Iterate over the messages and add any untranslated messages to the untranslated messages lookup
+		for j := range newMessages[i].Messages {
+			if newMessages[i].Messages[j].Status == model.MessageStatusUntranslated {
+				untranslatedMessagesLookup[newMessages[i].Messages[j].ID] = &newMessages[i].Messages[j]
+			}
+		}
+
+		// Create a new messages to store the messages that need to be translated
+		toBeTranslated := &model.Messages{
+			Language: newOriginalMessages.Language,
+			Messages: make([]model.Message, 0, len(untranslatedMessagesLookup)),
+		}
+
+		for _, message := range untranslatedMessagesLookup {
+			toBeTranslated.Messages = append(toBeTranslated.Messages, *message)
+		}
+
+		// Translate messages -
+		// untranslated messages in toBeTranslated will be translated from original to target language.
+		targetLanguage := newMessages[i].Language
+		translated, err := t.translator.Translate(ctx, toBeTranslated, targetLanguage)
+		if err != nil {
+			return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
+		}
+
+		// Overwrite untranslated messages with translated messages
+		for _, translatedMessage := range translated.Messages {
+			if untranslatedMessage, ok := untranslatedMessagesLookup[translatedMessage.ID]; ok {
+				*untranslatedMessage = translatedMessage
+			}
+		}
+	}
+
+	return newMessages, nil
 }

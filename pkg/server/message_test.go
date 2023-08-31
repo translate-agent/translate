@@ -87,40 +87,34 @@ func Test_alterTranslations(t *testing.T) {
 
 			allMessages := append(tt.translatedMessages, *tt.originalMessages)
 
-			// prepare new original messages with randomly altered message text
+			// Prepare new original messages with randomly altered message text
 
-			newOriginalMessages := &model.Messages{
-				Language: tt.originalMessages.Language,
-				Messages: make([]model.Message, len(tt.originalMessages.Messages)),
-				Original: true,
-			}
-
-			copy(newOriginalMessages.Messages, tt.originalMessages.Messages)
-
-			alteredMessageLookup := make(map[string]struct{})
+			newOriginalMessages := &model.MessagesSlice{*tt.originalMessages}.Clone()[0]
+			alteredMessageLookup := make(map[string]string)
 
 			for i, msg := range newOriginalMessages.Messages {
 				if gofakeit.Bool() {
 					newOriginalMessages.Messages[i].Message = gofakeit.BuzzWord()
-					alteredMessageLookup[msg.ID] = struct{}{}
+					alteredMessageLookup[msg.ID] = newOriginalMessages.Messages[i].Message
 				}
 			}
 
+			// Invoke alterTranslations
 			newMessages, err := translateSrv.alterTranslations(ctx, allMessages, newOriginalMessages)
 			require.NoError(t, err)
-
 			require.Len(t, newMessages, len(allMessages))
 
-			// check that altered messages have been translated and marked as fuzzy for all translations.
+			// Check that messages have been altered and marked as untranslated for all translations.
 			for _, m := range newMessages {
 				if m.Original {
+					require.Equal(t, *tt.originalMessages, m)
 					continue
 				}
 
 				for _, message := range m.Messages {
-					if _, ok := alteredMessageLookup[message.ID]; ok {
-						require.Equal(t, mockTranslation, message.Message)
-						require.Equal(t, model.MessageStatusFuzzy, message.Status)
+					if alteredMessage, ok := alteredMessageLookup[message.ID]; ok {
+						require.Equal(t, alteredMessage, message.Message)
+						require.Equal(t, model.MessageStatusUntranslated, message.Status)
 					}
 				}
 			}
@@ -168,22 +162,108 @@ func Test_populateTranslations(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			// Add some extra messages to the original messages
-			tt.originalMessages.Messages = append(tt.originalMessages.Messages, *rand.ModelMessage())
-			tt.originalMessages.Messages = append(tt.originalMessages.Messages, *rand.ModelMessage())
-
 			// Create a slice with all messages (Original + translated)
 			allMessages := append(tt.translatedMessages, *tt.originalMessages)
 
-			// Invoke populateTranslatedMessages
-			newMessages, err := translateSrv.populateTranslations(ctx, allMessages, tt.originalMessages)
+			// Add some extra messages to the new original messages
+			newOriginalMessages := &model.MessagesSlice{*tt.originalMessages}.Clone()[0]
+			newOriginalMessages.Messages = append(newOriginalMessages.Messages, *rand.ModelMessage())
+			newOriginalMessages.Messages = append(newOriginalMessages.Messages, *rand.ModelMessage())
+
+			// Invoke populateTranslations
+			newMessages, err := translateSrv.populateTranslations(ctx, allMessages, newOriginalMessages)
 			require.NoError(t, err)
 
 			// Assert that length of loaded messages is equal to the length of all messages. (one for original + count of translated messages)
 			require.Len(t, newMessages, len(allMessages))
+
 			// Assert that the length of the messages in the loaded messages is equal to the length of the original messages.
 			for _, m := range newMessages {
-				require.Len(t, m.Messages, len(tt.originalMessages.Messages))
+				if m.Original {
+					require.Equal(t, *tt.originalMessages, m)
+					continue
+				}
+
+				require.Len(t, m.Messages, len(newOriginalMessages.Messages))
+			}
+		})
+	}
+}
+
+func Test_refreshTranslations(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	originalMessages1 := randOriginalMessages(3)
+	originalMessages2 := randOriginalMessages(10)
+
+	tests := []struct {
+		name               string
+		originalMessages   *model.Messages
+		translatedMessages []model.Messages
+		assertFunc         func(t *testing.T, originalMessages *model.Messages, translatedMessages []model.Messages)
+	}{
+		{
+			name:               "Fuzzy translate untranslated messages for one translation",
+			originalMessages:   originalMessages1,
+			translatedMessages: randTranslatedMessages(1, 3, originalMessages1),
+		},
+		{
+			name:               "Fuzzy translate untranslated messages for five translations",
+			originalMessages:   originalMessages2,
+			translatedMessages: randTranslatedMessages(5, 5, originalMessages2),
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			allMessages := append(tt.translatedMessages, *tt.originalMessages)
+			newOriginalMessages := &model.MessagesSlice{*tt.originalMessages}.Clone()[0]
+			untranslatedMessageIDLookup := make(map[string]struct{})
+
+			// Randomly set message status to untranslated
+
+			for _, msg := range newOriginalMessages.Messages {
+				if gofakeit.Bool() {
+					untranslatedMessageIDLookup[msg.ID] = struct{}{}
+				}
+			}
+
+			for i := range allMessages {
+				if allMessages[i].Original {
+					continue
+				}
+
+				for j := range allMessages[i].Messages {
+					if _, ok := untranslatedMessageIDLookup[allMessages[i].Messages[j].ID]; ok {
+						allMessages[i].Messages[j].Status = model.MessageStatusUntranslated
+					}
+				}
+			}
+
+			// Invoke refreshTranslations
+			newMessages, err := translateSrv.refreshTranslations(ctx, allMessages, newOriginalMessages)
+			require.NoError(t, err)
+
+			require.Len(t, newMessages, len(allMessages))
+
+			// Check that untranslated messages have been translated and marked as fuzzy for all translations.
+			for _, m := range newMessages {
+				if m.Original {
+					require.Equal(t, *tt.originalMessages, m)
+					continue
+				}
+
+				for _, message := range m.Messages {
+					if _, ok := untranslatedMessageIDLookup[message.ID]; ok {
+						require.Equal(t, mockTranslation, message.Message)
+						require.Equal(t, model.MessageStatusFuzzy, message.Status)
+					}
+				}
 			}
 		})
 	}

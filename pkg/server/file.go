@@ -130,20 +130,25 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
-		// find original messages with altered text, translate & replace text in the associated messages for all translations.
+		// Find original messages with altered text, then replace text in associated messages for all translations.
 		newMessages, err := t.alterTranslations(ctx, allMessages, messages)
 		if err != nil {
 			return nil, err
 		}
 
-		// if populateMessages is true - populate missing messages for all translations.
+		// If populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {
 			if newMessages, err = t.populateTranslations(ctx, newMessages, messages); err != nil {
 				return nil, err
 			}
 		}
 
-		// update all translations
+		// Fuzzy translate untranslated messages for all translations
+		if newMessages, err = t.refreshTranslations(ctx, newMessages, messages); err != nil {
+			return nil, err
+		}
+
+		// Update all translations
 		for i := range newMessages {
 			if newMessages[i].Original {
 				continue
