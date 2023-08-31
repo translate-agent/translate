@@ -119,7 +119,7 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:     "input with curly braces in it",
-			input:    "{Chart [\\{\\}] was added to dashboard [\\{\\}]}",
+			input:    `{Chart [\{\}] was added to dashboard [\{\}]}`,
 			expected: []interface{}{NodeText{Text: "Chart [{}] was added to dashboard [{}]"}},
 		},
 	} {

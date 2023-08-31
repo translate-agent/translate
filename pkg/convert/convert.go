@@ -9,7 +9,6 @@ func convertToMessageFormatSingular(message string) string {
 	}
 
 	message = escapeSpecialChars(message)
-	message = escapePipe(message)
 
 	return "{" + message + "}"
 }
@@ -18,8 +17,9 @@ func convertToMessageFormatSingular(message string) string {
 func escapeSpecialChars(message string) string {
 	if strings.Contains(message, "{") ||
 		strings.Contains(message, "}") ||
-		strings.Contains(message, "\\") {
-		r := strings.NewReplacer("{", "\\{", "}", "\\}", "\\", "\\\\")
+		strings.Contains(message, "\\") ||
+		strings.Contains(message, "|") {
+		r := strings.NewReplacer("{", "\\{", "}", "\\}", "\\", "\\\\", "|", "\\|")
 		return r.Replace(message)
 	}
 
@@ -30,20 +30,4 @@ func escapeSpecialChars(message string) string {
 func removeEnclosingBrackets(message string) string {
 	replacer := strings.NewReplacer("{", "", "}", "")
 	return replacer.Replace(message)
-}
-
-// escapePipe escapes single pipe characters '|' in a given string
-// but leaves double pipe characters '||' untouched.
-func escapePipe(input string) string {
-	var output strings.Builder
-
-	for i := 0; i < len(input); i++ {
-		if input[i] == '|' {
-			output.WriteString("\\|")
-		} else {
-			output.WriteByte(input[i])
-		}
-	}
-
-	return output.String()
 }

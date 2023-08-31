@@ -94,7 +94,7 @@ msgstr "Bonjour le monde!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "{Bonjour \\{\\} le monde!}",
+						Message:     `{Bonjour \{\} le monde!}`,
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -116,7 +116,7 @@ msgstr "Bonjour {} le monde!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "{Bonjour \\\\ le monde!}",
+						Message:     `{Bonjour \\ le monde!}`,
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -138,7 +138,7 @@ msgstr "Bonjour \ le monde!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "{Bonjour \\| le monde!}",
+						Message:     `{Bonjour \| le monde!}`,
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -151,6 +151,28 @@ msgstr ""
 #, fuzzy
 msgid "Hello, world!"
 msgstr "Bonjour | le monde!"
+`),
+		},
+		{
+			name: "msgstr with double pipe inside",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello, world!",
+						Message:     `{Bonjour \|\| le monde!}`,
+						Description: "A simple greeting",
+						Status:      model.MessageStatusFuzzy,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: en\n"
+#. A simple greeting
+#, fuzzy
+msgid "Hello, world!"
+msgstr "Bonjour || le monde!"
 `),
 		},
 		{
@@ -1176,7 +1198,7 @@ when * {There are {$count} apples.}
 				Messages: []model.Message{
 					{
 						ID:          "+ {%s} hello",
-						Message:     "{+ \\{%s\\} hello}",
+						Message:     `{+ \{%s\} hello}`,
 						Description: "a greeting",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -1199,7 +1221,30 @@ when * {There are {$count} apples.}
 				Messages: []model.Message{
 					{
 						ID:          "+ | hello",
-						Message:     "{+ \\| hello}",
+						Message:     `{+ \| hello}`,
+						Description: "a greeting",
+						Status:      model.MessageStatusUntranslated,
+					},
+				},
+				Original: true,
+			},
+			original: true,
+		},
+		{
+			name: "msgid with double pipe inside",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							#. a greeting
+							msgid "+ || hello"
+							msgstr ""
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "+ || hello",
+						Message:     `{+ \|\| hello}`,
 						Description: "a greeting",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -1222,30 +1267,7 @@ when * {There are {$count} apples.}
 				Messages: []model.Message{
 					{
 						ID:          "+ \\ hello",
-						Message:     "{+ \\\\ hello}",
-						Description: "a greeting",
-						Status:      model.MessageStatusUntranslated,
-					},
-				},
-				Original: true,
-			},
-			original: true,
-		},
-		{
-			name: "msgid with pipe inside annotation",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							#. a greeting
-							msgid "The character | has to be paired or escaped: {&private | }"
-							msgstr ""
-			`),
-			expected: model.Messages{
-				Language: language.English,
-				Messages: []model.Message{
-					{
-						ID:          "The character | has to be paired or escaped: {&private | }",
-						Message:     "{The character \\| has to be paired or escaped: \\{&private \\| \\}}",
+						Message:     `{+ \\ hello}`,
 						Description: "a greeting",
 						Status:      model.MessageStatusUntranslated,
 					},
