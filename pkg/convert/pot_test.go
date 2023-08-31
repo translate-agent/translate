@@ -88,6 +88,78 @@ msgstr "Bonjour le monde!"
 `),
 		},
 		{
+			name: "msgstr with curly braces inside",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "Hello, world!",
+						Message: `{Bonjour \{\} le monde!}`,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: en\n"
+msgid "Hello, world!"
+msgstr "Bonjour {} le monde!"
+`),
+		},
+		{
+			name: "msgstr with slash inside",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "Hello, world!",
+						Message: `{Bonjour \\ le monde!}`,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: en\n"
+msgid "Hello, world!"
+msgstr "Bonjour \ le monde!"
+`),
+		},
+		{
+			name: "msgstr with pipe inside",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "Hello, world!",
+						Message: `{Bonjour \| le monde!}`,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: en\n"
+msgid "Hello, world!"
+msgstr "Bonjour | le monde!"
+`),
+		},
+		{
+			name: "msgstr with double pipe inside",
+			input: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "Hello, world!",
+						Message: `{Bonjour \|\| le monde!}`,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: en\n"
+msgid "Hello, world!"
+msgstr "Bonjour || le monde!"
+`),
+		},
+		{
 			name: "multiline description",
 			input: model.Messages{
 				Language: language.English,
@@ -1095,6 +1167,167 @@ when * {There are {$count} apples.}
 			`),
 			original:    false,
 			expectedErr: fmt.Errorf("convert tokens to pot.Po: get previous token: no previous token"),
+		},
+		{
+			name: "msgid with curly braces inside",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							msgid "+ {%s} hello"
+							msgstr ""
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "+ {%s} hello",
+						Message: `{+ \{%s\} hello}`,
+					},
+				},
+				Original: true,
+			},
+			original: true,
+		},
+		{
+			name: "msgid with pipe inside",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							msgid "+ | hello"
+							msgstr ""
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "+ | hello",
+						Message: `{+ \| hello}`,
+					},
+				},
+				Original: true,
+			},
+			original: true,
+		},
+		{
+			name: "msgid with double pipe inside",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							msgid "+ || hello"
+							msgstr ""
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "+ || hello",
+						Message: `{+ \|\| hello}`,
+					},
+				},
+				Original: true,
+			},
+			original: true,
+		},
+		{
+			name: "msgid with slash inside",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							msgid "+ \ hello"
+							msgstr ""
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "+ \\ hello",
+						Message: `{+ \\ hello}`,
+					},
+				},
+				Original: true,
+			},
+			original: true,
+		},
+		{
+			name: "plural msgstr with curly braces",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] "Il y a %d pomme {test}."
+							msgstr[1] "Il y a %d pommes {tests}."
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:       "There is %d apple.",
+						PluralID: "There are %d apples.",
+						Message: `match {$count :number}
+when 1 {Il y a {$count} pomme \{test\}.}
+when * {Il y a {$count} pommes \{tests\}.}
+`,
+					},
+				},
+				Original: false,
+			},
+			original: false,
+		},
+		{
+			name: "plural msgstr with pipe",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] "Il y a %d pomme |."
+							msgstr[1] "Il y a %d pommes |."
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:       "There is %d apple.",
+						PluralID: "There are %d apples.",
+						Message: `match {$count :number}
+when 1 {Il y a {$count} pomme \|.}
+when * {Il y a {$count} pommes \|.}
+`,
+					},
+				},
+				Original: false,
+			},
+			original: false,
+		},
+		{
+			name: "plural msgstr with slash",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] "Il y a %d pomme \."
+							msgstr[1] "Il y a %d pommes \."
+			`),
+			expected: model.Messages{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:       "There is %d apple.",
+						PluralID: "There are %d apples.",
+						Message: `match {$count :number}
+when 1 {Il y a {$count} pomme \\.}
+when * {Il y a {$count} pommes \\.}
+`,
+					},
+				},
+				Original: false,
+			},
+			original: false,
 		},
 	}
 

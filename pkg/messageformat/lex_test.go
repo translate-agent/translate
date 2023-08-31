@@ -56,7 +56,7 @@ func Test_lex(t *testing.T) {
 			},
 		},
 		{
-			name:  "expr with variable and function and text",
+			name:  "expr with variable, function and text",
 			input: "{Hello, {$guest :person} is here}",
 			expected: []Token{
 				tokenSeparatorOpen,
@@ -71,7 +71,7 @@ func Test_lex(t *testing.T) {
 			},
 		},
 		{
-			name:  "expr with variable and function and text",
+			name:  "expr with variable, function and text",
 			input: "{{+button}Submit{-button}}",
 			expected: []Token{
 				tokenSeparatorOpen,
@@ -221,6 +221,36 @@ func Test_lex(t *testing.T) {
 				tokenSeparatorClose,
 				tokenSeparatorOpen,
 				mkTokenErrorf(`invalid first character %v of function at %d`, "-", 13),
+			},
+		},
+		{
+			name:  "input with curly braces",
+			input: `{Chart [\{\}] was added to dashboard [\{\}]}`,
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "Chart [{}] was added to dashboard [{}]"),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name:  "input with pipes",
+			input: `{Chart [\|] was added to dashboard [\|]}`,
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "Chart [|] was added to dashboard [|]"),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name:  "input with slashes",
+			input: `{Chart [\\] was added to dashboard [\\]}`,
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "Chart [\\] was added to dashboard [\\]"),
+				tokenSeparatorClose,
+				tokenEOF,
 			},
 		},
 	} {

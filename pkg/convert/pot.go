@@ -247,7 +247,7 @@ func writeMultiline(b *bytes.Buffer, tag poTag, lines []string) error {
 // It returns a slice of strings representing the individual lines.
 func getPoTagLines(str string) []string {
 	encodedStr := strconv.Quote(str)
-
+	encodedStr = strings.ReplaceAll(encodedStr, "\\\\", "\\")
 	encodedStr = encodedStr[1 : len(encodedStr)-1] // trim quotes
 	lines := strings.Split(encodedStr, "\\n")
 
@@ -337,6 +337,7 @@ func convertPluralsToMessageString(plurals []string) string {
 	sb.WriteString("match {$count :number}\n")
 
 	for i, plural := range plurals {
+		plural = escapeSpecialChars(plural)
 		line := strings.ReplaceAll(strings.TrimSpace(plural), "%d", "{$count}")
 
 		var count string
