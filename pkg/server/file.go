@@ -133,19 +133,19 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		// Find original messages with altered text, then replace text in associated messages for all translations.
 		newMessages, err := t.alterTranslations(ctx, allMessages, messages)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("replace text in associated messages :%w", err)
 		}
 
 		// If populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {
 			if newMessages, err = t.populateTranslations(ctx, newMessages, messages); err != nil {
-				return nil, err
+				return nil, fmt.Errorf("populate missing messages :%w", err)
 			}
 		}
 
 		// Fuzzy translate untranslated messages for all translations
 		if newMessages, err = t.refreshTranslations(ctx, newMessages, messages); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("translate untranslated messages :%w", err)
 		}
 
 		// Update all translations

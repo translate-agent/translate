@@ -17,7 +17,7 @@ type Messages struct {
 
 type MessagesSlice []Messages
 
-// Clone() returns a deep copy of MessagesSlice.
+// Clone returns a deep copy of MessagesSlice.
 func (m MessagesSlice) Clone() MessagesSlice {
 	if len(m) == 0 {
 		return nil
