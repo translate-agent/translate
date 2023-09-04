@@ -125,36 +125,34 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 
 	// When updating original messages, changes might affect translations - transform and update all translations.
 	if messages.Original {
-		allMessages, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
+		all, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
+		all = all.Replace(*messages)
+		prev, _ := all.SplitOriginal()
+
 		// Find original messages with altered text, then replace text in associated messages for all translations.
-		newMessages, err := t.alterTranslations(ctx, allMessages, messages)
-		if err != nil {
-			return nil, fmt.Errorf("replace text in associated messages :%w", err)
-		}
+		all = t.alterTranslations(all, findUntranslatedIDs(*prev, *messages))
 
 		// If populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {
-			if newMessages, err = t.populateTranslations(ctx, newMessages, messages); err != nil {
-				return nil, fmt.Errorf("populate missing messages :%w", err)
-			}
+			all = t.populateTranslations(all)
 		}
 
 		// Fuzzy translate untranslated messages for all translations
-		if newMessages, err = t.refreshTranslations(ctx, newMessages, messages); err != nil {
-			return nil, fmt.Errorf("translate untranslated messages :%w", err)
+		if all, err = t.fuzzyTranslate(ctx, all); err != nil {
+			return nil, fmt.Errorf("fuzzy translate messages :%w", err)
 		}
 
 		// Update all translations
-		for i := range newMessages {
-			if newMessages[i].Original {
+		for i := range all {
+			if all[i].Original {
 				continue
 			}
 
-			err = t.repo.SaveMessages(ctx, params.serviceID, &newMessages[i])
+			err = t.repo.SaveMessages(ctx, params.serviceID, &all[i])
 			switch {
 			default:
 				// noop

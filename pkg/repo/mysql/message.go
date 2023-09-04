@@ -105,7 +105,7 @@ ON DUPLICATE KEY UPDATE
 }
 
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts repo.LoadMessagesOpts,
-) ([]model.Messages, error) {
+) (model.MessagesSlice, error) {
 	rows, err := sq.
 		Select("mm.id, mm.message, mm.description, mm.positions, mm.status, m.language, m.original").
 		From("message_message mm").

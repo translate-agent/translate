@@ -26,7 +26,7 @@ type LoadMessagesOpts struct {
 type MessagesRepo interface {
 	// SaveMessages handles both Create and Update
 	SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *model.Messages) error
-	LoadMessages(ctx context.Context, serviceID uuid.UUID, opts LoadMessagesOpts) ([]model.Messages, error)
+	LoadMessages(ctx context.Context, serviceID uuid.UUID, opts LoadMessagesOpts) (model.MessagesSlice, error)
 }
 
 type Repo interface {

@@ -2,12 +2,13 @@ package server
 
 import (
 	"context"
+	"github.com/brianvoe/gofakeit/v6"
+	"golang.org/x/exp/slices"
 	"log"
 	"os"
 	"strings"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v6"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
@@ -57,26 +58,39 @@ func TestMain(m *testing.M) {
 func Test_alterTranslations(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
-	originalMessages1 := randOriginalMessages(3)
-	originalMessages2 := randOriginalMessages(10)
+	originalMessages1 := randOriginalMessages(5)
+	translatedMessages := randTranslatedMessages(5, 5, originalMessages1)
+	mixedMessages := append(translatedMessages, *originalMessages1)
 
 	tests := []struct {
-		name               string
-		originalMessages   *model.Messages
-		translatedMessages []model.Messages
-		assertFunc         func(t *testing.T, originalMessages *model.Messages, translatedMessages []model.Messages)
+		name            string
+		messages        model.MessagesSlice
+		untranslatedIds []string
+		expected        model.MessagesSlice
 	}{
 		{
-			name:               "Update altered messages for one translation",
-			originalMessages:   originalMessages1,
-			translatedMessages: randTranslatedMessages(1, 3, originalMessages1),
+			name:            "No untranslated IDs are provided",
+			messages:        model.MessagesSlice{*originalMessages1},
+			untranslatedIds: nil,
+			expected:        model.MessagesSlice{*originalMessages1},
 		},
 		{
-			name:               "Update altered messages for five translations",
-			originalMessages:   originalMessages2,
-			translatedMessages: randTranslatedMessages(5, 5, originalMessages2),
+			name:            "Single original message, untranslated IDs are provided",
+			messages:        model.MessagesSlice{*originalMessages1},
+			untranslatedIds: []string{originalMessages1.Messages[0].ID},
+			expected:        model.MessagesSlice{*originalMessages1},
+		},
+		{
+			name:            "Non originals messages, untranslated IDs are provided",
+			messages:        translatedMessages,
+			untranslatedIds: []string{translatedMessages[0].Messages[0].ID},
+			expected:        translatedMessages,
+		},
+		{
+			name:            "Update altered messages for transaction ",
+			messages:        mixedMessages,
+			untranslatedIds: []string{originalMessages1.Messages[0].ID},
+			expected:        mixedMessages,
 		},
 	}
 
@@ -85,38 +99,29 @@ func Test_alterTranslations(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			allMessages := append(tt.translatedMessages, *tt.originalMessages)
+			result := translateSrv.alterTranslations(tt.messages, tt.untranslatedIds)
+			require.Len(t, result, len(tt.expected))
 
-			// Prepare new original messages with randomly altered message text
+			original, _ := tt.messages.SplitOriginal()
 
-			newOriginalMessages := &model.MessagesSlice{*tt.originalMessages}.Clone()[0]
-			alteredMessageLookup := make(map[string]string)
-
-			for i, msg := range newOriginalMessages.Messages {
-				if gofakeit.Bool() {
-					newOriginalMessages.Messages[i].Message = gofakeit.BuzzWord()
-					alteredMessageLookup[msg.ID] = newOriginalMessages.Messages[i].Message
-				}
+			if original == nil || len(tt.expected) == 1 || len(tt.untranslatedIds) == 0 {
+				require.Equal(t, tt.expected, tt.messages)
+				return
 			}
 
-			// Invoke alterTranslations
-			newMessages, err := translateSrv.alterTranslations(ctx, allMessages, newOriginalMessages)
-			require.NoError(t, err)
-			require.Len(t, newMessages, len(allMessages))
-
 			// Check that messages have been altered and marked as untranslated for all translations.
-			for _, m := range newMessages {
+			for i, m := range result {
 				if m.Original {
-					require.Equal(t, *tt.originalMessages, m)
+					require.Equal(t, tt.messages[i], m)
 					continue
 				}
 
-				for _, message := range m.Messages {
-					if alteredMessage, ok := alteredMessageLookup[message.ID]; ok {
-						require.Equal(t, alteredMessage, message.Message)
-						require.Equal(t, model.MessageStatusUntranslated, message.Status)
+				for _, msg := range m.Messages {
+					if slices.Contains(tt.untranslatedIds, msg.ID) {
+						require.Equal(t, msg.Status, model.MessageStatusUntranslated)
 					}
 				}
+
 			}
 		})
 	}
@@ -124,8 +129,6 @@ func Test_alterTranslations(t *testing.T) {
 
 func Test_populateTranslations(t *testing.T) {
 	t.Parallel()
-
-	ctx := context.Background()
 
 	originalMessages1 := randOriginalMessages(5)
 	originalMessages2 := randOriginalMessages(5)
@@ -135,7 +138,6 @@ func Test_populateTranslations(t *testing.T) {
 		name               string
 		originalMessages   *model.Messages
 		translatedMessages []model.Messages
-		assertFunc         func(t *testing.T, originalMessages *model.Messages, translatedMessages []model.Messages)
 	}{
 		{
 			// Original messages with 5 messages, and one translated messages with same 5 messages.messages ID's.
@@ -165,32 +167,26 @@ func Test_populateTranslations(t *testing.T) {
 			// Create a slice with all messages (Original + translated)
 			allMessages := append(tt.translatedMessages, *tt.originalMessages)
 
-			// Add some extra messages to the new original messages
-			newOriginalMessages := &model.MessagesSlice{*tt.originalMessages}.Clone()[0]
-			newOriginalMessages.Messages = append(newOriginalMessages.Messages, *rand.ModelMessage())
-			newOriginalMessages.Messages = append(newOriginalMessages.Messages, *rand.ModelMessage())
-
 			// Invoke populateTranslations
-			newMessages, err := translateSrv.populateTranslations(ctx, allMessages, newOriginalMessages)
-			require.NoError(t, err)
+			newMessages := translateSrv.populateTranslations(allMessages)
 
 			// Assert that length of loaded messages is equal to the length of all messages. (one for original + count of translated messages)
 			require.Len(t, newMessages, len(allMessages))
 
 			// Assert that the length of the messages in the loaded messages is equal to the length of the original messages.
-			for _, m := range newMessages {
+			for i, m := range newMessages {
 				if m.Original {
 					require.Equal(t, *tt.originalMessages, m)
 					continue
 				}
 
-				require.Len(t, m.Messages, len(newOriginalMessages.Messages))
+				require.Len(t, m.Messages, len(newMessages[i].Messages))
 			}
 		})
 	}
 }
 
-func Test_refreshTranslations(t *testing.T) {
+func Test_fuzzyTranslate(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -246,7 +242,7 @@ func Test_refreshTranslations(t *testing.T) {
 			}
 
 			// Invoke refreshTranslations
-			newMessages, err := translateSrv.refreshTranslations(ctx, allMessages, newOriginalMessages)
+			newMessages, err := translateSrv.fuzzyTranslate(ctx, allMessages)
 			require.NoError(t, err)
 
 			require.Len(t, newMessages, len(allMessages))
@@ -309,3 +305,40 @@ func randTranslatedMessages(n uint, msgCount uint, original *model.Messages) []m
 
 	return messages
 }
+
+func randTranslatedMessages1(n uint, msgCount uint, original *model.Messages) model.Messages {
+	var concatenatedMessages model.Messages
+
+	for i, lang := range rand.Languages(n) {
+		msg := rand.ModelMessages(
+			msgCount,
+			nil,
+			rand.WithOriginal(false),
+			rand.WithSameIDs(original),
+			rand.WithLanguage(lang),
+		)
+
+		if i == 0 {
+			concatenatedMessages = *msg
+		} else {
+			concatenatedMessages.Messages = append(concatenatedMessages.Messages, msg.Messages...)
+		}
+	}
+
+	return concatenatedMessages
+}
+
+//
+//// randOriginalAndNonOriginalMessages creates a random messages with the original and not original message.
+//func randOriginalAndNonOriginalMessages(includeOriginal bool, msgCount uint) model.MessagesSlice {
+//	result := model.MessagesSlice{}
+//	if includeOriginal {
+//		result = append(result, *randOriginalMessages(msgCount))
+//		result = append(result, *randNonOriginalMessages(msgCount))
+//	} else {
+//		result = append(result, *randNonOriginalMessages(msgCount))
+//		result = append(result, *randNonOriginalMessages(msgCount))
+//	}
+//
+//	return result
+//}
