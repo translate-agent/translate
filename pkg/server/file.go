@@ -127,7 +127,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		}
 
 		if len(all) == 1 && all[0].Original {
-			return nil, nil
+			return &emptypb.Empty{}, nil
 		}
 
 		prev, _ := all.SplitOriginal()
