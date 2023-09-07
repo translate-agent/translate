@@ -4,7 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	
+
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
 )
@@ -17,17 +17,17 @@ type Messages struct {
 
 type MessagesSlice []Messages
 
-
 func (m MessagesSlice) Replace(messages Messages) MessagesSlice {
 	for i := range m {
 		if m[i].Language == messages.Language {
-			m[i] = messages 
+			m[i] = messages
+
 			return m
 		}
 	}
 
 	return append(m, messages)
-} 
+}
 
 // Clone returns a deep copy of MessagesSlice.
 func (m MessagesSlice) Clone() MessagesSlice {
