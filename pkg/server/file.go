@@ -114,14 +114,6 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	_, err = t.repo.LoadService(ctx, params.serviceID)
-	switch {
-	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, "service not found")
-	case err != nil:
-		return nil, status.Errorf(codes.Internal, "")
-	}
-
 	all := model.MessagesSlice{*messages}
 
 	// When updating original messages, changes might affect translations - transform and update all translations.
@@ -150,7 +142,10 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 
 	for i := range all {
 		err = t.repo.SaveMessages(ctx, params.serviceID, &all[i])
-		if err != nil {
+		switch {
+		case errors.Is(err, repo.ErrNotFound):
+			return nil, status.Errorf(codes.NotFound, "service not found")
+		case err != nil:
 			return nil, status.Errorf(codes.Internal, "")
 		}
 	}

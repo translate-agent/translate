@@ -305,39 +305,27 @@ func (t *TranslateServiceServer) alterTranslations(
 // populateTranslations adds any missing messages from the original messages to all translated messages,
 // returns messagesSlice containing populated translations.
 func (t *TranslateServiceServer) populateTranslations(all model.MessagesSlice) []model.Messages {
-	// Iterate over the existing messages
-	for i := range all {
-		// Skip if Original is true
-		if all[i].Original {
-			continue
-		}
+	original, others := all.SplitOriginal()
 
-		// Create a map to store the IDs of the missing messages
-		missingMsgIDs := make(map[string]struct{}, len(all[i].Messages))
-		for _, m := range all[i].Messages {
-			missingMsgIDs[m.ID] = struct{}{}
-		}
-
-		// Create a new messages to store missing messages
-		missingMsgs := &model.Messages{
-			Language: all[i].Language,
-			Messages: make([]model.Message, 0, len(all[i].Messages)),
-		}
-
-		// Iterate over the original messages and add any missing messages to the toBeTranslated.Messages slice
-		for _, msg := range all[i].Messages {
-			if _, ok := missingMsgIDs[msg.ID]; !ok {
-				m := msg
-				m.Status = model.MessageStatusUntranslated
-				missingMsgs.Messages = append(missingMsgs.Messages, m)
+	for i := range original.Messages {
+		for j := range others {
+			found := slices.ContainsFunc(others[j].Messages, func(message model.Message) bool {
+				return message.ID == original.Messages[i].ID
+			})
+			if !found {
+				others[j].Messages = append(others[j].Messages, model.Message{
+					ID: original.Messages[i].ID,
+					Message: original.Messages[i].Message,
+					PluralID: original.Messages[i].PluralID,
+					Description: original.Messages[i].Description,
+					Positions: original.Messages[i].Positions,
+					Status: model.MessageStatusUntranslated,
+				})
 			}
 		}
-
-		// Append the missing messages to the existing messages
-		all[i].Messages = append(all[i].Messages, missingMsgs.Messages...)
 	}
 
-	return all
+	return append(others, *original)
 }
 
 // langExists returns true if the provided language exists in the provided model.Messages slice.
