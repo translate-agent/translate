@@ -114,22 +114,24 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	empty, err, done := t.SaveMsgsAndHandleErrors(ctx, params, messages)
-	if done {
-		return empty, err
+	_, err = t.repo.LoadService(ctx, params.serviceID)
+	switch {
+	case errors.Is(err, repo.ErrNotFound):
+		return nil, status.Errorf(codes.NotFound, "service not found")
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "")
 	}
+
+	all := model.MessagesSlice{*messages}
 
 	// When updating original messages, changes might affect translations - transform and update all translations.
 	if messages.Original {
-		all, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
+		all, err = t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
-		if len(all) == 1 && all[0].Original {
-			return &emptypb.Empty{}, nil
-		}
-
+		all = all.Replace(*messages)
 		prev, _ := all.SplitOriginal()
 
 		// Find original messages with altered text, then replace text in associated messages for all translations.
@@ -144,33 +146,16 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		if all, err = t.fuzzyTranslate(ctx, all); err != nil {
 			return nil, fmt.Errorf("fuzzy translate messages :%w", err)
 		}
+	}
 
-		// Update all translations
-		for i := range all {
-			if all[i].Original {
-				continue
-			}
-
-			empty, err, done = t.SaveMsgsAndHandleErrors(ctx, params, messages)
-			if done {
-				return empty, err
-			}
+	for i := range all {
+		err = t.repo.SaveMessages(ctx, params.serviceID, &all[i])
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "")
 		}
 	}
 
 	return &emptypb.Empty{}, nil
-}
-
-func (t *TranslateServiceServer) SaveMsgsAndHandleErrors(ctx context.Context, params *uploadParams, messages *model.Messages) (*emptypb.Empty, error, bool) {
-	switch err := t.repo.SaveMessages(ctx, params.serviceID, messages); {
-	default:
-		// noop
-	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, "service not found"), true
-	case err != nil:
-		return nil, status.Errorf(codes.Internal, ""), true
-	}
-	return nil, nil, false
 }
 
 // ----------------------DownloadTranslationFile-------------------------------

@@ -220,25 +220,21 @@ func (t *TranslateServiceServer) UpdateMessages(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	all, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "")
-	}
-
-	if len(all) == 0 || !langExists(all, params.messages.Language) {
-		return nil, status.Errorf(codes.NotFound, "messages not found for language: '%s'", params.messages.Language)
-	}
-
-	err = t.repo.SaveMessages(ctx, params.serviceID, params.messages)
-	messages, err, done := t.handleErrors(err)
-	if done {
-		return messages, err
-	}
+	all := model.MessagesSlice{*params.messages}
 
 	// When updating original messages, changes might affect translations - transform and update all translations.
 	if params.messages.Original {
+		all, err = t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "")
+		}
+
+		if !langExists(all, params.messages.Language) {
+			return nil, status.Errorf(codes.NotFound, "messages not found for language: '%s'", params.messages.Language)
+		}
+
 		all = all.Replace(*params.messages)
-		prev, others := all.SplitOriginal()
+		prev, _ := all.SplitOriginal()
 
 		// Find original messages with altered text, then replace text in associated messages for all translations.
 		all = t.alterTranslations(all, findUntranslatedIDs(prev, params.messages))
@@ -252,30 +248,25 @@ func (t *TranslateServiceServer) UpdateMessages(
 		if all, err = t.fuzzyTranslate(ctx, all); err != nil {
 			return nil, fmt.Errorf("fuzzy translate messages: %w", err)
 		}
+	} else {
+		prev, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{FilterLanguages: []language.Tag{params.messages.Language}})
+		switch {
+		case err != nil:
+			return nil, status.Errorf(codes.Internal, "")
+		case len(prev) == 0:
+			return nil, status.Errorf(codes.NotFound, "messages not found")
+		}
+	}
 
-		// Update messages for all translations
-		for i := range others {
-			err = t.repo.SaveMessages(ctx, params.serviceID, &all[i])
-			messages, err, done = t.handleErrors(err)
-			if done {
-				return messages, err
-			}
+	// Update messages for all translations
+	for i := range all {
+		err = t.repo.SaveMessages(ctx, params.serviceID, &all[i])
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "")
 		}
 	}
 
 	return messagesToProto(params.messages), nil
-}
-
-func (t *TranslateServiceServer) handleErrors(err error) (*translatev1.Messages, error, bool) {
-	switch {
-	default:
-		// noop
-	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, "service not found"), true
-	case err != nil:
-		return nil, status.Errorf(codes.Internal, ""), true
-	}
-	return nil, nil, false
 }
 
 // helpers
@@ -296,6 +287,8 @@ func (t *TranslateServiceServer) alterTranslations(
 	if original == nil {
 		return all
 	}
+
+	slices.Sort(untranslatedIDs)
 
 	// Update altered messages for all translations
 	for _, msg := range others {
