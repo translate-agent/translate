@@ -24,6 +24,13 @@ func (ms MessagesSlice) HasLanguage(targetLang language.Tag) bool {
 	})
 }
 
+// LanguageIndex returns index of Messages with the given language. If not found, returns -1.
+func (ms MessagesSlice) LanguageIndex(targetLang language.Tag) int {
+	return slices.IndexFunc(ms, func(m Messages) bool {
+		return m.Language == targetLang
+	})
+}
+
 func (m MessagesSlice) Replace(messages Messages) MessagesSlice {
 	for i := range m {
 		if m[i].Language == messages.Language {

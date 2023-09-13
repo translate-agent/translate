@@ -237,7 +237,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 		prev, _ := all.SplitOriginal()
 
 		// Find original messages with altered text, then replace text in associated messages for all translations.
-		all = t.alterTranslations(all, findUntranslatedIDs(prev, params.messages))
+		all = t.alterTranslations(all, getUntranslatedIDs(prev, params.messages))
 
 		// If populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {
@@ -377,18 +377,23 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 	return all, nil
 }
 
-func findUntranslatedIDs(prev, next *model.Messages) []string {
-	lookup := make(map[string]string, len(prev.Messages))
+/*
+getUntranslatedIDs returns a list of message IDs that have been altered e.g.
+ 1. The message.message has been changed
+ 2. The message with new message.ID has been added
+*/
+func getUntranslatedIDs(old, new *model.Messages) []string {
+	lookup := make(map[string]string, len(old.Messages))
 
-	for i := range prev.Messages {
-		lookup[prev.Messages[i].ID] = prev.Messages[i].Message
+	for _, msg := range old.Messages {
+		lookup[msg.ID] = msg.Message
 	}
 
 	var ids []string
 
-	for i := range next.Messages {
-		if next.Messages[i].Message != lookup[prev.Messages[i].ID] {
-			ids = append(ids, next.Messages[i].ID)
+	for _, msg := range new.Messages {
+		if oldMsg, ok := lookup[msg.ID]; !ok || oldMsg != msg.Message {
+			ids = append(ids, msg.ID)
 		}
 	}
 
