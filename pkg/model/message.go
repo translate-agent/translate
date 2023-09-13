@@ -17,6 +17,13 @@ type Messages struct {
 
 type MessagesSlice []Messages
 
+// HasLanguage checks if MessagesSlice contains Messages with the given language.
+func (ms MessagesSlice) HasLanguage(targetLang language.Tag) bool {
+	return slices.ContainsFunc(ms, func(m Messages) bool {
+		return m.Language == targetLang
+	})
+}
+
 func (m MessagesSlice) Replace(messages Messages) MessagesSlice {
 	for i := range m {
 		if m[i].Language == messages.Language {

@@ -229,8 +229,8 @@ func (t *TranslateServiceServer) UpdateMessages(
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
-		if !langExists(all, params.messages.Language) {
-			return nil, status.Errorf(codes.NotFound, "messages not found for language: '%s'", params.messages.Language)
+		if !all.HasLanguage(params.messages.Language) {
+			return nil, status.Errorf(codes.NotFound, "no messages for language: '%s'", params.messages.Language)
 		}
 
 		all = all.Replace(*params.messages)
@@ -314,25 +314,18 @@ func (t *TranslateServiceServer) populateTranslations(all model.MessagesSlice) [
 			})
 			if !found {
 				others[j].Messages = append(others[j].Messages, model.Message{
-					ID: original.Messages[i].ID,
-					Message: original.Messages[i].Message,
-					PluralID: original.Messages[i].PluralID,
+					ID:          original.Messages[i].ID,
+					Message:     original.Messages[i].Message,
+					PluralID:    original.Messages[i].PluralID,
 					Description: original.Messages[i].Description,
-					Positions: original.Messages[i].Positions,
-					Status: model.MessageStatusUntranslated,
+					Positions:   original.Messages[i].Positions,
+					Status:      model.MessageStatusUntranslated,
 				})
 			}
 		}
 	}
 
 	return append(others, *original)
-}
-
-// langExists returns true if the provided language exists in the provided model.Messages slice.
-func langExists(msgs []model.Messages, lang language.Tag) bool {
-	return slices.ContainsFunc(msgs, func(m model.Messages) bool {
-		return m.Language == lang
-	})
 }
 
 // fuzzyTranslate fuzzy translates any untranslated messages,
