@@ -229,11 +229,13 @@ func (t *TranslateServiceServer) UpdateMessages(
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
-		if !all.HasLanguage(params.messages.Language) {
+		switch idx := all.LanguageIndex(params.messages.Language); idx {
+		case -1:
 			return nil, status.Errorf(codes.NotFound, "no messages for language: '%s'", params.messages.Language)
+		default:
+			all[idx] = *params.messages
 		}
 
-		all = all.Replace(*params.messages)
 		prev, _ := all.SplitOriginal()
 
 		// Find original messages with altered text, then replace text in associated messages for all translations.
@@ -247,14 +249,6 @@ func (t *TranslateServiceServer) UpdateMessages(
 		// Fuzzy translate untranslated messages for all translations
 		if all, err = t.fuzzyTranslate(ctx, all); err != nil {
 			return nil, fmt.Errorf("fuzzy translate messages: %w", err)
-		}
-	} else {
-		prev, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{FilterLanguages: []language.Tag{params.messages.Language}})
-		switch {
-		case err != nil:
-			return nil, status.Errorf(codes.Internal, "")
-		case len(prev) == 0:
-			return nil, status.Errorf(codes.NotFound, "messages not found")
 		}
 	}
 
@@ -271,8 +265,23 @@ func (t *TranslateServiceServer) UpdateMessages(
 
 // helpers
 
-// alterTranslations alter the status of specific messages in multiple languages to "untranslated"
-// based on a list of message IDs, while keeping the "original" language messages unchanged.
+/*
+alterTranslations alter the status of specific messages in multiple languages to "untranslated"
+based on a list of message IDs, while keeping the "original" language messages unchanged.
+
+Example:
+
+	untranslatedIDs := { "1" }
+
+	{ Language: en, Original: true, Messages: [ { ID: "1", Message: "Hello", Status: Translated  } ], ...
+	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour", Status: Translated  } ], ... ] }
+	{ Language: de, Messages: [ { ID: "1", Message: "Hallo", Status: Translated  } ], ... ]
+
+	Result:
+	{ Language: en, Original: true, Messages: [ { ID: "1", Message: "Hello", Status: Translated  } ], ...
+	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour", Status: Untranslated  }, ... ] }
+	{ Language: de, Messages: [ { ID: "1", Message: "Hallo", Status: Untranslated  } ], ... ]
+*/
 func (t *TranslateServiceServer) alterTranslations(
 	all model.MessagesSlice,
 	untranslatedIDs []string,
@@ -304,16 +313,14 @@ func (t *TranslateServiceServer) alterTranslations(
 
 /*
 populateTranslations adds messages that exists in original language but not in other languages.
+
 Example:
 
-	Original:
-	{ ..., Messages: [ { ID: "1", Message: "Hello" }, { ID: "2", Message: "World" } ] }
-
-	Translated:
-	{ ..., Messages: [ { ID: "1", Message: "Bonjour" } ] }
+	{ Language: en, Original: true, Messages: [ { ID: "1", Message: "Hello" }, { ID: "2", Message: "World" } ] }
+	{ Language: fr, Original: false, Messages: [ { ID: "1", Message: "Bonjour" } ] }
 
 	Result:
-	{ ..., Messages: [ { ID: "1", Message: "Bonjour" }, { ID: "2", Message: "World", Status: Untranslated } ] }
+	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour" }, { ID: "2", Message: "World", Status: Untranslated } ] }
 */
 func (t *TranslateServiceServer) populateTranslations(all model.MessagesSlice) model.MessagesSlice {
 	original, others := all.SplitOriginal()
@@ -341,7 +348,7 @@ func (t *TranslateServiceServer) populateTranslations(all model.MessagesSlice) m
 func (t *TranslateServiceServer) fuzzyTranslate(
 	ctx context.Context,
 	all model.MessagesSlice,
-) ([]model.Messages, error) {
+) (model.MessagesSlice, error) {
 	for i := range all {
 		if all[i].Original {
 			continue
