@@ -302,9 +302,20 @@ func (t *TranslateServiceServer) alterTranslations(
 	return all
 }
 
-// populateTranslations adds any missing messages from the original messages to all translated messages,
-// returns messagesSlice containing populated translations.
-func (t *TranslateServiceServer) populateTranslations(all model.MessagesSlice) []model.Messages {
+/*
+populateTranslations adds messages that exists in original language but not in other languages.
+Example:
+
+	Original:
+	{ ..., Messages: [ { ID: "1", Message: "Hello" }, { ID: "2", Message: "World" } ] }
+
+	Translated:
+	{ ..., Messages: [ { ID: "1", Message: "Bonjour" } ] }
+
+	Result:
+	{ ..., Messages: [ { ID: "1", Message: "Bonjour" }, { ID: "2", Message: "World", Status: Untranslated } ] }
+*/
+func (t *TranslateServiceServer) populateTranslations(all model.MessagesSlice) model.MessagesSlice {
 	original, others := all.SplitOriginal()
 
 	for i := range original.Messages {
@@ -312,15 +323,12 @@ func (t *TranslateServiceServer) populateTranslations(all model.MessagesSlice) [
 			found := slices.ContainsFunc(others[j].Messages, func(message model.Message) bool {
 				return message.ID == original.Messages[i].ID
 			})
+
 			if !found {
-				others[j].Messages = append(others[j].Messages, model.Message{
-					ID:          original.Messages[i].ID,
-					Message:     original.Messages[i].Message,
-					PluralID:    original.Messages[i].PluralID,
-					Description: original.Messages[i].Description,
-					Positions:   original.Messages[i].Positions,
-					Status:      model.MessageStatusUntranslated,
-				})
+				newMsg := original.Messages[i]
+				newMsg.Status = model.MessageStatusUntranslated
+
+				others[j].Messages = append(others[j].Messages, newMsg)
 			}
 		}
 	}
