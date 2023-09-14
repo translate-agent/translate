@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo/badgerdb"
+	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
@@ -79,20 +80,20 @@ func Test_alterTranslations(t *testing.T) {
 		},
 		// Nothing is changed, messages with original flag should not be altered.
 		{
-			name:            "One original message with untranslated IDs",
+			name:            "One original message",
 			messages:        model.MessagesSlice{*originalMessages},
 			untranslatedIds: []string{originalMessages.Messages[0].ID},
 		},
 		// First message status is changed to untranslated for all messages, other messages are not changed.
 		{
-			name:            "Multiple messages with untranslated IDs",
+			name:            "Multiple translated messages",
 			messages:        translatedMessages,
 			untranslatedIds: []string{translatedMessages[0].Messages[0].ID},
 		},
 		// First message status is changed to untranslated for all messages except original one
 		// other messages are not changed.
 		{
-			name:            "Mixed messages with untranslated IDs",
+			name:            "Mixed messages",
 			messages:        mixedMessages,
 			untranslatedIds: []string{originalMessages.Messages[0].ID},
 		},
@@ -110,7 +111,7 @@ func Test_alterTranslations(t *testing.T) {
 			// For original messages, no messages should be altered, e.g. all messages should be with status translated.
 			if original != nil {
 				for _, m := range original.Messages {
-					require.Equal(t, m.Status, model.MessageStatusTranslated)
+					testutil.RequireEqualStatus(t, model.MessageStatusTranslated, m.Status)
 				}
 			}
 
@@ -120,9 +121,9 @@ func Test_alterTranslations(t *testing.T) {
 			for _, msgs := range others {
 				for _, msg := range msgs.Messages {
 					if slices.Contains(tt.untranslatedIds, msg.ID) {
-						require.Equal(t, msg.Status, model.MessageStatusUntranslated)
+						testutil.RequireEqualStatus(t, model.MessageStatusUntranslated, msg.Status)
 					} else {
-						require.Equal(t, msg.Status, model.MessageStatusTranslated)
+						testutil.RequireEqualStatus(t, model.MessageStatusTranslated, msg.Status)
 					}
 				}
 			}
