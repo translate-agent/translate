@@ -60,11 +60,10 @@ func Test_alterTranslations(t *testing.T) {
 	t.Parallel()
 
 	originalMessages := randOriginalMessages(5)
-	translatedMessages := randTranslatedMessages(5, 5, originalMessages)
+	translatedMessages := randTranslatedMessages(3, 5, originalMessages)
 
-	mixedMessages := make(model.MessagesSlice, 0, len(translatedMessages)+1)
-	mixedMessages = append(mixedMessages, translatedMessages...)
-	mixedMessages = append(mixedMessages, *originalMessages)
+	mixedMessages := model.MessagesSlice{*originalMessages}
+	mixedMessages = append(mixedMessages, randTranslatedMessages(3, 5, originalMessages)...)
 
 	tests := []struct {
 		name            string
@@ -88,7 +87,7 @@ func Test_alterTranslations(t *testing.T) {
 		{
 			name:            "Multiple translated messages",
 			messages:        translatedMessages,
-			untranslatedIds: []string{translatedMessages[0].Messages[0].ID},
+			untranslatedIds: []string{originalMessages.Messages[0].ID},
 		},
 		// First message status is changed to untranslated for all messages except original one
 		// other messages are not changed.

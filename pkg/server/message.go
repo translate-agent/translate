@@ -288,17 +288,14 @@ func (t *TranslateServiceServer) alterTranslations(
 		return
 	}
 
-	original, others := all.SplitOriginal()
-
-	// Return if messages don't contain original language
-	if original == nil {
-		return
-	}
-
 	slices.Sort(untranslatedIDs)
 
 	// Update altered messages for all translations
-	for _, msg := range others {
+	for _, msg := range all {
+		if msg.Original {
+			continue
+		}
+
 		for i := range msg.Messages {
 			if _, found := slices.BinarySearch(untranslatedIDs, msg.Messages[i].ID); found {
 				msg.Messages[i].Status = model.MessageStatusUntranslated
