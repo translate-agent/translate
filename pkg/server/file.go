@@ -135,7 +135,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		}
 
 		// Find original messages with altered text, then replace text in associated messages for all translations.
-		all = t.alterTranslations(all, getUntranslatedIDs(originalMessages, messages))
+		t.alterTranslations(all, getUntranslatedIDs(originalMessages, messages))
 
 		// If populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {
@@ -144,7 +144,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 
 		// Fuzzy translate untranslated messages for all translations
 		if all, err = t.fuzzyTranslate(ctx, all); err != nil {
-			return nil, fmt.Errorf("fuzzy translate messages :%w", err)
+			return nil, status.Errorf(codes.Unknown, err.Error())
 		}
 	}
 

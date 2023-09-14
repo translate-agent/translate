@@ -58,9 +58,12 @@ func TestMain(m *testing.M) {
 func Test_alterTranslations(t *testing.T) {
 	t.Parallel()
 
-	originalMessages1 := randOriginalMessages(5)
-	translatedMessages := randTranslatedMessages(5, 5, originalMessages1)
-	mixedMessages := append(translatedMessages, *originalMessages1)
+	originalMessages := randOriginalMessages(5)
+	translatedMessages := randTranslatedMessages(5, 5, originalMessages)
+
+	mixedMessages := make(model.MessagesSlice, 0, len(translatedMessages)+1)
+	mixedMessages = append(mixedMessages, translatedMessages...)
+	mixedMessages = append(mixedMessages, *originalMessages)
 
 	tests := []struct {
 		name            string
@@ -68,29 +71,30 @@ func Test_alterTranslations(t *testing.T) {
 		untranslatedIds []string
 		expected        model.MessagesSlice
 	}{
+		// Nothing is changed, because untranslated IDs are not provided.
 		{
-			name:            "No untranslated IDs are provided",
-			messages:        model.MessagesSlice{*originalMessages1},
+			name:            "Without untranslated IDs",
+			messages:        model.MessagesSlice{*originalMessages},
 			untranslatedIds: nil,
-			expected:        model.MessagesSlice{*originalMessages1},
 		},
+		// Nothing is changed, messages with original flag should not be altered.
 		{
-			name:            "Single original message, untranslated IDs are provided",
-			messages:        model.MessagesSlice{*originalMessages1},
-			untranslatedIds: []string{originalMessages1.Messages[0].ID},
-			expected:        model.MessagesSlice{*originalMessages1},
+			name:            "One original message with untranslated IDs",
+			messages:        model.MessagesSlice{*originalMessages},
+			untranslatedIds: []string{originalMessages.Messages[0].ID},
 		},
+		// First message status is changed to untranslated for all messages, other messages are not changed.
 		{
-			name:            "Non originals messages, untranslated IDs are provided",
+			name:            "Multiple messages with untranslated IDs",
 			messages:        translatedMessages,
 			untranslatedIds: []string{translatedMessages[0].Messages[0].ID},
-			expected:        translatedMessages,
 		},
+		// First message status is changed to untranslated for all messages except original one
+		// other messages are not changed.
 		{
-			name:            "Update altered messages for transaction ",
+			name:            "Mixed messages with untranslated IDs",
 			messages:        mixedMessages,
-			untranslatedIds: []string{originalMessages1.Messages[0].ID},
-			expected:        mixedMessages,
+			untranslatedIds: []string{originalMessages.Messages[0].ID},
 		},
 	}
 
@@ -99,29 +103,28 @@ func Test_alterTranslations(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := translateSrv.alterTranslations(tt.messages, tt.untranslatedIds)
-			require.Len(t, result, len(tt.expected))
+			translateSrv.alterTranslations(tt.messages, tt.untranslatedIds)
 
-			original, _ := tt.messages.SplitOriginal()
+			original, others := tt.messages.SplitOriginal()
 
-			if original == nil || len(tt.expected) == 1 || len(tt.untranslatedIds) == 0 {
-				require.Equal(t, tt.expected, tt.messages)
-				return
+			// For original messages, no messages should be altered, e.g. all messages should be with status translated.
+			if original != nil {
+				for _, m := range original.Messages {
+					require.Equal(t, m.Status, model.MessageStatusTranslated)
+				}
 			}
 
-			// Check that messages have been altered and marked as untranslated for all translations.
-			for i, m := range result {
-				if m.Original {
-					require.Equal(t, tt.messages[i], m)
-					continue
-				}
-
-				for _, msg := range m.Messages {
+			// For non original messages, check that
+			// 1. Ones with untranslated IDs are marked as untranslated.
+			// 2. Ones without untranslated IDs are left as is, e.g. translated.
+			for _, msgs := range others {
+				for _, msg := range msgs.Messages {
 					if slices.Contains(tt.untranslatedIds, msg.ID) {
 						require.Equal(t, msg.Status, model.MessageStatusUntranslated)
+					} else {
+						require.Equal(t, msg.Status, model.MessageStatusTranslated)
 					}
 				}
-
 			}
 		})
 	}
@@ -311,16 +314,21 @@ func prepareMessages(t *testing.T, originalMessages *model.Messages, translatedM
 
 // randOriginalMessages creates a random messages with the original flag set to true.
 func randOriginalMessages(messageCount uint) *model.Messages {
-	return rand.ModelMessages(messageCount, nil, rand.WithOriginal(true), rand.WithLanguage(language.English))
+	return rand.ModelMessages(
+		messageCount,
+		[]rand.ModelMessageOption{rand.WithStatus(model.MessageStatusTranslated)},
+		rand.WithOriginal(true),
+		rand.WithLanguage(language.English))
 }
 
-// randTranslatedMessages creates a random messages with the original flag set to false.
+// randTranslatedMessages creates a random messages with the original flag set to false
+// with the same IDs as the original messages, and with translated status.
 func randTranslatedMessages(n uint, msgCount uint, original *model.Messages) []model.Messages {
 	messages := make([]model.Messages, n)
 	for i, lang := range rand.Languages(n) {
 		messages[i] = *rand.ModelMessages(
 			msgCount,
-			nil,
+			[]rand.ModelMessageOption{rand.WithStatus(model.MessageStatusTranslated)},
 			rand.WithOriginal(false),
 			rand.WithSameIDs(original),
 			rand.WithLanguage(lang))
