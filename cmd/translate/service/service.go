@@ -79,8 +79,8 @@ var rootCmd = &cobra.Command{
 		}
 
 		defer func() {
-			if repoCloseErr := repo.Close(); repoCloseErr != nil {
-				log.Printf("close repo: %v", repoCloseErr)
+			if closeErr := repo.Close(); closeErr != nil {
+				log.Printf("close repo: %v", closeErr)
 			}
 		}()
 

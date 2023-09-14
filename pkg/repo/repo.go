@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"errors"
+	"io"
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
@@ -33,5 +34,5 @@ type Repo interface {
 	ServicesRepo
 	MessagesRepo
 
-	Close() error
+	io.Closer
 }
