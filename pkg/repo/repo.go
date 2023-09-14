@@ -32,4 +32,6 @@ type MessagesRepo interface {
 type Repo interface {
 	ServicesRepo
 	MessagesRepo
+
+	Close() error
 }
