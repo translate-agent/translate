@@ -134,7 +134,12 @@ func Test_populateTranslations(t *testing.T) {
 	t.Parallel()
 
 	originalMessages1 := randOriginalMessages(5)
+	translatedMessages1 := randTranslatedMessages(1, uint(len(originalMessages1.Messages)), originalMessages1)
+
 	originalMessages2 := randOriginalMessages(5)
+	translatedMessages2 := randTranslatedMessages(2, uint(len(originalMessages2.Messages)), originalMessages2)
+	originalMessages2.Messages = append(originalMessages2.Messages, *rand.ModelMessage())
+
 	originalMessages3 := randOriginalMessages(5)
 
 	tests := []struct {
@@ -143,19 +148,19 @@ func Test_populateTranslations(t *testing.T) {
 		translatedMessages []model.Messages
 	}{
 		{
-			// Original messages with 5 messages, and one translated messages with same 5 messages.messages ID's.
-			name:               "Populate one translation file",
+			// Original messages and translated messages, have same messages.messages ID's -> noop
+			name:               "Nothing to populate",
 			originalMessages:   originalMessages1,
-			translatedMessages: randTranslatedMessages(1, 5, originalMessages1),
+			translatedMessages: translatedMessages1,
 		},
 		{
-			// Original messages with 5 messages, and three translated messages with same 5 messages.messages ID's.
-			name:               "Populate multiple translated messages",
+			// Original messages have one extra message -> translated messages should be populated with the extra message.
+			name:               "Populate two translations with one new message",
 			originalMessages:   originalMessages2,
-			translatedMessages: randTranslatedMessages(3, 5, originalMessages2),
+			translatedMessages: translatedMessages2,
 		},
 		{
-			// Original messages with 5 messages, and one empty translated messages.
+			// Translated messages are empty -> translated messages should be populated with all messages from original messages.
 			name:               "Populate empty translated messages",
 			originalMessages:   originalMessages3,
 			translatedMessages: randTranslatedMessages(1, 0, originalMessages3),
@@ -168,22 +173,29 @@ func Test_populateTranslations(t *testing.T) {
 			t.Parallel()
 
 			// Create a slice with all messages (Original + translated)
-			allMessages := append(tt.translatedMessages, *tt.originalMessages)
+			allMessages := model.MessagesSlice{*tt.originalMessages}
+			allMessages = append(allMessages, tt.translatedMessages...)
 
-			// Invoke populateTranslations
 			newMessages := translateSrv.populateTranslations(allMessages)
 
-			// Assert that length of loaded messages is equal to the length of all messages. (one for original + count of translated messages)
+			// Assert that length of loaded messages is equal to the length of all messages.
 			require.Len(t, newMessages, len(allMessages))
 
-			// Assert that the length of the messages in the loaded messages is equal to the length of the original messages.
-			for i, m := range newMessages {
-				if m.Original {
-					require.Equal(t, *tt.originalMessages, m)
-					continue
-				}
+			original, others := newMessages.SplitOriginal()
 
-				require.Len(t, m.Messages, len(newMessages[i].Messages))
+			// Assert that original messages are not altered.
+			require.Equal(t, tt.originalMessages, original)
+
+			// Assert that all messages from original messages are present in translated messages.
+			for _, m := range others {
+				require.Len(t, m.Messages, len(tt.originalMessages.Messages))
+
+				// Check each message individually, for correct population.
+				for _, origMsg := range tt.originalMessages.Messages {
+					require.True(t, slices.ContainsFunc(m.Messages, func(transMsg model.Message) bool {
+						return transMsg.ID == origMsg.ID
+					}), "translated messages should contain original message with ID %s", origMsg.ID)
+				}
 			}
 		})
 	}
