@@ -87,10 +87,7 @@ func FromPot(b []byte, original bool) (model.Messages, error) {
 			Description: strings.Join(node.ExtractedComment, "\n "),
 			Positions:   node.References,
 			Message:     convert(node),
-		}
-
-		if strings.Contains(node.Flag, "fuzzy") {
-			message.Status = model.MessageStatusFuzzy
+			Status:      getStatus(convert(node), original, strings.Contains(node.Flag, "fuzzy")),
 		}
 
 		messages = append(messages, message)
