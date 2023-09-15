@@ -1,11 +1,13 @@
 package convert
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
+	"go.expect.digital/translate/pkg/testutil"
 )
 
 func Test_FromNgxTranslate(t *testing.T) {
@@ -17,14 +19,17 @@ func Test_FromNgxTranslate(t *testing.T) {
 		expectedErr error
 		expected    model.Messages
 	}{
+		// Positive tests
 		{
 			name:  "Not nested",
 			input: []byte(`{"message":"example"}`),
 			expected: model.Messages{
+				Original: true,
 				Messages: []model.Message{
 					{
 						ID:      "message",
 						Message: "{example}",
+						Status:  model.MessageStatusTranslated,
 					},
 				},
 			},
@@ -33,22 +38,26 @@ func Test_FromNgxTranslate(t *testing.T) {
 			name:  "Nested normally",
 			input: []byte(`{"message":{"example":"message1"}}`),
 			expected: model.Messages{
+				Original: false,
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
 						Message: "{message1}",
+						Status:  model.MessageStatusTranslated,
 					},
 				},
 			},
 		},
 		{
 			name:  "Nested with dot",
-			input: []byte(`{"message.example":"message1"}`),
+			input: []byte(`{"message.example":""}`),
 			expected: model.Messages{
+				Original: false,
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
-						Message: "{message1}",
+						Message: "",
+						Status:  model.MessageStatusUntranslated,
 					},
 				},
 			},
@@ -57,29 +66,31 @@ func Test_FromNgxTranslate(t *testing.T) {
 			name:  "Nested mixed",
 			input: []byte(`{"message.example":"message1","msg":{"example":"message2"}}`),
 			expected: model.Messages{
+				Original: true,
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
 						Message: "{message1}",
+						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "msg.example",
 						Message: "{message2}",
+						Status:  model.MessageStatusTranslated,
 					},
 				},
 			},
 		},
+		// Negative tests
 		{
 			name:        "Unsupported value type",
 			input:       []byte(`{"message": 1.0}`),
-			expectedErr: fmt.Errorf("traverse ngx-translate: unsupported value type %T for key %s", 1.0, "message"),
-			expected:    model.Messages{},
+			expectedErr: errors.New("unsupported value type"),
 		},
 		{
 			name:        "Invalid JSON",
 			input:       []byte(`{"message": "example"`),
-			expectedErr: fmt.Errorf("unmarshal from ngx-translate to model.Messages: unexpected end of JSON input"),
-			expected:    model.Messages{},
+			expectedErr: errors.New("unmarshal"),
 		},
 	}
 
@@ -88,14 +99,14 @@ func Test_FromNgxTranslate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromNgxTranslate(tt.input, false)
-			if err != nil {
-				assert.Equal(t, tt.expectedErr, fmt.Errorf(err.Error()))
+			actual, err := FromNgxTranslate(tt.input, tt.expected.Original)
+			if tt.expectedErr != nil {
+				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			assert.Equal(t, tt.expected.Language, actual.Language)
-			assert.ElementsMatch(t, tt.expected.Messages, actual.Messages)
+			require.NoError(t, err)
+			testutil.EqualMessages(t, &tt.expected, &actual)
 		})
 	}
 }
