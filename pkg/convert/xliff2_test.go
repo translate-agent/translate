@@ -82,13 +82,26 @@ func assertEqualXml(t *testing.T, expected, actual []byte) bool { //nolint:unpar
 func Test_FromXliff2(t *testing.T) {
 	t.Parallel()
 
-	msgOpts := []testutilrand.ModelMessageOption{
-		// Do not mark message as fuzzy, as this is not supported by XLIFF 2.0
-		testutilrand.WithStatus(model.MessageStatusUntranslated),
-	}
+	sourceMessages := testutilrand.ModelMessages(
+		3,
+		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
+		testutilrand.WithOriginal(true),
+	)
 
-	sourceMessages := testutilrand.ModelMessages(3, msgOpts, testutilrand.WithOriginal(true))
-	translatedMessages := testutilrand.ModelMessages(3, msgOpts, testutilrand.WithOriginal(false))
+	translatedMessages := testutilrand.ModelMessages(
+		3,
+		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
+		testutilrand.WithOriginal(false),
+	)
+
+	translatedButEmpty := testutilrand.ModelMessages(
+		3,
+		[]testutilrand.ModelMessageOption{
+			testutilrand.WithStatus(model.MessageStatusUntranslated),
+			testutilrand.WithMessage(""),
+		},
+		testutilrand.WithOriginal(false),
+	)
 
 	tests := []struct {
 		name     string
@@ -96,14 +109,19 @@ func Test_FromXliff2(t *testing.T) {
 		input    []byte
 	}{
 		{
-			name:     "Happy Path Untranslated",
+			name:     "Original",
 			input:    randXliff2(sourceMessages),
 			expected: sourceMessages,
 		},
 		{
-			name:     "Happy Path Translated",
+			name:     "Translated with translations",
 			input:    randXliff2(translatedMessages),
 			expected: translatedMessages,
+		},
+		{
+			name:     "Translated without translations",
+			input:    randXliff2(translatedButEmpty),
+			expected: translatedButEmpty,
 		},
 	}
 
@@ -112,16 +130,12 @@ func Test_FromXliff2(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromXliff2(tt.input, false)
+			actual, err := FromXliff2(tt.input, tt.expected.Original)
 			require.NoError(t, err)
 
 			for i := range actual.Messages {
 				actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
 			}
-
-			// TODO: for now restore the flag to the expected
-			// remove this as XLIFF is the format were we can implicitly determine if file is original or not
-			actual.Original = tt.expected.Original
 
 			testutil.EqualMessages(t, tt.expected, &actual)
 		})
@@ -151,8 +165,7 @@ func Test_TransformXLIFF2(t *testing.T) {
 	msgOpts := []testutilrand.ModelMessageOption{
 		// Enclose message in curly braces, as ToXliff2() removes them, and FromXliff2() adds them again
 		testutilrand.WithMessageFormat(),
-		// Do not mark message as fuzzy, as this is not supported by XLIFF 1.2
-		testutilrand.WithStatus(model.MessageStatusUntranslated),
+		testutilrand.WithStatus(model.MessageStatusTranslated),
 	}
 
 	conf := &quick.Config{
@@ -164,17 +177,13 @@ func Test_TransformXLIFF2(t *testing.T) {
 	}
 
 	f := func(expected *model.Messages) bool {
-		xliffData, err := ToXliff2(*expected)
+		serialized, err := ToXliff2(*expected)
 		require.NoError(t, err)
 
-		restoredMessages, err := FromXliff2(xliffData, false)
+		parsed, err := FromXliff2(serialized, expected.Original)
 		require.NoError(t, err)
 
-		// TODO: for now restore the flag to the expected
-		// remove this as XLIFF is the format were we can implicitly determine if file is original or not
-		restoredMessages.Original = expected.Original
-
-		testutil.EqualMessages(t, expected, &restoredMessages)
+		testutil.EqualMessages(t, expected, &parsed)
 
 		return true
 	}
