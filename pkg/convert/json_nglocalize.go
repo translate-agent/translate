@@ -32,7 +32,11 @@ func FromNgLocalize(data []byte, original bool) (model.Messages, error) {
 	}
 
 	for k, v := range ng.Translations {
-		messages.Messages = append(messages.Messages, model.Message{ID: k, Message: convertToMessageFormatSingular(v)})
+		messages.Messages = append(messages.Messages, model.Message{
+			ID:      k,
+			Message: convertToMessageFormatSingular(v),
+			Status:  getStatus(v, original, false),
+		})
 	}
 
 	return messages, nil
