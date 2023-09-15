@@ -697,18 +697,17 @@ func TestFromPot(t *testing.T) {
 	}{
 		{
 			name: "valid input",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: en\n"
-			#. a greeting
-			msgid "Hello"
-			msgstr "Hello, world!"
-			
-			#. a farewell
-			#, fuzzy
-			msgid "Goodbye"
-			msgstr "Goodbye, world!"
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							#. a greeting
+							msgid "Hello"
+							msgstr "Hello, world!"
+
+							#. a farewell
+							#, fuzzy
+							msgid "Goodbye"
+							msgstr "Goodbye, world!"
 			`),
 			expected: model.Messages{
 				Language: language.English,
@@ -731,18 +730,17 @@ func TestFromPot(t *testing.T) {
 		},
 		{
 			name: "fuzzy param before empty id",
-			input: []byte(`
-			#, fuzzy
-			msgid ""
-			msgstr ""
-			"Language: en\n"
-			#. a greeting
-			msgid "Hello"
-			msgstr "Hello, world!"
+			input: []byte(`#, fuzzy
+							msgid ""
+							msgstr ""
+							"Language: en\n"
+							#. a greeting
+							msgid "Hello"
+							msgstr "Hello, world!"
 
-			#. a farewell
-			msgid "Goodbye"
-			msgstr "Goodbye, world!"
+							#. a farewell
+							msgid "Goodbye"
+							msgstr "Goodbye, world!"
 			`),
 			expected: model.Messages{
 				Language: language.English,
@@ -765,16 +763,15 @@ func TestFromPot(t *testing.T) {
 		},
 		{
 			name: "msgid and msgstr empty headers",
-			input: []byte(`
-			#, fuzzy
-			"Language: en\n"
-			#. a greeting
-			msgid "Hello"
-			msgstr "Hello, world!"
+			input: []byte(`#, fuzzy
+							"Language: en\n"
+							#. a greeting
+							msgid "Hello"
+							msgstr "Hello, world!"
 
-			#. a farewell
-			msgid "Goodbye"
-			msgstr "Goodbye, world!"
+							#. a farewell
+							msgid "Goodbye"
+							msgstr "Goodbye, world!"
 			`),
 			expected: model.Messages{
 				Language: language.English,
@@ -797,16 +794,15 @@ func TestFromPot(t *testing.T) {
 		},
 		{
 			name: "if empty msgstr missing",
-			input: []byte(`
-			msgid ""
-			"Language: en\n"
-			#. a greeting
-			msgid "Hello"
-			msgstr "Hello, world!"
+			input: []byte(`msgid ""
+							"Language: en\n"
+							#. a greeting
+							msgid "Hello"
+							msgstr "Hello, world!"
 
-			#. a farewell
-			msgid "Goodbye"
-			msgstr "Goodbye, world!"
+							#. a farewell
+							msgid "Goodbye"
+							msgstr "Goodbye, world!"
 			`),
 			expected: model.Messages{
 				Language: language.English,
@@ -829,21 +825,20 @@ func TestFromPot(t *testing.T) {
 		},
 		{
 			name: "multiline description",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: en\n"
-			#. a greeting
-			#. a greeting2
-			msgid "Hello"
-			msgstr ""
-			"Hello, world!\n"
-			"very long string\n"
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							#. a greeting
+							#. a greeting2
+							msgid "Hello"
+							msgstr ""
+							"Hello, world!\n"
+							"very long string\n"
 
-			#. a farewell
-			#, fuzzy
-			msgid "Goodbye"
-			msgstr "Goodbye, world!"
+							#. a farewell
+							#, fuzzy
+							msgid "Goodbye"
+							msgstr "Goodbye, world!"
 			`),
 			expected: model.Messages{
 				Language: language.English,
@@ -866,16 +861,15 @@ func TestFromPot(t *testing.T) {
 		},
 		{
 			name: "multiline msgid",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: en\n"
-			#. a greeting
-			#, fuzzy
-			msgid ""
-			"Hello\n"
-			"Hello2\n"
-			msgstr "Hello, world!"
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							#. a greeting
+							#, fuzzy
+							msgid ""
+							"Hello\n"
+							"Hello2\n"
+							msgstr "Hello, world!"
 			`),
 			expected: model.Messages{
 				Language: language.English,
@@ -892,39 +886,38 @@ func TestFromPot(t *testing.T) {
 		},
 		{
 			name: "Multiple headers",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Project-Id-Version: \n"
-			"POT-Creation-Date: \n"
-			"PO-Revision-Date: \n"
-			"Last-Translator: \n"
-			"Language-Team: \n"
-			"Language: fr\n"
-			"MIME-Version: 1.0\n"
-			"Content-Type: text/plain; charset=UTF-8\n"
-			"Content-Transfer-Encoding: 8bit\n"
-			"X-Generator: Poedit 2.2\n"
-			"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+			input: []byte(`msgid ""
+						msgstr ""
+						"Project-Id-Version: \n"
+						"POT-Creation-Date: \n"
+						"PO-Revision-Date: \n"
+						"Last-Translator: \n"
+						"Language-Team: \n"
+						"Language: fr\n"
+						"MIME-Version: 1.0\n"
+						"Content-Type: text/plain; charset=UTF-8\n"
+						"Content-Transfer-Encoding: 8bit\n"
+						"X-Generator: Poedit 2.2\n"
+						"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-			#: examples/simple/example.clj:10
-			msgid "Greetings"
-			msgstr "Bonjour"
+						#: examples/simple/example.clj:10
+						msgid "Greetings"
+						msgstr "Bonjour"
 
-			#: examples/simple/example.clj:20
-			msgid "Please confirm your email"
-			msgstr "Veuillez confirmer votre email"
+						#: examples/simple/example.clj:20
+						msgid "Please confirm your email"
+						msgstr "Veuillez confirmer votre email"
 
-			#: examples/simple/example.clj:30
-			msgid "Welcome, %s!"
-			msgstr "Bienvenue, %s!"
+						#: examples/simple/example.clj:30
+						msgid "Welcome, %s!"
+						msgstr "Bienvenue, %s!"
 
-			#: examples/simple/example.clj:40
-			#: examples/simple/example.clj:50
-			msgid "product"
-			msgid_plural "%s products"
-			msgstr[0] "produit"
-			msgstr[1] "%s produits"
+						#: examples/simple/example.clj:40
+						#: examples/simple/example.clj:50
+						msgid "product"
+						msgid_plural "%s products"
+						msgstr[0] "produit"
+						msgstr[1] "%s produits"
 			`),
 			expected: model.Messages{
 				Language: language.French,
@@ -963,19 +956,18 @@ when * {%s produits}
 		},
 		{
 			name: "plural msgstr with simple msgstr",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: it\n"
-			"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-			#. apple counts
-			msgid "There is %d apple."
-			msgid_plural "There are %d apples."
-			msgstr[0] "Il y a %d pomme."
-			msgstr[1] "Il y a %d pommes."
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: it\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							#. apple counts
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] "Il y a %d pomme."
+							msgstr[1] "Il y a %d pommes."
 
-			msgid "hi"
-			msgstr "ciao"
+							msgid "hi"
+							msgstr "ciao"
 			`),
 			expected: model.Messages{
 				Language: language.Italian,
@@ -1001,16 +993,15 @@ when * {Il y a {$count} pommes.}
 		},
 		{
 			name: "plural msgstr",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: fr\n"
-			"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-			#. apple counts
-			msgid "There is %d apple."
-			msgid_plural "There are %d apples."
-			msgstr[0] "Il y a %d pomme."
-			msgstr[1] "Il y a %d pommes."
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: fr\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							#. apple counts
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] "Il y a %d pomme."
+							msgstr[1] "Il y a %d pommes."
 			`),
 			expected: model.Messages{
 				Language: language.French,
@@ -1031,20 +1022,19 @@ when * {Il y a {$count} pommes.}
 		},
 		{
 			name: "plural msgstr with new line",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: fr\n"
-			"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-			#. apple counts
-			msgid "There is %d apple."
-			msgid_plural "There are %d apples."
-			msgstr[0] ""
-			"Il y a %d\n"
-			"pomme.\n"
-			msgstr[1] ""
-			"Il y a %d\n"
-			"pommes.\n"
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: fr\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							#. apple counts
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] ""
+							"Il y a %d\n"
+							"pomme.\n"
+							msgstr[1] ""
+							"Il y a %d\n"
+							"pommes.\n"
 			`),
 			expected: model.Messages{
 				Language: language.French,
@@ -1062,19 +1052,18 @@ when * {Il y a {$count} pommes.}
 		},
 		{
 			name: "multiline msgid_plural and msgid",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: fr\n"
-			"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-			#. apple counts
-			msgid "There is %d apple."
-			msgid_plural ""
-			"There are %d apples.\n"
-			msgstr[0] ""
-			"Il y a %d\n"
-			"pomme.\n"
-			msgstr[1] "Il y a %d pommes."
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: fr\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							#. apple counts
+							msgid "There is %d apple."
+							msgid_plural ""
+							"There are %d apples.\n"
+							msgstr[0] ""
+							"Il y a %d\n"
+							"pomme.\n"
+							msgstr[1] "Il y a %d pommes."
 			`),
 			expected: model.Messages{
 				Language: language.French,
@@ -1092,13 +1081,12 @@ when * {Il y a {$count} pommes.}
 		},
 		{
 			name: "single msgstr with original lang",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: en\n"
-			#. a greeting
-			msgid "Hello"
-			msgstr ""
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							#. a greeting
+							msgid "Hello"
+							msgstr ""
 			`),
 			expected: model.Messages{
 				Language: language.English,
@@ -1115,16 +1103,15 @@ when * {Il y a {$count} pommes.}
 		},
 		{
 			name: "plural msgstr with original lang",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: en\n"
-			"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-			#. apple counts
-			msgid "There is %d apple."
-			msgid_plural "There are %d apples."
-			msgstr[0] ""
-			msgstr[1] ""
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							#. apple counts
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] ""
+							msgstr[1] ""
 			`),
 			expected: model.Messages{
 				Language: language.English,
@@ -1145,38 +1132,35 @@ when * {There are {$count} apples.}
 		},
 		{
 			name: "invalid input",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: en\n"
-			#. a greeting
-			msgid 323344
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							#. a greeting
+							msgid 323344
 			`),
 			expectedErr: errors.New("convert tokens to pot.Po: invalid po file: no messages found"),
 		},
 		{
 			name: "msgid before empty msgstr is missing",
-			input: []byte(`
-			msgstr ""
-			"Language: en\n"
-			#. a greeting
-			msgid "Hello"
-			msgstr "Hello, world!"
+			input: []byte(`msgstr ""
+							"Language: en\n"
+							#. a greeting
+							msgid "Hello"
+							msgstr "Hello, world!"
 
-			#. a farewell
-			msgid "Goodbye"
-			msgstr "Goodbye, world!"
+							#. a farewell
+							msgid "Goodbye"
+							msgstr "Goodbye, world!"
 			`),
 			expectedErr: errors.New("convert tokens to pot.Po: get previous token: no previous token"),
 		},
 		{
 			name: "msgid with curly braces inside",
-			input: []byte(
-				`msgid ""
-			msgstr ""
-			"Language: en\n"
-			msgid "+ {%s} hello"
-			msgstr ""
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							msgid "+ {%s} hello"
+							msgstr ""
 			`),
 			expected: model.Messages{
 				Language: language.English,
@@ -1192,12 +1176,11 @@ when * {There are {$count} apples.}
 		},
 		{
 			name: "msgid with pipe inside",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: en\n"
-			msgid "+ | hello"
-			msgstr ""
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							msgid "+ | hello"
+							msgstr ""
 			`),
 			expected: model.Messages{
 				Language: language.English,
@@ -1213,12 +1196,11 @@ when * {There are {$count} apples.}
 		},
 		{
 			name: "msgid with double pipe inside",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: en\n"
-			msgid "+ || hello"
-			msgstr ""
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							msgid "+ || hello"
+							msgstr ""
 			`),
 			expected: model.Messages{
 				Language: language.English,
@@ -1234,12 +1216,11 @@ when * {There are {$count} apples.}
 		},
 		{
 			name: "msgid with slash inside",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: en\n"
-			msgid "+ \ hello"
-			msgstr ""
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							msgid "+ \ hello"
+							msgstr ""
 			`),
 			expected: model.Messages{
 				Language: language.English,
@@ -1255,15 +1236,14 @@ when * {There are {$count} apples.}
 		},
 		{
 			name: "plural msgstr with curly braces",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: fr\n"
-			"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-			msgid "There is %d apple."
-			msgid_plural "There are %d apples."
-			msgstr[0] "Il y a %d pomme {test}."
-			msgstr[1] "Il y a %d pommes {tests}."
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: fr\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] "Il y a %d pomme {test}."
+							msgstr[1] "Il y a %d pommes {tests}."
 			`),
 			expected: model.Messages{
 				Language: language.French,
@@ -1283,15 +1263,14 @@ when * {Il y a {$count} pommes \{tests\}.}
 		},
 		{
 			name: "plural msgstr with pipe",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: fr\n"
-			"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-			msgid "There is %d apple."
-			msgid_plural "There are %d apples."
-			msgstr[0] "Il y a %d pomme |."
-			msgstr[1] "Il y a %d pommes |."
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: fr\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] "Il y a %d pomme |."
+							msgstr[1] "Il y a %d pommes |."
 			`),
 			expected: model.Messages{
 				Language: language.French,
@@ -1311,15 +1290,14 @@ when * {Il y a {$count} pommes \|.}
 		},
 		{
 			name: "plural msgstr with slash",
-			input: []byte(`
-			msgid ""
-			msgstr ""
-			"Language: fr\n"
-			"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-			msgid "There is %d apple."
-			msgid_plural "There are %d apples."
-			msgstr[0] "Il y a %d pomme \."
-			msgstr[1] "Il y a %d pommes \."
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: fr\n"
+							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+							msgid "There is %d apple."
+							msgid_plural "There are %d apples."
+							msgstr[0] "Il y a %d pomme \."
+							msgstr[1] "Il y a %d pommes \."
 			`),
 			expected: model.Messages{
 				Language: language.French,
