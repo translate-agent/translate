@@ -51,7 +51,7 @@ func getStatus(msg string, original, fuzzy bool) (status model.MessageStatus) {
 		status = model.MessageStatusUntranslated
 	case fuzzy:
 		status = model.MessageStatusFuzzy
-	case original, !original && (msg != "" && msg != "{}"):
+	case original, !original && msg != "":
 		status = model.MessageStatusTranslated
 	}
 
