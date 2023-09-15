@@ -109,6 +109,7 @@ func FromArb(data []byte, original bool) (model.Messages, error) {
 			return model.Messages{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
 		}
 
+		msg.Status = getStatus(msg.Message, original, false)
 		msg.Message = convertToMessageFormatSingular(msg.Message)
 
 		var err error

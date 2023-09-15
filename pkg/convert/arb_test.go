@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
+	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
 
@@ -39,26 +41,30 @@ func Test_FromArb(t *testing.T) {
 				"farewell": "Goodbye friend"
 			}`),
 			expected: model.Messages{
+				Original: true,
 				Messages: []model.Message{
 					{
 						ID:          "title",
 						Message:     "{Hello World!}",
 						Description: "Message to greet the World",
+						Status:      model.MessageStatusTranslated,
 					},
 					{
 						ID:      "greeting",
 						Message: "{Welcome \\{user\\}!}",
+						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "farewell",
 						Message: "{Goodbye friend}",
+						Status:  model.MessageStatusTranslated,
 					},
 				},
 			},
 			expectedErr: nil,
 		},
 		{
-			name: "Message in curly braces",
+			name: "Message with placeholder",
 			input: []byte(`
 			{
 				"title": "Hello World!",
@@ -77,19 +83,22 @@ func Test_FromArb(t *testing.T) {
 				"farewell": "Goodbye friend"
 			}`),
 			expected: model.Messages{
+				Original: true,
 				Messages: []model.Message{
 					{
 						ID:          "title",
 						Message:     "{Hello World!}",
-						Description: "Message to greet the World",
+						Description: "Message to greet the World", Status: model.MessageStatusTranslated,
 					},
 					{
 						ID:      "greeting",
 						Message: "{Welcome \\{user\\}!}",
+						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "farewell",
 						Message: "{Goodbye friend}",
+						Status:  model.MessageStatusTranslated,
 					},
 				},
 			},
@@ -132,22 +141,23 @@ func Test_FromArb(t *testing.T) {
 			name: "With locale",
 			input: []byte(`
       {
-        "@@locale": "en",
-        "title": "Hello World!",
+        "@@locale": "lv",
+        "title": "",
         "@title": {
           "description": "Message to greet the World"
         }
       }`),
 			expected: model.Messages{
-				Language: language.English,
+				Language: language.Latvian,
+				Original: false,
 				Messages: []model.Message{
 					{
 						ID:          "title",
-						Message:     "{Hello World!}",
+						Message:     "",
 						Description: "Message to greet the World",
+						Status:      model.MessageStatusUntranslated,
 					},
 				},
-				Original: false,
 			},
 			expectedErr: nil,
 		},
@@ -183,18 +193,15 @@ func Test_FromArb(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromArb(tt.input, false)
+			actual, err := FromArb(tt.input, tt.expected.Original)
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
-			assert.Equal(t, tt.expected.Language, actual.Language)
-			assert.ElementsMatch(t, tt.expected.Messages, actual.Messages)
+			testutil.EqualMessages(t, &tt.expected, &actual)
 		})
 	}
 }
