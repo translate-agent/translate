@@ -78,6 +78,12 @@ var rootCmd = &cobra.Command{
 			log.Panicf("create new repo: %v", err)
 		}
 
+		defer func() {
+			if closeErr := repo.Close(); closeErr != nil {
+				log.Printf("close repo: %v", closeErr)
+			}
+		}()
+
 		var translator fuzzy.Translator
 
 		switch viper.GetString("service.translator") {

@@ -45,6 +45,10 @@ func initBadgerDB() error {
 }
 
 func TestMain(m *testing.M) {
+	os.Exit(testMain(m))
+}
+
+func testMain(m *testing.M) int {
 	ctx := context.Background()
 
 	viper.SetEnvPrefix("translate")
@@ -67,7 +71,12 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	os.Exit(m.Run())
+	// Close all connections
+	for _, repo := range repos {
+		defer repo.Close()
+	}
+
+	return m.Run()
 }
 
 // allRepos runs a test for each repo that is defined in the repos map.
