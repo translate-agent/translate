@@ -88,7 +88,8 @@ func Test_FromArb(t *testing.T) {
 					{
 						ID:          "title",
 						Message:     "{Hello World!}",
-						Description: "Message to greet the World", Status: model.MessageStatusTranslated,
+						Description: "Message to greet the World",
+						Status:      model.MessageStatusTranslated,
 					},
 					{
 						ID:      "greeting",
