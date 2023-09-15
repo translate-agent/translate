@@ -63,6 +63,9 @@ func messagesToPipeline(m model.Messages) pipeline.Messages {
 }
 
 // messagesFromPipeline converts a pipeline.Messages structure into a model.Messages structure.
+//
+// TODO: Not original texts, should populate
+// message.Message with message.Translation.Msg not the message.Message.Msg.
 func messagesFromPipeline(m pipeline.Messages, original bool) model.Messages {
 	msgs := model.Messages{
 		Language: m.Language,
@@ -75,10 +78,7 @@ func messagesFromPipeline(m pipeline.Messages, original bool) model.Messages {
 			ID:          value.ID[0],
 			Description: value.Meaning,
 			Message:     convertToMessageFormatSingular(value.Message.Msg),
-		}
-
-		if value.Fuzzy {
-			msg.Status = model.MessageStatusFuzzy
+			Status:      getStatus(value.Message.Msg, original, value.Fuzzy),
 		}
 
 		if value.Position != "" {

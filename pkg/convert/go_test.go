@@ -4,8 +4,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"go.expect.digital/translate/pkg/model"
+	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
 
@@ -72,62 +74,61 @@ func TestFromGo(t *testing.T) {
 
 	modelMsg := model.Messages{
 		Language: language.English,
+		Original: true,
 		Messages: []model.Message{
 			{
 				ID:          "1",
 				Message:     "{message1}",
 				Description: "description1",
 				Positions:   []string{"src/config.go:10"},
-				Status:      model.MessageStatusFuzzy,
-			},
-			{
-				ID:          "1",
-				Message:     "{message1}",
-				Description: "description1",
-				Positions:   []string{"src/config.go:20"},
-				Status:      model.MessageStatusFuzzy,
+				Status:      model.MessageStatusTranslated,
 			},
 			{
 				ID:          "2",
 				Message:     "{message2}",
 				Description: "description2",
+				Positions:   []string{"src/config.go:20"},
+				Status:      model.MessageStatusTranslated,
+			},
+			{
+				ID:          "3",
+				Message:     "{message3}",
+				Description: "description3",
+				Status:      model.MessageStatusTranslated,
 			},
 		},
 	}
 
 	input := []byte(`
 	{
-		"language":"en",
-		"messages":[
+		"language": "en",
+		"messages": [
 			{
-				"id":"1",
-				"meaning":"description1",
-				"message":"message1",
-				"translation":"",
-				"position": "src/config.go:10",
-				"fuzzy":true
+				"id": "1",
+				"meaning": "description1",
+				"message": "message1",
+				"translation": "",
+				"position": "src/config.go:10"
 			},
 			{
-				"id":"1",
-				"meaning":"description1",
-				"message":"message1",
-				"translation":"",
-				"position": "src/config.go:20",
-				"fuzzy":true
+				"id": "2",
+				"meaning": "description2",
+				"message": "message2",
+				"translation": "",
+				"position": "src/config.go:20"
 			},
 			{
-				"id":"2",
-				"meaning":"description2",
-				"message":"message2",
-				"translation":""
+				"id": "3",
+				"meaning": "description3",
+				"message": "message3",
+				"translation": ""
 			}
 		]
-	}`)
-
-	actual, err := FromGo(input, false)
-	if !assert.NoError(t, err) {
-		return
 	}
+	`)
 
-	assert.Equal(t, modelMsg, actual)
+	actual, err := FromGo(input, modelMsg.Original)
+	require.NoError(t, err)
+
+	testutil.EqualMessages(t, &modelMsg, &actual)
 }
