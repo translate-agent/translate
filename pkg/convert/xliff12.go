@@ -72,11 +72,14 @@ func FromXliff12(data []byte, original bool) (model.Messages, error) {
 	}
 
 	for _, unit := range xlf.File.Body.TransUnits {
+		message := getMessage(unit)
+
 		messages.Messages = append(messages.Messages, model.Message{
 			ID:          unit.ID,
-			Message:     convertToMessageFormatSingular(getMessage(unit)),
+			Message:     convertToMessageFormatSingular(message),
 			Description: unit.Note,
 			Positions:   positionsFromXliff12(unit.ContextGroups),
+			Status:      getStatus(message, original, false),
 		})
 	}
 
