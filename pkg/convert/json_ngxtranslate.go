@@ -21,6 +21,11 @@ func FromNgxTranslate(b []byte, original bool) (messages model.Messages, err err
 
 	var traverseMap func(key string, value interface{}) error
 
+	status := model.MessageStatusUntranslated
+	if original {
+		status = model.MessageStatusTranslated
+	}
+
 	traverseMap = func(key string, value interface{}) (err error) {
 		switch v := value.(type) {
 		default:
@@ -29,7 +34,7 @@ func FromNgxTranslate(b []byte, original bool) (messages model.Messages, err err
 			messages.Messages = append(messages.Messages, model.Message{
 				ID:      key,
 				Message: convertToMessageFormatSingular(v),
-				Status:  getStatus(v, original, false),
+				Status:  status,
 			})
 		case map[string]interface{}:
 			for subKey, subValue := range v {

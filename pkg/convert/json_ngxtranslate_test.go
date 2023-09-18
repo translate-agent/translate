@@ -43,7 +43,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 					{
 						ID:      "message.example",
 						Message: "{message1}",
-						Status:  model.MessageStatusTranslated,
+						Status:  model.MessageStatusUntranslated,
 					},
 				},
 			},
