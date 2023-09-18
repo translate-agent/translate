@@ -93,6 +93,11 @@ func FromArb(data []byte, original bool) (model.Messages, error) {
 		return model.Messages{}, fmt.Errorf("find locale: %w", err)
 	}
 
+	status := model.MessageStatusUntranslated
+	if original {
+		status = model.MessageStatusTranslated
+	}
+
 	messages := model.Messages{Language: lang, Original: original}
 
 	for key, value := range dst {
@@ -101,7 +106,7 @@ func FromArb(data []byte, original bool) (model.Messages, error) {
 			continue
 		}
 
-		msg := model.Message{ID: key}
+		msg := model.Message{ID: key, Status: status}
 
 		// If a key does not have an '@' prefix and its value is not of type string, then file is not formatted correctly.
 		var ok bool
@@ -109,7 +114,6 @@ func FromArb(data []byte, original bool) (model.Messages, error) {
 			return model.Messages{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
 		}
 
-		msg.Status = getStatus(msg.Message, original, false)
 		msg.Message = convertToMessageFormatSingular(msg.Message)
 
 		var err error

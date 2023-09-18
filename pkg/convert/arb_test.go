@@ -2,7 +2,6 @@ package convert
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,6 +20,7 @@ func Test_FromArb(t *testing.T) {
 		input       []byte
 		expected    model.Messages
 	}{
+		// Positive tests
 		{
 			name: "Combination of messages",
 			input: []byte(`
@@ -61,7 +61,6 @@ func Test_FromArb(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: nil,
 		},
 		{
 			name: "Message with placeholder",
@@ -103,8 +102,31 @@ func Test_FromArb(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: nil,
 		},
+		{
+			name: "With locale",
+			input: []byte(`
+      {
+        "@@locale": "lv",
+        "title": "",
+        "@title": {
+          "description": "Message to greet the World"
+        }
+      }`),
+			expected: model.Messages{
+				Language: language.Latvian,
+				Original: false,
+				Messages: []model.Message{
+					{
+						ID:          "title",
+						Message:     "",
+						Description: "Message to greet the World",
+						Status:      model.MessageStatusUntranslated,
+					},
+				},
+			},
+		},
+		// Negative tests
 		{
 			name: "Wrong value type for @title",
 			input: []byte(`
@@ -139,30 +161,6 @@ func Test_FromArb(t *testing.T) {
 			expectedErr: errors.New("'Description' expected type 'string', got unconvertible type 'map[string]interface {}'"),
 		},
 		{
-			name: "With locale",
-			input: []byte(`
-      {
-        "@@locale": "lv",
-        "title": "",
-        "@title": {
-          "description": "Message to greet the World"
-        }
-      }`),
-			expected: model.Messages{
-				Language: language.Latvian,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:          "title",
-						Message:     "",
-						Description: "Message to greet the World",
-						Status:      model.MessageStatusUntranslated,
-					},
-				},
-			},
-			expectedErr: nil,
-		},
-		{
 			name: "With malformed locale",
 			input: []byte(`
       {
@@ -172,7 +170,7 @@ func Test_FromArb(t *testing.T) {
           "description": "Message to greet the World"
         }
       }`),
-			expectedErr: fmt.Errorf("language: tag is not well-formed"),
+			expectedErr: errors.New("language: tag is not well-formed"),
 		},
 		{
 			name: "With wrong value type for locale",
@@ -186,7 +184,7 @@ func Test_FromArb(t *testing.T) {
           "description": "Message to greet the World"
         }
       }`),
-			expectedErr: fmt.Errorf("unsupported value type 'map[string]interface {}' for key '@@locale'"),
+			expectedErr: errors.New("unsupported value type 'map[string]interface {}' for key '@@locale'"),
 		},
 	}
 	for _, tt := range tests {
