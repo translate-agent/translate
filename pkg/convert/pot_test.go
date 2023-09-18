@@ -717,7 +717,7 @@ func TestFromPot(t *testing.T) {
 						ID:          "Hello",
 						Message:     "{Hello, world!}",
 						Description: "a greeting",
-						Status:      model.MessageStatusTranslated,
+						Status:      model.MessageStatusUntranslated,
 					},
 					{
 						ID:          "Goodbye",
@@ -756,7 +756,7 @@ func TestFromPot(t *testing.T) {
 						ID:          "Goodbye",
 						Message:     "{Goodbye, world!}",
 						Description: "a farewell",
-						Status:      model.MessageStatusTranslated,
+						Status:      model.MessageStatusUntranslated,
 					},
 				},
 			},
@@ -787,7 +787,7 @@ func TestFromPot(t *testing.T) {
 						ID:          "Goodbye",
 						Message:     "{Goodbye, world!}",
 						Description: "a farewell",
-						Status:      model.MessageStatusTranslated,
+						Status:      model.MessageStatusUntranslated,
 					},
 				},
 			},
@@ -812,13 +812,13 @@ func TestFromPot(t *testing.T) {
 						ID:          "Hello",
 						Message:     "{Hello, world!}",
 						Description: "a greeting",
-						Status:      model.MessageStatusTranslated,
+						Status:      model.MessageStatusUntranslated,
 					},
 					{
 						ID:          "Goodbye",
 						Message:     "{Goodbye, world!}",
 						Description: "a farewell",
-						Status:      model.MessageStatusTranslated,
+						Status:      model.MessageStatusUntranslated,
 					},
 				},
 			},
@@ -848,7 +848,7 @@ func TestFromPot(t *testing.T) {
 						ID:          "Hello",
 						Message:     "{Hello, world!\nvery long string\n}",
 						Description: "a greeting\n a greeting2",
-						Status:      model.MessageStatusTranslated,
+						Status:      model.MessageStatusUntranslated,
 					},
 					{
 						ID:          "Goodbye",
@@ -927,19 +927,19 @@ func TestFromPot(t *testing.T) {
 						ID:        "Greetings",
 						Message:   "{Bonjour}",
 						Positions: []string{"examples/simple/example.clj:10"},
-						Status:    model.MessageStatusTranslated,
+						Status:    model.MessageStatusUntranslated,
 					},
 					{
 						ID:        "Please confirm your email",
 						Message:   "{Veuillez confirmer votre email}",
 						Positions: []string{"examples/simple/example.clj:20"},
-						Status:    model.MessageStatusTranslated,
+						Status:    model.MessageStatusUntranslated,
 					},
 					{
 						ID:        "Welcome, %s!",
 						Message:   "{Bienvenue, %s!}",
 						Positions: []string{"examples/simple/example.clj:30"},
-						Status:    model.MessageStatusTranslated,
+						Status:    model.MessageStatusUntranslated,
 					},
 					{
 						ID:       "product",
@@ -949,7 +949,7 @@ when 1 {produit}
 when * {%s produits}
 `,
 						Positions: []string{"examples/simple/example.clj:40", "examples/simple/example.clj:50"},
-						Status:    model.MessageStatusTranslated,
+						Status:    model.MessageStatusUntranslated,
 					},
 				},
 			},
@@ -981,12 +981,12 @@ when 1 {Il y a {$count} pomme.}
 when * {Il y a {$count} pommes.}
 `,
 						Description: "apple counts",
-						Status:      model.MessageStatusTranslated,
+						Status:      model.MessageStatusUntranslated,
 					},
 					{
 						ID:      "hi",
 						Message: "{ciao}",
-						Status:  model.MessageStatusTranslated,
+						Status:  model.MessageStatusUntranslated,
 					},
 				},
 			},
@@ -1015,7 +1015,7 @@ when 1 {Il y a {$count} pomme.}
 when * {Il y a {$count} pommes.}
 `,
 						Description: "apple counts",
-						Status:      model.MessageStatusTranslated,
+						Status:      model.MessageStatusUntranslated,
 					},
 				},
 			},
@@ -1045,7 +1045,7 @@ when * {Il y a {$count} pommes.}
 						PluralID:    "There are %d apples.",
 						Message:     "match {$count :number}\nwhen 1 {Il y a {$count}\npomme.}\nwhen * {Il y a {$count}\npommes.}\n",
 						Description: "apple counts",
-						Status:      model.MessageStatusTranslated,
+						Status:      model.MessageStatusUntranslated,
 					},
 				},
 			},
@@ -1074,7 +1074,7 @@ when * {Il y a {$count} pommes.}
 						PluralID:    "There are %d apples.\n",
 						Message:     "match {$count :number}\nwhen 1 {Il y a {$count}\npomme.}\nwhen * {Il y a {$count} pommes.}\n",
 						Description: "apple counts",
-						Status:      model.MessageStatusTranslated,
+						Status:      model.MessageStatusUntranslated,
 					},
 				},
 			},
@@ -1256,7 +1256,7 @@ when * {There are {$count} apples.}
 when 1 {Il y a {$count} pomme \{test\}.}
 when * {Il y a {$count} pommes \{tests\}.}
 `,
-						Status: model.MessageStatusTranslated,
+						Status: model.MessageStatusUntranslated,
 					},
 				},
 			},
@@ -1283,7 +1283,7 @@ when * {Il y a {$count} pommes \{tests\}.}
 when 1 {Il y a {$count} pomme \|.}
 when * {Il y a {$count} pommes \|.}
 `,
-						Status: model.MessageStatusTranslated,
+						Status: model.MessageStatusUntranslated,
 					},
 				},
 			},
@@ -1310,7 +1310,7 @@ when * {Il y a {$count} pommes \|.}
 when 1 {Il y a {$count} pomme \\.}
 when * {Il y a {$count} pommes \\.}
 `,
-						Status: model.MessageStatusTranslated,
+						Status: model.MessageStatusUntranslated,
 					},
 				},
 			},

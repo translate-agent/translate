@@ -62,10 +62,18 @@ func FromPot(b []byte, original bool) (model.Messages, error) {
 
 	singularValue := func(v pot.MessageNode) string { return v.MsgStr[0] }
 	pluralValue := func(v pot.MessageNode) []string { return v.MsgStr }
+	getStatus := func(v pot.MessageNode) model.MessageStatus {
+		if strings.Contains(v.Flag, "fuzzy") {
+			return model.MessageStatusFuzzy
+		}
+
+		return model.MessageStatusUntranslated
+	}
 
 	if original {
 		singularValue = func(v pot.MessageNode) string { return v.MsgId }
 		pluralValue = func(v pot.MessageNode) []string { return []string{v.MsgId, v.MsgIdPlural} }
+		getStatus = func(_ pot.MessageNode) model.MessageStatus { return model.MessageStatusTranslated }
 	}
 
 	convert := func(v pot.MessageNode) string { return convertToMessageFormatSingular(singularValue(v)) }
@@ -87,7 +95,7 @@ func FromPot(b []byte, original bool) (model.Messages, error) {
 			Description: strings.Join(node.ExtractedComment, "\n "),
 			Positions:   node.References,
 			Message:     convert(node),
-			Status:      getStatus(convert(node), original, strings.Contains(node.Flag, "fuzzy")),
+			Status:      getStatus(node),
 		}
 
 		messages = append(messages, message)
