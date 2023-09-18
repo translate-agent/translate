@@ -71,11 +71,17 @@ func messagesFromPipeline(m pipeline.Messages, original bool) model.Messages {
 	}
 
 	getMessage := func(m pipeline.Message) string { return m.Translation.Msg }
-	status := model.MessageStatusUntranslated
+	getStatus := func(m pipeline.Message) model.MessageStatus {
+		if m.Fuzzy {
+			return model.MessageStatusFuzzy
+		}
+
+		return model.MessageStatusUntranslated
+	}
 
 	if original {
 		getMessage = func(m pipeline.Message) string { return m.Message.Msg }
-		status = model.MessageStatusTranslated
+		getStatus = func(_ pipeline.Message) model.MessageStatus { return model.MessageStatusTranslated }
 	}
 
 	for _, value := range m.Messages {
@@ -83,7 +89,7 @@ func messagesFromPipeline(m pipeline.Messages, original bool) model.Messages {
 			ID:          value.ID[0],
 			Description: value.Meaning,
 			Message:     convertToMessageFormatSingular(getMessage(value)),
-			Status:      status,
+			Status:      getStatus(value),
 		}
 
 		if value.Position != "" {

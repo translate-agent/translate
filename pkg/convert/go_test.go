@@ -74,27 +74,27 @@ func TestFromGo(t *testing.T) {
 
 	modelMsg := model.Messages{
 		Language: language.English,
-		Original: true,
+		Original: false,
 		Messages: []model.Message{
 			{
 				ID:          "1",
-				Message:     "{message1}",
+				Message:     "{translatedMessage1}",
 				Description: "description1",
 				Positions:   []string{"src/config.go:10"},
-				Status:      model.MessageStatusTranslated,
+				Status:      model.MessageStatusFuzzy,
 			},
 			{
 				ID:          "2",
-				Message:     "{message2}",
+				Message:     "{translatedMessage2}",
 				Description: "description2",
 				Positions:   []string{"src/config.go:20"},
-				Status:      model.MessageStatusTranslated,
+				Status:      model.MessageStatusFuzzy,
 			},
 			{
 				ID:          "3",
-				Message:     "{message3}",
+				Message:     "",
 				Description: "description3",
-				Status:      model.MessageStatusTranslated,
+				Status:      model.MessageStatusUntranslated,
 			},
 		},
 	}
@@ -107,15 +107,17 @@ func TestFromGo(t *testing.T) {
 				"id": "1",
 				"meaning": "description1",
 				"message": "message1",
-				"translation": "",
-				"position": "src/config.go:10"
+				"translation": "translatedMessage1",
+				"position": "src/config.go:10",
+				"fuzzy":true
 			},
 			{
 				"id": "2",
 				"meaning": "description2",
 				"message": "message2",
-				"translation": "",
-				"position": "src/config.go:20"
+				"translation": "translatedMessage2",
+				"position": "src/config.go:20",
+				"fuzzy":true
 			},
 			{
 				"id": "3",
