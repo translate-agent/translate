@@ -64,11 +64,13 @@ func FromXliff12(data []byte, original bool) (model.Messages, error) {
 	}
 
 	getMessage := func(t transUnit) string { return t.Source }
+	status := model.MessageStatusTranslated
 
 	// Check if a target language is set
 	if !messages.Original {
 		messages.Language = xlf.File.TargetLanguage
 		getMessage = func(t transUnit) string { return t.Target }
+		status = model.MessageStatusUntranslated
 	}
 
 	for _, unit := range xlf.File.Body.TransUnits {
@@ -79,7 +81,7 @@ func FromXliff12(data []byte, original bool) (model.Messages, error) {
 			Message:     convertToMessageFormatSingular(message),
 			Description: unit.Note,
 			Positions:   positionsFromXliff12(unit.ContextGroups),
-			Status:      getStatus(message, original, false),
+			Status:      status,
 		})
 	}
 
