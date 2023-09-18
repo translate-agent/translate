@@ -1,7 +1,7 @@
 package convert
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -66,7 +66,7 @@ func Test_FromNgLocalize(t *testing.T) {
 					{
 						ID:      "Hello",
 						Message: "{Bonjour}",
-						Status:  model.MessageStatusTranslated,
+						Status:  model.MessageStatusUntranslated,
 					},
 					{
 						ID:      "Welcome",
@@ -87,7 +87,7 @@ func Test_FromNgLocalize(t *testing.T) {
           "Welcome": "Bienvenue"
         }
       }`),
-			expectedErr: fmt.Errorf("language: subtag \"xyz\" is well-formed but unknown"),
+			expectedErr: errors.New("language: subtag \"xyz\" is well-formed but unknown"),
 		},
 	}
 	for _, tt := range tests {
