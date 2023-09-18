@@ -8,6 +8,8 @@ import (
 )
 
 func EqualMessages(t *testing.T, expected, actual *model.Messages) {
+	t.Helper()
+
 	if expected == nil {
 		require.Equal(t, expected, actual)
 	}
