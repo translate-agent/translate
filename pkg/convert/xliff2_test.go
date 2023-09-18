@@ -82,46 +82,32 @@ func assertEqualXml(t *testing.T, expected, actual []byte) bool { //nolint:unpar
 func Test_FromXliff2(t *testing.T) {
 	t.Parallel()
 
-	sourceMessages := testutilrand.ModelMessages(
+	originalMessages := testutilrand.ModelMessages(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
 		testutilrand.WithOriginal(true),
 	)
 
-	translatedMessages := testutilrand.ModelMessages(
+	nonOriginalMessages := testutilrand.ModelMessages(
 		3,
-		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
-		testutilrand.WithOriginal(false),
-	)
-
-	translatedButEmpty := testutilrand.ModelMessages(
-		3,
-		[]testutilrand.ModelMessageOption{
-			testutilrand.WithStatus(model.MessageStatusUntranslated),
-			testutilrand.WithMessage(""),
-		},
+		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusUntranslated)},
 		testutilrand.WithOriginal(false),
 	)
 
 	tests := []struct {
 		name     string
 		expected *model.Messages
-		input    []byte
+		data     []byte
 	}{
 		{
 			name:     "Original",
-			input:    randXliff2(sourceMessages),
-			expected: sourceMessages,
+			data:     randXliff2(originalMessages),
+			expected: originalMessages,
 		},
 		{
-			name:     "Translated with translations",
-			input:    randXliff2(translatedMessages),
-			expected: translatedMessages,
-		},
-		{
-			name:     "Translated without translations",
-			input:    randXliff2(translatedButEmpty),
-			expected: translatedButEmpty,
+			name:     "Different language",
+			data:     randXliff2(nonOriginalMessages),
+			expected: nonOriginalMessages,
 		},
 	}
 
@@ -130,7 +116,7 @@ func Test_FromXliff2(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromXliff2(tt.input, tt.expected.Original)
+			actual, err := FromXliff2(tt.data, tt.expected.Original)
 			require.NoError(t, err)
 
 			for i := range actual.Messages {

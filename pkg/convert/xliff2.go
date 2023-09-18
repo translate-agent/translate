@@ -53,11 +53,13 @@ func FromXliff2(data []byte, original bool) (model.Messages, error) {
 	}
 
 	getMessage := func(u unit) string { return u.Source }
+	status := model.MessageStatusTranslated
 
 	// Check if a target language is set
 	if !messages.Original {
 		messages.Language = xlf.TrgLang
 		getMessage = func(u unit) string { return u.Target }
+		status = model.MessageStatusUntranslated
 	}
 
 	findDescription := func(u unit) string {
@@ -78,7 +80,7 @@ func FromXliff2(data []byte, original bool) (model.Messages, error) {
 			Message:     convertToMessageFormatSingular(message),
 			Description: findDescription(unit),
 			Positions:   positionsFromXliff2(unit.Notes),
-			Status:      getStatus(message, original, false),
+			Status:      status,
 		})
 	}
 
