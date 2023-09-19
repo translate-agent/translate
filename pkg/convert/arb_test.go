@@ -2,11 +2,12 @@ package convert
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
+	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
 
@@ -19,6 +20,7 @@ func Test_FromArb(t *testing.T) {
 		input       []byte
 		expected    model.Messages
 	}{
+		// Positive tests
 		{
 			name: "Combination of messages",
 			input: []byte(`
@@ -39,26 +41,29 @@ func Test_FromArb(t *testing.T) {
 				"farewell": "Goodbye friend"
 			}`),
 			expected: model.Messages{
+				Original: true,
 				Messages: []model.Message{
 					{
 						ID:          "title",
 						Message:     "{Hello World!}",
 						Description: "Message to greet the World",
+						Status:      model.MessageStatusTranslated,
 					},
 					{
 						ID:      "greeting",
 						Message: "{Welcome \\{user\\}!}",
+						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "farewell",
 						Message: "{Goodbye friend}",
+						Status:  model.MessageStatusTranslated,
 					},
 				},
 			},
-			expectedErr: nil,
 		},
 		{
-			name: "Message in curly braces",
+			name: "Message with placeholder",
 			input: []byte(`
 			{
 				"title": "Hello World!",
@@ -77,24 +82,51 @@ func Test_FromArb(t *testing.T) {
 				"farewell": "Goodbye friend"
 			}`),
 			expected: model.Messages{
+				Original: true,
 				Messages: []model.Message{
 					{
 						ID:          "title",
 						Message:     "{Hello World!}",
 						Description: "Message to greet the World",
+						Status:      model.MessageStatusTranslated,
 					},
 					{
 						ID:      "greeting",
 						Message: "{Welcome \\{user\\}!}",
+						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "farewell",
 						Message: "{Goodbye friend}",
+						Status:  model.MessageStatusTranslated,
 					},
 				},
 			},
-			expectedErr: nil,
 		},
+		{
+			name: "With locale",
+			input: []byte(`
+      {
+        "@@locale": "lv",
+        "title": "",
+        "@title": {
+          "description": "Message to greet the World"
+        }
+      }`),
+			expected: model.Messages{
+				Language: language.Latvian,
+				Original: false,
+				Messages: []model.Message{
+					{
+						ID:          "title",
+						Message:     "",
+						Description: "Message to greet the World",
+						Status:      model.MessageStatusUntranslated,
+					},
+				},
+			},
+		},
+		// Negative tests
 		{
 			name: "Wrong value type for @title",
 			input: []byte(`
@@ -129,29 +161,6 @@ func Test_FromArb(t *testing.T) {
 			expectedErr: errors.New("'Description' expected type 'string', got unconvertible type 'map[string]interface {}'"),
 		},
 		{
-			name: "With locale",
-			input: []byte(`
-      {
-        "@@locale": "en",
-        "title": "Hello World!",
-        "@title": {
-          "description": "Message to greet the World"
-        }
-      }`),
-			expected: model.Messages{
-				Language: language.English,
-				Messages: []model.Message{
-					{
-						ID:          "title",
-						Message:     "{Hello World!}",
-						Description: "Message to greet the World",
-					},
-				},
-				Original: false,
-			},
-			expectedErr: nil,
-		},
-		{
 			name: "With malformed locale",
 			input: []byte(`
       {
@@ -161,7 +170,7 @@ func Test_FromArb(t *testing.T) {
           "description": "Message to greet the World"
         }
       }`),
-			expectedErr: fmt.Errorf("language: tag is not well-formed"),
+			expectedErr: errors.New("language: tag is not well-formed"),
 		},
 		{
 			name: "With wrong value type for locale",
@@ -175,7 +184,7 @@ func Test_FromArb(t *testing.T) {
           "description": "Message to greet the World"
         }
       }`),
-			expectedErr: fmt.Errorf("unsupported value type 'map[string]interface {}' for key '@@locale'"),
+			expectedErr: errors.New("unsupported value type 'map[string]interface {}' for key '@@locale'"),
 		},
 	}
 	for _, tt := range tests {
@@ -183,18 +192,15 @@ func Test_FromArb(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromArb(tt.input, false)
+			actual, err := FromArb(tt.input, tt.expected.Original)
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
-			assert.Equal(t, tt.expected.Language, actual.Language)
-			assert.ElementsMatch(t, tt.expected.Messages, actual.Messages)
+			testutil.EqualMessages(t, &tt.expected, &actual)
 		})
 	}
 }

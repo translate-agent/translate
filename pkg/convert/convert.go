@@ -1,6 +1,8 @@
 package convert
 
-import "strings"
+import (
+	"strings"
+)
 
 // convertToMessageFormatSingular wraps the input string with curly braces and returns the modified string.
 func convertToMessageFormatSingular(message string) string {
