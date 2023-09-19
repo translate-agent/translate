@@ -123,16 +123,8 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
-		originalMessages := messages
-
-		// Replace messages from repo with the new ones, or append if not found.
-		switch idx := all.LanguageIndex(messages.Language); idx {
-		case -1:
-			all = append(all, *messages)
-		default:
-			all[idx] = *messages
-			originalMessages, _ = all.SplitOriginal()
-		}
+		all.Replace(*messages)
+		originalMessages, _ := all.SplitOriginal()
 
 		// Find original messages with altered text, then replace text in associated messages for all translations.
 		t.alterTranslations(all, getUntranslatedIDs(originalMessages, messages))

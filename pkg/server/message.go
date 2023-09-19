@@ -225,11 +225,11 @@ func (t *TranslateServiceServer) UpdateMessages(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	switch idx := all.LanguageIndex(params.messages.Language); idx {
-	case -1:
+	switch all.HasLanguage(params.messages.Language) {
+	case true:
+		all.Replace(*params.messages)
+	case false:
 		return nil, status.Errorf(codes.NotFound, "no messages for language: '%s'", params.messages.Language)
-	default:
-		all[idx] = *params.messages
 	}
 
 	// When updating original messages, changes might affect translations - transform and update all translations.

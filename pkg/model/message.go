@@ -18,29 +18,25 @@ type Messages struct {
 type MessagesSlice []Messages
 
 // HasLanguage checks if MessagesSlice contains Messages with the given language.
-func (ms MessagesSlice) HasLanguage(targetLang language.Tag) bool {
-	return slices.ContainsFunc(ms, func(m Messages) bool {
-		return m.Language == targetLang
-	})
+func (ms MessagesSlice) HasLanguage(lang language.Tag) bool {
+	return ms.LanguageIndex(lang) != -1
 }
 
 // LanguageIndex returns index of Messages with the given language. If not found, returns -1.
-func (ms MessagesSlice) LanguageIndex(targetLang language.Tag) int {
+func (ms MessagesSlice) LanguageIndex(lang language.Tag) int {
 	return slices.IndexFunc(ms, func(m Messages) bool {
-		return m.Language == targetLang
+		return m.Language == lang
 	})
 }
 
-func (m MessagesSlice) Replace(messages Messages) MessagesSlice {
-	for i := range m {
-		if m[i].Language == messages.Language {
-			m[i] = messages
-
-			return m
-		}
+// Replace replaces Messages with the same language. If not found, appends to the slice.
+func (ms *MessagesSlice) Replace(messages Messages) {
+	switch idx := ms.LanguageIndex(messages.Language); idx {
+	case -1:
+		*ms = append(*ms, messages)
+	default:
+		(*ms)[idx] = messages
 	}
-
-	return append(m, messages)
 }
 
 // SplitOriginal returns a pointer to the original and other messages.
