@@ -55,7 +55,6 @@ func FromXliff2(data []byte, original bool) (model.Messages, error) {
 	getMessage := func(u unit) string { return u.Target }
 	status := model.MessageStatusUntranslated
 
-	// Check if a target language is set
 	if messages.Original {
 		messages.Language = xlf.SrcLang
 		getMessage = func(u unit) string { return u.Source }
