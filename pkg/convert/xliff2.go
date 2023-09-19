@@ -47,19 +47,19 @@ func FromXliff2(data []byte, original bool) (model.Messages, error) {
 	}
 
 	messages := model.Messages{
-		Language: xlf.SrcLang,
+		Language: xlf.TrgLang,
 		Original: xlf.TrgLang == language.Und,
 		Messages: make([]model.Message, 0, len(xlf.File.Units)),
 	}
 
-	getMessage := func(u unit) string { return u.Source }
-	status := model.MessageStatusTranslated
+	getMessage := func(u unit) string { return u.Target }
+	status := model.MessageStatusUntranslated
 
 	// Check if a target language is set
-	if !messages.Original {
-		messages.Language = xlf.TrgLang
-		getMessage = func(u unit) string { return u.Target }
-		status = model.MessageStatusUntranslated
+	if messages.Original {
+		messages.Language = xlf.SrcLang
+		getMessage = func(u unit) string { return u.Source }
+		status = model.MessageStatusTranslated
 	}
 
 	findDescription := func(u unit) string {
