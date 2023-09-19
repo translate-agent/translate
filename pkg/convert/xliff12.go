@@ -58,25 +58,29 @@ func FromXliff12(data []byte, original bool) (model.Messages, error) {
 	}
 
 	messages := model.Messages{
-		Language: xlf.File.SourceLanguage,
+		Language: xlf.File.TargetLanguage,
 		Original: xlf.File.TargetLanguage == language.Und,
 		Messages: make([]model.Message, 0, len(xlf.File.Body.TransUnits)),
 	}
 
-	getMessage := func(t transUnit) string { return t.Source }
+	getMessage := func(t transUnit) string { return t.Target }
+	status := model.MessageStatusUntranslated
 
-	// Check if a target language is set
-	if !messages.Original {
-		messages.Language = xlf.File.TargetLanguage
-		getMessage = func(t transUnit) string { return t.Target }
+	if messages.Original {
+		messages.Language = xlf.File.SourceLanguage
+		getMessage = func(t transUnit) string { return t.Source }
+		status = model.MessageStatusTranslated
 	}
 
 	for _, unit := range xlf.File.Body.TransUnits {
+		message := getMessage(unit)
+
 		messages.Messages = append(messages.Messages, model.Message{
 			ID:          unit.ID,
-			Message:     convertToMessageFormatSingular(getMessage(unit)),
+			Message:     convertToMessageFormatSingular(message),
 			Description: unit.Note,
 			Positions:   positionsFromXliff12(unit.ContextGroups),
+			Status:      status,
 		})
 	}
 

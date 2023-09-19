@@ -11,7 +11,13 @@ import (
 
 var errUnspecifiedSchema = errors.New("unspecified schema")
 
-// MessagesFromData converts in specific schema serialized data to model.Messages.
+/*
+MessagesFromData converts in specific schema serialized data to model.Messages.
+  - If original is true, then all messages are marked as TRANSLATED
+  - If original is false, then all messages are marked as UNTRANSLATED or FUZZY (if schema supports fuzzy messages)
+
+TODO: Add support for converting non original, but already translated messages and mark them as TRANSLATED
+*/
 func MessagesFromData(params *uploadParams) (*model.Messages, error) {
 	var from func([]byte, bool) (model.Messages, error)
 

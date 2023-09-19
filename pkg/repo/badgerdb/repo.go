@@ -13,6 +13,15 @@ type Repo struct {
 	db *badger.DB
 }
 
+func (r *Repo) Close() error {
+	err := r.db.Close()
+	if err != nil {
+		return fmt.Errorf("close badger db: %w", err)
+	}
+
+	return nil
+}
+
 type option func(*Repo) error
 
 // WithDefaultDB opens a new Badger database in file system

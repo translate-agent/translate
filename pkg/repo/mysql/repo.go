@@ -12,6 +12,15 @@ type Repo struct {
 	db *sql.DB
 }
 
+func (r *Repo) Close() error {
+	err := r.db.Close()
+	if err != nil {
+		return fmt.Errorf("close mysql db: %w", err)
+	}
+
+	return nil
+}
+
 // Option interface used for setting optional Repo properties.
 type Option interface {
 	apply(*Repo) error

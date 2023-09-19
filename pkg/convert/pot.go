@@ -62,10 +62,18 @@ func FromPot(b []byte, original bool) (model.Messages, error) {
 
 	singularValue := func(v pot.MessageNode) string { return v.MsgStr[0] }
 	pluralValue := func(v pot.MessageNode) []string { return v.MsgStr }
+	getStatus := func(v pot.MessageNode) model.MessageStatus {
+		if strings.Contains(v.Flag, "fuzzy") {
+			return model.MessageStatusFuzzy
+		}
+
+		return model.MessageStatusUntranslated
+	}
 
 	if original {
 		singularValue = func(v pot.MessageNode) string { return v.MsgId }
 		pluralValue = func(v pot.MessageNode) []string { return []string{v.MsgId, v.MsgIdPlural} }
+		getStatus = func(_ pot.MessageNode) model.MessageStatus { return model.MessageStatusTranslated }
 	}
 
 	convert := func(v pot.MessageNode) string { return convertToMessageFormatSingular(singularValue(v)) }
@@ -87,10 +95,7 @@ func FromPot(b []byte, original bool) (model.Messages, error) {
 			Description: strings.Join(node.ExtractedComment, "\n "),
 			Positions:   node.References,
 			Message:     convert(node),
-		}
-
-		if strings.Contains(node.Flag, "fuzzy") {
-			message.Status = model.MessageStatusFuzzy
+			Status:      getStatus(node),
 		}
 
 		messages = append(messages, message)
@@ -247,7 +252,7 @@ func writeMultiline(b *bytes.Buffer, tag poTag, lines []string) error {
 // It returns a slice of strings representing the individual lines.
 func getPoTagLines(str string) []string {
 	encodedStr := strconv.Quote(str)
-
+	encodedStr = strings.ReplaceAll(encodedStr, "\\\\", "\\")
 	encodedStr = encodedStr[1 : len(encodedStr)-1] // trim quotes
 	lines := strings.Split(encodedStr, "\\n")
 
@@ -337,6 +342,7 @@ func convertPluralsToMessageString(plurals []string) string {
 	sb.WriteString("match {$count :number}\n")
 
 	for i, plural := range plurals {
+		plural = escapeSpecialChars(plural)
 		line := strings.ReplaceAll(strings.TrimSpace(plural), "%d", "{$count}")
 
 		var count string
