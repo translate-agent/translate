@@ -43,21 +43,6 @@ func (m MessagesSlice) Replace(messages Messages) MessagesSlice {
 	return append(m, messages)
 }
 
-// Clone returns a deep copy of MessagesSlice.
-func (m MessagesSlice) Clone() MessagesSlice {
-	if len(m) == 0 {
-		return nil
-	}
-
-	msgs := slices.Clone(m)
-
-	for i := range m {
-		msgs[i].Messages = slices.Clone(m[i].Messages)
-	}
-
-	return msgs
-}
-
 // SplitOriginal returns a pointer to the original and other messages.
 func (m MessagesSlice) SplitOriginal() (original *Messages, others MessagesSlice) {
 	others = make(MessagesSlice, 0, len(m))

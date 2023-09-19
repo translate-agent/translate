@@ -233,12 +233,10 @@ func Test_fuzzyTranslate(t *testing.T) {
 			t.Parallel()
 
 			allMessages := append(tt.translatedMessages, *tt.originalMessages)
-			newOriginalMessages := &model.MessagesSlice{*tt.originalMessages}.Clone()[0]
 			untranslatedMessageIDLookup := make(map[string]struct{})
 
 			// Randomly set message status to untranslated
-
-			for _, msg := range newOriginalMessages.Messages {
+			for _, msg := range tt.originalMessages.Messages {
 				if gofakeit.Bool() {
 					untranslatedMessageIDLookup[msg.ID] = struct{}{}
 				}
