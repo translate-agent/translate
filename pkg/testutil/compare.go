@@ -18,9 +18,3 @@ func EqualMessages(t *testing.T, expected, actual *model.Messages) {
 	require.Equal(t, expected.Original, actual.Original, "messages.original = %t, but want %t", actual.Original, expected.Original) //nolint:lll
 	require.ElementsMatch(t, expected.Messages, actual.Messages)
 }
-
-// RequireEqualStatus checks that the expected and actual message statuses
-// are equal, and gives human readable error if not.
-func RequireEqualStatus(t *testing.T, expected, actual model.MessageStatus) {
-	require.Equal(t, expected, actual, "message.status = %s, but want %s", actual, expected)
-}

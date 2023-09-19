@@ -237,7 +237,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 		prev, _ := all.SplitOriginal()
 
 		// Find original messages with altered text, then replace text in associated messages for all translations.
-		t.alterTranslations(all, getUntranslatedIDs(prev, params.messages))
+		all.AlterTranslations(getUntranslatedIDs(prev, params.messages))
 
 		// If populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {
@@ -314,6 +314,8 @@ Example:
 
 	Result:
 	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour" }, { ID: "2", Message: "World", Status: Untranslated } ] }
+
+TODO: Reciever should be changed to model.MessagesSlice.
 */
 func (t *TranslateServiceServer) populateTranslations(all model.MessagesSlice) model.MessagesSlice {
 	original, others := all.SplitOriginal()

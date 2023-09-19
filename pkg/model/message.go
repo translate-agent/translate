@@ -54,6 +54,44 @@ func (m MessagesSlice) SplitOriginal() (original *Messages, others MessagesSlice
 	return
 }
 
+/*
+AlterTranslations changes the status of specific messages in all languages to UNTRANSLATED
+based on a list of message IDs, while keeping the original language messages status.
+
+Example:
+
+	untranslatedIDs := { "1" }
+
+	{ Language: en, Original: true, Messages: [ { ID: "1", Message: "Hello", Status: Translated  } ], ...
+	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour", Status: Translated  } ], ... ] }
+	{ Language: de, Messages: [ { ID: "1", Message: "Hallo", Status: Translated  } ], ... ]
+
+	Result:
+	{ Language: en, Original: true, Messages: [ { ID: "1", Message: "Hello", Status: Translated  } ], ...
+	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour", Status: Untranslated  }, ... ] }
+	{ Language: de, Messages: [ { ID: "1", Message: "Hallo", Status: Untranslated  } ], ... ]
+*/
+func (ms MessagesSlice) AlterTranslations(untranslatedIDs []string) {
+	if len(untranslatedIDs) == 0 || len(ms) == 1 {
+		return
+	}
+
+	slices.Sort(untranslatedIDs)
+
+	// Update altered messages for all translations
+	for _, msg := range ms {
+		if msg.Original {
+			continue
+		}
+
+		for i := range msg.Messages {
+			if _, found := slices.BinarySearch(untranslatedIDs, msg.Messages[i].ID); found {
+				msg.Messages[i].Status = MessageStatusUntranslated
+			}
+		}
+	}
+}
+
 type Message struct {
 	ID          string
 	PluralID    string

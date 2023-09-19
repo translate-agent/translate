@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo/badgerdb"
-	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
@@ -54,80 +53,6 @@ func TestMain(m *testing.M) {
 
 	translateSrv = NewTranslateServiceServer(repository, &mockTranslator{})
 	os.Exit(m.Run())
-}
-
-func Test_alterTranslations(t *testing.T) {
-	t.Parallel()
-
-	originalMessages := randOriginalMessages(5)
-	translatedMessages := randTranslatedMessages(3, 5, originalMessages)
-
-	mixedMessages := model.MessagesSlice{*originalMessages}
-	mixedMessages = append(mixedMessages, randTranslatedMessages(3, 5, originalMessages)...)
-
-	tests := []struct {
-		name            string
-		messages        model.MessagesSlice
-		untranslatedIds []string
-		expected        model.MessagesSlice
-	}{
-		// Nothing is changed, because untranslated IDs are not provided.
-		{
-			name:            "Without untranslated IDs",
-			messages:        model.MessagesSlice{*originalMessages},
-			untranslatedIds: nil,
-		},
-		// Nothing is changed, messages with original flag should not be altered.
-		{
-			name:            "One original message",
-			messages:        model.MessagesSlice{*originalMessages},
-			untranslatedIds: []string{originalMessages.Messages[0].ID},
-		},
-		// First message status is changed to untranslated for all messages, other messages are not changed.
-		{
-			name:            "Multiple translated messages",
-			messages:        translatedMessages,
-			untranslatedIds: []string{originalMessages.Messages[0].ID},
-		},
-		// First message status is changed to untranslated for all messages except original one
-		// other messages are not changed.
-		{
-			name:            "Mixed messages",
-			messages:        mixedMessages,
-			untranslatedIds: []string{originalMessages.Messages[0].ID},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			translateSrv.alterTranslations(tt.messages, tt.untranslatedIds)
-
-			original, others := tt.messages.SplitOriginal()
-
-			// For original messages, no messages should be altered, e.g. all messages should be with status translated.
-			if original != nil {
-				for _, m := range original.Messages {
-					testutil.RequireEqualStatus(t, model.MessageStatusTranslated, m.Status)
-				}
-			}
-
-			// For non original messages, check that
-			// 1. Ones with untranslated IDs are marked as untranslated.
-			// 2. Ones without untranslated IDs are left as is, e.g. translated.
-			for _, msgs := range others {
-				for _, msg := range msgs.Messages {
-					if slices.Contains(tt.untranslatedIds, msg.ID) {
-						testutil.RequireEqualStatus(t, model.MessageStatusUntranslated, msg.Status)
-					} else {
-						testutil.RequireEqualStatus(t, model.MessageStatusTranslated, msg.Status)
-					}
-				}
-			}
-		})
-	}
 }
 
 func Test_populateTranslations(t *testing.T) {
@@ -278,7 +203,7 @@ func Test_fuzzyTranslate(t *testing.T) {
 	}
 }
 
-func Test_getChangedMessagesIDs(t *testing.T) {
+func Test_getUntranslatedIDs(t *testing.T) {
 	old := &model.Messages{
 		Messages: []model.Message{
 			{ID: "1", Message: "Hello"},
