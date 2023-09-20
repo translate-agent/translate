@@ -264,47 +264,6 @@ func (t *TranslateServiceServer) UpdateMessages(
 // helpers
 
 /*
-alterTranslations alter the status of specific messages in multiple languages to "untranslated"
-based on a list of message IDs, while keeping the "original" language messages unchanged.
-
-Example:
-
-	untranslatedIDs := { "1" }
-
-	{ Language: en, Original: true, Messages: [ { ID: "1", Message: "Hello", Status: Translated  } ], ...
-	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour", Status: Translated  } ], ... ] }
-	{ Language: de, Messages: [ { ID: "1", Message: "Hallo", Status: Translated  } ], ... ]
-
-	Result:
-	{ Language: en, Original: true, Messages: [ { ID: "1", Message: "Hello", Status: Translated  } ], ...
-	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour", Status: Untranslated  }, ... ] }
-	{ Language: de, Messages: [ { ID: "1", Message: "Hallo", Status: Untranslated  } ], ... ]
-*/
-func (t *TranslateServiceServer) alterTranslations(
-	all model.MessagesSlice,
-	untranslatedIDs []string,
-) {
-	if len(untranslatedIDs) == 0 || len(all) == 1 {
-		return
-	}
-
-	slices.Sort(untranslatedIDs)
-
-	// Update altered messages for all translations
-	for _, msg := range all {
-		if msg.Original {
-			continue
-		}
-
-		for i := range msg.Messages {
-			if _, found := slices.BinarySearch(untranslatedIDs, msg.Messages[i].ID); found {
-				msg.Messages[i].Status = model.MessageStatusUntranslated
-			}
-		}
-	}
-}
-
-/*
 populateTranslations adds messages that exists in original language but not in other languages.
 
 Example:
