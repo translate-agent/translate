@@ -236,8 +236,8 @@ func (t *TranslateServiceServer) UpdateMessages(
 	if params.messages.Original {
 		prev, _ := all.SplitOriginal()
 
-		// Find original messages with altered text, then replace text in associated messages for all translations.
-		all.AlterTranslations(getUntranslatedIDs(prev, params.messages))
+		// Mark new or altered messages as untranslated.
+		all.MarkUntranslated(getUntranslatedIDs(prev, params.messages))
 
 		// If populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {

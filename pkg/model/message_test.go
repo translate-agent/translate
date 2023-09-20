@@ -7,7 +7,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-func Test_AlterTranslations(t *testing.T) {
+func Test_MarkUntranslated(t *testing.T) {
 	t.Parallel()
 
 	originalMsgs := func() Messages {
@@ -69,7 +69,7 @@ func Test_AlterTranslations(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			tt.messages.AlterTranslations(tt.untranslatedIds)
+			tt.messages.MarkUntranslated(tt.untranslatedIds)
 
 			original, others := tt.messages.SplitOriginal()
 

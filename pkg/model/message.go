@@ -55,12 +55,12 @@ func (m MessagesSlice) SplitOriginal() (original *Messages, others MessagesSlice
 }
 
 /*
-AlterTranslations changes the status of specific messages in all languages to UNTRANSLATED
-based on a list of message IDs, while keeping the original language messages status.
+MarkUntranslated changes status of message in all languages except the original to
+UNTRANSLATED if message.ID is in the ids slice.
 
 Example:
 
-	untranslatedIDs := { "1" }
+	ids := { "1" }
 
 	{ Language: en, Original: true, Messages: [ { ID: "1", Message: "Hello", Status: Translated  } ], ...
 	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour", Status: Translated  } ], ... ] }
@@ -71,22 +71,22 @@ Example:
 	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour", Status: Untranslated  }, ... ] }
 	{ Language: de, Messages: [ { ID: "1", Message: "Hallo", Status: Untranslated  } ], ... ]
 */
-func (ms MessagesSlice) AlterTranslations(untranslatedIDs []string) {
-	if len(untranslatedIDs) == 0 || len(ms) == 1 {
+func (ms MessagesSlice) MarkUntranslated(ids []string) {
+	n := len(ms)
+	if len(ids) == 0 || n == 0 || (n == 1 && ms[0].Original) {
 		return
 	}
 
-	slices.Sort(untranslatedIDs)
+	slices.Sort(ids)
 
-	// Update altered messages for all translations
-	for _, msg := range ms {
-		if msg.Original {
+	for _, messages := range ms {
+		if messages.Original {
 			continue
 		}
 
-		for i := range msg.Messages {
-			if _, found := slices.BinarySearch(untranslatedIDs, msg.Messages[i].ID); found {
-				msg.Messages[i].Status = MessageStatusUntranslated
+		for i := range messages.Messages {
+			if _, found := slices.BinarySearch(ids, messages.Messages[i].ID); found {
+				messages.Messages[i].Status = MessageStatusUntranslated
 			}
 		}
 	}
