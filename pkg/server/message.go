@@ -315,7 +315,7 @@ Example:
 	Result:
 	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour" }, { ID: "2", Message: "World", Status: Untranslated } ] }
 
-TODO: Reciever should be changed to model.MessagesSlice.
+TODO: Receiver should be changed to model.MessagesSlice.
 */
 func (t *TranslateServiceServer) populateTranslations(all model.MessagesSlice) model.MessagesSlice {
 	original, others := all.SplitOriginal()
