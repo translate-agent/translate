@@ -10,54 +10,57 @@ import (
 func Test_AlterTranslations(t *testing.T) {
 	t.Parallel()
 
-	originalMsgs := Messages{
-		Original: true,
-		Messages: []Message{
-			{ID: "1", Status: MessageStatusTranslated},
-			{ID: "2", Status: MessageStatusTranslated},
-			{ID: "3", Status: MessageStatusTranslated},
-		},
+	originalMsgs := func() Messages {
+		return Messages{
+			Original: true,
+			Messages: []Message{
+				{ID: "1", Status: MessageStatusTranslated},
+				{ID: "2", Status: MessageStatusTranslated},
+				{ID: "3", Status: MessageStatusTranslated},
+			},
+		}
 	}
 
-	nonOriginalMsgs := Messages{
-		Original: false,
-		Messages: []Message{
-			{ID: "1", Status: MessageStatusTranslated},
-			{ID: "2", Status: MessageStatusTranslated},
-			{ID: "3", Status: MessageStatusTranslated},
-		},
+	nonOriginalMsgs := func() Messages {
+		return Messages{
+			Original: false,
+			Messages: []Message{
+				{ID: "1", Status: MessageStatusTranslated},
+				{ID: "2", Status: MessageStatusTranslated},
+				{ID: "3", Status: MessageStatusTranslated},
+			},
+		}
 	}
 
 	tests := []struct {
 		name            string
 		messages        MessagesSlice
 		untranslatedIds []string
-		expected        MessagesSlice
 	}{
 		// Nothing is changed, untranslated IDs are not provided.
 		{
 			name:            "Without untranslated IDs",
-			messages:        MessagesSlice{originalMsgs, nonOriginalMsgs},
+			messages:        MessagesSlice{originalMsgs(), nonOriginalMsgs()},
 			untranslatedIds: nil,
 		},
 		// Nothing is changed, messages with original flag should not be altered.
 		{
 			name:            "One original messages",
-			messages:        MessagesSlice{originalMsgs},
-			untranslatedIds: []string{originalMsgs.Messages[0].ID},
+			messages:        MessagesSlice{originalMsgs()},
+			untranslatedIds: []string{"1"},
 		},
 		// First message status is changed to untranslated for all messages, other messages are not changed.
 		{
 			name:            "Multiple translated messages",
-			messages:        MessagesSlice{nonOriginalMsgs, nonOriginalMsgs},
-			untranslatedIds: []string{nonOriginalMsgs.Messages[0].ID},
+			messages:        MessagesSlice{nonOriginalMsgs(), nonOriginalMsgs()},
+			untranslatedIds: []string{"1"},
 		},
 		// First message status is changed to untranslated for all messages except original one
 		// other messages are not changed.
 		{
 			name:            "Mixed messages",
-			messages:        MessagesSlice{originalMsgs, nonOriginalMsgs},
-			untranslatedIds: []string{originalMsgs.Messages[0].ID},
+			messages:        MessagesSlice{originalMsgs(), nonOriginalMsgs()},
+			untranslatedIds: []string{"1", "2"},
 		},
 	}
 
