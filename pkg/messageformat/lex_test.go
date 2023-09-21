@@ -253,6 +253,26 @@ func Test_lex(t *testing.T) {
 				tokenEOF,
 			},
 		},
+		{
+			name:  "input with plus sign",
+			input: `{+ vēl %s}`,
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "+ vēl %s"),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name:  "input with minus sign",
+			input: `{- vēl %s}`,
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "- vēl %s"),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
 	} {
 		test := test
 

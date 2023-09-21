@@ -122,6 +122,16 @@ func Test_Parse(t *testing.T) {
 			input:    `{Chart [\{\}] was added to dashboard [\{\}]}`,
 			expected: []interface{}{NodeText{Text: "Chart [{}] was added to dashboard [{}]"}},
 		},
+		{
+			name:     "input with plus sign in it ",
+			input:    `{+ vēl %s}`,
+			expected: []interface{}{NodeText{Text: "+ vēl %s"}},
+		},
+		{
+			name:     "input with minus sign in it ",
+			input:    `{- vēl %s}`,
+			expected: []interface{}{NodeText{Text: "- vēl %s"}},
+		},
 	} {
 		test := test
 

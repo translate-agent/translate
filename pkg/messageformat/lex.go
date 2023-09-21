@@ -211,12 +211,13 @@ func lexExpr(l *lexer) stateFn {
 		}
 	case '$':
 		return lexVariable(l)
+
 	case ':':
 		return lexFunction(l)
 	case '+':
-		return lexOpeningFunction(l)
+		return processFunction(l, v)
 	case '-':
-		return lexClosingFunction(l)
+		return processFunction(l, v)
 	case '{':
 		l.exprDepth++
 		l.insideExpr = true
@@ -369,4 +370,19 @@ func isNameChar(v rune) bool {
 // isSpace reports whether r is a space character.
 func isSpace(r rune) bool {
 	return r == ' ' || r == '\t' || r == '\r' || r == '\n'
+}
+
+func processFunction(l *lexer, v rune) stateFn {
+	if l.exprDepth > 1 {
+		switch v {
+		case '+':
+			return lexOpeningFunction(l)
+		case '-':
+			return lexClosingFunction(l)
+		}
+	}
+
+	l.backup()
+
+	return lexText(l)
 }
