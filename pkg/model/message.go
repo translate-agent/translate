@@ -53,7 +53,7 @@ func (ms MessagesSlice) LanguageIndex(lang language.Tag) int {
 	})
 }
 
-// Replace replaces Messages with the same language. If not found, appends to the slice.
+// Replace replaces Messages with the same language. If not found, appends it.
 func (ms *MessagesSlice) Replace(messages Messages) {
 	switch idx := ms.LanguageIndex(messages.Language); idx {
 	case -1:
@@ -155,36 +155,32 @@ func (ms MessagesSlice) PopulateTranslations() {
 
 	var wg sync.WaitGroup
 
-	for i := range ms {
-		// Skip original messages
-		if i == origIdx {
-			continue
-		}
-
-		wg.Add(1)
-
-		populate := func(i int) {
-			defer wg.Done()
-
-			// Current language's message lookup.
-			lookup := make(map[string]struct{}, len(ms[i].Messages))
-			for _, message := range ms[i].Messages {
-				lookup[message.ID] = struct{}{}
+	for _, origMsg := range ms[origIdx].Messages {
+		for j := range ms {
+			if ms[j].Original {
+				continue
 			}
 
-			// Add missing message from original language
-			for _, origMsg := range ms[origIdx].Messages {
-				if _, ok := lookup[origMsg.ID]; !ok {
+			wg.Add(1)
+
+			populate := func(j int) {
+				defer wg.Done()
+
+				contains := slices.ContainsFunc(ms[j].Messages, func(m Message) bool {
+					return m.ID == origMsg.ID
+				})
+
+				if !contains {
 					origMsg.Status = MessageStatusUntranslated
-					ms[i].Messages = append(ms[i].Messages, origMsg)
+					ms[j].Messages = append(ms[j].Messages, origMsg)
 				}
 			}
+
+			go populate(j)
 		}
-
-		go populate(i)
+		// Wait for all goroutines to finish before continuing to the next message.
+		wg.Wait()
 	}
-
-	wg.Wait()
 }
 
 type Message struct {
