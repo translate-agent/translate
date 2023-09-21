@@ -16,6 +16,29 @@ type Messages struct {
 	Original bool
 }
 
+/*
+FindChangedMessagesIDs returns a list of message IDs that have been altered in the new Messages e.g.
+ 1. The message.message has been changed
+ 2. The message with new ID has been added.
+*/
+func (m *Messages) FindChangedMessagesIDs(new *Messages) []string {
+	lookup := make(map[string]string, len(m.Messages))
+
+	for _, msg := range m.Messages {
+		lookup[msg.ID] = msg.Message
+	}
+
+	var ids []string
+
+	for _, msg := range new.Messages {
+		if oldMsg, ok := lookup[msg.ID]; !ok || oldMsg != msg.Message {
+			ids = append(ids, msg.ID)
+		}
+	}
+
+	return ids
+}
+
 type MessagesSlice []Messages
 
 // HasLanguage checks if MessagesSlice contains Messages with the given language.

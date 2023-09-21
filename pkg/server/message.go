@@ -233,10 +233,10 @@ func (t *TranslateServiceServer) UpdateMessages(
 
 	// When updating original messages, changes might affect translations - transform and update all translations.
 	if params.messages.Original {
-		prev, _ := all.SplitOriginal()
+		originalMessages, _ := all.SplitOriginal()
 
 		// Mark new or altered messages as untranslated.
-		all.MarkUntranslated(getUntranslatedIDs(prev, params.messages))
+		all.MarkUntranslated(originalMessages.FindChangedMessagesIDs(params.messages))
 
 		// If populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {
@@ -312,27 +312,4 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 	}
 
 	return all, nil
-}
-
-/*
-getUntranslatedIDs returns a list of message IDs that have been altered e.g.
- 1. The message.message has been changed
- 2. The message with new message.ID has been added
-*/
-func getUntranslatedIDs(old, new *model.Messages) []string {
-	lookup := make(map[string]string, len(old.Messages))
-
-	for _, msg := range old.Messages {
-		lookup[msg.ID] = msg.Message
-	}
-
-	var ids []string
-
-	for _, msg := range new.Messages {
-		if oldMsg, ok := lookup[msg.ID]; !ok || oldMsg != msg.Message {
-			ids = append(ids, msg.ID)
-		}
-	}
-
-	return ids
 }

@@ -131,29 +131,6 @@ func Test_fuzzyTranslate(t *testing.T) {
 	}
 }
 
-func Test_getUntranslatedIDs(t *testing.T) {
-	old := &model.Messages{
-		Messages: []model.Message{
-			{ID: "1", Message: "Hello"},
-			{ID: "2", Message: "World"},
-		},
-	}
-	new := &model.Messages{
-		Messages: []model.Message{
-			{ID: "1", Message: "Hello"},
-			{ID: "2", Message: "Go"},
-			{ID: "3", Message: "Testing"},
-		},
-	}
-
-	changedIDs := getUntranslatedIDs(old, new)
-
-	// ID:1 -> Are the same (Should not be included)
-	// ID:2 -> Messages has been changed (Should be included)
-	// ID:3 -> Is new (Should be included)
-	require.Equal(t, []string{"2", "3"}, changedIDs)
-}
-
 // helpers
 
 // prepareMessages creates a service, and inserts it together with the original and translated messages into the repository.

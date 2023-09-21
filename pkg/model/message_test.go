@@ -188,3 +188,28 @@ func Test_PopulateTranslations(t *testing.T) {
 		})
 	}
 }
+
+func Test_FindChangedMessages(t *testing.T) {
+	t.Parallel()
+
+	old := Messages{
+		Messages: []Message{
+			{ID: "1", Message: "Hello"},
+			{ID: "2", Message: "World"},
+		},
+	}
+	new := Messages{
+		Messages: []Message{
+			{ID: "1", Message: "Hello"},
+			{ID: "2", Message: "Go"},
+			{ID: "3", Message: "Testing"},
+		},
+	}
+
+	changedIDs := old.FindChangedMessagesIDs(&new)
+
+	// ID:1 -> Are the same (Should not be included)
+	// ID:2 -> Messages has been changed (Should be included)
+	// ID:3 -> Is new (Should be included)
+	require.Equal(t, []string{"2", "3"}, changedIDs)
+}
