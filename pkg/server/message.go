@@ -9,7 +9,6 @@ import (
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
-	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -241,7 +240,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 
 		// If populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {
-			all = t.populateTranslations(all)
+			all.PopulateTranslations()
 		}
 
 		// Fuzzy translate untranslated messages for all translations
@@ -262,40 +261,6 @@ func (t *TranslateServiceServer) UpdateMessages(
 }
 
 // helpers
-
-/*
-populateTranslations adds messages that exists in original language but not in other languages.
-
-Example:
-
-	{ Language: en, Original: true, Messages: [ { ID: "1", Message: "Hello" }, { ID: "2", Message: "World" } ] }
-	{ Language: fr, Original: false, Messages: [ { ID: "1", Message: "Bonjour" } ] }
-
-	Result:
-	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour" }, { ID: "2", Message: "World", Status: Untranslated } ] }
-
-TODO: Receiver should be changed to model.MessagesSlice.
-*/
-func (t *TranslateServiceServer) populateTranslations(all model.MessagesSlice) model.MessagesSlice {
-	original, others := all.SplitOriginal()
-
-	for i := range original.Messages {
-		for j := range others {
-			found := slices.ContainsFunc(others[j].Messages, func(message model.Message) bool {
-				return message.ID == original.Messages[i].ID
-			})
-
-			if !found {
-				newMsg := original.Messages[i]
-				newMsg.Status = model.MessageStatusUntranslated
-
-				others[j].Messages = append(others[j].Messages, newMsg)
-			}
-		}
-	}
-
-	return append(others, *original)
-}
 
 // fuzzyTranslate fuzzy translates any untranslated messages,
 // returns messagesSlice containing refreshed translations.

@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
@@ -90,6 +91,77 @@ func (ms MessagesSlice) MarkUntranslated(ids []string) {
 			}
 		}
 	}
+}
+
+/*
+PopulateTranslations adds missing messages from the original language to other languages.
+Example:
+
+	Input:
+	MessagesSlice{
+		{
+			Language: en,
+			Original: true,
+			Messages: [ { ID: "1", Message: "Hello" }, { ID: "2", Message: "World" } ],
+		},
+		{
+			Language: fr,
+			Original: false,
+			Messages: [ { ID: "1", Message: "Bonjour" } ],
+		},
+	}
+
+	Output:
+	MessagesSlice{
+		{
+			Language: en,
+			Original: true,
+			Messages: [ { ID: "1", Message: "Hello" }, { ID: "2", Message: "World" } ],
+		},
+		{
+			Language: fr,
+			Original: false,
+			Messages: [ { ID: "1", Message: "Bonjour" }, { ID: "2", Message: "World", Status: Untranslated } ],
+		},
+*/
+func (ms MessagesSlice) PopulateTranslations() {
+	origIdx := slices.IndexFunc(ms, func(m Messages) bool { return m.Original })
+	if origIdx == -1 {
+		return
+	}
+
+	var wg sync.WaitGroup
+
+	for i := range ms {
+		// Skip original messages
+		if i == origIdx {
+			continue
+		}
+
+		wg.Add(1)
+
+		populate := func(i int) {
+			defer wg.Done()
+
+			// Current language's message lookup.
+			lookup := make(map[string]struct{}, len(ms[i].Messages))
+			for _, message := range ms[i].Messages {
+				lookup[message.ID] = struct{}{}
+			}
+
+			// Add missing message from original language
+			for _, origMsg := range ms[origIdx].Messages {
+				if _, ok := lookup[origMsg.ID]; !ok {
+					origMsg.Status = MessageStatusUntranslated
+					ms[i].Messages = append(ms[i].Messages, origMsg)
+				}
+			}
+		}
+
+		go populate(i)
+	}
+
+	wg.Wait()
 }
 
 type Message struct {

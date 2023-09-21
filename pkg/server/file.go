@@ -131,7 +131,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 
 		// If populateMessages is true - populate missing messages for all translations.
 		if params.populateTranslations {
-			all = t.populateTranslations(all)
+			all.PopulateTranslations()
 		}
 
 		// Fuzzy translate untranslated messages for all translations
