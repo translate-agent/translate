@@ -335,8 +335,6 @@ func isAlpha(v rune) bool {
 //	/ %x370-37D / %x37F-1FFF / %x200C-200D
 //	/ %x2070-218F / %x2C00-2FEF / %x3001-D7FF
 //	/ %xF900-FDCF / %xFDF0-FFFD / %x10000-EFFFF
-//
-//nolint:gocognit
 func isNameFirstChar(v rune) bool {
 	return isAlpha(v) ||
 		v == '_' ||
