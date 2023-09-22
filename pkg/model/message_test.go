@@ -1,11 +1,10 @@
 package model
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"golang.org/x/exp/slices"
 )
 
 func Test_MarkUntranslated(t *testing.T) {

@@ -4,9 +4,9 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sync"
 
-	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
 )
 
