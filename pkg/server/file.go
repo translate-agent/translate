@@ -124,7 +124,8 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		}
 
 		all.Replace(*messages)
-		originalMessages, _ := all.SplitOriginal()
+
+		originalMessages := all[all.OriginalIndex()]
 
 		// Mark new or altered messages as untranslated.
 		all.MarkUntranslated(originalMessages.FindChangedMessageIDs(messages))

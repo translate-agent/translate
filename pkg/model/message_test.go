@@ -35,32 +35,32 @@ func Test_MarkUntranslated(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		messages        MessagesSlice
+		messagesSlice   MessagesSlice
 		untranslatedIds []string
 	}{
 		// Nothing is changed, untranslated IDs are not provided.
 		{
 			name:            "Without untranslated IDs",
-			messages:        MessagesSlice{originalMsgs(), nonOriginalMsgs()},
+			messagesSlice:   MessagesSlice{originalMsgs(), nonOriginalMsgs()},
 			untranslatedIds: nil,
 		},
 		// Nothing is changed, messages with original flag should not be altered.
 		{
 			name:            "One original messages",
-			messages:        MessagesSlice{originalMsgs()},
+			messagesSlice:   MessagesSlice{originalMsgs()},
 			untranslatedIds: []string{"1"},
 		},
 		// First message status is changed to untranslated for all messages, other messages are not changed.
 		{
 			name:            "Multiple translated messages",
-			messages:        MessagesSlice{nonOriginalMsgs(), nonOriginalMsgs()},
+			messagesSlice:   MessagesSlice{nonOriginalMsgs(), nonOriginalMsgs()},
 			untranslatedIds: []string{"1"},
 		},
 		// First message status is changed to untranslated for all messages except original one
 		// other messages are not changed.
 		{
 			name:            "Mixed messages",
-			messages:        MessagesSlice{originalMsgs(), nonOriginalMsgs()},
+			messagesSlice:   MessagesSlice{originalMsgs(), nonOriginalMsgs()},
 			untranslatedIds: []string{"1", "2"},
 		},
 	}
@@ -70,13 +70,12 @@ func Test_MarkUntranslated(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			tt.messages.MarkUntranslated(tt.untranslatedIds)
-
-			original, others := tt.messages.SplitOriginal()
+			origIdx := tt.messagesSlice.OriginalIndex()
+			tt.messagesSlice.MarkUntranslated(tt.untranslatedIds)
 
 			// For original messages, no messages should be altered, e.g. all messages should be with status translated.
-			if original != nil {
-				for _, msg := range original.Messages {
+			if origIdx != -1 {
+				for _, msg := range tt.messagesSlice[origIdx].Messages {
 					require.Equal(t, MessageStatusTranslated.String(), msg.Status.String())
 				}
 			}
@@ -84,14 +83,18 @@ func Test_MarkUntranslated(t *testing.T) {
 			// For non original messages:
 			// 1. if it's ID is in untranslated IDs then it's status should be changed to untranslated.
 			// 2. if it's ID is not in untranslated IDs, it's status should be left as is, e.g. translated.
-			for _, msgs := range others {
-				for _, msg := range msgs.Messages {
+			for _, messages := range tt.messagesSlice {
+				if messages.Original {
+					continue
+				}
+
+				for _, message := range messages.Messages {
 					expectedStatus := MessageStatusTranslated
-					if slices.Contains(tt.untranslatedIds, msg.ID) {
+					if slices.Contains(tt.untranslatedIds, message.ID) {
 						expectedStatus = MessageStatusUntranslated
 					}
 
-					require.Equal(t, expectedStatus.String(), msg.Status.String())
+					require.Equal(t, expectedStatus.String(), message.Status.String())
 				}
 			}
 		})
@@ -151,18 +154,18 @@ func Test_PopulateTranslations(t *testing.T) {
 	expectedIds := []string{"0", "1", "2"}
 
 	tests := []struct {
-		name        string
-		allMessages MessagesSlice
+		name         string
+		messageSlice MessagesSlice
 	}{
 		{
 			// Only original messages -> noop
-			name:        "Nothing to populate",
-			allMessages: onlyOriginal,
+			name:         "Nothing to populate",
+			messageSlice: onlyOriginal,
 		},
 		{
 			// Original messages have extra messages -> translated messages should be populated with the extra messages.
-			name:        "Populate multiple",
-			allMessages: mixed,
+			name:         "Populate multiple",
+			messageSlice: mixed,
 		},
 	}
 
@@ -171,9 +174,9 @@ func Test_PopulateTranslations(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			tt.allMessages.PopulateTranslations()
+			tt.messageSlice.PopulateTranslations()
 
-			for _, messages := range tt.allMessages {
+			for _, messages := range tt.messageSlice {
 				require.Len(t, messages.Messages, expectedLen)
 
 				// Check that all messages.messages has all messages from original.

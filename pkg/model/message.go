@@ -60,6 +60,13 @@ func (ms MessagesSlice) LanguageIndex(lang language.Tag) int {
 	})
 }
 
+// OriginalIndex returns index of Messages with the original flag set to true. If not found, returns -1.
+func (ms MessagesSlice) OriginalIndex() int {
+	return slices.IndexFunc(ms, func(m Messages) bool {
+		return m.Original
+	})
+}
+
 // Replace replaces Messages with the same language. If not found, appends it.
 func (ms *MessagesSlice) Replace(messages Messages) {
 	switch idx := ms.LanguageIndex(messages.Language); idx {
@@ -68,21 +75,6 @@ func (ms *MessagesSlice) Replace(messages Messages) {
 	default:
 		(*ms)[idx] = messages
 	}
-}
-
-// SplitOriginal returns a pointer to the original and other messages.
-func (m MessagesSlice) SplitOriginal() (original *Messages, others MessagesSlice) {
-	others = make(MessagesSlice, 0, len(m))
-
-	for i := range m {
-		if m[i].Original {
-			original = &m[i]
-		} else {
-			others = append(others, m[i])
-		}
-	}
-
-	return
 }
 
 /*

@@ -233,7 +233,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 
 	// When updating original messages, changes might affect translations - transform and update all translations.
 	if params.messages.Original {
-		originalMessages, _ := all.SplitOriginal()
+		originalMessages := all[all.OriginalIndex()]
 
 		// Mark new or altered messages as untranslated.
 		all.MarkUntranslated(originalMessages.FindChangedMessageIDs(params.messages))
@@ -268,13 +268,17 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 	ctx context.Context,
 	all model.MessagesSlice,
 ) (model.MessagesSlice, error) {
-	// TODO: splitting is called too many times across the codebase, should be refactored.
-	original, others := all.SplitOriginal()
-	if original == nil {
+	origIdx := all.OriginalIndex()
+	if origIdx == -1 {
 		return nil, errors.New("original messages not found")
 	}
 
-	for i := range others {
+	for i := range all {
+		// Skip original messages
+		if i == origIdx {
+			continue
+		}
+
 		// Create a map to store pointers to untranslated messages
 		untranslatedMessagesLookup := make(map[string]*model.Message)
 
@@ -287,7 +291,7 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 
 		// Create a new messages to store the messages that need to be translated
 		toBeTranslated := &model.Messages{
-			Language: original.Language,
+			Language: all[origIdx].Language,
 			Messages: make([]model.Message, 0, len(untranslatedMessagesLookup)),
 		}
 
