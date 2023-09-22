@@ -16,13 +16,6 @@ type Messages struct {
 	Original bool
 }
 
-// MessageIndex returns index of Message with the given ID. If not found, returns -1.
-func (m *Messages) MessageIndex(id string) int {
-	return slices.IndexFunc(m.Messages, func(msg Message) bool {
-		return msg.ID == id
-	})
-}
-
 /*
 FindChangedMessageIDs returns a list of message IDs that have been altered in the new Messages e.g.
  1. The message.message has been changed
