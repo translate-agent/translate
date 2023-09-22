@@ -189,7 +189,7 @@ func Test_PopulateTranslations(t *testing.T) {
 	}
 }
 
-func Test_FindChangedMessages(t *testing.T) {
+func Test_FindChangedMessageIDs(t *testing.T) {
 	t.Parallel()
 
 	old := Messages{
@@ -206,7 +206,7 @@ func Test_FindChangedMessages(t *testing.T) {
 		},
 	}
 
-	changedIDs := old.FindChangedMessagesIDs(&new)
+	changedIDs := old.FindChangedMessageIDs(&new)
 
 	// ID:1 -> Are the same (Should not be included)
 	// ID:2 -> Messages has been changed (Should be included)

@@ -16,12 +16,19 @@ type Messages struct {
 	Original bool
 }
 
+// MessageIndex returns index of Message with the given ID. If not found, returns -1.
+func (m *Messages) MessageIndex(id string) int {
+	return slices.IndexFunc(m.Messages, func(msg Message) bool {
+		return msg.ID == id
+	})
+}
+
 /*
-FindChangedMessagesIDs returns a list of message IDs that have been altered in the new Messages e.g.
+FindChangedMessageIDs returns a list of message IDs that have been altered in the new Messages e.g.
  1. The message.message has been changed
  2. The message with new ID has been added.
 */
-func (m *Messages) FindChangedMessagesIDs(new *Messages) []string {
+func (m *Messages) FindChangedMessageIDs(new *Messages) []string {
 	lookup := make(map[string]string, len(m.Messages))
 
 	for _, msg := range m.Messages {
@@ -84,16 +91,33 @@ UNTRANSLATED if message.ID is in the ids slice.
 
 Example:
 
+	Input:
 	ids := { "1" }
+	MessagesSlice{
+		{
+			Language: en,
+			Original: true,
+			Messages: [ { ID: "1", Message: "Hello", Status: Translated,  }, ... ],
+		},
+		{
+			Language: fr,
+			Original: false,
+			Messages: [ { ID: "1", Message: "Bonjour", Status: Translated }, ... ],
+		},
+	}
 
-	{ Language: en, Original: true, Messages: [ { ID: "1", Message: "Hello", Status: Translated  } ], ...
-	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour", Status: Translated  } ], ... ] }
-	{ Language: de, Messages: [ { ID: "1", Message: "Hallo", Status: Translated  } ], ... ]
-
-	Result:
-	{ Language: en, Original: true, Messages: [ { ID: "1", Message: "Hello", Status: Translated  } ], ...
-	{ Language: fr, Messages: [ { ID: "1", Message: "Bonjour", Status: Untranslated  }, ... ] }
-	{ Language: de, Messages: [ { ID: "1", Message: "Hallo", Status: Untranslated  } ], ... ]
+	Output:
+	MessagesSlice{
+		{
+			Language: en,
+			Original: true,
+			Messages: [ { ID: "1", Message: "Hello", Status: Translated  }, ... ],
+		},
+		{
+			Language: fr,
+			Original: false,
+			Messages: [ { ID: "1", Message: "Bonjour", Status: Untranslated  }, ... ],
+		}
 */
 func (ms MessagesSlice) MarkUntranslated(ids []string) {
 	n := len(ms)
@@ -118,6 +142,7 @@ func (ms MessagesSlice) MarkUntranslated(ids []string) {
 
 /*
 PopulateTranslations adds missing messages from the original language to other languages.
+
 Example:
 
 	Input:
@@ -166,11 +191,7 @@ func (ms MessagesSlice) PopulateTranslations() {
 			populate := func(j int) {
 				defer wg.Done()
 
-				contains := slices.ContainsFunc(ms[j].Messages, func(m Message) bool {
-					return m.ID == origMsg.ID
-				})
-
-				if !contains {
+				if ms[j].MessageIndex(origMsg.ID) == -1 {
 					origMsg.Status = MessageStatusUntranslated
 					ms[j].Messages = append(ms[j].Messages, origMsg)
 				}
