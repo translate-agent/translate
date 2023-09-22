@@ -210,14 +210,13 @@ func lexExpr(l *lexer) stateFn {
 			return lexText(l)
 		}
 	case '$':
-		return lexVariable(l)
-
+		return processChar(l, lexVariable)
 	case ':':
-		return lexFunction(l)
+		return processChar(l, lexFunction)
 	case '+':
-		return processFunction(l, v)
+		return processFunction(l, lexOpeningFunction)
 	case '-':
-		return processFunction(l, v)
+		return processFunction(l, lexClosingFunction)
 	case '{':
 		l.exprDepth++
 		l.insideExpr = true
@@ -283,10 +282,6 @@ func lexClosingFunction(l *lexer) stateFn {
 func lexFunction(l *lexer) stateFn {
 	first := l.next()
 
-	if !isNameFirstChar(first) {
-		return l.emitToken(mkTokenErrorf(`invalid first character %s in function at %d`, string(first), l.pos))
-	}
-
 	function := string(first)
 
 	for {
@@ -303,10 +298,6 @@ func lexFunction(l *lexer) stateFn {
 
 func lexVariable(l *lexer) stateFn {
 	first := l.next()
-
-	if !isNameFirstChar(first) {
-		return l.emitToken(mkTokenErrorf(`invalid first character %s in variable at %d`, string(first), l.pos))
-	}
 
 	variable := string(first)
 
@@ -372,14 +363,19 @@ func isSpace(r rune) bool {
 	return r == ' ' || r == '\t' || r == '\r' || r == '\n'
 }
 
-func processFunction(l *lexer, v rune) stateFn {
+func processFunction(l *lexer, f func(*lexer) stateFn) stateFn {
 	if l.exprDepth > 1 {
-		switch v {
-		case '+':
-			return lexOpeningFunction(l)
-		case '-':
-			return lexClosingFunction(l)
-		}
+		return f(l)
+	}
+
+	l.backup()
+
+	return lexText(l)
+}
+
+func processChar(l *lexer, f func(*lexer) stateFn) stateFn {
+	if isAlpha(l.peek()) {
+		return f(l)
 	}
 
 	l.backup()
