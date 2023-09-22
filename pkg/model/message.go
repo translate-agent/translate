@@ -172,28 +172,35 @@ func (ms MessagesSlice) PopulateTranslations() {
 
 	var wg sync.WaitGroup
 
-	for _, origMsg := range ms[origIdx].Messages {
-		for j := range ms {
-			if ms[j].Original {
-				continue
+	for i := range ms {
+		if ms[i].Original {
+			continue
+		}
+
+		wg.Add(1)
+
+		populate := func(i int) {
+			defer wg.Done()
+
+			lookup := make(map[string]struct{}, len(ms[i].Messages))
+			for j := range ms[i].Messages {
+				lookup[ms[i].Messages[j].ID] = struct{}{}
 			}
 
-			wg.Add(1)
+			for j := range ms[origIdx].Messages {
+				if _, ok := lookup[ms[origIdx].Messages[j].ID]; !ok {
+					newMsg := ms[origIdx].Messages[j]
+					newMsg.Status = MessageStatusUntranslated
 
-			populate := func(j int) {
-				defer wg.Done()
-
-				if ms[j].MessageIndex(origMsg.ID) == -1 {
-					origMsg.Status = MessageStatusUntranslated
-					ms[j].Messages = append(ms[j].Messages, origMsg)
+					ms[i].Messages = append(ms[i].Messages, newMsg)
 				}
 			}
-
-			go populate(j)
 		}
-		// Wait for all goroutines to finish before continuing to the next message.
-		wg.Wait()
+
+		go populate(i)
 	}
+
+	wg.Wait()
 }
 
 type Message struct {
