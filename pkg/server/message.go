@@ -244,7 +244,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 		}
 
 		if err := t.fuzzyTranslate(ctx, all); err != nil {
-			return nil, status.Errorf(codes.Unknown, err.Error())
+			return nil, status.Errorf(codes.Internal, "")
 		}
 
 		updatedMessages = all
@@ -277,6 +277,11 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 		return errors.New("original messages not found")
 	}
 
+	origMsgLookup := make(map[string]string, len(all[origIdx].Messages))
+	for _, msg := range all[origIdx].Messages {
+		origMsgLookup[msg.ID] = msg.Message
+	}
+
 	for i := range all {
 		// Skip original messages
 		if i == origIdx {
@@ -289,6 +294,7 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 		// Iterate over the messages and add any untranslated messages to the untranslated messages lookup
 		for j := range all[i].Messages {
 			if all[i].Messages[j].Status == model.MessageStatusUntranslated {
+				all[i].Messages[j].Message = origMsgLookup[all[i].Messages[j].ID]
 				untranslatedMessagesLookup[all[i].Messages[j].ID] = &all[i].Messages[j]
 			}
 		}

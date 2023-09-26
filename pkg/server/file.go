@@ -137,7 +137,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 			}
 
 			if err := t.fuzzyTranslate(ctx, all); err != nil {
-				return nil, status.Errorf(codes.Unknown, err.Error())
+				return nil, status.Errorf(codes.Internal, "")
 			}
 
 			updatedMessages = all
