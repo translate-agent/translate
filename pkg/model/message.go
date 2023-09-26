@@ -26,21 +26,21 @@ type Message struct {
 type MessageStatus int32
 
 const (
-	MessageStatusUntranslated MessageStatus = iota
+	MessageStatusTranslated MessageStatus = iota
 	MessageStatusFuzzy
-	MessageStatusTranslated
+	MessageStatusUntranslated
 )
 
 func (s MessageStatus) String() string {
 	switch s {
 	default:
 		return ""
-	case MessageStatusUntranslated:
-		return "UNTRANSLATED"
-	case MessageStatusFuzzy:
-		return "FUZZY"
 	case MessageStatusTranslated:
 		return "TRANSLATED"
+	case MessageStatusFuzzy:
+		return "FUZZY"
+	case MessageStatusUntranslated:
+		return "UNTRANSLATED"
 	}
 }
 
@@ -56,12 +56,12 @@ func (s *MessageStatus) Scan(value interface{}) error {
 		return fmt.Errorf("unknown type %+v, expected string", v)
 	case []byte:
 		switch string(v) {
-		case MessageStatusUntranslated.String():
-			*s = MessageStatusUntranslated
-		case MessageStatusFuzzy.String():
-			*s = MessageStatusFuzzy
 		case MessageStatusTranslated.String():
 			*s = MessageStatusTranslated
+		case MessageStatusFuzzy.String():
+			*s = MessageStatusFuzzy
+		case MessageStatusUntranslated.String():
+			*s = MessageStatusUntranslated
 		default:
 			return fmt.Errorf("unknown message status: %+v", v)
 		}
