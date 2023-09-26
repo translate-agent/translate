@@ -25,9 +25,9 @@ message Message {
   repeated string positions = 5;
 
   enum Status {
-    UNTRANSLATED = 0;
+    TRANSLATED = 0;
     FUZZY = 1;
-    TRANSLATED = 2;
+    UNTRANSLATED = 2;
   }
 }
 
