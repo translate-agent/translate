@@ -2,23 +2,16 @@ package server
 
 import (
 	"context"
-	"log"
-	"os"
-	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/repo/badgerdb"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
 
 const mockTranslation = "{Translated}"
-
-var translateSrv *TranslateServiceServer
 
 type mockTranslator struct{}
 
@@ -39,25 +32,12 @@ func (m *mockTranslator) Translate(ctx context.Context, messages *model.Messages
 	return newMessages, nil
 }
 
-func TestMain(m *testing.M) {
-	viper.SetEnvPrefix("translate")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	viper.AutomaticEnv()
-
-	repository, err := badgerdb.NewRepo(badgerdb.WithDefaultDB())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	translateSrv = NewTranslateServiceServer(repository, &mockTranslator{})
-	os.Exit(m.Run())
-}
-
 func Test_fuzzyTranslate(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
+
+	translateSrv := NewTranslateServiceServer(nil, &mockTranslator{})
 
 	originalMessages1 := randOriginalMessages(3)
 	originalMessages2 := randOriginalMessages(10)
@@ -85,7 +65,10 @@ func Test_fuzzyTranslate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			allMessages := append(tt.translatedMessages, *tt.originalMessages)
+			allMessages := make(model.MessagesSlice, 0, len(tt.translatedMessages)+1)
+			allMessages = append(allMessages, *tt.originalMessages)
+			allMessages = append(allMessages, tt.translatedMessages...)
+
 			untranslatedMessageIDLookup := make(map[string]struct{})
 
 			// Randomly set message status to untranslated
@@ -107,14 +90,11 @@ func Test_fuzzyTranslate(t *testing.T) {
 				}
 			}
 
-			// Invoke refreshTranslations
-			newMessages, err := translateSrv.fuzzyTranslate(ctx, allMessages)
+			err := translateSrv.fuzzyTranslate(ctx, allMessages)
 			require.NoError(t, err)
 
-			require.Len(t, newMessages, len(allMessages))
-
 			// Check that untranslated messages have been translated and marked as fuzzy for all translations.
-			for _, m := range newMessages {
+			for _, m := range allMessages {
 				if m.Original {
 					require.Equal(t, *tt.originalMessages, m)
 					continue
@@ -123,7 +103,9 @@ func Test_fuzzyTranslate(t *testing.T) {
 				for _, message := range m.Messages {
 					if _, ok := untranslatedMessageIDLookup[message.ID]; ok {
 						require.Equal(t, mockTranslation, message.Message)
-						require.Equal(t, model.MessageStatusFuzzy, message.Status)
+						require.Equal(t, model.MessageStatusFuzzy.String(), message.Status.String())
+					} else {
+						require.Equal(t, model.MessageStatusTranslated.String(), message.Status.String())
 					}
 				}
 			}
@@ -132,25 +114,6 @@ func Test_fuzzyTranslate(t *testing.T) {
 }
 
 // helpers
-
-// prepareMessages creates a service, and inserts it together with the original and translated messages into the repository.
-func prepareMessages(t *testing.T, originalMessages *model.Messages, translatedMessages []model.Messages) (service *model.Service) {
-	ctx := context.Background()
-	service = rand.ModelService()
-
-	err := translateSrv.repo.SaveService(ctx, service)
-	require.NoError(t, err, "create test service")
-
-	err = translateSrv.repo.SaveMessages(ctx, service.ID, originalMessages)
-	require.NoError(t, err, "create original test messages")
-
-	for _, m := range translatedMessages {
-		err = translateSrv.repo.SaveMessages(ctx, service.ID, &m)
-		require.NoError(t, err, "create translated test messages")
-	}
-
-	return service
-}
 
 // randOriginalMessages creates a random messages with the original flag set to true.
 func randOriginalMessages(messageCount uint) *model.Messages {

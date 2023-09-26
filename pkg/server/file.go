@@ -114,35 +114,38 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	all := model.MessagesSlice{*messages}
+	// Case for when not original, or uploading original for the first time.
+	updatedMessages := model.MessagesSlice{*messages}
 
 	// When updating original messages, changes might affect translations - transform and update all translations.
 	if messages.Original {
-		all, err = t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
+		all, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
-		all.Replace(*messages)
+		if origIdx := all.OriginalIndex(); origIdx != -1 {
+			oldOriginal := all[origIdx]
 
-		originalMessages := all[all.OriginalIndex()]
+			// Mark new or altered messages as untranslated.
+			all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(messages))
+			// Replace original messages with new ones.
+			all.Replace(*messages)
+			// Add missing messages for all translations.
+			if params.populateTranslations {
+				all.PopulateTranslations()
+			}
 
-		// Mark new or altered messages as untranslated.
-		all.MarkUntranslated(originalMessages.FindChangedMessageIDs(messages))
+			if err := t.fuzzyTranslate(ctx, all); err != nil {
+				return nil, status.Errorf(codes.Unknown, err.Error())
+			}
 
-		// If populateMessages is true - populate missing messages for all translations.
-		if params.populateTranslations {
-			all.PopulateTranslations()
-		}
-
-		// Fuzzy translate untranslated messages for all translations
-		if all, err = t.fuzzyTranslate(ctx, all); err != nil {
-			return nil, status.Errorf(codes.Unknown, err.Error())
+			updatedMessages = all
 		}
 	}
 
-	for i := range all {
-		err = t.repo.SaveMessages(ctx, params.serviceID, &all[i])
+	for i := range updatedMessages {
+		err = t.repo.SaveMessages(ctx, params.serviceID, &updatedMessages[i])
 		switch {
 		case errors.Is(err, repo.ErrNotFound):
 			return nil, status.Errorf(codes.NotFound, "service not found")

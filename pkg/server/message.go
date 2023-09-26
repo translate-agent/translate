@@ -224,33 +224,35 @@ func (t *TranslateServiceServer) UpdateMessages(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	switch all.HasLanguage(params.messages.Language) {
-	case true:
-		all.Replace(*params.messages)
-	case false:
+	if !all.HasLanguage(params.messages.Language) {
 		return nil, status.Errorf(codes.NotFound, "no messages for language: '%s'", params.messages.Language)
 	}
 
-	// When updating original messages, changes might affect translations - transform and update all translations.
-	if params.messages.Original {
-		originalMessages := all[all.OriginalIndex()]
+	// Case for when not original, or uploading original for the first time.
+	updatedMessages := model.MessagesSlice{*params.messages}
 
-		// Mark new or altered messages as untranslated.
-		all.MarkUntranslated(originalMessages.FindChangedMessageIDs(params.messages))
+	if origIdx := all.OriginalIndex(); params.messages.Original && origIdx != -1 {
+		oldOriginal := all[origIdx]
 
-		// If populateMessages is true - populate missing messages for all translations.
+		// Mark new or altered original messages as untranslated for all translations.
+		all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(params.messages))
+		// Replace original messages with new ones.
+		all.Replace(*params.messages)
+		// Add missing messages for all translations.
 		if params.populateTranslations {
 			all.PopulateTranslations()
 		}
 
-		// Fuzzy translate untranslated messages for all translations
-		if all, err = t.fuzzyTranslate(ctx, all); err != nil {
+		if err := t.fuzzyTranslate(ctx, all); err != nil {
 			return nil, status.Errorf(codes.Unknown, err.Error())
 		}
+
+		updatedMessages = all
+
 	}
 
 	// Update messages for all translations
-	for i := range all {
+	for i := range updatedMessages {
 		err = t.repo.SaveMessages(ctx, params.serviceID, &all[i])
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
@@ -264,13 +266,15 @@ func (t *TranslateServiceServer) UpdateMessages(
 
 // fuzzyTranslate fuzzy translates any untranslated messages,
 // returns messagesSlice containing refreshed translations.
+//
+// TODO: This logic should be moved to fuzzy pkg.
 func (t *TranslateServiceServer) fuzzyTranslate(
 	ctx context.Context,
 	all model.MessagesSlice,
-) (model.MessagesSlice, error) {
+) error {
 	origIdx := all.OriginalIndex()
 	if origIdx == -1 {
-		return nil, errors.New("original messages not found")
+		return errors.New("original messages not found")
 	}
 
 	for i := range all {
@@ -304,7 +308,7 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 		targetLanguage := all[i].Language
 		translated, err := t.translator.Translate(ctx, toBeTranslated, targetLanguage)
 		if err != nil {
-			return nil, fmt.Errorf("translator translate messages: %w", err)
+			return fmt.Errorf("translator translate messages: %w", err)
 		}
 
 		// Overwrite untranslated messages with translated messages
@@ -315,5 +319,5 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 		}
 	}
 
-	return all, nil
+	return nil
 }
