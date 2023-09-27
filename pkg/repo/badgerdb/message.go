@@ -48,7 +48,7 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 
 // LoadMessages retrieves messages from db based on serviceID and LoadMessageOpts.
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts repo.LoadMessagesOpts,
-) ([]model.Messages, error) {
+) (model.MessagesSlice, error) {
 	if _, err := r.LoadService(ctx, serviceID); errors.Is(err, repo.ErrNotFound) {
 		return nil, nil // Empty messages.messages for this service (Not an error)
 	} else if err != nil {

@@ -114,24 +114,43 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	switch err := t.repo.SaveMessages(ctx, params.serviceID, messages); {
-	default:
-		// noop
-	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, "service not found")
-	case err != nil:
-		return nil, status.Errorf(codes.Internal, "")
-	}
+	// Case for when not original, or uploading original for the first time.
+	updatedMessages := model.MessagesSlice{*messages}
 
-	// If the uploaded file is original and populateTranslations flag is true, populate the translated messages.
-	if messages.Original && params.populateTranslations {
-		allMessages, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
+	// When updating original messages, changes might affect translations - transform and update all translations.
+	if messages.Original {
+		all, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
-		if err = t.populateTranslatedMessages(ctx, params.serviceID, messages, allMessages); err != nil {
-			return nil, err
+		if origIdx := all.OriginalIndex(); origIdx != -1 {
+			oldOriginal := all[origIdx]
+
+			// Mark new or altered messages as untranslated.
+			all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(messages))
+			// Replace original messages with new ones.
+			all.Replace(*messages)
+			// Add missing messages for all translations.
+			if params.populateTranslations {
+				all.PopulateTranslations()
+			}
+
+			if err := t.fuzzyTranslate(ctx, all); err != nil {
+				return nil, status.Errorf(codes.Internal, "")
+			}
+
+			updatedMessages = all
+		}
+	}
+
+	for i := range updatedMessages {
+		err = t.repo.SaveMessages(ctx, params.serviceID, &updatedMessages[i])
+		switch {
+		case errors.Is(err, repo.ErrNotFound):
+			return nil, status.Errorf(codes.NotFound, "service not found")
+		case err != nil:
+			return nil, status.Errorf(codes.Internal, "")
 		}
 	}
 
