@@ -22,16 +22,15 @@ FindChangedMessageIDs returns a list of message IDs that have been altered in th
  2. The message with new ID has been added.
 */
 func (m *Messages) FindChangedMessageIDs(new *Messages) []string {
-	lookup := make(map[string]string, len(m.Messages))
-
-	for _, msg := range m.Messages {
-		lookup[msg.ID] = msg.Message
+	lookup := make(map[string]int, len(m.Messages))
+	for i := range m.Messages {
+		lookup[m.Messages[i].ID] = i
 	}
 
 	var ids []string
 
 	for _, msg := range new.Messages {
-		if oldMsg, ok := lookup[msg.ID]; !ok || oldMsg != msg.Message {
+		if idx, ok := lookup[msg.ID]; !ok || m.Messages[idx].Message != msg.Message {
 			ids = append(ids, msg.ID)
 		}
 	}
