@@ -152,7 +152,8 @@ func modelTranslation(msgCount uint, msgOpts ...ModelMessageOption) *model.Trans
 	return translations
 }
 
-// ModelTranslation generates a random model.Translation with specific messages.message count, message and messages options.
+// ModelTranslation generates a random model.Translation
+// with specific messages.message count, message and messages options.
 func ModelTranslation(msgCount uint, msgOpts []ModelMessageOption, msgsOpts ...ModelMessagesOption) *model.Translation {
 	// msgsF wraps modelTranslation() for mdl function.
 	msgsF := func() *model.Translation {
