@@ -43,7 +43,7 @@ type TranslateServiceClient interface {
 	DeleteService(ctx context.Context, in *DeleteServiceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CreateTranslation(ctx context.Context, in *CreateTranslationRequest, opts ...grpc.CallOption) (*Translation, error)
 	UpdateTranslation(ctx context.Context, in *UpdateTranslationRequest, opts ...grpc.CallOption) (*Translation, error)
-	ListTranslation(ctx context.Context, in *ListTranslationRequest, opts ...grpc.CallOption) (*ListTranslationResponse, error)
+	ListTranslation(ctx context.Context, in *ListTranslationsRequest, opts ...grpc.CallOption) (*ListTranslationsResponse, error)
 	UploadTranslationFile(ctx context.Context, in *UploadTranslationFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DownloadTranslationFile(ctx context.Context, in *DownloadTranslationFileRequest, opts ...grpc.CallOption) (*DownloadTranslationFileResponse, error)
 }
@@ -119,8 +119,8 @@ func (c *translateServiceClient) UpdateTranslation(ctx context.Context, in *Upda
 	return out, nil
 }
 
-func (c *translateServiceClient) ListTranslation(ctx context.Context, in *ListTranslationRequest, opts ...grpc.CallOption) (*ListTranslationResponse, error) {
-	out := new(ListTranslationResponse)
+func (c *translateServiceClient) ListTranslation(ctx context.Context, in *ListTranslationsRequest, opts ...grpc.CallOption) (*ListTranslationsResponse, error) {
+	out := new(ListTranslationsResponse)
 	err := c.cc.Invoke(ctx, TranslateService_ListTranslation_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ type TranslateServiceServer interface {
 	DeleteService(context.Context, *DeleteServiceRequest) (*emptypb.Empty, error)
 	CreateTranslation(context.Context, *CreateTranslationRequest) (*Translation, error)
 	UpdateTranslation(context.Context, *UpdateTranslationRequest) (*Translation, error)
-	ListTranslation(context.Context, *ListTranslationRequest) (*ListTranslationResponse, error)
+	ListTranslation(context.Context, *ListTranslationsRequest) (*ListTranslationsResponse, error)
 	UploadTranslationFile(context.Context, *UploadTranslationFileRequest) (*emptypb.Empty, error)
 	DownloadTranslationFile(context.Context, *DownloadTranslationFileRequest) (*DownloadTranslationFileResponse, error)
 	mustEmbedUnimplementedTranslateServiceServer()
@@ -188,7 +188,7 @@ func (UnimplementedTranslateServiceServer) CreateTranslation(context.Context, *C
 func (UnimplementedTranslateServiceServer) UpdateTranslation(context.Context, *UpdateTranslationRequest) (*Translation, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateTranslation not implemented")
 }
-func (UnimplementedTranslateServiceServer) ListTranslation(context.Context, *ListTranslationRequest) (*ListTranslationResponse, error) {
+func (UnimplementedTranslateServiceServer) ListTranslation(context.Context, *ListTranslationsRequest) (*ListTranslationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTranslation not implemented")
 }
 func (UnimplementedTranslateServiceServer) UploadTranslationFile(context.Context, *UploadTranslationFileRequest) (*emptypb.Empty, error) {
@@ -337,7 +337,7 @@ func _TranslateService_UpdateTranslation_Handler(srv interface{}, ctx context.Co
 }
 
 func _TranslateService_ListTranslation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListTranslationRequest)
+	in := new(ListTranslationsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -349,7 +349,7 @@ func _TranslateService_ListTranslation_Handler(srv interface{}, ctx context.Cont
 		FullMethod: TranslateService_ListTranslation_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TranslateServiceServer).ListTranslation(ctx, req.(*ListTranslationRequest))
+		return srv.(TranslateServiceServer).ListTranslation(ctx, req.(*ListTranslationsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

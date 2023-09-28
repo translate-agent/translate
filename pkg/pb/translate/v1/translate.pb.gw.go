@@ -381,7 +381,7 @@ func request_TranslateService_CreateTranslation_0(ctx context.Context, marshaler
 	if berr != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Messages); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Translations); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -415,7 +415,7 @@ func local_request_TranslateService_CreateTranslation_0(ctx context.Context, mar
 	if berr != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Messages); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Translations); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -442,7 +442,7 @@ func local_request_TranslateService_CreateTranslation_0(ctx context.Context, mar
 }
 
 var (
-	filter_TranslateService_UpdateTranslation_0 = &utilities.DoubleArray{Encoding: map[string]int{"messages": 0, "service_id": 1, "serviceId": 2, "language": 3}, Base: []int{1, 4, 5, 6, 7, 2, 0, 0, 0, 0, 0, 0}, Check: []int{0, 1, 1, 1, 1, 2, 6, 2, 2, 3, 4, 5}}
+	filter_TranslateService_UpdateTranslation_0 = &utilities.DoubleArray{Encoding: map[string]int{"translations": 0, "service_id": 1, "serviceId": 2, "language": 3}, Base: []int{1, 4, 5, 6, 7, 2, 0, 0, 0, 0, 0, 0}, Check: []int{0, 1, 1, 1, 1, 2, 6, 2, 2, 3, 4, 5}}
 )
 
 func request_TranslateService_UpdateTranslation_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -453,7 +453,7 @@ func request_TranslateService_UpdateTranslation_0(ctx context.Context, marshaler
 	if berr != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Messages); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Translations); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -474,14 +474,14 @@ func request_TranslateService_UpdateTranslation_0(ctx context.Context, marshaler
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "service_id", err)
 	}
 
-	val, ok = pathParams["messages.language"]
+	val, ok = pathParams["translations.language"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "messages.language")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "translations.language")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "messages.language", val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "translations.language", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "messages.language", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "translations.language", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -504,7 +504,7 @@ func local_request_TranslateService_UpdateTranslation_0(ctx context.Context, mar
 	if berr != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Messages); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Translations); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -525,14 +525,14 @@ func local_request_TranslateService_UpdateTranslation_0(ctx context.Context, mar
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "service_id", err)
 	}
 
-	val, ok = pathParams["messages.language"]
+	val, ok = pathParams["translations.language"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "messages.language")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "translations.language")
 	}
 
-	err = runtime.PopulateFieldFromPath(&protoReq, "messages.language", val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "translations.language", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "messages.language", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "translations.language", err)
 	}
 
 	if err := req.ParseForm(); err != nil {
@@ -548,7 +548,7 @@ func local_request_TranslateService_UpdateTranslation_0(ctx context.Context, mar
 }
 
 func request_TranslateService_ListTranslation_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListTranslationRequest
+	var protoReq ListTranslationsRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -574,7 +574,7 @@ func request_TranslateService_ListTranslation_0(ctx context.Context, marshaler r
 }
 
 func local_request_TranslateService_ListTranslation_0(ctx context.Context, marshaler runtime.Marshaler, server TranslateServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListTranslationRequest
+	var protoReq ListTranslationsRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -1035,7 +1035,7 @@ func RegisterTranslateServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/CreateTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/messages"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/CreateTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/translations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1060,7 +1060,7 @@ func RegisterTranslateServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/UpdateTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/messages/{messages.language}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/UpdateTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/translations/{translations.language}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1085,7 +1085,7 @@ func RegisterTranslateServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/ListTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/messages"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/ListTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/translations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1356,7 +1356,7 @@ func RegisterTranslateServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/CreateTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/messages"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/CreateTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/translations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1378,7 +1378,7 @@ func RegisterTranslateServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/UpdateTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/messages/{messages.language}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/UpdateTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/translations/{translations.language}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1400,7 +1400,7 @@ func RegisterTranslateServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/ListTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/messages"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/ListTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/translations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1498,11 +1498,11 @@ var (
 
 	pattern_TranslateService_DeleteService_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "services", "id"}, ""))
 
-	pattern_TranslateService_CreateTranslation_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "services", "service_id", "messages"}, ""))
+	pattern_TranslateService_CreateTranslation_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "services", "service_id", "translations"}, ""))
 
-	pattern_TranslateService_UpdateTranslation_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "services", "service_id", "messages", "messages.language"}, ""))
+	pattern_TranslateService_UpdateTranslation_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "services", "service_id", "translations", "translations.language"}, ""))
 
-	pattern_TranslateService_ListTranslation_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "services", "service_id", "messages"}, ""))
+	pattern_TranslateService_ListTranslation_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "services", "service_id", "translations"}, ""))
 
 	pattern_TranslateService_UploadTranslationFile_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "services", "service_id", "files", "language"}, ""))
 
