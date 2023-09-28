@@ -127,7 +127,7 @@ type listTranslationParams struct {
 	serviceID uuid.UUID
 }
 
-func parseListTranslationRequestParams(req *translatev1.ListTranslationsRequest) (*listTranslationParams, error) {
+func parseListTranslationRequestParams(req *translatev1.ListTranslationRequest) (*listTranslationParams, error) {
 	serviceID, err := uuidFromProto(req.GetServiceId())
 	if err != nil {
 		return nil, fmt.Errorf("parse service_id: %w", err)
@@ -146,7 +146,7 @@ func (l *listTranslationParams) validate() error {
 
 func (t *TranslateServiceServer) ListTranslation(
 	ctx context.Context,
-	req *translatev1.ListTranslationsRequest,
+	req *translatev1.ListTranslationRequest,
 ) (*translatev1.ListTranslationsResponse, error) {
 	params, err := parseListTranslationRequestParams(req)
 	if err != nil {

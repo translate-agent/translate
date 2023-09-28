@@ -548,7 +548,7 @@ func local_request_TranslateService_UpdateTranslation_0(ctx context.Context, mar
 }
 
 func request_TranslateService_ListTranslation_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListTranslationsRequest
+	var protoReq ListTranslationRequest
 	var metadata runtime.ServerMetadata
 
 	var (
@@ -574,7 +574,7 @@ func request_TranslateService_ListTranslation_0(ctx context.Context, marshaler r
 }
 
 func local_request_TranslateService_ListTranslation_0(ctx context.Context, marshaler runtime.Marshaler, server TranslateServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListTranslationsRequest
+	var protoReq ListTranslationRequest
 	var metadata runtime.ServerMetadata
 
 	var (

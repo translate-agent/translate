@@ -70,7 +70,7 @@ message CreateTranslationRequest {
   Translation translations = 2;
 }
 
-message ListTranslationsRequest {
+message ListTranslationRequest {
   string service_id = 1;
 }
 
@@ -156,7 +156,7 @@ service TranslateService {
     };
   }
 
-  rpc ListTranslation(ListTranslationsRequest) returns (ListTranslationsResponse) {
+  rpc ListTranslation(ListTranslationRequest) returns (ListTranslationsResponse) {
     option (google.api.http) = {get: "/v1/services/{service_id}/translations"};
   }
 
