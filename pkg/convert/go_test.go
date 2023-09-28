@@ -14,7 +14,7 @@ import (
 func TestToGo(t *testing.T) {
 	t.Parallel()
 
-	modelMsg := model.Messages{
+	modelMsg := model.Translation{
 		Language: language.English,
 		Messages: []model.Message{
 			{
@@ -72,7 +72,7 @@ func TestToGo(t *testing.T) {
 func TestFromGo(t *testing.T) {
 	t.Parallel()
 
-	modelMsg := model.Messages{
+	modelMsg := model.Translation{
 		Language: language.English,
 		Original: false,
 		Messages: []model.Message{

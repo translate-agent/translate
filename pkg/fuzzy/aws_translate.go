@@ -102,18 +102,18 @@ func NewAWSTranslate(ctx context.Context, opts ...AWSTranslateOption) (*AWSTrans
 // --------------------Methods--------------------
 
 func (a *AWSTranslate) Translate(ctx context.Context,
-	messages *model.Messages,
+	messages *model.Translation,
 	targetLanguage language.Tag,
-) (*model.Messages, error) {
+) (*model.Translation, error) {
 	if messages == nil {
 		return nil, nil
 	}
 
 	if len(messages.Messages) == 0 {
-		return &model.Messages{Language: messages.Language, Original: messages.Original}, nil
+		return &model.Translation{Language: messages.Language, Original: messages.Original}, nil
 	}
 
-	translatedMessages := model.Messages{
+	translatedMessages := model.Translation{
 		Language: targetLanguage,
 		Original: messages.Original,
 		Messages: make([]model.Message, 0, len(messages.Messages)),

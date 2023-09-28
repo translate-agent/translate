@@ -544,7 +544,7 @@ func Test_CreateMessages_REST(t *testing.T) {
 	require.NoError(t, err, "create test translation file")
 
 	tests := []struct {
-		messages     *translatev1.Messages
+		messages     *translatev1.Translation
 		name         string
 		serviceID    string
 		expectedCode int
@@ -552,13 +552,13 @@ func Test_CreateMessages_REST(t *testing.T) {
 		{
 			name:         "Happy path, create messages",
 			serviceID:    service.Id,
-			messages:     randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+			messages:     randMessages(t, &translatev1.Translation{Language: langs[0].String()}),
 			expectedCode: http.StatusOK,
 		},
 		{
 			name:      "Happy path, empty messages.messages",
 			serviceID: service.Id,
-			messages: &translatev1.Messages{
+			messages: &translatev1.Translation{
 				Language: langs[1].String(),
 			},
 			expectedCode: http.StatusOK,
@@ -577,7 +577,7 @@ func Test_CreateMessages_REST(t *testing.T) {
 		{
 			name:      "Bad request, messages.language not provided",
 			serviceID: service.Id,
-			messages: &translatev1.Messages{
+			messages: &translatev1.Translation{
 				Language: "",
 			},
 			expectedCode: http.StatusBadRequest,
@@ -585,7 +585,7 @@ func Test_CreateMessages_REST(t *testing.T) {
 		{
 			name:      "Status conflict, service already has messages for specified language",
 			serviceID: serviceWithMsgs.Id,
-			messages: &translatev1.Messages{
+			messages: &translatev1.Translation{
 				Language: uploadReq.Language,
 			},
 			expectedCode: http.StatusConflict,
@@ -628,7 +628,7 @@ func Test_UpdateMessages_REST(t *testing.T) {
 
 	_, err := client.CreateMessages(ctx, &translatev1.CreateMessagesRequest{
 		ServiceId: service.Id,
-		Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+		Messages:  randMessages(t, &translatev1.Translation{Language: langs[0].String()}),
 	})
 	require.NoError(t, err, "create test messages")
 
@@ -640,7 +640,7 @@ func Test_UpdateMessages_REST(t *testing.T) {
 
 		return &translatev1.UpdateMessagesRequest{
 			ServiceId: service.Id,
-			Messages:  randMessages(t, &translatev1.Messages{Language: lang}),
+			Messages:  randMessages(t, &translatev1.Translation{Language: lang}),
 		}
 	}
 

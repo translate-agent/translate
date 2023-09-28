@@ -21,7 +21,7 @@ func messagesKey(serviceID uuid.UUID, language language.Tag) []byte {
 }
 
 // SaveMessages handles both Create and Update.
-func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *model.Messages) error {
+func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *model.Translation) error {
 	_, err := r.LoadService(ctx, serviceID)
 	if err != nil {
 		return fmt.Errorf("repo: load service: %w", err)
@@ -48,7 +48,7 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 
 // LoadMessages retrieves messages from db based on serviceID and LoadMessageOpts.
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts repo.LoadMessagesOpts,
-) (model.MessagesSlice, error) {
+) (model.TranslationSlice, error) {
 	if _, err := r.LoadService(ctx, serviceID); errors.Is(err, repo.ErrNotFound) {
 		return nil, nil // Empty messages.messages for this service (Not an error)
 	} else if err != nil {
@@ -76,12 +76,12 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts repo.
 
 // loadMessagesByLang returns messages for service based on provided languages.
 func (r *Repo) loadMessagesByLang(serviceID uuid.UUID, languages []language.Tag,
-) ([]model.Messages, error) {
-	messages := make([]model.Messages, 0, len(languages))
+) ([]model.Translation, error) {
+	messages := make([]model.Translation, 0, len(languages))
 
 	if err := r.db.View(func(txn *badger.Txn) error {
 		for _, lang := range languages {
-			var msgs model.Messages
+			var msgs model.Translation
 
 			item, txErr := txn.Get(messagesKey(serviceID, lang))
 			switch {
@@ -107,17 +107,17 @@ func (r *Repo) loadMessagesByLang(serviceID uuid.UUID, languages []language.Tag,
 }
 
 // loadMessages returns all messages for service.
-func (r *Repo) loadMessages(serviceID uuid.UUID) ([]model.Messages, error) {
+func (r *Repo) loadMessages(serviceID uuid.UUID) ([]model.Translation, error) {
 	keyPrefix := []byte(messagesPrefix + serviceID.String())
 
-	var messages []model.Messages
+	var messages []model.Translation
 
 	if err := r.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 
 		for it.Seek(keyPrefix); it.ValidForPrefix(keyPrefix); it.Next() {
-			msgs := model.Messages{}
+			msgs := model.Translation{}
 
 			if err := getValue(it.Item(), &msgs); err != nil {
 				return fmt.Errorf("transaction: get value: %w", err)

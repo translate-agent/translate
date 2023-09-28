@@ -27,7 +27,7 @@ import (
 func randUploadData(t *testing.T, schema translatev1.Schema, lang language.Tag) []byte {
 	t.Helper()
 
-	messages := rand.ModelMessages(3, nil, rand.WithLanguage(lang))
+	messages := rand.ModelTranslation(3, nil, rand.WithLanguage(lang))
 
 	data, err := server.MessagesToData(schema, messages)
 	require.NoError(t, err, "convert rand messages to serialized data")
@@ -426,7 +426,7 @@ func Test_ListServices_gRPC(t *testing.T) {
 
 // ------------------Messages------------------
 
-func randMessages(t *testing.T, override *translatev1.Messages) *translatev1.Messages {
+func randMessages(t *testing.T, override *translatev1.Translation) *translatev1.Translation {
 	t.Helper()
 
 	lang := rand.Language().String()
@@ -436,7 +436,7 @@ func randMessages(t *testing.T, override *translatev1.Messages) *translatev1.Mes
 
 	n := gofakeit.IntRange(1, 5)
 
-	msgs := &translatev1.Messages{
+	msgs := &translatev1.Translation{
 		Language: lang,
 		Messages: make([]*translatev1.Message, 0, n),
 	}
@@ -484,7 +484,7 @@ func Test_CreateMessages_gRPC(t *testing.T) {
 			name: "Happy path, create messages",
 			request: &translatev1.CreateMessagesRequest{
 				ServiceId: service.Id,
-				Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+				Messages:  randMessages(t, &translatev1.Translation{Language: langs[0].String()}),
 			},
 			expectedCode: codes.OK,
 		},
@@ -492,7 +492,7 @@ func Test_CreateMessages_gRPC(t *testing.T) {
 			name: "Happy path, empty messages.messages",
 			request: &translatev1.CreateMessagesRequest{
 				ServiceId: service.Id,
-				Messages: &translatev1.Messages{
+				Messages: &translatev1.Translation{
 					Language: langs[1].String(),
 				},
 			},
@@ -517,7 +517,7 @@ func Test_CreateMessages_gRPC(t *testing.T) {
 			name: "Invalid argument, messages.language not provided",
 			request: &translatev1.CreateMessagesRequest{
 				ServiceId: service.Id,
-				Messages: &translatev1.Messages{
+				Messages: &translatev1.Translation{
 					Language: "",
 				},
 			},
@@ -527,7 +527,7 @@ func Test_CreateMessages_gRPC(t *testing.T) {
 			name: "Already exists, service already has messages for specified language",
 			request: &translatev1.CreateMessagesRequest{
 				ServiceId: serviceWithMsgs.Id,
-				Messages: &translatev1.Messages{
+				Messages: &translatev1.Translation{
 					Language: uploadReq.Language,
 				},
 			},
@@ -611,7 +611,7 @@ func Test_UpdateMessages_gRPC(t *testing.T) {
 
 	_, err := client.CreateMessages(ctx, &translatev1.CreateMessagesRequest{
 		ServiceId: service.Id,
-		Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+		Messages:  randMessages(t, &translatev1.Translation{Language: langs[0].String()}),
 	})
 	require.NoError(t, err, "create test messages")
 
@@ -623,7 +623,7 @@ func Test_UpdateMessages_gRPC(t *testing.T) {
 
 		return &translatev1.UpdateMessagesRequest{
 			ServiceId: service.Id,
-			Messages:  randMessages(t, &translatev1.Messages{Language: lang}),
+			Messages:  randMessages(t, &translatev1.Translation{Language: lang}),
 		}
 	}
 

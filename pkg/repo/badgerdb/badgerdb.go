@@ -32,8 +32,8 @@ func newDB(options badger.Options) (*badger.DB, error) {
 	return db, nil
 }
 
-// getValue unmarshals the value of a BadgerDB item into v (either *model.Service or *model.Messages).
-func getValue[T *model.Service | *model.Messages](item *badger.Item, v T) error {
+// getValue unmarshals the value of a BadgerDB item into v (either *model.Service or *model.Translation).
+func getValue[T *model.Service | *model.Translation](item *badger.Item, v T) error {
 	return item.Value(func(val []byte) error { //nolint:wrapcheck
 		if err := json.Unmarshal(val, &v); err != nil {
 			return fmt.Errorf("unmarshal %T: %w", v, err)

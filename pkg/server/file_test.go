@@ -152,36 +152,36 @@ func Test_GetLanguage(t *testing.T) {
 
 	type args struct {
 		params   *uploadParams
-		messages *model.Messages
+		messages *model.Translation
 	}
 
 	// Tests
 
 	messagesDefinedParamsUndefined := args{
 		params:   &uploadParams{languageTag: language.Und},
-		messages: rand.ModelMessages(3, nil),
+		messages: rand.ModelTranslation(3, nil),
 	}
 
 	messagesUndefinedParamsDefined := args{
 		params:   &uploadParams{languageTag: rand.Language()},
-		messages: rand.ModelMessages(3, nil, rand.WithLanguage(language.Und)),
+		messages: rand.ModelTranslation(3, nil, rand.WithLanguage(language.Und)),
 	}
 
 	sameLang := rand.Language()
 	bothDefinedSameLang := args{
 		params:   &uploadParams{languageTag: sameLang},
-		messages: rand.ModelMessages(3, nil, rand.WithLanguage(sameLang)),
+		messages: rand.ModelTranslation(3, nil, rand.WithLanguage(sameLang)),
 	}
 
 	undefinedBoth := args{
 		params:   &uploadParams{languageTag: language.Und},
-		messages: rand.ModelMessages(3, nil, rand.WithLanguage(language.Und)),
+		messages: rand.ModelTranslation(3, nil, rand.WithLanguage(language.Und)),
 	}
 
 	langs := rand.Languages(2)
 	langMismatch := args{
 		params:   &uploadParams{languageTag: langs[0]},
-		messages: rand.ModelMessages(3, nil, rand.WithLanguage(langs[1])),
+		messages: rand.ModelTranslation(3, nil, rand.WithLanguage(langs[1])),
 	}
 
 	tests := []struct {

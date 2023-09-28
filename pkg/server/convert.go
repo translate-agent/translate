@@ -12,14 +12,14 @@ import (
 var errUnspecifiedSchema = errors.New("unspecified schema")
 
 /*
-MessagesFromData converts in specific schema serialized data to model.Messages.
+MessagesFromData converts in specific schema serialized data to model.Translation.
   - If original is true, then all messages are marked as TRANSLATED
   - If original is false, then all messages are marked as UNTRANSLATED or FUZZY (if schema supports fuzzy messages)
 
 TODO: Add support for converting non original, but already translated messages and mark them as TRANSLATED
 */
-func MessagesFromData(params *uploadParams) (*model.Messages, error) {
-	var from func([]byte, bool) (model.Messages, error)
+func MessagesFromData(params *uploadParams) (*model.Translation, error) {
+	var from func([]byte, bool) (model.Translation, error)
 
 	switch params.schema {
 	case translatev1.Schema_ARB:
@@ -48,9 +48,9 @@ func MessagesFromData(params *uploadParams) (*model.Messages, error) {
 	return &messages, nil
 }
 
-// MessagesToData converts model.Messages to specific schema serialized data.
-func MessagesToData(schema translatev1.Schema, messages *model.Messages) ([]byte, error) {
-	var to func(model.Messages) ([]byte, error)
+// MessagesToData converts model.Translation to specific schema serialized data.
+func MessagesToData(schema translatev1.Schema, messages *model.Translation) ([]byte, error) {
+	var to func(model.Translation) ([]byte, error)
 
 	switch schema {
 	case translatev1.Schema_ARB:
@@ -73,7 +73,7 @@ func MessagesToData(schema translatev1.Schema, messages *model.Messages) ([]byte
 
 	// Prevent nil pointer dereference.
 	if messages == nil {
-		messages = &model.Messages{}
+		messages = &model.Translation{}
 	}
 
 	data, err := to(*messages)

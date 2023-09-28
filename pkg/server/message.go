@@ -17,7 +17,7 @@ import (
 // ----------------------CreateMessages-------------------------------
 
 type createMessagesParams struct {
-	messages  *model.Messages
+	messages  *model.Translation
 	serviceID uuid.UUID
 }
 
@@ -57,7 +57,7 @@ func (c *createMessagesParams) validate() error {
 func (t *TranslateServiceServer) CreateMessages(
 	ctx context.Context,
 	req *translatev1.CreateMessagesRequest,
-) (*translatev1.Messages, error) {
+) (*translatev1.Translation, error) {
 	params, err := parseCreateMessagesRequestParams(req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
@@ -168,7 +168,7 @@ func (t *TranslateServiceServer) ListMessages(
 // ----------------------UpdateMessages-------------------------------
 
 type updateMessagesParams struct {
-	messages             *model.Messages
+	messages             *model.Translation
 	serviceID            uuid.UUID
 	populateTranslations bool
 }
@@ -209,7 +209,7 @@ func (u *updateMessagesParams) validate() error {
 func (t *TranslateServiceServer) UpdateMessages(
 	ctx context.Context,
 	req *translatev1.UpdateMessagesRequest,
-) (*translatev1.Messages, error) {
+) (*translatev1.Translation, error) {
 	params, err := parseUpdateMessagesRequestParams(req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
@@ -229,7 +229,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 	}
 
 	// Case for when not original, or uploading original for the first time.
-	updatedMessages := model.MessagesSlice{*params.messages}
+	updatedMessages := model.TranslationSlice{*params.messages}
 
 	if origIdx := all.OriginalIndex(); params.messages.Original && origIdx != -1 {
 		oldOriginal := all[origIdx]
@@ -270,7 +270,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 // TODO: This logic should be moved to fuzzy pkg.
 func (t *TranslateServiceServer) fuzzyTranslate(
 	ctx context.Context,
-	all model.MessagesSlice,
+	all model.TranslationSlice,
 ) error {
 	origIdx := all.OriginalIndex()
 	if origIdx == -1 {
@@ -300,7 +300,7 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 		}
 
 		// Create a new messages to store the messages that need to be translated
-		toBeTranslated := &model.Messages{
+		toBeTranslated := &model.Translation{
 			Language: all[origIdx].Language,
 			Messages: make([]model.Message, 0, len(untranslatedMessagesLookup)),
 		}

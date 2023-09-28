@@ -38,7 +38,7 @@ func Test_SaveMessages(t *testing.T) {
 		service := prepareService(testCtx, t, repository)
 
 		tests := []struct {
-			messages    *model.Messages
+			messages    *model.Translation
 			expectedErr error
 			name        string
 			serviceID   uuid.UUID
@@ -46,13 +46,13 @@ func Test_SaveMessages(t *testing.T) {
 			{
 				name:        "Happy path",
 				serviceID:   service.ID,
-				messages:    rand.ModelMessages(3, nil),
+				messages:    rand.ModelTranslation(3, nil),
 				expectedErr: nil,
 			},
 			{
 				name:        "Missing service",
 				serviceID:   uuid.New(),
-				messages:    rand.ModelMessages(3, nil),
+				messages:    rand.ModelTranslation(3, nil),
 				expectedErr: repo.ErrNotFound,
 			},
 		}
@@ -92,11 +92,11 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 
 		// Create unique languages
 		languages := rand.Languages(3)
-		messages := make([]*model.Messages, len(languages))
+		messages := make([]*model.Translation, len(languages))
 
 		// Create messages for each language
 		for i, lang := range languages {
-			messages[i] = rand.ModelMessages(3, nil, rand.WithLanguage(lang))
+			messages[i] = rand.ModelTranslation(3, nil, rand.WithLanguage(lang))
 		}
 
 		// Save messages
@@ -124,7 +124,7 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 
 		// Prepare
 		service := prepareService(testCtx, t, repository)
-		expectedMessages := rand.ModelMessages(3, nil)
+		expectedMessages := rand.ModelTranslation(3, nil)
 
 		err := repository.SaveMessages(testCtx, service.ID, expectedMessages)
 		require.NoError(t, err, "Save messages")
@@ -167,7 +167,7 @@ func Test_LoadMessages(t *testing.T) {
 
 		// Prepare
 		service := prepareService(testCtx, t, repository)
-		messages := rand.ModelMessages(3, nil, rand.WithLanguage(messagesLang))
+		messages := rand.ModelTranslation(3, nil, rand.WithLanguage(messagesLang))
 
 		err := repository.SaveMessages(testCtx, service.ID, messages)
 		require.NoError(t, err, "Prepare test messages")
@@ -175,25 +175,25 @@ func Test_LoadMessages(t *testing.T) {
 		tests := []struct {
 			language  language.Tag
 			name      string
-			expected  []model.Messages
+			expected  []model.Translation
 			serviceID uuid.UUID
 		}{
 			{
 				language:  messages.Language,
 				name:      "Happy Path",
-				expected:  []model.Messages{*messages},
+				expected:  []model.Translation{*messages},
 				serviceID: service.ID,
 			},
 			{
 				language:  messages.Language,
 				name:      "No messages with service",
-				expected:  []model.Messages{},
+				expected:  []model.Translation{},
 				serviceID: uuid.New(),
 			},
 			{
 				language:  langWithNoMsgs,
 				name:      "No messages with language",
-				expected:  []model.Messages{},
+				expected:  []model.Translation{},
 				serviceID: service.ID,
 			},
 		}
@@ -221,10 +221,10 @@ func Test_LoadAllMessagesForService(t *testing.T) {
 
 		service := prepareService(testCtx, t, repository)
 		languages := rand.Languages(gofakeit.UintRange(1, 5))
-		messages := make([]model.Messages, 0, len(languages))
+		messages := make([]model.Translation, 0, len(languages))
 
 		for _, lang := range languages {
-			msgs := rand.ModelMessages(1, nil, rand.WithLanguage(lang))
+			msgs := rand.ModelTranslation(1, nil, rand.WithLanguage(lang))
 			err := repository.SaveMessages(testCtx, service.ID, msgs)
 			require.NoError(t, err, "Prepare test messages")
 			messages = append(messages, *msgs)
@@ -232,7 +232,7 @@ func Test_LoadAllMessagesForService(t *testing.T) {
 
 		tests := []struct {
 			name         string
-			expectedMsgs []model.Messages
+			expectedMsgs []model.Translation
 			languages    []language.Tag
 			serviceID    uuid.UUID
 		}{

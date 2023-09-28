@@ -173,42 +173,42 @@ func messageSliceFromProto(m []*translatev1.Message) ([]model.Message, error) {
 
 // ----------------------Messages----------------------
 
-// messagesToProto converts *model.Messages to *translatev1.Messages.
-func messagesToProto(m *model.Messages) *translatev1.Messages {
-	if m == nil {
+// messagesToProto converts *model.Translation to *translatev1.Translation.
+func messagesToProto(t *model.Translation) *translatev1.Translation {
+	if t == nil {
 		return nil
 	}
 
-	return &translatev1.Messages{
-		Language: languageToProto(m.Language),
-		Original: m.Original,
-		Messages: messageSliceToProto(m.Messages),
+	return &translatev1.Translation{
+		Language: languageToProto(t.Language),
+		Original: t.Original,
+		Messages: messageSliceToProto(t.Messages),
 	}
 }
 
-// messagesFromProto converts *translatev1.Messages to *model.Messages.
-func messagesFromProto(m *translatev1.Messages) (*model.Messages, error) {
-	if m == nil {
+// messagesFromProto converts *translatev1.Translation to *model.Translation.
+func messagesFromProto(t *translatev1.Translation) (*model.Translation, error) {
+	if t == nil {
 		return nil, nil
 	}
 
 	var (
 		err  error
-		msgs = &model.Messages{Original: m.Original}
+		msgs = &model.Translation{Original: t.Original}
 	)
 
-	if msgs.Language, err = languageFromProto(m.Language); err != nil {
+	if msgs.Language, err = languageFromProto(t.Language); err != nil {
 		return nil, fmt.Errorf("transform language tag: %w", err)
 	}
 
-	if msgs.Messages, err = messageSliceFromProto(m.Messages); err != nil {
+	if msgs.Messages, err = messageSliceFromProto(t.Messages); err != nil {
 		return nil, fmt.Errorf("transform messages: %w", err)
 	}
 
 	return msgs, nil
 }
 
-// messagesSliceToProto converts []model.Messages to []*translatev1.Messages.
-func messagesSliceToProto(m []model.Messages) []*translatev1.Messages {
+// messagesSliceToProto converts []model.Translation to []*translatev1.Translation.
+func messagesSliceToProto(m []model.Translation) []*translatev1.Translation {
 	return sliceToProto(m, messagesToProto)
 }

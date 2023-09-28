@@ -49,15 +49,15 @@ type context struct {
 	Content string `xml:",chardata"`
 }
 
-// FromXliff12 converts serialized data from the XML data in the XLIFF 1.2 format into a model.Messages struct.
+// FromXliff12 converts serialized data from the XML data in the XLIFF 1.2 format into a model.Translation struct.
 // For now original param is ignored.
-func FromXliff12(data []byte, original bool) (model.Messages, error) {
+func FromXliff12(data []byte, original bool) (model.Translation, error) {
 	var xlf xliff12
 	if err := xml.Unmarshal(data, &xlf); err != nil {
-		return model.Messages{}, fmt.Errorf("unmarshal xliff12: %w", err)
+		return model.Translation{}, fmt.Errorf("unmarshal xliff12: %w", err)
 	}
 
-	messages := model.Messages{
+	messages := model.Translation{
 		Language: xlf.File.TargetLanguage,
 		Original: xlf.File.TargetLanguage == language.Und,
 		Messages: make([]model.Message, 0, len(xlf.File.Body.TransUnits)),
@@ -87,8 +87,8 @@ func FromXliff12(data []byte, original bool) (model.Messages, error) {
 	return messages, nil
 }
 
-// ToXliff12 converts a model.Messages struct into a byte slice in the XLIFF 1.2 format.
-func ToXliff12(messages model.Messages) ([]byte, error) {
+// ToXliff12 converts a model.Translation struct into a byte slice in the XLIFF 1.2 format.
+func ToXliff12(messages model.Translation) ([]byte, error) {
 	xlf := xliff12{
 		Version: "1.2",
 		File: xliff12File{

@@ -117,7 +117,7 @@ func TokensToPo(tokens []Token) (Po, error) {
 				messages = append(messages, currentMessage)
 				currentMessage = MessageNode{}
 			}
-			// In our model.Messages currently there are no place to store these headers/metadata about translation file.
+			// In our model.Translation currently there are no place to store these headers/metadata about translation file.
 		case TokenTypeHeaderReportMsgidBugsTo,
 			TokenTypeHeaderProjectIdVersion,
 			TokenTypeHeaderPOTCreationDate,

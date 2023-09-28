@@ -13,7 +13,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *model.Messages) error {
+func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
 	_, err := r.LoadService(ctx, serviceID)
 	if err != nil {
 		return fmt.Errorf("repo: load service: %w", err)
@@ -21,7 +21,7 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("repo: begin tx to save messages: %w", err)
+		return fmt.Errorf("repo: begin tx to save translation: %w", err)
 	}
 
 	defer tx.Rollback() //nolint:errcheck
@@ -33,7 +33,7 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 		ctx,
 		`SELECT id FROM message WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
 		serviceID,
-		messages.Language.String(),
+		translation.Language.String(),
 	)
 
 	// Check if message already exists, if not, create a new one
@@ -51,8 +51,8 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 			`INSERT INTO message (id, service_id, language, original) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
 			messageID,
 			serviceID,
-			messages.Language.String(),
-			messages.Original,
+			translation.Language.String(),
+			translation.Original,
 		); err != nil {
 			return fmt.Errorf("repo: insert message: %w", err)
 		}
@@ -82,7 +82,7 @@ ON DUPLICATE KEY UPDATE
 	}
 	defer stmt.Close()
 
-	for _, m := range messages.Messages {
+	for _, m := range translation.Messages {
 		_, err = stmt.ExecContext(
 			ctx,
 			messageID,
@@ -98,14 +98,14 @@ ON DUPLICATE KEY UPDATE
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("repo: commit tx to save messages: %w", err)
+		return fmt.Errorf("repo: commit tx to save translation: %w", err)
 	}
 
 	return nil
 }
 
 func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts repo.LoadMessagesOpts,
-) (model.MessagesSlice, error) {
+) (model.TranslationSlice, error) {
 	rows, err := sq.
 		Select("mm.id, mm.message, mm.description, mm.positions, mm.status, m.language, m.original").
 		From("message_message mm").
@@ -120,7 +120,7 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts repo.
 
 	defer rows.Close()
 
-	messagesLookup := make(map[string]*model.Messages)
+	translationsLookup := make(map[string]*model.Translation)
 
 	for rows.Next() {
 		var (
@@ -135,26 +135,26 @@ func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts repo.
 		}
 
 		// Lookup message by language
-		messages, ok := messagesLookup[lang]
+		translations, ok := translationsLookup[lang]
 		// If not found, create a new one
 		if !ok {
-			messages = &model.Messages{
+			translations = &model.Translation{
 				Language: language.MustParse(lang),
 				Original: original,
 			}
 			// Add to lookup
-			messagesLookup[lang] = messages
+			translationsLookup[lang] = translations
 		}
-		// Add scanned message to messages
-		messages.Messages = append(messages.Messages, msg)
+		// Add scanned message to translations
+		translations.Messages = append(translations.Messages, msg)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("repo: scan messages: %w", err)
 	}
 
-	allMessages := make([]model.Messages, 0, len(messagesLookup))
-	for _, msgs := range messagesLookup {
+	allMessages := make([]model.Translation, 0, len(translationsLookup))
+	for _, msgs := range translationsLookup {
 		allMessages = append(allMessages, *msgs)
 	}
 

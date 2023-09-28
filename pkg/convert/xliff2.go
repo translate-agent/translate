@@ -37,16 +37,16 @@ type note struct {
 	Content  string `xml:",chardata"` // messages.messages[n].Description (if Category == "description")
 }
 
-// FromXliff2 converts serialized data from the XML data in the XLIFF 2 format into a model.Messages struct.
+// FromXliff2 converts serialized data from the XML data in the XLIFF 2 format into a model.Translation struct.
 // For now original param is ignored.
-func FromXliff2(data []byte, original bool) (model.Messages, error) {
+func FromXliff2(data []byte, original bool) (model.Translation, error) {
 	var xlf xliff2
 
 	if err := xml.Unmarshal(data, &xlf); err != nil {
-		return model.Messages{}, fmt.Errorf("unmarshal xliff2: %w", err)
+		return model.Translation{}, fmt.Errorf("unmarshal xliff2: %w", err)
 	}
 
-	messages := model.Messages{
+	messages := model.Translation{
 		Language: xlf.TrgLang,
 		Original: xlf.TrgLang == language.Und,
 		Messages: make([]model.Message, 0, len(xlf.File.Units)),
@@ -86,8 +86,8 @@ func FromXliff2(data []byte, original bool) (model.Messages, error) {
 	return messages, nil
 }
 
-// ToXliff2 converts a model.Messages struct into a byte slice in the XLIFF 2 format.
-func ToXliff2(messages model.Messages) ([]byte, error) {
+// ToXliff2 converts a model.Translation struct into a byte slice in the XLIFF 2 format.
+func ToXliff2(messages model.Translation) ([]byte, error) {
 	xlf := xliff2{
 		Version: "2.0",
 		SrcLang: messages.Language,

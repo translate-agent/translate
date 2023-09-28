@@ -39,11 +39,11 @@ app_fr.arb
 
 */
 
-// FromArb converts a serialized data in ARB file format into model.Messages.
-func FromArb(data []byte, original bool) (model.Messages, error) {
+// FromArb converts a serialized data in ARB file format into model.Translation.
+func FromArb(data []byte, original bool) (model.Translation, error) {
 	var dst map[string]interface{}
 	if err := json.Unmarshal(data, &dst); err != nil {
-		return model.Messages{}, fmt.Errorf("unmarshal ARB serialized data: %w", err)
+		return model.Translation{}, fmt.Errorf("unmarshal ARB serialized data: %w", err)
 	}
 
 	findDescription := func(key string) (string, error) {
@@ -90,7 +90,7 @@ func FromArb(data []byte, original bool) (model.Messages, error) {
 
 	lang, err := findLocale()
 	if err != nil {
-		return model.Messages{}, fmt.Errorf("find locale: %w", err)
+		return model.Translation{}, fmt.Errorf("find locale: %w", err)
 	}
 
 	status := model.MessageStatusUntranslated
@@ -98,7 +98,7 @@ func FromArb(data []byte, original bool) (model.Messages, error) {
 		status = model.MessageStatusTranslated
 	}
 
-	messages := model.Messages{Language: lang, Original: original}
+	translations := model.Translation{Language: lang, Original: original}
 
 	for key, value := range dst {
 		// Ignore a key if it begins with '@' as it only supplies metadata for message not the message itself.
@@ -111,24 +111,24 @@ func FromArb(data []byte, original bool) (model.Messages, error) {
 		// If a key does not have an '@' prefix and its value is not of type string, then file is not formatted correctly.
 		var ok bool
 		if msg.Message, ok = value.(string); !ok {
-			return model.Messages{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
+			return model.Translation{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
 		}
 
 		msg.Message = convertToMessageFormatSingular(msg.Message)
 
 		var err error
 		if msg.Description, err = findDescription(key); err != nil {
-			return model.Messages{}, fmt.Errorf("find description of '%s': %w", key, err)
+			return model.Translation{}, fmt.Errorf("find description of '%s': %w", key, err)
 		}
 
-		messages.Messages = append(messages.Messages, msg)
+		translations.Messages = append(translations.Messages, msg)
 	}
 
-	return messages, nil
+	return translations, nil
 }
 
-// Converts model.Messages into a serialized data in ARB file format.
-func ToArb(messages model.Messages) ([]byte, error) {
+// ToArb converts model.Translation into a serialized data in ARB file format.
+func ToArb(messages model.Translation) ([]byte, error) {
 	// dst length = number of messages + number of potential descriptions (same as number of messages) + locale.
 	dst := make(map[string]interface{}, len(messages.Messages)*2+1)
 	// "und" (Undetermined) language.Tag is also valid BCP47 tag.

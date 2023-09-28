@@ -24,7 +24,7 @@ func Test_TranslateMock(t *testing.T) {
 	allMocks(t, func(t *testing.T, mock Translator) {
 		tests := []struct {
 			expectedErr error
-			messages    *model.Messages
+			messages    *model.Translation
 			name        string
 		}{
 			{
@@ -176,9 +176,9 @@ func allMocks(t *testing.T, f func(t *testing.T, mock Translator)) {
 
 // randMessages returns a random messages model with the given count of messages and source language.
 // The messages will not be fuzzy.
-func randMessages(msgCount uint, srcLang language.Tag) *model.Messages {
+func randMessages(msgCount uint, srcLang language.Tag) *model.Translation {
 	msgOpts := []rand.ModelMessageOption{rand.WithStatus(model.MessageStatusUntranslated)}
 	msgsOpts := []rand.ModelMessagesOption{rand.WithLanguage(srcLang)}
 
-	return rand.ModelMessages(msgCount, msgOpts, msgsOpts...)
+	return rand.ModelTranslation(msgCount, msgOpts, msgsOpts...)
 }

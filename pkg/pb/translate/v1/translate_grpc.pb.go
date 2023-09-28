@@ -41,8 +41,8 @@ type TranslateServiceClient interface {
 	CreateService(ctx context.Context, in *CreateServiceRequest, opts ...grpc.CallOption) (*Service, error)
 	UpdateService(ctx context.Context, in *UpdateServiceRequest, opts ...grpc.CallOption) (*Service, error)
 	DeleteService(ctx context.Context, in *DeleteServiceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	CreateMessages(ctx context.Context, in *CreateMessagesRequest, opts ...grpc.CallOption) (*Messages, error)
-	UpdateMessages(ctx context.Context, in *UpdateMessagesRequest, opts ...grpc.CallOption) (*Messages, error)
+	CreateMessages(ctx context.Context, in *CreateMessagesRequest, opts ...grpc.CallOption) (*Translation, error)
+	UpdateMessages(ctx context.Context, in *UpdateMessagesRequest, opts ...grpc.CallOption) (*Translation, error)
 	ListMessages(ctx context.Context, in *ListMessagesRequest, opts ...grpc.CallOption) (*ListMessagesResponse, error)
 	UploadTranslationFile(ctx context.Context, in *UploadTranslationFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DownloadTranslationFile(ctx context.Context, in *DownloadTranslationFileRequest, opts ...grpc.CallOption) (*DownloadTranslationFileResponse, error)
@@ -101,8 +101,8 @@ func (c *translateServiceClient) DeleteService(ctx context.Context, in *DeleteSe
 	return out, nil
 }
 
-func (c *translateServiceClient) CreateMessages(ctx context.Context, in *CreateMessagesRequest, opts ...grpc.CallOption) (*Messages, error) {
-	out := new(Messages)
+func (c *translateServiceClient) CreateMessages(ctx context.Context, in *CreateMessagesRequest, opts ...grpc.CallOption) (*Translation, error) {
+	out := new(Translation)
 	err := c.cc.Invoke(ctx, TranslateService_CreateMessages_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -110,8 +110,8 @@ func (c *translateServiceClient) CreateMessages(ctx context.Context, in *CreateM
 	return out, nil
 }
 
-func (c *translateServiceClient) UpdateMessages(ctx context.Context, in *UpdateMessagesRequest, opts ...grpc.CallOption) (*Messages, error) {
-	out := new(Messages)
+func (c *translateServiceClient) UpdateMessages(ctx context.Context, in *UpdateMessagesRequest, opts ...grpc.CallOption) (*Translation, error) {
+	out := new(Translation)
 	err := c.cc.Invoke(ctx, TranslateService_UpdateMessages_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -155,8 +155,8 @@ type TranslateServiceServer interface {
 	CreateService(context.Context, *CreateServiceRequest) (*Service, error)
 	UpdateService(context.Context, *UpdateServiceRequest) (*Service, error)
 	DeleteService(context.Context, *DeleteServiceRequest) (*emptypb.Empty, error)
-	CreateMessages(context.Context, *CreateMessagesRequest) (*Messages, error)
-	UpdateMessages(context.Context, *UpdateMessagesRequest) (*Messages, error)
+	CreateMessages(context.Context, *CreateMessagesRequest) (*Translation, error)
+	UpdateMessages(context.Context, *UpdateMessagesRequest) (*Translation, error)
 	ListMessages(context.Context, *ListMessagesRequest) (*ListMessagesResponse, error)
 	UploadTranslationFile(context.Context, *UploadTranslationFileRequest) (*emptypb.Empty, error)
 	DownloadTranslationFile(context.Context, *DownloadTranslationFileRequest) (*DownloadTranslationFileResponse, error)
@@ -182,10 +182,10 @@ func (UnimplementedTranslateServiceServer) UpdateService(context.Context, *Updat
 func (UnimplementedTranslateServiceServer) DeleteService(context.Context, *DeleteServiceRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteService not implemented")
 }
-func (UnimplementedTranslateServiceServer) CreateMessages(context.Context, *CreateMessagesRequest) (*Messages, error) {
+func (UnimplementedTranslateServiceServer) CreateMessages(context.Context, *CreateMessagesRequest) (*Translation, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateMessages not implemented")
 }
-func (UnimplementedTranslateServiceServer) UpdateMessages(context.Context, *UpdateMessagesRequest) (*Messages, error) {
+func (UnimplementedTranslateServiceServer) UpdateMessages(context.Context, *UpdateMessagesRequest) (*Translation, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateMessages not implemented")
 }
 func (UnimplementedTranslateServiceServer) ListMessages(context.Context, *ListMessagesRequest) (*ListMessagesResponse, error) {

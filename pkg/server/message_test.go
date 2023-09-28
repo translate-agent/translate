@@ -15,8 +15,8 @@ const mockTranslation = "{Translated}"
 
 type mockTranslator struct{}
 
-func (m *mockTranslator) Translate(ctx context.Context, messages *model.Messages, targetLanguage language.Tag) (*model.Messages, error) {
-	newMessages := &model.Messages{
+func (m *mockTranslator) Translate(ctx context.Context, messages *model.Translation, targetLanguage language.Tag) (*model.Translation, error) {
+	newMessages := &model.Translation{
 		Language: targetLanguage,
 		Messages: make([]model.Message, 0, len(messages.Messages)),
 		Original: messages.Original,
@@ -44,9 +44,9 @@ func Test_fuzzyTranslate(t *testing.T) {
 
 	tests := []struct {
 		name               string
-		originalMessages   *model.Messages
-		translatedMessages []model.Messages
-		assertFunc         func(t *testing.T, originalMessages *model.Messages, translatedMessages []model.Messages)
+		originalMessages   *model.Translation
+		translatedMessages []model.Translation
+		assertFunc         func(t *testing.T, originalMessages *model.Translation, translatedMessages []model.Translation)
 	}{
 		{
 			name:               "Fuzzy translate untranslated messages for one translation",
@@ -65,7 +65,7 @@ func Test_fuzzyTranslate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			allMessages := make(model.MessagesSlice, 0, len(tt.translatedMessages)+1)
+			allMessages := make(model.TranslationSlice, 0, len(tt.translatedMessages)+1)
 			allMessages = append(allMessages, *tt.originalMessages)
 			allMessages = append(allMessages, tt.translatedMessages...)
 
@@ -116,8 +116,8 @@ func Test_fuzzyTranslate(t *testing.T) {
 // helpers
 
 // randOriginalMessages creates a random messages with the original flag set to true.
-func randOriginalMessages(messageCount uint) *model.Messages {
-	return rand.ModelMessages(
+func randOriginalMessages(messageCount uint) *model.Translation {
+	return rand.ModelTranslation(
 		messageCount,
 		[]rand.ModelMessageOption{rand.WithStatus(model.MessageStatusTranslated)},
 		rand.WithOriginal(true),
@@ -126,10 +126,10 @@ func randOriginalMessages(messageCount uint) *model.Messages {
 
 // randTranslatedMessages creates a random messages with the original flag set to false
 // with the same IDs as the original messages, and with translated status.
-func randTranslatedMessages(n uint, msgCount uint, original *model.Messages) []model.Messages {
-	messages := make([]model.Messages, n)
+func randTranslatedMessages(n uint, msgCount uint, original *model.Translation) []model.Translation {
+	messages := make([]model.Translation, n)
 	for i, lang := range rand.Languages(n) {
-		messages[i] = *rand.ModelMessages(
+		messages[i] = *rand.ModelTranslation(
 			msgCount,
 			[]rand.ModelMessageOption{rand.WithStatus(model.MessageStatusTranslated)},
 			rand.WithOriginal(false),

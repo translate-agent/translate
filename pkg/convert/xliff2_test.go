@@ -17,7 +17,7 @@ import (
 	testutilrand "go.expect.digital/translate/pkg/testutil/rand"
 )
 
-func randXliff2(messages *model.Messages) []byte {
+func randXliff2(messages *model.Translation) []byte {
 	b := new(bytes.Buffer)
 
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
@@ -82,13 +82,13 @@ func assertEqualXml(t *testing.T, expected, actual []byte) bool { //nolint:unpar
 func Test_FromXliff2(t *testing.T) {
 	t.Parallel()
 
-	originalMessages := testutilrand.ModelMessages(
+	originalMessages := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
 		testutilrand.WithOriginal(true),
 	)
 
-	nonOriginalMessages := testutilrand.ModelMessages(
+	nonOriginalMessages := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusUntranslated)},
 		testutilrand.WithOriginal(false),
@@ -96,7 +96,7 @@ func Test_FromXliff2(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		expected *model.Messages
+		expected *model.Translation
 		data     []byte
 	}{
 		{
@@ -136,7 +136,7 @@ func Test_ToXliff2(t *testing.T) {
 		testutilrand.WithStatus(model.MessageStatusUntranslated),
 	}
 
-	messages := testutilrand.ModelMessages(4, msgOpts, testutilrand.WithOriginal(true))
+	messages := testutilrand.ModelTranslation(4, msgOpts, testutilrand.WithOriginal(true))
 	expected := randXliff2(messages)
 
 	actual, err := ToXliff2(*messages)
@@ -158,11 +158,11 @@ func Test_TransformXLIFF2(t *testing.T) {
 		MaxCount: 100,
 		Values: func(values []reflect.Value, _ *rand.Rand) {
 			values[0] = reflect.ValueOf(
-				testutilrand.ModelMessages(3, msgOpts, testutilrand.WithOriginal(true))) // input generator
+				testutilrand.ModelTranslation(3, msgOpts, testutilrand.WithOriginal(true))) // input generator
 		},
 	}
 
-	f := func(expected *model.Messages) bool {
+	f := func(expected *model.Translation) bool {
 		serialized, err := ToXliff2(*expected)
 		require.NoError(t, err)
 

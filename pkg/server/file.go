@@ -69,7 +69,7 @@ func (u *uploadParams) validate() error {
 
 // getLanguage returns the language tag for an upload based on the upload parameters and messages.
 // It returns an error if no language is set or if the languages in the upload parameters and messages are mismatched.
-func getLanguage(reqParams *uploadParams, messages *model.Messages) (language.Tag, error) {
+func getLanguage(reqParams *uploadParams, messages *model.Translation) (language.Tag, error) {
 	und := language.Und
 
 	// Scenario 1: Both messages and params have undefined language
@@ -115,7 +115,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	}
 
 	// Case for when not original, or uploading original for the first time.
-	updatedMessages := model.MessagesSlice{*messages}
+	updatedMessages := model.TranslationSlice{*messages}
 
 	// When updating original messages, changes might affect translations - transform and update all translations.
 	if messages.Original {
@@ -223,7 +223,7 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 	}
 
 	if len(messages) == 0 {
-		messages = append(messages, model.Messages{Language: params.languageTag})
+		messages = append(messages, model.Translation{Language: params.languageTag})
 	}
 
 	data, err := MessagesToData(params.schema, &messages[0])

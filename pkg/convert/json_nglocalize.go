@@ -18,14 +18,14 @@ type ngJSON struct {
 }
 
 // FromNgLocalize converts serialized data from the ng extract-i18n tool ("ng extract-i18n --format json")
-// into a model.Messages struct.
-func FromNgLocalize(data []byte, original bool) (model.Messages, error) {
+// into a model.Translation struct.
+func FromNgLocalize(data []byte, original bool) (model.Translation, error) {
 	var ng ngJSON
 	if err := json.Unmarshal(data, &ng); err != nil {
-		return model.Messages{}, fmt.Errorf("unmarshal @angular/localize JSON into ngJSON struct: %w", err)
+		return model.Translation{}, fmt.Errorf("unmarshal @angular/localize JSON into ngJSON struct: %w", err)
 	}
 
-	messages := model.Messages{
+	translation := model.Translation{
 		Language: ng.Language,
 		Messages: make([]model.Message, 0, len(ng.Translations)),
 		Original: original,
@@ -37,24 +37,24 @@ func FromNgLocalize(data []byte, original bool) (model.Messages, error) {
 	}
 
 	for k, v := range ng.Translations {
-		messages.Messages = append(messages.Messages, model.Message{
+		translation.Messages = append(translation.Messages, model.Message{
 			ID:      k,
 			Message: convertToMessageFormatSingular(v),
 			Status:  status,
 		})
 	}
 
-	return messages, nil
+	return translation, nil
 }
 
-// ToNgLocalize converts a model.Messages struct into a byte slice in @angular/localize JSON format.
-func ToNgLocalize(messages model.Messages) ([]byte, error) {
+// ToNgLocalize converts a model.Translation struct into a byte slice in @angular/localize JSON format.
+func ToNgLocalize(translations model.Translation) ([]byte, error) {
 	ng := ngJSON{
-		Language:     messages.Language,
-		Translations: make(map[string]string, len(messages.Messages)),
+		Language:     translations.Language,
+		Translations: make(map[string]string, len(translations.Messages)),
 	}
 
-	for _, msg := range messages.Messages {
+	for _, msg := range translations.Messages {
 		ng.Translations[msg.ID] = removeEnclosingBrackets(msg.Message)
 	}
 

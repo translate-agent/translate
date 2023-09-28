@@ -17,7 +17,7 @@ func Usage() string {
 }
 
 type Translator interface {
-	Translate(ctx context.Context, messages *model.Messages, targetLanguage language.Tag) (*model.Messages, error)
+	Translate(ctx context.Context, messages *model.Translation, targetLanguage language.Tag) (*model.Translation, error)
 	// XXX: Method to return supported languages? e.g. SupportedLanguages() map[language.Tag]bool
 }
 
@@ -26,8 +26,8 @@ type NoopTranslate struct{}
 
 // Translate returns unmodified incoming messages.
 func (n *NoopTranslate) Translate(ctx context.Context,
-	messages *model.Messages,
+	messages *model.Translation,
 	targetLanguage language.Tag,
-) (*model.Messages, error) {
+) (*model.Translation, error) {
 	return messages, nil
 }

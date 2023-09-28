@@ -10,8 +10,8 @@ import (
 func Test_MarkUntranslated(t *testing.T) {
 	t.Parallel()
 
-	originalMsgs := func() Messages {
-		return Messages{
+	originalMsgs := func() Translation {
+		return Translation{
 			Original: true,
 			Messages: []Message{
 				{ID: "1", Status: MessageStatusTranslated},
@@ -21,8 +21,8 @@ func Test_MarkUntranslated(t *testing.T) {
 		}
 	}
 
-	nonOriginalMsgs := func() Messages {
-		return Messages{
+	nonOriginalMsgs := func() Translation {
+		return Translation{
 			Original: false,
 			Messages: []Message{
 				{ID: "1", Status: MessageStatusTranslated},
@@ -34,32 +34,32 @@ func Test_MarkUntranslated(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		messagesSlice   MessagesSlice
+		messagesSlice   TranslationSlice
 		untranslatedIds []string
 	}{
 		// Nothing is changed, untranslated IDs are not provided.
 		{
 			name:            "Without untranslated IDs",
-			messagesSlice:   MessagesSlice{originalMsgs(), nonOriginalMsgs()},
+			messagesSlice:   TranslationSlice{originalMsgs(), nonOriginalMsgs()},
 			untranslatedIds: nil,
 		},
 		// Nothing is changed, messages with original flag should not be altered.
 		{
 			name:            "One original messages",
-			messagesSlice:   MessagesSlice{originalMsgs()},
+			messagesSlice:   TranslationSlice{originalMsgs()},
 			untranslatedIds: []string{"1"},
 		},
 		// First message status is changed to untranslated for all messages, other messages are not changed.
 		{
 			name:            "Multiple translated messages",
-			messagesSlice:   MessagesSlice{nonOriginalMsgs(), nonOriginalMsgs()},
+			messagesSlice:   TranslationSlice{nonOriginalMsgs(), nonOriginalMsgs()},
 			untranslatedIds: []string{"1"},
 		},
 		// First message status is changed to untranslated for all messages except original one
 		// other messages are not changed.
 		{
 			name:            "Mixed messages",
-			messagesSlice:   MessagesSlice{originalMsgs(), nonOriginalMsgs()},
+			messagesSlice:   TranslationSlice{originalMsgs(), nonOriginalMsgs()},
 			untranslatedIds: []string{"1", "2"},
 		},
 	}
@@ -104,8 +104,8 @@ func Test_PopulateTranslations(t *testing.T) {
 	t.Parallel()
 
 	// for test1
-	onlyOriginal := MessagesSlice{
-		Messages{
+	onlyOriginal := TranslationSlice{
+		Translation{
 			Original: true,
 			Messages: []Message{
 				{ID: "0", Message: "0", Status: MessageStatusTranslated},
@@ -116,8 +116,8 @@ func Test_PopulateTranslations(t *testing.T) {
 	}
 
 	// for test2
-	mixed := MessagesSlice{
-		Messages{
+	mixed := TranslationSlice{
+		Translation{
 			Original: true,
 			Messages: []Message{
 				{ID: "0", Message: "0", Status: MessageStatusTranslated},
@@ -126,7 +126,7 @@ func Test_PopulateTranslations(t *testing.T) {
 			},
 		},
 		// Same messages, nothing should be populated.
-		Messages{
+		Translation{
 			Original: false,
 			Messages: []Message{
 				{ID: "0", Message: "0", Status: MessageStatusTranslated},
@@ -135,7 +135,7 @@ func Test_PopulateTranslations(t *testing.T) {
 			},
 		},
 		// Missing ID:2, should be added
-		Messages{
+		Translation{
 			Original: false,
 			Messages: []Message{
 				{ID: "0", Message: "0", Status: MessageStatusTranslated},
@@ -143,7 +143,7 @@ func Test_PopulateTranslations(t *testing.T) {
 			},
 		},
 		// Empty messages, all messages from original should be added.
-		Messages{
+		Translation{
 			Original: false,
 			Messages: []Message{},
 		},
@@ -154,7 +154,7 @@ func Test_PopulateTranslations(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		messageSlice MessagesSlice
+		messageSlice TranslationSlice
 	}{
 		{
 			// Only original messages -> noop
@@ -194,13 +194,13 @@ func Test_PopulateTranslations(t *testing.T) {
 func Test_FindChangedMessageIDs(t *testing.T) {
 	t.Parallel()
 
-	old := Messages{
+	old := Translation{
 		Messages: []Message{
 			{ID: "1", Message: "Hello"},
 			{ID: "2", Message: "World"},
 		},
 	}
-	new := Messages{
+	new := Translation{
 		Messages: []Message{
 			{ID: "1", Message: "Hello"},
 			{ID: "2", Message: "Go"},

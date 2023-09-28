@@ -31,7 +31,7 @@ message Message {
   }
 }
 
-message Messages {
+message Translation {
   string language = 1;
   bool original = 2;
   repeated Message messages = 3;
@@ -67,7 +67,7 @@ message DownloadTranslationFileResponse {
 
 message CreateMessagesRequest {
   string service_id = 1;
-  Messages messages = 2;
+  Translation messages = 2;
 }
 
 message ListMessagesRequest {
@@ -75,13 +75,13 @@ message ListMessagesRequest {
 }
 
 message ListMessagesResponse {
-  repeated Messages messages = 1;
+  repeated Translation messages = 1;
 }
 
 message UpdateMessagesRequest {
   string service_id = 1;
   bool populate_translations = 2;
-  Messages messages = 3;
+  Translation messages = 3;
 }
 
 // -----------------Service requests/responses-----------------------
@@ -142,14 +142,14 @@ service TranslateService {
     option (google.api.http) = {delete: "/v1/services/{id}"};
   }
 
-  rpc CreateMessages(CreateMessagesRequest) returns (Messages) {
+  rpc CreateMessages(CreateMessagesRequest) returns (Translation) {
     option (google.api.http) = {
       post: "/v1/services/{service_id}/messages",
       body: "messages"
     };
   }
 
-  rpc UpdateMessages(UpdateMessagesRequest) returns (Messages) {
+  rpc UpdateMessages(UpdateMessagesRequest) returns (Translation) {
     option (google.api.http) = {
       put: "/v1/services/{service_id}/messages/{messages.language}"
       body: "messages"

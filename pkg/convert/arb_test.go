@@ -18,7 +18,7 @@ func Test_FromArb(t *testing.T) {
 		expectedErr error
 		name        string
 		input       []byte
-		expected    model.Messages
+		expected    model.Translation
 	}{
 		// Positive tests
 		{
@@ -40,7 +40,7 @@ func Test_FromArb(t *testing.T) {
 				},
 				"farewell": "Goodbye friend"
 			}`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Original: true,
 				Messages: []model.Message{
 					{
@@ -81,7 +81,7 @@ func Test_FromArb(t *testing.T) {
 				},
 				"farewell": "Goodbye friend"
 			}`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Original: true,
 				Messages: []model.Message{
 					{
@@ -113,7 +113,7 @@ func Test_FromArb(t *testing.T) {
           "description": "Message to greet the World"
         }
       }`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.Latvian,
 				Original: false,
 				Messages: []model.Message{
@@ -208,7 +208,7 @@ func Test_FromArb(t *testing.T) {
 func Test_ToArb(t *testing.T) {
 	t.Parallel()
 
-	messages := model.Messages{
+	messages := model.Translation{
 		Language: language.French,
 		Messages: []model.Message{
 			{
