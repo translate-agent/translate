@@ -31,7 +31,7 @@ func parseCreateTranslationRequestParams(req *translatev1.CreateTranslationReque
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	if p.messages, err = messagesFromProto(req.Messages); err != nil {
+	if p.messages, err = messagesFromProto(req.Translations); err != nil {
 		return nil, fmt.Errorf("parse messages: %w", err)
 	}
 
@@ -127,7 +127,7 @@ type listTranslationParams struct {
 	serviceID uuid.UUID
 }
 
-func parseListTranslationRequestParams(req *translatev1.ListTranslationRequest) (*listTranslationParams, error) {
+func parseListTranslationRequestParams(req *translatev1.ListTranslationsRequest) (*listTranslationParams, error) {
 	serviceID, err := uuidFromProto(req.GetServiceId())
 	if err != nil {
 		return nil, fmt.Errorf("parse service_id: %w", err)
@@ -146,8 +146,8 @@ func (l *listTranslationParams) validate() error {
 
 func (t *TranslateServiceServer) ListTranslation(
 	ctx context.Context,
-	req *translatev1.ListTranslationRequest,
-) (*translatev1.ListTranslationResponse, error) {
+	req *translatev1.ListTranslationsRequest,
+) (*translatev1.ListTranslationsResponse, error) {
 	params, err := parseListTranslationRequestParams(req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
@@ -162,7 +162,7 @@ func (t *TranslateServiceServer) ListTranslation(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	return &translatev1.ListTranslationResponse{Messages: messagesSliceToProto(messages)}, nil
+	return &translatev1.ListTranslationsResponse{Translations: messagesSliceToProto(messages)}, nil
 }
 
 // ----------------------UpdateTranslation-------------------------------
@@ -183,7 +183,7 @@ func parseUpdateTranslationRequestParams(req *translatev1.UpdateTranslationReque
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	if params.messages, err = messagesFromProto(req.Messages); err != nil {
+	if params.messages, err = messagesFromProto(req.Translations); err != nil {
 		return nil, fmt.Errorf("parse messages: %w", err)
 	}
 

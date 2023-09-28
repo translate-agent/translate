@@ -601,7 +601,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.serviceID + "/messages",
+				Path:   "v1/services/" + tt.serviceID + "/translations",
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(body))
@@ -627,8 +627,8 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 	langs := rand.Languages(2)
 
 	_, err := client.CreateTranslation(ctx, &translatev1.CreateTranslationRequest{
-		ServiceId: service.Id,
-		Messages:  randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
+		ServiceId:    service.Id,
+		Translations: randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
 	})
 	require.NoError(t, err, "create test messages")
 
@@ -639,8 +639,8 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 		}
 
 		return &translatev1.UpdateTranslationRequest{
-			ServiceId: service.Id,
-			Messages:  randTranslation(t, &translatev1.Translation{Language: lang}),
+			ServiceId:    service.Id,
+			Translations: randTranslation(t, &translatev1.Translation{Language: lang}),
 		}
 	}
 
@@ -652,10 +652,10 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 	notFoundServiceID.ServiceId = gofakeit.UUID()
 
 	invalidArgumentNilMessagesReq := randUpdateMessageReq("")
-	invalidArgumentNilMessagesReq.Messages = nil
+	invalidArgumentNilMessagesReq.Translations = nil
 
 	invalidArgumentUndMessagesLanguageReq := randUpdateMessageReq("")
-	invalidArgumentUndMessagesLanguageReq.Messages.Language = ""
+	invalidArgumentUndMessagesLanguageReq.Translations.Language = ""
 
 	tests := []struct {
 		request      *translatev1.UpdateTranslationRequest
@@ -692,19 +692,19 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			body, err := json.Marshal(tt.request.Messages)
+			body, err := json.Marshal(tt.request.Translations)
 			require.NoError(t, err, "marshal messages")
 
 			language := langs[0].String()
 
-			if tt.request.Messages != nil {
-				language = tt.request.Messages.Language
+			if tt.request.Translations != nil {
+				language = tt.request.Translations.Language
 			}
 
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.request.ServiceId + "/messages/" + language,
+				Path:   "v1/services/" + tt.request.ServiceId + "/translations/" + language,
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(body))
@@ -762,7 +762,7 @@ func Test_GetMessages_REST(t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.serviceID + "/messages",
+				Path:   "v1/services/" + tt.serviceID + "/translations",
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
