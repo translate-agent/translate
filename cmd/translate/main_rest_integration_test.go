@@ -525,10 +525,10 @@ func Test_ListServices_REST(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-// ------------------Messages------------------
+// ------------------Translations------------------
 
 // POST.
-func Test_CreateMessages_REST(t *testing.T) {
+func Test_CreateTranslation_REST(t *testing.T) {
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
@@ -552,7 +552,7 @@ func Test_CreateMessages_REST(t *testing.T) {
 		{
 			name:         "Happy path, create messages",
 			serviceID:    service.Id,
-			messages:     randMessages(t, &translatev1.Translation{Language: langs[0].String()}),
+			messages:     randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
 			expectedCode: http.StatusOK,
 		},
 		{
@@ -566,7 +566,7 @@ func Test_CreateMessages_REST(t *testing.T) {
 		{
 			name:         "Not found, service not found",
 			serviceID:    gofakeit.UUID(),
-			messages:     randMessages(t, nil),
+			messages:     randTranslation(t, nil),
 			expectedCode: http.StatusNotFound,
 		},
 		{
@@ -617,7 +617,7 @@ func Test_CreateMessages_REST(t *testing.T) {
 	}
 }
 
-func Test_UpdateMessages_REST(t *testing.T) {
+func Test_UpdateTranslation_REST(t *testing.T) {
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
@@ -626,21 +626,21 @@ func Test_UpdateMessages_REST(t *testing.T) {
 	service := createService(ctx, t)
 	langs := rand.Languages(2)
 
-	_, err := client.CreateMessages(ctx, &translatev1.CreateMessagesRequest{
+	_, err := client.CreateTranslation(ctx, &translatev1.CreateTranslationRequest{
 		ServiceId: service.Id,
-		Messages:  randMessages(t, &translatev1.Translation{Language: langs[0].String()}),
+		Messages:  randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
 	})
 	require.NoError(t, err, "create test messages")
 
 	// helper for update request generation
-	randUpdateMessageReq := func(lang string) *translatev1.UpdateMessagesRequest {
+	randUpdateMessageReq := func(lang string) *translatev1.UpdateTranslationRequest {
 		if lang == "" {
 			lang = rand.Language().String()
 		}
 
-		return &translatev1.UpdateMessagesRequest{
+		return &translatev1.UpdateTranslationRequest{
 			ServiceId: service.Id,
-			Messages:  randMessages(t, &translatev1.Translation{Language: lang}),
+			Messages:  randTranslation(t, &translatev1.Translation{Language: lang}),
 		}
 	}
 
@@ -658,7 +658,7 @@ func Test_UpdateMessages_REST(t *testing.T) {
 	invalidArgumentUndMessagesLanguageReq.Messages.Language = ""
 
 	tests := []struct {
-		request      *translatev1.UpdateMessagesRequest
+		request      *translatev1.UpdateTranslationRequest
 		name         string
 		expectedCode uint
 	}{

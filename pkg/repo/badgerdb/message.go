@@ -21,7 +21,7 @@ func messagesKey(serviceID uuid.UUID, language language.Tag) []byte {
 }
 
 // SaveMessages handles both Create and Update.
-func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *model.Translation) error {
+func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, messages *model.Translation) error {
 	_, err := r.LoadService(ctx, serviceID)
 	if err != nil {
 		return fmt.Errorf("repo: load service: %w", err)
@@ -47,7 +47,7 @@ func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *
 }
 
 // LoadMessages retrieves messages from db based on serviceID and LoadMessageOpts.
-func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts repo.LoadMessagesOpts,
+func (r *Repo) LoadTranslation(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationOpts,
 ) (model.TranslationSlice, error) {
 	if _, err := r.LoadService(ctx, serviceID); errors.Is(err, repo.ErrNotFound) {
 		return nil, nil // Empty messages.messages for this service (Not an error)

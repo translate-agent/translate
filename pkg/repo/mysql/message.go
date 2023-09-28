@@ -13,7 +13,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-func (r *Repo) SaveMessages(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
+func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
 	_, err := r.LoadService(ctx, serviceID)
 	if err != nil {
 		return fmt.Errorf("repo: load service: %w", err)
@@ -104,7 +104,7 @@ ON DUPLICATE KEY UPDATE
 	return nil
 }
 
-func (r *Repo) LoadMessages(ctx context.Context, serviceID uuid.UUID, opts repo.LoadMessagesOpts,
+func (r *Repo) LoadTranslation(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationOpts,
 ) (model.TranslationSlice, error) {
 	rows, err := sq.
 		Select("mm.id, mm.message, mm.description, mm.positions, mm.status, m.language, m.original").

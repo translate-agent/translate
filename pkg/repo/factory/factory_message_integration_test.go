@@ -60,7 +60,7 @@ func Test_SaveMessages(t *testing.T) {
 		for _, tt := range tests {
 			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				err := repository.SaveMessages(ctx, tt.serviceID, tt.messages)
+				err := repository.SaveTranslation(ctx, tt.serviceID, tt.messages)
 
 				if tt.expectedErr != nil {
 					assert.ErrorIs(t, err, tt.expectedErr)
@@ -71,8 +71,8 @@ func Test_SaveMessages(t *testing.T) {
 
 				// Assure that the messages were saved correctly.
 
-				actualMessages, err := repository.LoadMessages(ctx, tt.serviceID,
-					repo.LoadMessagesOpts{FilterLanguages: []language.Tag{tt.messages.Language}})
+				actualMessages, err := repository.LoadTranslation(ctx, tt.serviceID,
+					repo.LoadTranslationOpts{FilterLanguages: []language.Tag{tt.messages.Language}})
 				require.NoError(t, err, "Load saved messages")
 
 				testutil.EqualMessages(t, tt.messages, &actualMessages[0])
@@ -101,14 +101,14 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 
 		// Save messages
 		for _, m := range messages {
-			err := repository.SaveMessages(testCtx, service.ID, m)
+			err := repository.SaveTranslation(testCtx, service.ID, m)
 			require.NoError(t, err, "Save messages")
 		}
 
 		// Assure that all messages are saved
 		for _, m := range messages {
-			actualMessages, err := repository.LoadMessages(testCtx, service.ID,
-				repo.LoadMessagesOpts{FilterLanguages: []language.Tag{m.Language}})
+			actualMessages, err := repository.LoadTranslation(testCtx, service.ID,
+				repo.LoadTranslationOpts{FilterLanguages: []language.Tag{m.Language}})
 			require.NoError(t, err, "Load saved messages")
 
 			testutil.EqualMessages(t, m, &actualMessages[0])
@@ -126,7 +126,7 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 		service := prepareService(testCtx, t, repository)
 		expectedMessages := rand.ModelTranslation(3, nil)
 
-		err := repository.SaveMessages(testCtx, service.ID, expectedMessages)
+		err := repository.SaveTranslation(testCtx, service.ID, expectedMessages)
 		require.NoError(t, err, "Save messages")
 
 		// Update Message, Description and Status values, while keeping the ID
@@ -138,13 +138,13 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 
 		// Save updated messages
 
-		err = repository.SaveMessages(testCtx, service.ID, expectedMessages)
+		err = repository.SaveTranslation(testCtx, service.ID, expectedMessages)
 		require.NoError(t, err, "Update messages")
 
 		// Assure that messages are updated
 
-		actualMessages, err := repository.LoadMessages(testCtx, service.ID,
-			repo.LoadMessagesOpts{FilterLanguages: []language.Tag{expectedMessages.Language}})
+		actualMessages, err := repository.LoadTranslation(testCtx, service.ID,
+			repo.LoadTranslationOpts{FilterLanguages: []language.Tag{expectedMessages.Language}})
 		require.NoError(t, err, "Load updated messages")
 
 		testutil.EqualMessages(t, expectedMessages, &actualMessages[0])
@@ -169,7 +169,7 @@ func Test_LoadMessages(t *testing.T) {
 		service := prepareService(testCtx, t, repository)
 		messages := rand.ModelTranslation(3, nil, rand.WithLanguage(messagesLang))
 
-		err := repository.SaveMessages(testCtx, service.ID, messages)
+		err := repository.SaveTranslation(testCtx, service.ID, messages)
 		require.NoError(t, err, "Prepare test messages")
 
 		tests := []struct {
@@ -201,8 +201,8 @@ func Test_LoadMessages(t *testing.T) {
 		for _, tt := range tests {
 			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				actualMessages, err := repository.LoadMessages(ctx, tt.serviceID,
-					repo.LoadMessagesOpts{FilterLanguages: []language.Tag{tt.language}})
+				actualMessages, err := repository.LoadTranslation(ctx, tt.serviceID,
+					repo.LoadTranslationOpts{FilterLanguages: []language.Tag{tt.language}})
 				require.NoError(t, err, "Load messages")
 
 				assert.ElementsMatch(t, tt.expected, actualMessages)
@@ -225,7 +225,7 @@ func Test_LoadAllMessagesForService(t *testing.T) {
 
 		for _, lang := range languages {
 			msgs := rand.ModelTranslation(1, nil, rand.WithLanguage(lang))
-			err := repository.SaveMessages(testCtx, service.ID, msgs)
+			err := repository.SaveTranslation(testCtx, service.ID, msgs)
 			require.NoError(t, err, "Prepare test messages")
 			messages = append(messages, *msgs)
 		}
@@ -252,8 +252,8 @@ func Test_LoadAllMessagesForService(t *testing.T) {
 		for _, tt := range tests {
 			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				actualMessages, err := repository.LoadMessages(ctx, tt.serviceID,
-					repo.LoadMessagesOpts{FilterLanguages: tt.languages})
+				actualMessages, err := repository.LoadTranslation(ctx, tt.serviceID,
+					repo.LoadTranslationOpts{FilterLanguages: tt.languages})
 
 				require.NoError(t, err, "Load messages")
 				assert.ElementsMatch(t, actualMessages, tt.expectedMsgs)

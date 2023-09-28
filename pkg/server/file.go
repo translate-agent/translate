@@ -119,7 +119,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 
 	// When updating original messages, changes might affect translations - transform and update all translations.
 	if messages.Original {
-		all, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
+		all, err := t.repo.LoadTranslation(ctx, params.serviceID, repo.LoadTranslationOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
@@ -145,7 +145,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	}
 
 	for i := range updatedMessages {
-		err = t.repo.SaveMessages(ctx, params.serviceID, &updatedMessages[i])
+		err = t.repo.SaveTranslation(ctx, params.serviceID, &updatedMessages[i])
 		switch {
 		case errors.Is(err, repo.ErrNotFound):
 			return nil, status.Errorf(codes.NotFound, "service not found")
@@ -216,8 +216,8 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := t.repo.LoadMessages(ctx, params.serviceID,
-		repo.LoadMessagesOpts{FilterLanguages: []language.Tag{params.languageTag}})
+	messages, err := t.repo.LoadTranslation(ctx, params.serviceID,
+		repo.LoadTranslationOpts{FilterLanguages: []language.Tag{params.languageTag}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}

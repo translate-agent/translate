@@ -14,16 +14,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// ----------------------CreateMessages-------------------------------
+// ----------------------CreateTranslation-------------------------------
 
-type createMessagesParams struct {
+type createTranslationParams struct {
 	messages  *model.Translation
 	serviceID uuid.UUID
 }
 
-func parseCreateMessagesRequestParams(req *translatev1.CreateMessagesRequest) (*createMessagesParams, error) {
+func parseCreateTranslationRequestParams(req *translatev1.CreateTranslationRequest) (*createTranslationParams, error) {
 	var (
-		p   = &createMessagesParams{}
+		p   = &createTranslationParams{}
 		err error
 	)
 
@@ -38,7 +38,7 @@ func parseCreateMessagesRequestParams(req *translatev1.CreateMessagesRequest) (*
 	return p, nil
 }
 
-func (c *createMessagesParams) validate() error {
+func (c *createTranslationParams) validate() error {
 	if c.serviceID == uuid.Nil {
 		return errors.New("'service_id' is required")
 	}
@@ -54,11 +54,11 @@ func (c *createMessagesParams) validate() error {
 	return nil
 }
 
-func (t *TranslateServiceServer) CreateMessages(
+func (t *TranslateServiceServer) CreateTranslation(
 	ctx context.Context,
-	req *translatev1.CreateMessagesRequest,
+	req *translatev1.CreateTranslationRequest,
 ) (*translatev1.Translation, error) {
-	params, err := parseCreateMessagesRequestParams(req)
+	params, err := parseCreateTranslationRequestParams(req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
@@ -67,8 +67,8 @@ func (t *TranslateServiceServer) CreateMessages(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	msgs, err := t.repo.LoadMessages(ctx, params.serviceID,
-		repo.LoadMessagesOpts{FilterLanguages: []language.Tag{params.messages.Language}})
+	msgs, err := t.repo.LoadTranslation(ctx, params.serviceID,
+		repo.LoadTranslationOpts{FilterLanguages: []language.Tag{params.messages.Language}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
@@ -82,7 +82,7 @@ func (t *TranslateServiceServer) CreateMessages(
 		// Retrieve language from original messages.
 		var originalLanguage *language.Tag
 		// TODO: to improve performance should be replaced with CheckMessagesExist db function.
-		msgs, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
+		msgs, err := t.repo.LoadTranslation(ctx, params.serviceID, repo.LoadTranslationOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
@@ -112,7 +112,7 @@ func (t *TranslateServiceServer) CreateMessages(
 		}
 	}
 
-	if err := t.repo.SaveMessages(ctx, params.serviceID, params.messages); errors.Is(err, repo.ErrNotFound) {
+	if err := t.repo.SaveTranslation(ctx, params.serviceID, params.messages); errors.Is(err, repo.ErrNotFound) {
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	} else if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
@@ -121,22 +121,22 @@ func (t *TranslateServiceServer) CreateMessages(
 	return messagesToProto(params.messages), nil
 }
 
-// ----------------------ListMessages-------------------------------
+// ----------------------ListTranslation-------------------------------
 
-type listMessagesParams struct {
+type listTranslationParams struct {
 	serviceID uuid.UUID
 }
 
-func parseListMessagesRequestParams(req *translatev1.ListMessagesRequest) (*listMessagesParams, error) {
+func parseListTranslationRequestParams(req *translatev1.ListTranslationRequest) (*listTranslationParams, error) {
 	serviceID, err := uuidFromProto(req.GetServiceId())
 	if err != nil {
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	return &listMessagesParams{serviceID: serviceID}, nil
+	return &listTranslationParams{serviceID: serviceID}, nil
 }
 
-func (l *listMessagesParams) validate() error {
+func (l *listTranslationParams) validate() error {
 	if l.serviceID == uuid.Nil {
 		return errors.New("'service_id' is required")
 	}
@@ -144,11 +144,11 @@ func (l *listMessagesParams) validate() error {
 	return nil
 }
 
-func (t *TranslateServiceServer) ListMessages(
+func (t *TranslateServiceServer) ListTranslation(
 	ctx context.Context,
-	req *translatev1.ListMessagesRequest,
-) (*translatev1.ListMessagesResponse, error) {
-	params, err := parseListMessagesRequestParams(req)
+	req *translatev1.ListTranslationRequest,
+) (*translatev1.ListTranslationResponse, error) {
+	params, err := parseListTranslationRequestParams(req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
@@ -157,25 +157,25 @@ func (t *TranslateServiceServer) ListMessages(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
+	messages, err := t.repo.LoadTranslation(ctx, params.serviceID, repo.LoadTranslationOpts{})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	return &translatev1.ListMessagesResponse{Messages: messagesSliceToProto(messages)}, nil
+	return &translatev1.ListTranslationResponse{Messages: messagesSliceToProto(messages)}, nil
 }
 
-// ----------------------UpdateMessages-------------------------------
+// ----------------------UpdateTranslation-------------------------------
 
-type updateMessagesParams struct {
+type updateTranslationParams struct {
 	messages             *model.Translation
 	serviceID            uuid.UUID
 	populateTranslations bool
 }
 
-func parseUpdateMessagesRequestParams(req *translatev1.UpdateMessagesRequest) (*updateMessagesParams, error) {
+func parseUpdateTranslationRequestParams(req *translatev1.UpdateTranslationRequest) (*updateTranslationParams, error) {
 	var (
-		params = updateMessagesParams{populateTranslations: req.GetPopulateTranslations()}
+		params = updateTranslationParams{populateTranslations: req.GetPopulateTranslations()}
 		err    error
 	)
 
@@ -190,7 +190,7 @@ func parseUpdateMessagesRequestParams(req *translatev1.UpdateMessagesRequest) (*
 	return &params, nil
 }
 
-func (u *updateMessagesParams) validate() error {
+func (u *updateTranslationParams) validate() error {
 	if u.serviceID == uuid.Nil {
 		return errors.New("'service_id' is required")
 	}
@@ -206,11 +206,11 @@ func (u *updateMessagesParams) validate() error {
 	return nil
 }
 
-func (t *TranslateServiceServer) UpdateMessages(
+func (t *TranslateServiceServer) UpdateTranslation(
 	ctx context.Context,
-	req *translatev1.UpdateMessagesRequest,
+	req *translatev1.UpdateTranslationRequest,
 ) (*translatev1.Translation, error) {
-	params, err := parseUpdateMessagesRequestParams(req)
+	params, err := parseUpdateTranslationRequestParams(req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
@@ -219,7 +219,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	all, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
+	all, err := t.repo.LoadTranslation(ctx, params.serviceID, repo.LoadTranslationOpts{})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
@@ -229,7 +229,7 @@ func (t *TranslateServiceServer) UpdateMessages(
 	}
 
 	// Case for when not original, or uploading original for the first time.
-	updatedMessages := model.TranslationSlice{*params.messages}
+	updatedTranslations := model.TranslationSlice{*params.messages}
 
 	if origIdx := all.OriginalIndex(); params.messages.Original && origIdx != -1 {
 		oldOriginal := all[origIdx]
@@ -247,13 +247,13 @@ func (t *TranslateServiceServer) UpdateMessages(
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
-		updatedMessages = all
+		updatedTranslations = all
 
 	}
 
 	// Update messages for all translations
-	for i := range updatedMessages {
-		err = t.repo.SaveMessages(ctx, params.serviceID, &all[i])
+	for i := range updatedTranslations {
+		err = t.repo.SaveTranslation(ctx, params.serviceID, &all[i])
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
