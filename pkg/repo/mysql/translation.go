@@ -26,30 +26,30 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 
 	defer tx.Rollback() //nolint:errcheck
 
-	// Check if message already exist
-	var messageID uuid.UUID
+	// Check if translation already exist
+	var translationID uuid.UUID
 
 	row := tx.QueryRowContext(
 		ctx,
-		`SELECT id FROM message WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
+		`SELECT id FROM translation WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
 		serviceID,
 		translation.Language.String(),
 	)
 
-	// Check if message already exists, if not, create a new one
-	switch err = row.Scan(&messageID); {
+	// Check if translation already exists, if not, create a new one
+	switch err = row.Scan(&translationID); {
 	// Message already exists
 	default:
 		// noop
 
-	// Message does not exist
+	// Translation does not exist
 	case errors.Is(err, sql.ErrNoRows):
-		messageID = uuid.New()
+		translationID = uuid.New()
 
 		if _, err = tx.ExecContext(
 			ctx,
-			`INSERT INTO message (id, service_id, language, original) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
-			messageID,
+			`INSERT INTO translation (id, service_id, language, original) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
+			translationID,
 			serviceID,
 			translation.Language.String(),
 			translation.Original,
@@ -85,7 +85,7 @@ ON DUPLICATE KEY UPDATE
 	for _, m := range translation.Messages {
 		_, err = stmt.ExecContext(
 			ctx,
-			messageID,
+			translationID,
 			m.ID,
 			m.Message,
 			m.Description,
@@ -109,7 +109,7 @@ func (r *Repo) LoadTranslation(ctx context.Context, serviceID uuid.UUID, opts re
 	rows, err := sq.
 		Select("mm.id, mm.message, mm.description, mm.positions, mm.status, m.language, m.original").
 		From("message_message mm").
-		Join("message m ON m.id = mm.message_id").
+		Join("translation m ON m.id = mm.message_id").
 		Where("m.service_id = UUID_TO_BIN(?)", serviceID).
 		Where(eq("m.language", langToStringSlice(opts.FilterLanguages))).
 		RunWith(r.db).
@@ -134,7 +134,7 @@ func (r *Repo) LoadTranslation(ctx context.Context, serviceID uuid.UUID, opts re
 			return nil, fmt.Errorf("repo: scan message: %w", err)
 		}
 
-		// Lookup message by language
+		// Lookup translations by language
 		translations, ok := translationsLookup[lang]
 		// If not found, create a new one
 		if !ok {

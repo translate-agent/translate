@@ -3,7 +3,7 @@ CREATE TABLE service (
   name VARCHAR(255)
 );
 
-CREATE TABLE message (
+CREATE TABLE translation (
   id BINARY(16) PRIMARY KEY,
   service_id BINARY(16) NOT NULL,
   language VARCHAR(20) NOT NULL,
@@ -21,5 +21,5 @@ CREATE TABLE message_message (
   positions JSON,
 
   UNIQUE ((SHA1(id)), message_id),
-  FOREIGN KEY (message_id) REFERENCES message (id)
+  FOREIGN KEY (message_id) REFERENCES translation (id)
 );
