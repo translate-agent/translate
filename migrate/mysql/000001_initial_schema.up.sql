@@ -12,7 +12,7 @@ CREATE TABLE translation (
   FOREIGN KEY (service_id) REFERENCES service (id)
 );
 
-CREATE TABLE message_message (
+CREATE TABLE message (
   message_id BINARY(16) NOT NULL,
   id TEXT NOT NULL,
   message TEXT NOT NULL,

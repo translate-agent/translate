@@ -62,12 +62,12 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 		return fmt.Errorf("repo: scan message: %w", err)
 	}
 
-	// Insert into message_message table,
-	// on duplicate message_message.id and message_message.message_id,
+	// Insert into message table,
+	// on duplicate message.id and message.message_id,
 	// update message's message, description and status values.
 	stmt, err := tx.PrepareContext(
 		ctx,
-		`INSERT INTO message_message
+		`INSERT INTO message
 	(message_id, id, message, description, positions, status)
 VALUES
 	(UUID_TO_BIN(?), ?, ?, ?, ?, ?)
@@ -78,7 +78,7 @@ ON DUPLICATE KEY UPDATE
 	status = VALUES(status)`,
 	)
 	if err != nil {
-		return fmt.Errorf("repo: prepare stmt to insert message_message: %w", err)
+		return fmt.Errorf("repo: prepare stmt to insert message: %w", err)
 	}
 	defer stmt.Close()
 
@@ -93,7 +93,7 @@ ON DUPLICATE KEY UPDATE
 			m.Status,
 		)
 		if err != nil {
-			return fmt.Errorf("repo: insert message_message: %w", err)
+			return fmt.Errorf("repo: insert message: %w", err)
 		}
 	}
 
@@ -108,7 +108,7 @@ func (r *Repo) LoadTranslation(ctx context.Context, serviceID uuid.UUID, opts re
 ) (model.TranslationSlice, error) {
 	rows, err := sq.
 		Select("mm.id, mm.message, mm.description, mm.positions, mm.status, m.language, m.original").
-		From("message_message mm").
+		From("message mm").
 		Join("translation m ON m.id = mm.message_id").
 		Where("m.service_id = UUID_TO_BIN(?)", serviceID).
 		Where(eq("m.language", langToStringSlice(opts.FilterLanguages))).
