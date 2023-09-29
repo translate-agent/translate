@@ -599,7 +599,7 @@ func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.T
 
 	messages := rand.ModelTranslation(3, nil)
 
-	data, err := server.MessagesToData(schema, messages)
+	data, err := server.TranslationToData(schema, messages)
 	require.NoError(t, err, "convert rand messages to serialized data")
 
 	return data, messages.Language

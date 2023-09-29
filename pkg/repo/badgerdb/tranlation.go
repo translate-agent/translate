@@ -13,7 +13,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-const messagesPrefix = "messages:"
+const messagesPrefix = "translation:"
 
 // messagesKey converts a serviceID and language to a BadgerDB key with prefix.
 func messagesKey(serviceID uuid.UUID, language language.Tag) []byte {
@@ -76,25 +76,25 @@ func (r *Repo) LoadTranslation(ctx context.Context, serviceID uuid.UUID, opts re
 
 // loadMessagesByLang returns messages for service based on provided languages.
 func (r *Repo) loadMessagesByLang(serviceID uuid.UUID, languages []language.Tag,
-) ([]model.Translation, error) {
-	messages := make([]model.Translation, 0, len(languages))
+) (model.TranslationSlice, error) {
+	translations := make([]model.Translation, 0, len(languages))
 
 	if err := r.db.View(func(txn *badger.Txn) error {
 		for _, lang := range languages {
-			var msgs model.Translation
+			var translation model.Translation
 
 			item, txErr := txn.Get(messagesKey(serviceID, lang))
 			switch {
 			default:
-				if valErr := getValue(item, &msgs); valErr != nil {
-					return fmt.Errorf("get messages by language '%s': %w", lang, valErr)
+				if valErr := getValue(item, &translation); valErr != nil {
+					return fmt.Errorf("get translations by language '%s': %w", lang, valErr)
 				}
 
-				messages = append(messages, msgs)
+				translations = append(translations, translation)
 			case errors.Is(txErr, badger.ErrKeyNotFound):
-				return nil // Empty messages.messages for this language (Not an error)
+				return nil // Empty translations.translations for this language (Not an error)
 			case txErr != nil:
-				return fmt.Errorf("transaction: get messages by language '%s': %w", lang, txErr)
+				return fmt.Errorf("transaction: get translations by language '%s': %w", lang, txErr)
 			}
 		}
 
@@ -103,27 +103,27 @@ func (r *Repo) loadMessagesByLang(serviceID uuid.UUID, languages []language.Tag,
 		return nil, fmt.Errorf("repo: db view: %w", err)
 	}
 
-	return messages, nil
+	return translations, nil
 }
 
 // loadMessages returns all messages for service.
-func (r *Repo) loadMessages(serviceID uuid.UUID) ([]model.Translation, error) {
+func (r *Repo) loadMessages(serviceID uuid.UUID) (model.TranslationSlice, error) {
 	keyPrefix := []byte(messagesPrefix + serviceID.String())
 
-	var messages []model.Translation
+	var translations []model.Translation
 
 	if err := r.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 
 		for it.Seek(keyPrefix); it.ValidForPrefix(keyPrefix); it.Next() {
-			msgs := model.Translation{}
+			translation := model.Translation{}
 
-			if err := getValue(it.Item(), &msgs); err != nil {
+			if err := getValue(it.Item(), &translation); err != nil {
 				return fmt.Errorf("transaction: get value: %w", err)
 			}
 
-			messages = append(messages, msgs)
+			translations = append(translations, translation)
 		}
 
 		return nil
@@ -131,5 +131,5 @@ func (r *Repo) loadMessages(serviceID uuid.UUID) ([]model.Translation, error) {
 		return nil, fmt.Errorf("repo: db view: %w", err)
 	}
 
-	return messages, nil
+	return translations, nil
 }

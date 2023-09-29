@@ -115,7 +115,7 @@ func Test_FromXliff12(t *testing.T) {
 				actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
 			}
 
-			testutil.EqualMessages(t, tt.expected, &actual)
+			testutil.EqualTranslations(t, tt.expected, &actual)
 		})
 	}
 }
@@ -161,7 +161,7 @@ func Test_TransformXLIFF12(t *testing.T) {
 		parsed, err := FromXliff12(serialized, expected.Original)
 		require.NoError(t, err)
 
-		testutil.EqualMessages(t, expected, &parsed)
+		testutil.EqualTranslations(t, expected, &parsed)
 
 		return true
 	}

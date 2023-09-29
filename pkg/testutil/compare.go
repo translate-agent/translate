@@ -7,7 +7,7 @@ import (
 	"go.expect.digital/translate/pkg/model"
 )
 
-func EqualMessages(t *testing.T, expected, actual *model.Translation) {
+func EqualTranslations(t *testing.T, expected, actual *model.Translation) {
 	t.Helper()
 
 	if expected == nil {

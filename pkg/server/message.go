@@ -17,8 +17,8 @@ import (
 // ----------------------CreateTranslation-------------------------------
 
 type createTranslationParams struct {
-	messages  *model.Translation
-	serviceID uuid.UUID
+	translation *model.Translation
+	serviceID   uuid.UUID
 }
 
 func parseCreateTranslationRequestParams(req *translatev1.CreateTranslationRequest) (*createTranslationParams, error) {
@@ -31,8 +31,8 @@ func parseCreateTranslationRequestParams(req *translatev1.CreateTranslationReque
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	if p.messages, err = messagesFromProto(req.Translations); err != nil {
-		return nil, fmt.Errorf("parse messages: %w", err)
+	if p.translation, err = translationFromProto(req.Translation); err != nil {
+		return nil, fmt.Errorf("parse translation: %w", err)
 	}
 
 	return p, nil
@@ -43,12 +43,12 @@ func (c *createTranslationParams) validate() error {
 		return errors.New("'service_id' is required")
 	}
 
-	if c.messages == nil {
-		return errors.New("'messages' is required")
+	if c.translation == nil {
+		return errors.New("'translation' is required")
 	}
 
-	if c.messages.Language == language.Und {
-		return fmt.Errorf("invalid messages: %w", errors.New("'language' is required"))
+	if c.translation.Language == language.Und {
+		return fmt.Errorf("invalid translation: %w", errors.New("'language' is required"))
 	}
 
 	return nil
@@ -67,33 +67,33 @@ func (t *TranslateServiceServer) CreateTranslation(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	msgs, err := t.repo.LoadTranslation(ctx, params.serviceID,
-		repo.LoadTranslationOpts{FilterLanguages: []language.Tag{params.messages.Language}})
+	translation, err := t.repo.LoadTranslation(ctx, params.serviceID,
+		repo.LoadTranslationOpts{FilterLanguages: []language.Tag{params.translation.Language}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if len(msgs) > 0 {
-		return nil, status.Errorf(codes.AlreadyExists, "messages already exist for language: '%s'", params.messages.Language)
+	if len(translation) > 0 {
+		return nil, status.Errorf(codes.AlreadyExists, "translation already exist for language: '%s'", params.translation.Language)
 	}
 
-	// Translate messages when messages are not original and original language is known.
-	if !params.messages.Original {
-		// Retrieve language from original messages.
+	// Translate translation when translation are not original and original language is known.
+	if !params.translation.Original {
+		// Retrieve language from original translation.
 		var originalLanguage *language.Tag
 		// TODO: to improve performance should be replaced with CheckMessagesExist db function.
-		msgs, err := t.repo.LoadTranslation(ctx, params.serviceID, repo.LoadTranslationOpts{})
+		loadTranslation, err := t.repo.LoadTranslation(ctx, params.serviceID, repo.LoadTranslationOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
-		for _, v := range msgs {
+		for _, v := range loadTranslation {
 			if v.Original {
 				originalLanguage = &v.Language
 
-				// if incoming messages are empty populate with original messages.
-				if params.messages.Messages == nil {
-					params.messages.Messages = v.Messages
+				// if incoming translation are empty populate with original translation.
+				if params.translation.Messages == nil {
+					params.translation.Messages = v.Messages
 				}
 
 				break
@@ -101,42 +101,42 @@ func (t *TranslateServiceServer) CreateTranslation(
 		}
 
 		if originalLanguage != nil {
-			// Translate messages -
-			// untranslated text in incoming messages will be translated from original to target language.
-			targetLanguage := params.messages.Language
-			params.messages.Language = *originalLanguage
-			params.messages, err = t.translator.Translate(ctx, params.messages, targetLanguage)
+			// Translate translation -
+			// untranslated text in incoming translation will be translated from original to target language.
+			targetLanguage := params.translation.Language
+			params.translation.Language = *originalLanguage
+			params.translation, err = t.translator.Translate(ctx, params.translation, targetLanguage)
 			if err != nil {
 				return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
 			}
 		}
 	}
 
-	if err := t.repo.SaveTranslation(ctx, params.serviceID, params.messages); errors.Is(err, repo.ErrNotFound) {
+	if err := t.repo.SaveTranslation(ctx, params.serviceID, params.translation); errors.Is(err, repo.ErrNotFound) {
 		return nil, status.Errorf(codes.NotFound, "service not found")
 	} else if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	return messagesToProto(params.messages), nil
+	return translationToProto(params.translation), nil
 }
 
-// ----------------------ListTranslation-------------------------------
+// ----------------------ListTranslations-------------------------------
 
-type listTranslationParams struct {
+type listTranslationsParams struct {
 	serviceID uuid.UUID
 }
 
-func parseListTranslationRequestParams(req *translatev1.ListTranslationRequest) (*listTranslationParams, error) {
+func parseListTranslationsRequestParams(req *translatev1.ListTranslationsRequest) (*listTranslationsParams, error) {
 	serviceID, err := uuidFromProto(req.GetServiceId())
 	if err != nil {
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	return &listTranslationParams{serviceID: serviceID}, nil
+	return &listTranslationsParams{serviceID: serviceID}, nil
 }
 
-func (l *listTranslationParams) validate() error {
+func (l *listTranslationsParams) validate() error {
 	if l.serviceID == uuid.Nil {
 		return errors.New("'service_id' is required")
 	}
@@ -144,11 +144,11 @@ func (l *listTranslationParams) validate() error {
 	return nil
 }
 
-func (t *TranslateServiceServer) ListTranslation(
+func (t *TranslateServiceServer) ListTranslations(
 	ctx context.Context,
-	req *translatev1.ListTranslationRequest,
+	req *translatev1.ListTranslationsRequest,
 ) (*translatev1.ListTranslationsResponse, error) {
-	params, err := parseListTranslationRequestParams(req)
+	params, err := parseListTranslationsRequestParams(req)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
@@ -168,7 +168,7 @@ func (t *TranslateServiceServer) ListTranslation(
 // ----------------------UpdateTranslation-------------------------------
 
 type updateTranslationParams struct {
-	messages             *model.Translation
+	translation          *model.Translation
 	serviceID            uuid.UUID
 	populateTranslations bool
 }
@@ -183,8 +183,8 @@ func parseUpdateTranslationRequestParams(req *translatev1.UpdateTranslationReque
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	if params.messages, err = messagesFromProto(req.Translations); err != nil {
-		return nil, fmt.Errorf("parse messages: %w", err)
+	if params.translation, err = translationFromProto(req.Translation); err != nil {
+		return nil, fmt.Errorf("parse translation: %w", err)
 	}
 
 	return &params, nil
@@ -195,11 +195,11 @@ func (u *updateTranslationParams) validate() error {
 		return errors.New("'service_id' is required")
 	}
 
-	if u.messages == nil {
-		return errors.New("'messages' is nil")
+	if u.translation == nil {
+		return errors.New("'translation' is nil")
 	}
 
-	if u.messages.Language == language.Und {
+	if u.translation.Language == language.Und {
 		return errors.New("'language' is required")
 	}
 
@@ -224,21 +224,21 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if !all.HasLanguage(params.messages.Language) {
-		return nil, status.Errorf(codes.NotFound, "no messages for language: '%s'", params.messages.Language)
+	if !all.HasLanguage(params.translation.Language) {
+		return nil, status.Errorf(codes.NotFound, "no translation for language: '%s'", params.translation.Language)
 	}
 
 	// Case for when not original, or uploading original for the first time.
-	updatedTranslations := model.TranslationSlice{*params.messages}
+	updatedTranslations := model.TranslationSlice{*params.translation}
 
-	if origIdx := all.OriginalIndex(); params.messages.Original && origIdx != -1 {
+	if origIdx := all.OriginalIndex(); params.translation.Original && origIdx != -1 {
 		oldOriginal := all[origIdx]
 
-		// Mark new or altered original messages as untranslated for all translations.
-		all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(params.messages))
-		// Replace original messages with new ones.
-		all.Replace(*params.messages)
-		// Add missing messages for all translations.
+		// Mark new or altered original translation as untranslated for all translations.
+		all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(params.translation))
+		// Replace original translation with new ones.
+		all.Replace(*params.translation)
+		// Add missing translation for all translations.
 		if params.populateTranslations {
 			all.PopulateTranslations()
 		}
@@ -251,7 +251,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 
 	}
 
-	// Update messages for all translations
+	// Update translation for all translations
 	for i := range updatedTranslations {
 		err = t.repo.SaveTranslation(ctx, params.serviceID, &all[i])
 		if err != nil {
@@ -259,12 +259,12 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		}
 	}
 
-	return messagesToProto(params.messages), nil
+	return translationToProto(params.translation), nil
 }
 
 // helpers
 
-// fuzzyTranslate fuzzy translates any untranslated messages,
+// fuzzyTranslate fuzzy translates any untranslated translation,
 // returns messagesSlice containing refreshed translations.
 //
 // TODO: This logic should be moved to fuzzy pkg.
@@ -274,7 +274,7 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 ) error {
 	origIdx := all.OriginalIndex()
 	if origIdx == -1 {
-		return errors.New("original messages not found")
+		return errors.New("original translation not found")
 	}
 
 	origMsgLookup := make(map[string]string, len(all[origIdx].Messages))
@@ -283,15 +283,15 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 	}
 
 	for i := range all {
-		// Skip original messages
+		// Skip original translation
 		if i == origIdx {
 			continue
 		}
 
-		// Create a map to store pointers to untranslated messages
+		// Create a map to store pointers to untranslated translation
 		untranslatedMessagesLookup := make(map[string]*model.Message)
 
-		// Iterate over the messages and add any untranslated messages to the untranslated messages lookup
+		// Iterate over the translation and add any untranslated translation to the untranslated translation lookup
 		for j := range all[i].Messages {
 			if all[i].Messages[j].Status == model.MessageStatusUntranslated {
 				all[i].Messages[j].Message = origMsgLookup[all[i].Messages[j].ID]
@@ -299,7 +299,7 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 			}
 		}
 
-		// Create a new messages to store the messages that need to be translated
+		// Create a new translation to store the translation that need to be translated
 		toBeTranslated := &model.Translation{
 			Language: all[origIdx].Language,
 			Messages: make([]model.Message, 0, len(untranslatedMessagesLookup)),
@@ -309,15 +309,15 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 			toBeTranslated.Messages = append(toBeTranslated.Messages, *msg)
 		}
 
-		// Translate messages -
-		// untranslated messages in toBeTranslated will be translated from original to target language.
+		// Translate translation -
+		// untranslated translation in toBeTranslated will be translated from original to target language.
 		targetLanguage := all[i].Language
 		translated, err := t.translator.Translate(ctx, toBeTranslated, targetLanguage)
 		if err != nil {
-			return fmt.Errorf("translator translate messages: %w", err)
+			return fmt.Errorf("translator translate translation: %w", err)
 		}
 
-		// Overwrite untranslated messages with translated messages
+		// Overwrite untranslated translation with translated translation
 		for _, translatedMessage := range translated.Messages {
 			if untranslatedMessage, ok := untranslatedMessagesLookup[translatedMessage.ID]; ok {
 				*untranslatedMessage = translatedMessage

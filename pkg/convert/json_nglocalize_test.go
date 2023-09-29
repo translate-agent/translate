@@ -104,7 +104,7 @@ func Test_FromNgLocalize(t *testing.T) {
 
 			require.NoError(t, err)
 
-			testutil.EqualMessages(t, &tt.expected, &actual)
+			testutil.EqualTranslations(t, &tt.expected, &actual)
 		})
 	}
 }

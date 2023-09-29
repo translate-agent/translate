@@ -75,7 +75,7 @@ func Test_SaveMessages(t *testing.T) {
 					repo.LoadTranslationOpts{FilterLanguages: []language.Tag{tt.messages.Language}})
 				require.NoError(t, err, "Load saved messages")
 
-				testutil.EqualMessages(t, tt.messages, &actualMessages[0])
+				testutil.EqualTranslations(t, tt.messages, &actualMessages[0])
 			})
 		}
 	})
@@ -111,7 +111,7 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 				repo.LoadTranslationOpts{FilterLanguages: []language.Tag{m.Language}})
 			require.NoError(t, err, "Load saved messages")
 
-			testutil.EqualMessages(t, m, &actualMessages[0])
+			testutil.EqualTranslations(t, m, &actualMessages[0])
 		}
 	})
 }
@@ -147,7 +147,7 @@ func Test_SaveMessagesUpdate(t *testing.T) {
 			repo.LoadTranslationOpts{FilterLanguages: []language.Tag{expectedMessages.Language}})
 		require.NoError(t, err, "Load updated messages")
 
-		testutil.EqualMessages(t, expectedMessages, &actualMessages[0])
+		testutil.EqualTranslations(t, expectedMessages, &actualMessages[0])
 	})
 }
 

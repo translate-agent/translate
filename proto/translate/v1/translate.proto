@@ -67,10 +67,10 @@ message DownloadTranslationFileResponse {
 
 message CreateTranslationRequest {
   string service_id = 1;
-  Translation translations = 2;
+  Translation translation = 2;
 }
 
-message ListTranslationRequest {
+message ListTranslationsRequest {
   string service_id = 1;
 }
 
@@ -81,7 +81,7 @@ message ListTranslationsResponse {
 message UpdateTranslationRequest {
   string service_id = 1;
   bool populate_translations = 2;
-  Translation translations = 3;
+  Translation translation = 3;
 }
 
 // -----------------Service requests/responses-----------------------
@@ -144,19 +144,19 @@ service TranslateService {
 
   rpc CreateTranslation(CreateTranslationRequest) returns (Translation) {
     option (google.api.http) = {
-      post: "/v1/services/{service_id}/translations",
-      body: "translations"
+      post: "/v1/services/{service_id}/translation",
+      body: "translation"
     };
   }
 
   rpc UpdateTranslation(UpdateTranslationRequest) returns (Translation) {
     option (google.api.http) = {
-      put: "/v1/services/{service_id}/translations/{translations.language}"
-      body: "translations"
+      put: "/v1/services/{service_id}/translations/{translation.language}"
+      body: "translation"
     };
   }
 
-  rpc ListTranslation(ListTranslationRequest) returns (ListTranslationsResponse) {
+  rpc ListTranslations(ListTranslationsRequest) returns (ListTranslationsResponse) {
     option (google.api.http) = {get: "/v1/services/{service_id}/translations"};
   }
 

@@ -1329,7 +1329,7 @@ when * {Il y a {$count} pommes \\.}
 			}
 
 			require.NoError(t, err)
-			testutil.EqualMessages(t, &tt.expected, &result)
+			testutil.EqualTranslations(t, &tt.expected, &result)
 		})
 	}
 }
@@ -1341,14 +1341,14 @@ func Test_TransformMessage(t *testing.T) {
 
 	lang := language.MustParse(gofakeit.LanguageBCP())
 
-	msg := model.Translation{
+	translation := model.Translation{
 		Language: lang,
 		Messages: make([]model.Message, 0, n),
 		Original: false,
 	}
 
 	for i := 0; i < n; i++ {
-		msg.Messages = append(msg.Messages, model.Message{
+		translation.Messages = append(translation.Messages, model.Message{
 			ID:          gofakeit.SentenceSimple(),
 			Description: gofakeit.SentenceSimple(),
 			Status:      model.MessageStatusUntranslated,
@@ -1356,11 +1356,11 @@ func Test_TransformMessage(t *testing.T) {
 		)
 	}
 
-	msgPot, err := ToPot(msg)
+	msgPot, err := ToPot(translation)
 	require.NoError(t, err)
 
-	restoredMsg, err := FromPot(msgPot, msg.Original)
+	restoredMsg, err := FromPot(msgPot, translation.Original)
 	require.NoError(t, err)
 
-	assert.Equal(t, msg, restoredMsg)
+	assert.Equal(t, translation, restoredMsg)
 }

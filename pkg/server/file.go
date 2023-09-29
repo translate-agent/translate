@@ -67,28 +67,28 @@ func (u *uploadParams) validate() error {
 	return nil
 }
 
-// getLanguage returns the language tag for an upload based on the upload parameters and messages.
-// It returns an error if no language is set or if the languages in the upload parameters and messages are mismatched.
-func getLanguage(reqParams *uploadParams, messages *model.Translation) (language.Tag, error) {
+// getLanguage returns the language tag for an upload based on the upload parameters and translation.
+// It returns an error if no language is set or if the languages in the upload parameters and translation are mismatched.
+func getLanguage(reqParams *uploadParams, translation *model.Translation) (language.Tag, error) {
 	und := language.Und
 
-	// Scenario 1: Both messages and params have undefined language
-	if reqParams.languageTag == und && messages.Language == und {
+	// Scenario 1: Both translation and params have undefined language
+	if reqParams.languageTag == und && translation.Language == und {
 		return und, errors.New("no language is set")
 	}
-	// Scenario 2: The languages in messages and params are different
-	if reqParams.languageTag != und && messages.Language != und && messages.Language != reqParams.languageTag {
+	// Scenario 2: The languages in translation and params are different
+	if reqParams.languageTag != und && translation.Language != und && translation.Language != reqParams.languageTag {
 		return und, errors.New("languages are mismatched")
 	}
-	// Scenario 3: The language in messages is undefined but the language in params is defined
-	if messages.Language == und {
+	// Scenario 3: The language in translation is undefined but the language in params is defined
+	if translation.Language == und {
 		return reqParams.languageTag, nil
 	}
 
 	// Scenario 4 and 5:
-	// The language in messages is defined but the language in params is undefined
-	// The languages in messages and params are the same
-	return messages.Language, nil
+	// The language in translation is defined but the language in params is undefined
+	// The languages in translation and params are the same
+	return translation.Language, nil
 }
 
 func (t *TranslateServiceServer) UploadTranslationFile(
@@ -104,7 +104,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := MessagesFromData(params)
+	messages, err := TranslationFromData(params)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
@@ -117,7 +117,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	// Case for when not original, or uploading original for the first time.
 	updatedMessages := model.TranslationSlice{*messages}
 
-	// When updating original messages, changes might affect translations - transform and update all translations.
+	// When updating original translation, changes might affect translations - transform and update all translations.
 	if messages.Original {
 		all, err := t.repo.LoadTranslation(ctx, params.serviceID, repo.LoadTranslationOpts{})
 		if err != nil {
@@ -127,11 +127,11 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		if origIdx := all.OriginalIndex(); origIdx != -1 {
 			oldOriginal := all[origIdx]
 
-			// Mark new or altered messages as untranslated.
+			// Mark new or altered translation as untranslated.
 			all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(messages))
-			// Replace original messages with new ones.
+			// Replace original translation with new ones.
 			all.Replace(*messages)
-			// Add missing messages for all translations.
+			// Add missing translation for all translations.
 			if params.populateTranslations {
 				all.PopulateTranslations()
 			}
@@ -226,7 +226,7 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		messages = append(messages, model.Translation{Language: params.languageTag})
 	}
 
-	data, err := MessagesToData(params.schema, &messages[0])
+	data, err := TranslationToData(params.schema, &messages[0])
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}

@@ -155,12 +155,12 @@ func modelTranslation(msgCount uint, msgOpts ...ModelMessageOption) *model.Trans
 // ModelTranslation generates a random model.Translation
 // with specific messages.message count, message and messages options.
 func ModelTranslation(msgCount uint, msgOpts []ModelMessageOption, msgsOpts ...ModelMessagesOption) *model.Translation {
-	// msgsF wraps modelTranslation() for mdl function.
-	msgsF := func() *model.Translation {
+	// translationF wraps modelTranslation() for mdl function.
+	translationF := func() *model.Translation {
 		return modelTranslation(msgCount, msgOpts...)
 	}
 
-	return mdl(msgsF, msgsOpts...)
+	return mdl(translationF, msgsOpts...)
 }
 
 // ModelTranslationSlice generates a slice of random model.Translation with the message and messages options.
@@ -170,12 +170,12 @@ func ModelTranslationSlice(
 	msgOpts []ModelMessageOption,
 	msgsOpts ...ModelMessagesOption,
 ) []*model.Translation {
-	// msgsF wraps ModelTranslation() for slice function.
-	msgsF := func(opts ...ModelMessagesOption) *model.Translation {
+	// translationF wraps ModelTranslation() for slice function.
+	translationF := func(opts ...ModelMessagesOption) *model.Translation {
 		return ModelTranslation(msgCount, msgOpts, opts...)
 	}
 
-	return slice(n, msgsF, msgsOpts...)
+	return slice(n, translationF, msgsOpts...)
 }
 
 // ------------------Messages Opts------------------
@@ -184,22 +184,22 @@ type ModelMessagesOption func(*model.Translation)
 
 // WithLanguage sets the language of the model.Translation.
 func WithLanguage(lang language.Tag) ModelMessagesOption {
-	return func(m *model.Translation) {
-		m.Language = lang
+	return func(t *model.Translation) {
+		t.Language = lang
 	}
 }
 
 // WithOriginal sets the original flag of the model.Translation.
 func WithOriginal(original bool) ModelMessagesOption {
-	return func(m *model.Translation) {
-		m.Original = original
+	return func(t *model.Translation) {
+		t.Original = original
 	}
 }
 
-func WithSameIDs(m *model.Translation) ModelMessagesOption {
-	return func(m2 *model.Translation) {
-		for i := range m2.Messages {
-			m2.Messages[i].ID = m.Messages[i].ID
+func WithSameIDs(t *model.Translation) ModelMessagesOption {
+	return func(t2 *model.Translation) {
+		for i := range t2.Messages {
+			t2.Messages[i].ID = t.Messages[i].ID
 		}
 	}
 }

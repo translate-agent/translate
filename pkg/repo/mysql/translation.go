@@ -154,8 +154,8 @@ func (r *Repo) LoadTranslation(ctx context.Context, serviceID uuid.UUID, opts re
 	}
 
 	allMessages := make([]model.Translation, 0, len(translationsLookup))
-	for _, msgs := range translationsLookup {
-		allMessages = append(allMessages, *msgs)
+	for _, translation := range translationsLookup {
+		allMessages = append(allMessages, *translation)
 	}
 
 	return allMessages, nil

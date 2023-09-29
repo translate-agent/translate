@@ -106,7 +106,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			testutil.EqualMessages(t, &tt.expected, &actual)
+			testutil.EqualTranslations(t, &tt.expected, &actual)
 		})
 	}
 }

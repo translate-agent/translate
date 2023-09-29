@@ -64,7 +64,7 @@ func translationToPipeline(t model.Translation) pipeline.Messages {
 
 // translationFromPipeline converts a pipeline.Messages structure into a model.Translation structure.
 func translationFromPipeline(m pipeline.Messages, original bool) model.Translation {
-	msgs := model.Translation{
+	translation := model.Translation{
 		Language: m.Language,
 		Messages: make([]model.Message, 0, len(m.Messages)),
 		Original: original,
@@ -96,8 +96,8 @@ func translationFromPipeline(m pipeline.Messages, original bool) model.Translati
 			msg.Positions = []string{value.Position}
 		}
 
-		msgs.Messages = append(msgs.Messages, msg)
+		translation.Messages = append(translation.Messages, msg)
 	}
 
-	return msgs
+	return translation
 }

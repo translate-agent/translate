@@ -173,8 +173,8 @@ func messageSliceFromProto(m []*translatev1.Message) ([]model.Message, error) {
 
 // ----------------------Messages----------------------
 
-// messagesToProto converts *model.Translation to *translatev1.Translation.
-func messagesToProto(t *model.Translation) *translatev1.Translation {
+// translationToProto converts *model.Translation to *translatev1.Translation.
+func translationToProto(t *model.Translation) *translatev1.Translation {
 	if t == nil {
 		return nil
 	}
@@ -186,29 +186,29 @@ func messagesToProto(t *model.Translation) *translatev1.Translation {
 	}
 }
 
-// messagesFromProto converts *translatev1.Translation to *model.Translation.
-func messagesFromProto(t *translatev1.Translation) (*model.Translation, error) {
+// translationFromProto converts *translatev1.Translation to *model.Translation.
+func translationFromProto(t *translatev1.Translation) (*model.Translation, error) {
 	if t == nil {
 		return nil, nil
 	}
 
 	var (
-		err  error
-		msgs = &model.Translation{Original: t.Original}
+		err         error
+		translation = &model.Translation{Original: t.Original}
 	)
 
-	if msgs.Language, err = languageFromProto(t.Language); err != nil {
+	if translation.Language, err = languageFromProto(t.Language); err != nil {
 		return nil, fmt.Errorf("transform language tag: %w", err)
 	}
 
-	if msgs.Messages, err = messageSliceFromProto(t.Messages); err != nil {
-		return nil, fmt.Errorf("transform messages: %w", err)
+	if translation.Messages, err = messageSliceFromProto(t.Messages); err != nil {
+		return nil, fmt.Errorf("transform translation: %w", err)
 	}
 
-	return msgs, nil
+	return translation, nil
 }
 
 // messagesSliceToProto converts []model.Translation to []*translatev1.Translation.
 func messagesSliceToProto(m []model.Translation) []*translatev1.Translation {
-	return sliceToProto(m, messagesToProto)
+	return sliceToProto(m, translationToProto)
 }

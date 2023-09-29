@@ -132,5 +132,5 @@ func TestFromGo(t *testing.T) {
 	actual, err := FromGo(input, modelMsg.Original)
 	require.NoError(t, err)
 
-	testutil.EqualMessages(t, &modelMsg, &actual)
+	testutil.EqualTranslations(t, &modelMsg, &actual)
 }
