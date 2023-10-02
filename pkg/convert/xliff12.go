@@ -31,10 +31,10 @@ type bodyElement struct {
 }
 
 type transUnit struct {
-	ID            string         `xml:"id,attr"`          // messages.messages[n].ID
-	Source        string         `xml:"source"`           // messages.messages[n].Message (if no target language is set)
-	Target        string         `xml:"target,omitempty"` // messages.messages[n].Message (if target language is set)
-	Note          string         `xml:"note,omitempty"`   // messages.messages[n].Description
+	ID            string         `xml:"id,attr"`          // translation.messages[n].ID
+	Source        string         `xml:"source"`           // translation.messages[n].Message (if no target language is set)
+	Target        string         `xml:"target,omitempty"` // translation.messages[n].Message (if target language is set)
+	Note          string         `xml:"note,omitempty"`   // translation.messages[n].Description
 	ContextGroups []contextGroup `xml:"context-group,omitempty"`
 	// No unified standard about storing fuzzy values
 }
@@ -57,7 +57,7 @@ func FromXliff12(data []byte, original bool) (model.Translation, error) {
 		return model.Translation{}, fmt.Errorf("unmarshal xliff12: %w", err)
 	}
 
-	messages := model.Translation{
+	translation := model.Translation{
 		Language: xlf.File.TargetLanguage,
 		Original: xlf.File.TargetLanguage == language.Und,
 		Messages: make([]model.Message, 0, len(xlf.File.Body.TransUnits)),
@@ -66,8 +66,8 @@ func FromXliff12(data []byte, original bool) (model.Translation, error) {
 	getMessage := func(t transUnit) string { return t.Target }
 	status := model.MessageStatusUntranslated
 
-	if messages.Original {
-		messages.Language = xlf.File.SourceLanguage
+	if translation.Original {
+		translation.Language = xlf.File.SourceLanguage
 		getMessage = func(t transUnit) string { return t.Source }
 		status = model.MessageStatusTranslated
 	}
@@ -75,7 +75,7 @@ func FromXliff12(data []byte, original bool) (model.Translation, error) {
 	for _, unit := range xlf.File.Body.TransUnits {
 		message := getMessage(unit)
 
-		messages.Messages = append(messages.Messages, model.Message{
+		translation.Messages = append(translation.Messages, model.Message{
 			ID:          unit.ID,
 			Message:     convertToMessageFormatSingular(message),
 			Description: unit.Note,
@@ -84,22 +84,22 @@ func FromXliff12(data []byte, original bool) (model.Translation, error) {
 		})
 	}
 
-	return messages, nil
+	return translation, nil
 }
 
 // ToXliff12 converts a model.Translation struct into a byte slice in the XLIFF 1.2 format.
-func ToXliff12(messages model.Translation) ([]byte, error) {
+func ToXliff12(translation model.Translation) ([]byte, error) {
 	xlf := xliff12{
 		Version: "1.2",
 		File: xliff12File{
-			SourceLanguage: messages.Language,
+			SourceLanguage: translation.Language,
 			Body: bodyElement{
-				TransUnits: make([]transUnit, 0, len(messages.Messages)),
+				TransUnits: make([]transUnit, 0, len(translation.Messages)),
 			},
 		},
 	}
 
-	for _, msg := range messages.Messages {
+	for _, msg := range translation.Messages {
 		xlf.File.Body.TransUnits = append(xlf.File.Body.TransUnits, transUnit{
 			ID:            msg.ID,
 			Source:        removeEnclosingBrackets(msg.Message),

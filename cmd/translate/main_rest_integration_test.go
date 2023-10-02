@@ -544,7 +544,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 	require.NoError(t, err, "create test translation file")
 
 	tests := []struct {
-		messages     *translatev1.Translation
+		translation  *translatev1.Translation
 		name         string
 		serviceID    string
 		expectedCode int
@@ -552,13 +552,13 @@ func Test_CreateTranslation_REST(t *testing.T) {
 		{
 			name:         "Happy path, create messages",
 			serviceID:    service.Id,
-			messages:     randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
+			translation:  randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:      "Happy path, empty messages.messages",
+			name:      "Happy path, empty translation.messages",
 			serviceID: service.Id,
-			messages: &translatev1.Translation{
+			translation: &translatev1.Translation{
 				Language: langs[1].String(),
 			},
 			expectedCode: http.StatusOK,
@@ -566,7 +566,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 		{
 			name:         "Not found, service not found",
 			serviceID:    gofakeit.UUID(),
-			messages:     randTranslation(t, nil),
+			translation:  randTranslation(t, nil),
 			expectedCode: http.StatusNotFound,
 		},
 		{
@@ -575,9 +575,9 @@ func Test_CreateTranslation_REST(t *testing.T) {
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name:      "Bad request, messages.language not provided",
+			name:      "Bad request, translation.language not provided",
 			serviceID: service.Id,
-			messages: &translatev1.Translation{
+			translation: &translatev1.Translation{
 				Language: "",
 			},
 			expectedCode: http.StatusBadRequest,
@@ -585,7 +585,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 		{
 			name:      "Status conflict, service already has messages for specified language",
 			serviceID: serviceWithMsgs.Id,
-			messages: &translatev1.Translation{
+			translation: &translatev1.Translation{
 				Language: uploadReq.Language,
 			},
 			expectedCode: http.StatusConflict,
@@ -595,7 +595,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			body, err := json.Marshal(tt.messages)
+			body, err := json.Marshal(tt.translation)
 			require.NoError(t, err, "marshal messages")
 
 			u := url.URL{
@@ -683,7 +683,7 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name:         "Invalid argument und messages.language",
+			name:         "Invalid argument und translation.language",
 			request:      invalidArgumentUndMessagesLanguageReq,
 			expectedCode: http.StatusBadRequest,
 		},

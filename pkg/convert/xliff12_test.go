@@ -128,10 +128,10 @@ func Test_ToXliff12(t *testing.T) {
 		testutilrand.WithStatus(model.MessageStatusUntranslated),
 	}
 
-	messages := testutilrand.ModelTranslation(4, msgOpts, testutilrand.WithOriginal(true))
-	expected := randXliff12(messages)
+	translation := testutilrand.ModelTranslation(4, msgOpts, testutilrand.WithOriginal(true))
+	expected := randXliff12(translation)
 
-	actual, err := ToXliff12(*messages)
+	actual, err := ToXliff12(*translation)
 	require.NoError(t, err)
 
 	assertEqualXml(t, expected, actual)

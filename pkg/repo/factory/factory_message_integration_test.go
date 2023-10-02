@@ -38,7 +38,7 @@ func Test_SaveMessages(t *testing.T) {
 		service := prepareService(testCtx, t, repository)
 
 		tests := []struct {
-			messages    *model.Translation
+			translation    *model.Translation
 			expectedErr error
 			name        string
 			serviceID   uuid.UUID
@@ -46,13 +46,13 @@ func Test_SaveMessages(t *testing.T) {
 			{
 				name:        "Happy path",
 				serviceID:   service.ID,
-				messages:    rand.ModelTranslation(3, nil),
+				translation:    rand.ModelTranslation(3, nil),
 				expectedErr: nil,
 			},
 			{
 				name:        "Missing service",
 				serviceID:   uuid.New(),
-				messages:    rand.ModelTranslation(3, nil),
+				translation:    rand.ModelTranslation(3, nil),
 				expectedErr: repo.ErrNotFound,
 			},
 		}
@@ -60,7 +60,7 @@ func Test_SaveMessages(t *testing.T) {
 		for _, tt := range tests {
 			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				err := repository.SaveTranslation(ctx, tt.serviceID, tt.messages)
+				err := repository.SaveTranslation(ctx, tt.serviceID, tt.translation)
 
 				if tt.expectedErr != nil {
 					assert.ErrorIs(t, err, tt.expectedErr)
@@ -72,10 +72,10 @@ func Test_SaveMessages(t *testing.T) {
 				// Assure that the messages were saved correctly.
 
 				actualMessages, err := repository.LoadTranslation(ctx, tt.serviceID,
-					repo.LoadTranslationOpts{FilterLanguages: []language.Tag{tt.messages.Language}})
+					repo.LoadTranslationOpts{FilterLanguages: []language.Tag{tt.translation.Language}})
 				require.NoError(t, err, "Load saved messages")
 
-				testutil.EqualTranslations(t, tt.messages, &actualMessages[0])
+				testutil.EqualTranslations(t, tt.translation, &actualMessages[0])
 			})
 		}
 	})
@@ -92,21 +92,21 @@ func Test_SaveMessagesMultipleLangOneService(t *testing.T) {
 
 		// Create unique languages
 		languages := rand.Languages(3)
-		messages := make([]*model.Translation, len(languages))
+		translations := make([]*model.Translation, len(languages))
 
 		// Create messages for each language
 		for i, lang := range languages {
-			messages[i] = rand.ModelTranslation(3, nil, rand.WithLanguage(lang))
+			translations[i] = rand.ModelTranslation(3, nil, rand.WithLanguage(lang))
 		}
 
 		// Save messages
-		for _, m := range messages {
+		for _, m := range translations {
 			err := repository.SaveTranslation(testCtx, service.ID, m)
 			require.NoError(t, err, "Save messages")
 		}
 
 		// Assure that all messages are saved
-		for _, m := range messages {
+		for _, m := range translations {
 			actualMessages, err := repository.LoadTranslation(testCtx, service.ID,
 				repo.LoadTranslationOpts{FilterLanguages: []language.Tag{m.Language}})
 			require.NoError(t, err, "Load saved messages")
@@ -167,9 +167,9 @@ func Test_LoadMessages(t *testing.T) {
 
 		// Prepare
 		service := prepareService(testCtx, t, repository)
-		messages := rand.ModelTranslation(3, nil, rand.WithLanguage(messagesLang))
+		translations := rand.ModelTranslation(3, nil, rand.WithLanguage(messagesLang))
 
-		err := repository.SaveTranslation(testCtx, service.ID, messages)
+		err := repository.SaveTranslation(testCtx, service.ID, translations)
 		require.NoError(t, err, "Prepare test messages")
 
 		tests := []struct {
@@ -179,13 +179,13 @@ func Test_LoadMessages(t *testing.T) {
 			serviceID uuid.UUID
 		}{
 			{
-				language:  messages.Language,
+				language:  translations.Language,
 				name:      "Happy Path",
-				expected:  []model.Translation{*messages},
+				expected:  []model.Translation{*translations},
 				serviceID: service.ID,
 			},
 			{
-				language:  messages.Language,
+				language:  translations.Language,
 				name:      "No messages with service",
 				expected:  []model.Translation{},
 				serviceID: uuid.New(),
@@ -221,13 +221,13 @@ func Test_LoadAllMessagesForService(t *testing.T) {
 
 		service := prepareService(testCtx, t, repository)
 		languages := rand.Languages(gofakeit.UintRange(1, 5))
-		messages := make([]model.Translation, 0, len(languages))
+		translations := make([]model.Translation, 0, len(languages))
 
 		for _, lang := range languages {
 			msgs := rand.ModelTranslation(1, nil, rand.WithLanguage(lang))
 			err := repository.SaveTranslation(testCtx, service.ID, msgs)
 			require.NoError(t, err, "Prepare test messages")
-			messages = append(messages, *msgs)
+			translations = append(translations, *msgs)
 		}
 
 		tests := []struct {
@@ -238,12 +238,12 @@ func Test_LoadAllMessagesForService(t *testing.T) {
 		}{
 			{
 				name:         "Happy Path, all service messages",
-				expectedMsgs: messages,
+				expectedMsgs: translations,
 				serviceID:    service.ID,
 			},
 			{
 				name:         "Happy Path, filter by existing languages",
-				expectedMsgs: messages,
+				expectedMsgs: translations,
 				serviceID:    service.ID,
 				languages:    languages,
 			},

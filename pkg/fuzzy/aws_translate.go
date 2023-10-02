@@ -102,24 +102,24 @@ func NewAWSTranslate(ctx context.Context, opts ...AWSTranslateOption) (*AWSTrans
 // --------------------Methods--------------------
 
 func (a *AWSTranslate) Translate(ctx context.Context,
-	messages *model.Translation,
+	translation *model.Translation,
 	targetLanguage language.Tag,
 ) (*model.Translation, error) {
-	if messages == nil {
+	if translation == nil {
 		return nil, nil
 	}
 
-	if len(messages.Messages) == 0 {
-		return &model.Translation{Language: messages.Language, Original: messages.Original}, nil
+	if len(translation.Messages) == 0 {
+		return &model.Translation{Language: translation.Language, Original: translation.Original}, nil
 	}
 
 	translatedMessages := model.Translation{
 		Language: targetLanguage,
-		Original: messages.Original,
-		Messages: make([]model.Message, 0, len(messages.Messages)),
+		Original: translation.Original,
+		Messages: make([]model.Message, 0, len(translation.Messages)),
 	}
 
-	for _, m := range messages.Messages {
+	for _, m := range translation.Messages {
 		translateOutput, err := a.client.TranslateText(ctx,
 			&translate.TranslateTextInput{
 				// Amazon Translate supports text translation between the languages listed in the following table.
@@ -130,7 +130,7 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 				// List of supported languages - https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
 
 				TargetLanguageCode: awsLanguage(targetLanguage),
-				SourceLanguageCode: awsLanguage(messages.Language),
+				SourceLanguageCode: awsLanguage(translation.Language),
 				// Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
 				Text: ptr(m.Message),
 			})

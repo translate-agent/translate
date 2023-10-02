@@ -15,14 +15,14 @@ const mockTranslation = "{Translated}"
 
 type mockTranslator struct{}
 
-func (m *mockTranslator) Translate(ctx context.Context, messages *model.Translation, targetLanguage language.Tag) (*model.Translation, error) {
+func (m *mockTranslator) Translate(ctx context.Context, translation *model.Translation, targetLanguage language.Tag) (*model.Translation, error) {
 	newMessages := &model.Translation{
 		Language: targetLanguage,
-		Messages: make([]model.Message, 0, len(messages.Messages)),
-		Original: messages.Original,
+		Messages: make([]model.Message, 0, len(translation.Messages)),
+		Original: translation.Original,
 	}
 
-	newMessages.Messages = append(newMessages.Messages, messages.Messages...)
+	newMessages.Messages = append(newMessages.Messages, translation.Messages...)
 
 	for i := range newMessages.Messages {
 		newMessages.Messages[i].Message = mockTranslation

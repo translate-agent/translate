@@ -17,31 +17,31 @@ import (
 	testutilrand "go.expect.digital/translate/pkg/testutil/rand"
 )
 
-func randXliff2(messages *model.Translation) []byte {
+func randXliff2(translation *model.Translation) []byte {
 	b := new(bytes.Buffer)
 
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
 
-	if messages.Original {
+	if translation.Original {
 		fmt.Fprintf(
 			b,
 			"<xliff xmlns=\"urn:oasis:names:tc:xliff:document:2.0\" version=\"2.0\" srcLang=\"%s\" trgLang=\"und\">",
-			messages.Language)
+			translation.Language)
 	} else {
 		fmt.Fprintf(
 			b,
 			"<xliff xmlns=\"urn:oasis:names:tc:xliff:document:2.0\" version=\"2.0\" srcLang=\"und\" trgLang=\"%s\">",
-			messages.Language)
+			translation.Language)
 	}
 
 	b.WriteString("<file>")
 
 	writeMsg := func(s string) { fmt.Fprintf(b, "<segment><target>%s</target></segment>", s) }
-	if messages.Original {
+	if translation.Original {
 		writeMsg = func(s string) { fmt.Fprintf(b, "<segment><source>%s</source></segment>", s) }
 	}
 
-	for _, msg := range messages.Messages {
+	for _, msg := range translation.Messages {
 		fmt.Fprintf(b, "<unit id=\"%s\">", msg.ID)
 
 		if msg.Description != "" || len(msg.Positions) > 0 {
@@ -136,10 +136,10 @@ func Test_ToXliff2(t *testing.T) {
 		testutilrand.WithStatus(model.MessageStatusUntranslated),
 	}
 
-	messages := testutilrand.ModelTranslation(4, msgOpts, testutilrand.WithOriginal(true))
-	expected := randXliff2(messages)
+	translation := testutilrand.ModelTranslation(4, msgOpts, testutilrand.WithOriginal(true))
+	expected := randXliff2(translation)
 
-	actual, err := ToXliff2(*messages)
+	actual, err := ToXliff2(*translation)
 	require.NoError(t, err)
 
 	assertEqualXml(t, expected, actual)

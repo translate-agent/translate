@@ -152,36 +152,36 @@ func Test_GetLanguage(t *testing.T) {
 
 	type args struct {
 		params   *uploadParams
-		messages *model.Translation
+		translation *model.Translation
 	}
 
 	// Tests
 
 	messagesDefinedParamsUndefined := args{
 		params:   &uploadParams{languageTag: language.Und},
-		messages: rand.ModelTranslation(3, nil),
+		translation: rand.ModelTranslation(3, nil),
 	}
 
 	messagesUndefinedParamsDefined := args{
 		params:   &uploadParams{languageTag: rand.Language()},
-		messages: rand.ModelTranslation(3, nil, rand.WithLanguage(language.Und)),
+		translation: rand.ModelTranslation(3, nil, rand.WithLanguage(language.Und)),
 	}
 
 	sameLang := rand.Language()
 	bothDefinedSameLang := args{
 		params:   &uploadParams{languageTag: sameLang},
-		messages: rand.ModelTranslation(3, nil, rand.WithLanguage(sameLang)),
+		translation: rand.ModelTranslation(3, nil, rand.WithLanguage(sameLang)),
 	}
 
 	undefinedBoth := args{
 		params:   &uploadParams{languageTag: language.Und},
-		messages: rand.ModelTranslation(3, nil, rand.WithLanguage(language.Und)),
+		translation: rand.ModelTranslation(3, nil, rand.WithLanguage(language.Und)),
 	}
 
 	langs := rand.Languages(2)
 	langMismatch := args{
 		params:   &uploadParams{languageTag: langs[0]},
-		messages: rand.ModelTranslation(3, nil, rand.WithLanguage(langs[1])),
+		translation: rand.ModelTranslation(3, nil, rand.WithLanguage(langs[1])),
 	}
 
 	tests := []struct {
@@ -193,7 +193,7 @@ func Test_GetLanguage(t *testing.T) {
 		{
 			name:        "Messages language is defined/params undefined",
 			args:        messagesDefinedParamsUndefined,
-			expected:    messagesDefinedParamsUndefined.messages.Language,
+			expected:    messagesDefinedParamsUndefined.translation.Language,
 			expectedErr: nil,
 		},
 		{
@@ -205,7 +205,7 @@ func Test_GetLanguage(t *testing.T) {
 		{
 			name:        "Both defined, same language",
 			args:        bothDefinedSameLang,
-			expected:    bothDefinedSameLang.messages.Language,
+			expected:    bothDefinedSameLang.translation.Language,
 			expectedErr: nil,
 		},
 		{
@@ -224,7 +224,7 @@ func Test_GetLanguage(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			actual, err := getLanguage(tt.args.params, tt.args.messages)
+			actual, err := getLanguage(tt.args.params, tt.args.translation)
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())

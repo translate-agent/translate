@@ -49,7 +49,7 @@ func TranslationFromData(params *uploadParams) (*model.Translation, error) {
 }
 
 // TranslationToData converts model.Translation to specific schema serialized data.
-func TranslationToData(schema translatev1.Schema, messages *model.Translation) ([]byte, error) {
+func TranslationToData(schema translatev1.Schema, translation *model.Translation) ([]byte, error) {
 	var to func(model.Translation) ([]byte, error)
 
 	switch schema {
@@ -72,11 +72,11 @@ func TranslationToData(schema translatev1.Schema, messages *model.Translation) (
 	}
 
 	// Prevent nil pointer dereference.
-	if messages == nil {
-		messages = &model.Translation{}
+	if translation == nil {
+		translation = &model.Translation{}
 	}
 
-	data, err := to(*messages)
+	data, err := to(*translation)
 	if err != nil {
 		return nil, fmt.Errorf("convert to %s schema: %w", schema, err)
 	}

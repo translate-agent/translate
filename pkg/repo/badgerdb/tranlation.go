@@ -21,19 +21,19 @@ func messagesKey(serviceID uuid.UUID, language language.Tag) []byte {
 }
 
 // SaveMessages handles both Create and Update.
-func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, messages *model.Translation) error {
+func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
 	_, err := r.LoadService(ctx, serviceID)
 	if err != nil {
 		return fmt.Errorf("repo: load service: %w", err)
 	}
 
 	err = r.db.Update(func(txn *badger.Txn) error {
-		val, marshalErr := json.Marshal(messages)
+		val, marshalErr := json.Marshal(translation)
 		if marshalErr != nil {
 			return fmt.Errorf("marshal messages: %w", err)
 		}
 
-		if setErr := txn.Set(messagesKey(serviceID, messages.Language), val); setErr != nil {
+		if setErr := txn.Set(messagesKey(serviceID, translation.Language), val); setErr != nil {
 			return fmt.Errorf("transaction: set messages: %w", err)
 		}
 
@@ -50,7 +50,7 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, message
 func (r *Repo) LoadTranslation(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationOpts,
 ) (model.TranslationSlice, error) {
 	if _, err := r.LoadService(ctx, serviceID); errors.Is(err, repo.ErrNotFound) {
-		return nil, nil // Empty messages.messages for this service (Not an error)
+		return nil, nil // Empty translation.messages for this service (Not an error)
 	} else if err != nil {
 		return nil, fmt.Errorf("repo: load service: %w", err)
 	}

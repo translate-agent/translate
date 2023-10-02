@@ -128,13 +128,13 @@ func FromArb(data []byte, original bool) (model.Translation, error) {
 }
 
 // ToArb converts model.Translation into a serialized data in ARB file format.
-func ToArb(messages model.Translation) ([]byte, error) {
+func ToArb(translation model.Translation) ([]byte, error) {
 	// dst length = number of messages + number of potential descriptions (same as number of messages) + locale.
-	dst := make(map[string]interface{}, len(messages.Messages)*2+1)
+	dst := make(map[string]interface{}, len(translation.Messages)*2+1)
 	// "und" (Undetermined) language.Tag is also valid BCP47 tag.
-	dst["@@locale"] = messages.Language
+	dst["@@locale"] = translation.Language
 
-	for _, msg := range messages.Messages {
+	for _, msg := range translation.Messages {
 		dst[msg.ID] = removeEnclosingBrackets(msg.Message)
 		if len(msg.Description) > 0 {
 			dst["@"+msg.ID] = map[string]string{"description": msg.Description}

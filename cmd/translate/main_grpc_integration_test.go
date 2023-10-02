@@ -27,10 +27,10 @@ import (
 func randUploadData(t *testing.T, schema translatev1.Schema, lang language.Tag) []byte {
 	t.Helper()
 
-	messages := rand.ModelTranslation(3, nil, rand.WithLanguage(lang))
+	translation := rand.ModelTranslation(3, nil, rand.WithLanguage(lang))
 
-	data, err := server.TranslationToData(schema, messages)
-	require.NoError(t, err, "convert rand messages to serialized data")
+	data, err := server.TranslationToData(schema, translation)
+	require.NoError(t, err, "convert rand translations to serialized data")
 
 	return data
 }
@@ -489,7 +489,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 			expectedCode: codes.OK,
 		},
 		{
-			name: "Happy path, empty messages.messages",
+			name: "Happy path, empty translation.messages",
 			request: &translatev1.CreateTranslationRequest{
 				ServiceId: service.Id,
 				Translation: &translatev1.Translation{
@@ -514,7 +514,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 			expectedCode: codes.InvalidArgument,
 		},
 		{
-			name: "Invalid argument, messages.language not provided",
+			name: "Invalid argument, translation.language not provided",
 			request: &translatev1.CreateTranslationRequest{
 				ServiceId: service.Id,
 				Translation: &translatev1.Translation{
@@ -667,7 +667,7 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 			expectedCode: codes.InvalidArgument,
 		},
 		{
-			name:         "Invalid argument und messages.language",
+			name:         "Invalid argument und translation.language",
 			request:      invalidArgumentUndMessagesLanguageReq,
 			expectedCode: codes.InvalidArgument,
 		},
