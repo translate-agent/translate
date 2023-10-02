@@ -24,15 +24,15 @@ func Test_TranslateMock(t *testing.T) {
 	allMocks(t, func(t *testing.T, mock Translator) {
 		tests := []struct {
 			expectedErr error
-			translation    *model.Translation
+			translation *model.Translation
 			name        string
 		}{
 			{
-				name:     "One message",
+				name:        "One message",
 				translation: randMessages(1, language.Latvian),
 			},
 			{
-				name:     "Multiple messages",
+				name:        "Multiple messages",
 				translation: randMessages(5, language.German),
 			},
 		}

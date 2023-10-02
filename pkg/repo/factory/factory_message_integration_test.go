@@ -38,7 +38,7 @@ func Test_SaveMessages(t *testing.T) {
 		service := prepareService(testCtx, t, repository)
 
 		tests := []struct {
-			translation    *model.Translation
+			translation *model.Translation
 			expectedErr error
 			name        string
 			serviceID   uuid.UUID
@@ -46,13 +46,13 @@ func Test_SaveMessages(t *testing.T) {
 			{
 				name:        "Happy path",
 				serviceID:   service.ID,
-				translation:    rand.ModelTranslation(3, nil),
+				translation: rand.ModelTranslation(3, nil),
 				expectedErr: nil,
 			},
 			{
 				name:        "Missing service",
 				serviceID:   uuid.New(),
-				translation:    rand.ModelTranslation(3, nil),
+				translation: rand.ModelTranslation(3, nil),
 				expectedErr: repo.ErrNotFound,
 			},
 		}
