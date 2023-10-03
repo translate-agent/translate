@@ -548,7 +548,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 	}
 }
 
-func Test_ListTranslation_gRPC(t *testing.T) {
+func Test_ListTranslations_gRPC(t *testing.T) {
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
@@ -570,7 +570,7 @@ func Test_ListTranslation_gRPC(t *testing.T) {
 		expectedCode codes.Code
 	}{
 		{
-			name:         "Happy path, get all messages",
+			name:         "Happy path, get all translations",
 			request:      &translatev1.ListTranslationsRequest{ServiceId: service.Id},
 			expectedCode: codes.OK,
 		},
@@ -652,7 +652,7 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 			expectedCode: codes.OK,
 		},
 		{
-			name:         "Message does not exists",
+			name:         "Translation does not exists",
 			request:      notFoundTranslationReq,
 			expectedCode: codes.NotFound,
 		},
