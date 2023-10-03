@@ -46,7 +46,7 @@ func Test_fuzzyTranslate(t *testing.T) {
 		name               string
 		originalTranslation   *model.Translation
 		translatedTranslation []model.Translation
-		assertFunc         func(t *testing.T, originalTranslation *model.Translation, translatedTranlation []model.Translation)
+		assertFunc         func(t *testing.T, originalTranslation *model.Translation, translatedTranslation []model.Translation)
 	}{
 		{
 			name:               "Fuzzy translate untranslated translation for one message",

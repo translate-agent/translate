@@ -178,7 +178,7 @@ func allMocks(t *testing.T, f func(t *testing.T, mock Translator)) {
 // The messages will not be fuzzy.
 func randTranslation(msgCount uint, srcLang language.Tag) *model.Translation {
 	msgOpts := []rand.ModelMessageOption{rand.WithStatus(model.MessageStatusUntranslated)}
-	tranlationOpts := []rand.ModelTranslationOption{rand.WithLanguage(srcLang)}
+	translationOpts := []rand.ModelTranslationOption{rand.WithLanguage(srcLang)}
 
-	return rand.ModelTranslation(msgCount, msgOpts, tranlationOpts...)
+	return rand.ModelTranslation(msgCount, msgOpts, translationOpts...)
 }
