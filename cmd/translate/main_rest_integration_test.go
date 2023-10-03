@@ -538,8 +538,8 @@ func Test_CreateTranslation_REST(t *testing.T) {
 	service := createService(ctx, t)
 	langs := rand.Languages(2)
 
-	serviceWithMsgs := createService(ctx, t)
-	uploadReq := randUploadRequest(t, serviceWithMsgs.Id)
+	serviceWithTranslations := createService(ctx, t)
+	uploadReq := randUploadRequest(t, serviceWithTranslations.Id)
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
 	require.NoError(t, err, "create test translation file")
 
@@ -584,7 +584,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 		},
 		{
 			name:      "Status conflict, service already has translation for specified language",
-			serviceID: serviceWithMsgs.Id,
+			serviceID: serviceWithTranslations.Id,
 			translation: &translatev1.Translation{
 				Language: uploadReq.Language,
 			},
@@ -693,7 +693,7 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			body, err := json.Marshal(tt.request.Translation)
-			require.NoError(t, err, "marshal messages")
+			require.NoError(t, err, "marshal translation")
 
 			language := langs[0].String()
 

@@ -1359,8 +1359,8 @@ func Test_TransformMessage(t *testing.T) {
 	msgPot, err := ToPot(translation)
 	require.NoError(t, err)
 
-	restoredMsg, err := FromPot(msgPot, translation.Original)
+	restoredTranslation, err := FromPot(msgPot, translation.Original)
 	require.NoError(t, err)
 
-	assert.Equal(t, translation, restoredMsg)
+	assert.Equal(t, translation, restoredTranslation)
 }

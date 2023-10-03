@@ -131,7 +131,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 			all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(translation))
 			// Replace original translation with new ones.
 			all.Replace(*translation)
-			// Add missing translation for all translations.
+			// Add missing messages for all translations.
 			if params.populateTranslations {
 				all.PopulateTranslations()
 			}

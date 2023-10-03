@@ -77,7 +77,7 @@ func (t *TranslateServiceServer) CreateTranslation(
 		return nil, status.Errorf(codes.AlreadyExists, "translation already exist for language: '%s'", params.translation.Language)
 	}
 
-	// Translate translation when translation are not original and original language is known.
+	// Translate messages when translation are not original and original language is known.
 	if !params.translation.Original {
 		// Retrieve language from original translation.
 		var originalLanguage *language.Tag
@@ -238,7 +238,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(params.translation))
 		// Replace original translation with new ones.
 		all.Replace(*params.translation)
-		// Add missing translation for all translations.
+		// Add missing messages for all translations.
 		if params.populateTranslations {
 			all.PopulateTranslations()
 		}
@@ -251,7 +251,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 
 	}
 
-	// Update translation for all translations
+	// Update messages for all translations
 	for i := range updatedTranslations {
 		err = t.repo.SaveTranslation(ctx, params.serviceID, &all[i])
 		if err != nil {
@@ -314,7 +314,7 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 		targetLanguage := all[i].Language
 		translated, err := t.translator.Translate(ctx, toBeTranslated, targetLanguage)
 		if err != nil {
-			return fmt.Errorf("translator translate translation: %w", err)
+			return fmt.Errorf("translator translate messages: %w", err)
 		}
 
 		// Overwrite untranslated messages with translated messagess

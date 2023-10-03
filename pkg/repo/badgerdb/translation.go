@@ -87,12 +87,12 @@ func (r *Repo) loadTranslationsByLang(serviceID uuid.UUID, languages []language.
 			switch {
 			default:
 				if valErr := getValue(item, &translation); valErr != nil {
-					return fmt.Errorf("get translations by language '%s': %w", lang, valErr)
+					return fmt.Errorf("get translation by language '%s': %w", lang, valErr)
 				}
 
 				translations = append(translations, translation)
 			case errors.Is(txErr, badger.ErrKeyNotFound):
-				return nil // Empty translations.translations for this language (Not an error)
+				return nil // No Translations for this language (Not an error)
 			case txErr != nil:
 				return fmt.Errorf("transaction: get translations by language '%s': %w", lang, txErr)
 			}

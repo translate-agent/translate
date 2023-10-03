@@ -41,31 +41,31 @@ func (t *Translation) FindChangedMessageIDs(new *Translation) []string {
 type Translations []Translation
 
 // HasLanguage checks if Translations contains Translation with the given language.
-func (ts Translations) HasLanguage(lang language.Tag) bool {
-	return ts.LanguageIndex(lang) != -1
+func (t Translations) HasLanguage(lang language.Tag) bool {
+	return t.LanguageIndex(lang) != -1
 }
 
 // LanguageIndex returns index of Translation with the given language. If not found, returns -1.
-func (ts Translations) LanguageIndex(lang language.Tag) int {
-	return slices.IndexFunc(ts, func(m Translation) bool {
+func (t Translations) LanguageIndex(lang language.Tag) int {
+	return slices.IndexFunc(t, func(m Translation) bool {
 		return m.Language == lang
 	})
 }
 
 // OriginalIndex returns index of Translation with the original flag set to true. If not found, returns -1.
-func (ts Translations) OriginalIndex() int {
-	return slices.IndexFunc(ts, func(m Translation) bool {
+func (t Translations) OriginalIndex() int {
+	return slices.IndexFunc(t, func(m Translation) bool {
 		return m.Original
 	})
 }
 
 // Replace replaces Translation with the same language. If not found, appends it.
-func (ts *Translations) Replace(translation Translation) {
-	switch idx := ts.LanguageIndex(translation.Language); idx {
+func (t *Translations) Replace(translation Translation) {
+	switch idx := t.LanguageIndex(translation.Language); idx {
 	case -1:
-		*ts = append(*ts, translation)
+		*t = append(*t, translation)
 	default:
-		(*ts)[idx] = translation
+		(*t)[idx] = translation
 	}
 }
 
@@ -103,15 +103,15 @@ Example:
 			Messages: [ { ID: "1", Message: "Bonjour", Status: Untranslated  }, ... ],
 		}
 */
-func (ts Translations) MarkUntranslated(ids []string) {
-	n := len(ts)
-	if len(ids) == 0 || n == 0 || (n == 1 && ts[0].Original) {
+func (t Translations) MarkUntranslated(ids []string) {
+	n := len(t)
+	if len(ids) == 0 || n == 0 || (n == 1 && t[0].Original) {
 		return
 	}
 
 	slices.Sort(ids)
 
-	for _, translation := range ts {
+	for _, translation := range t {
 		if translation.Original {
 			continue
 		}
@@ -130,7 +130,7 @@ PopulateTranslations adds missing messages from the original language to other l
 Example:
 
 	Input:
-	MessagesSlice{
+	Translations{
 		{
 			Language: en,
 			Original: true,
@@ -144,7 +144,7 @@ Example:
 	}
 
 	Output:
-	MessagesSlice{
+	Translations{
 		{
 			Language: en,
 			Original: true,
@@ -156,16 +156,16 @@ Example:
 			Messages: [ { ID: "1", Message: "Bonjour" }, { ID: "2", Message: "World", Status: Untranslated } ],
 		},
 */
-func (ts Translations) PopulateTranslations() {
-	origIdx := slices.IndexFunc(ts, func(m Translation) bool { return m.Original })
+func (t Translations) PopulateTranslations() {
+	origIdx := slices.IndexFunc(t, func(m Translation) bool { return m.Original })
 	if origIdx == -1 {
 		return
 	}
 
 	var wg sync.WaitGroup
 
-	for i := range ts {
-		if ts[i].Original {
+	for i := range t {
+		if t[i].Original {
 			continue
 		}
 
@@ -174,17 +174,17 @@ func (ts Translations) PopulateTranslations() {
 		populate := func(i int) {
 			defer wg.Done()
 
-			lookup := make(map[string]struct{}, len(ts[i].Messages))
-			for j := range ts[i].Messages {
-				lookup[ts[i].Messages[j].ID] = struct{}{}
+			lookup := make(map[string]struct{}, len(t[i].Messages))
+			for j := range t[i].Messages {
+				lookup[t[i].Messages[j].ID] = struct{}{}
 			}
 
-			for j := range ts[origIdx].Messages {
-				if _, ok := lookup[ts[origIdx].Messages[j].ID]; !ok {
-					newMsg := ts[origIdx].Messages[j]
+			for j := range t[origIdx].Messages {
+				if _, ok := lookup[t[origIdx].Messages[j].ID]; !ok {
+					newMsg := t[origIdx].Messages[j]
 					newMsg.Status = MessageStatusUntranslated
 
-					ts[i].Messages = append(ts[i].Messages, newMsg)
+					t[i].Messages = append(t[i].Messages, newMsg)
 				}
 			}
 		}

@@ -28,7 +28,7 @@ func prepareService(ctx context.Context, t *testing.T, repository repo.Repo) *mo
 	return service
 }
 
-func Test_SaveTranslations(t *testing.T) {
+func Test_SaveTranslation(t *testing.T) {
 	t.Parallel()
 
 	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
@@ -67,7 +67,7 @@ func Test_SaveTranslations(t *testing.T) {
 					return
 				}
 
-				require.NoError(t, err, "Save Translations")
+				require.NoError(t, err, "Save Translation")
 
 				// Assure that the translations were saved correctly.
 
@@ -109,14 +109,14 @@ func Test_SaveTranslationsMultipleLangOneService(t *testing.T) {
 		for _, translation := range translations {
 			actualTranslations, err := repository.LoadTranslations(testCtx, service.ID,
 				repo.LoadTranslationOpts{FilterLanguages: []language.Tag{translation.Language}})
-			require.NoError(t, err, "Load saved translation")
+			require.NoError(t, err, "Load saved translations")
 
 			testutil.EqualTranslations(t, translation, &actualTranslations[0])
 		}
 	})
 }
 
-func Test_SaveTranslationsUpdate(t *testing.T) {
+func Test_SaveTranslationUpdate(t *testing.T) {
 	t.Parallel()
 
 	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
@@ -145,7 +145,7 @@ func Test_SaveTranslationsUpdate(t *testing.T) {
 
 		actualTranslation, err := repository.LoadTranslations(testCtx, service.ID,
 			repo.LoadTranslationOpts{FilterLanguages: []language.Tag{expectedTranslations.Language}})
-		require.NoError(t, err, "Load updated translation")
+		require.NoError(t, err, "Load updated translations")
 
 		testutil.EqualTranslations(t, expectedTranslations, &actualTranslation[0])
 	})
@@ -224,10 +224,10 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 		translations := make([]model.Translation, 0, len(languages))
 
 		for _, lang := range languages {
-			msgs := rand.ModelTranslation(1, nil, rand.WithLanguage(lang))
-			err := repository.SaveTranslation(testCtx, service.ID, msgs)
+			translation := rand.ModelTranslation(1, nil, rand.WithLanguage(lang))
+			err := repository.SaveTranslation(testCtx, service.ID, translation)
 			require.NoError(t, err, "Prepare test translations")
-			translations = append(translations, *msgs)
+			translations = append(translations, *translation)
 		}
 
 		tests := []struct {

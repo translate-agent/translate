@@ -470,8 +470,8 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 	service := createService(ctx, t)
 	langs := rand.Languages(2)
 
-	serviceWithMsgs := createService(ctx, t)
-	uploadReq := randUploadRequest(t, serviceWithMsgs.Id)
+	serviceWithTranslations := createService(ctx, t)
+	uploadReq := randUploadRequest(t, serviceWithTranslations.Id)
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
 	require.NoError(t, err, "create test translation file")
 
@@ -526,7 +526,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 		{
 			name: "Already exists, service already has translation for specified language",
 			request: &translatev1.CreateTranslationRequest{
-				ServiceId: serviceWithMsgs.Id,
+				ServiceId: serviceWithTranslations.Id,
 				Translation: &translatev1.Translation{
 					Language: uploadReq.Language,
 				},
