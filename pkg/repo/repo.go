@@ -24,7 +24,7 @@ type LoadTranslationOpts struct {
 	FilterLanguages []language.Tag
 }
 
-type TranslationRepo interface {
+type TranslationsRepo interface {
 	// SaveTranslation handles both Create and Update
 	SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error
 	LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts LoadTranslationOpts) (model.Translations, error)
@@ -32,7 +32,7 @@ type TranslationRepo interface {
 
 type Repo interface {
 	ServicesRepo
-	TranslationRepo
+	TranslationsRepo
 
 	io.Closer
 }
