@@ -178,7 +178,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
 	require.NoError(t, err, "create test translation file")
 
-	// Change messages and upload again with the same language and serviceID
+	// Change translation and upload again with the same language and serviceID
 	uploadReq.Data = randUploadData(t, uploadReq.Schema, language.MustParse(uploadReq.Language))
 
 	resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, uploadReq))
@@ -207,12 +207,12 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 
 	happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
 
-	happyReqNoMessagesServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
+	happyReqNoTranslationServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
 
-	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, rand.Language().String())
+	happyReqNoTranslationLanguage := randDownloadRequest(service.Id, rand.Language().String())
 	// Ensure that the language is not the same as the uploaded one.
-	for happyReqNoMessagesLanguage.Language == uploadRequest.Language {
-		happyReqNoMessagesLanguage.Language = rand.Language().String()
+	for happyReqNoTranslationLanguage.Language == uploadRequest.Language {
+		happyReqNoTranslationLanguage.Language = rand.Language().String()
 	}
 
 	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
@@ -230,13 +230,13 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 		},
 
 		{
-			name:         "Happy path no messages with language",
-			request:      happyReqNoMessagesLanguage,
+			name:         "Happy path no translation with language",
+			request:      happyReqNoTranslationLanguage,
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "Happy path no messages with Service ID",
-			request:      happyReqNoMessagesServiceID,
+			name:         "Happy path no translation with Service ID",
+			request:      happyReqNoTranslationServiceID,
 			expectedCode: http.StatusOK,
 		},
 		{
@@ -550,7 +550,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 		expectedCode int
 	}{
 		{
-			name:         "Happy path, create messages",
+			name:         "Happy path, create translation",
 			serviceID:    service.Id,
 			translation:  randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
 			expectedCode: http.StatusOK,
@@ -570,7 +570,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "Bad request, messages not provided",
+			name:         "Bad request, translation not provided",
 			serviceID:    service.Id,
 			expectedCode: http.StatusBadRequest,
 		},
@@ -583,7 +583,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name:      "Status conflict, service already has messages for specified language",
+			name:      "Status conflict, service already has translation for specified language",
 			serviceID: serviceWithMsgs.Id,
 			translation: &translatev1.Translation{
 				Language: uploadReq.Language,
@@ -596,12 +596,12 @@ func Test_CreateTranslation_REST(t *testing.T) {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			body, err := json.Marshal(tt.translation)
-			require.NoError(t, err, "marshal messages")
+			require.NoError(t, err, "marshal translation")
 
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.serviceID + "/translation",
+				Path:   "v1/services/" + tt.serviceID + "/translations",
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(body))
@@ -630,10 +630,10 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 		ServiceId:   service.Id,
 		Translation: randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
 	})
-	require.NoError(t, err, "create test messages")
+	require.NoError(t, err, "create test translation")
 
 	// helper for update request generation
-	randUpdateMessageReq := func(lang string) *translatev1.UpdateTranslationRequest {
+	randUpdateTranslationReq := func(lang string) *translatev1.UpdateTranslationRequest {
 		if lang == "" {
 			lang = rand.Language().String()
 		}
@@ -644,18 +644,18 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 		}
 	}
 
-	happyReq := randUpdateMessageReq(langs[0].String()) // uploaded messages language
+	happyReq := randUpdateTranslationReq(langs[0].String()) // uploaded translation language
 
-	notFoundMessagesReq := randUpdateMessageReq(langs[1].String()) // different language without messages
+	notFoundTranslationReq := randUpdateTranslationReq(langs[1].String()) // different language without translation
 
-	notFoundServiceID := randUpdateMessageReq("")
+	notFoundServiceID := randUpdateTranslationReq("")
 	notFoundServiceID.ServiceId = gofakeit.UUID()
 
-	invalidArgumentNilMessagesReq := randUpdateMessageReq("")
-	invalidArgumentNilMessagesReq.Translation = nil
+	invalidArgumentNilTranslationReq := randUpdateTranslationReq("")
+	invalidArgumentNilTranslationReq.Translation = nil
 
-	invalidArgumentUndMessagesLanguageReq := randUpdateMessageReq("")
-	invalidArgumentUndMessagesLanguageReq.Translation.Language = ""
+	invalidArgumentUndTranslationLanguageReq := randUpdateTranslationReq("")
+	invalidArgumentUndTranslationLanguageReq.Translation.Language = ""
 
 	tests := []struct {
 		request      *translatev1.UpdateTranslationRequest
@@ -669,7 +669,7 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 		},
 		{
 			name:         "Message does not exists",
-			request:      notFoundMessagesReq,
+			request:      notFoundTranslationReq,
 			expectedCode: http.StatusNotFound,
 		},
 		{
@@ -678,13 +678,13 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "Invalid argument nil messages",
-			request:      invalidArgumentNilMessagesReq,
+			name:         "Invalid argument nil translation",
+			request:      invalidArgumentNilTranslationReq,
 			expectedCode: http.StatusBadRequest,
 		},
 		{
 			name:         "Invalid argument und translation.language",
-			request:      invalidArgumentUndMessagesLanguageReq,
+			request:      invalidArgumentUndTranslationLanguageReq,
 			expectedCode: http.StatusBadRequest,
 		},
 	}

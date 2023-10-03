@@ -13,14 +13,14 @@ import (
 	"golang.org/x/text/language"
 )
 
-const messagesPrefix = "translation:"
+const translationPrefix = "translation:"
 
-// messagesKey converts a serviceID and language to a BadgerDB key with prefix.
-func messagesKey(serviceID uuid.UUID, language language.Tag) []byte {
-	return []byte(fmt.Sprintf("%s%s:%s", messagesPrefix, serviceID, language))
+// translationKey converts a serviceID and language to a BadgerDB key with prefix.
+func translationKey(serviceID uuid.UUID, language language.Tag) []byte {
+	return []byte(fmt.Sprintf("%s%s:%s", translationPrefix, serviceID, language))
 }
 
-// SaveMessages handles both Create and Update.
+// SaveTranslation handles both Create and Update.
 func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
 	_, err := r.LoadService(ctx, serviceID)
 	if err != nil {
@@ -30,11 +30,11 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 	err = r.db.Update(func(txn *badger.Txn) error {
 		val, marshalErr := json.Marshal(translation)
 		if marshalErr != nil {
-			return fmt.Errorf("marshal messages: %w", err)
+			return fmt.Errorf("marshal translation: %w", err)
 		}
 
-		if setErr := txn.Set(messagesKey(serviceID, translation.Language), val); setErr != nil {
-			return fmt.Errorf("transaction: set messages: %w", err)
+		if setErr := txn.Set(translationKey(serviceID, translation.Language), val); setErr != nil {
+			return fmt.Errorf("transaction: set translation: %w", err)
 		}
 
 		return nil
@@ -46,44 +46,44 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 	return nil
 }
 
-// LoadMessages retrieves messages from db based on serviceID and LoadMessageOpts.
-func (r *Repo) LoadTranslation(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationOpts,
-) (model.TranslationSlice, error) {
+// LoadTranslations retrieves translations from db based on serviceID and LoadMessageOpts.
+func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationOpts,
+) (model.Translations, error) {
 	if _, err := r.LoadService(ctx, serviceID); errors.Is(err, repo.ErrNotFound) {
 		return nil, nil // Empty translation.messages for this service (Not an error)
 	} else if err != nil {
 		return nil, fmt.Errorf("repo: load service: %w", err)
 	}
 
-	// load all messages if languages are not provided.
+	// load all translations if languages are not provided.
 	if len(opts.FilterLanguages) == 0 {
-		messages, err := r.loadMessages(serviceID)
+		translations, err := r.loadTranslations(serviceID)
 		if err != nil {
-			return nil, fmt.Errorf("load messages by service '%s': %w", serviceID, err)
+			return nil, fmt.Errorf("load translation by service '%s': %w", serviceID, err)
 		}
 
-		return messages, nil
+		return translations, nil
 	}
 
-	// load messages based on provided languages.
-	messages, err := r.loadMessagesByLang(serviceID, opts.FilterLanguages)
+	// load translations based on provided languages.
+	translations, err := r.loadTranslationsByLang(serviceID, opts.FilterLanguages)
 	if err != nil {
-		return nil, fmt.Errorf("load messages by languages: %w", err)
+		return nil, fmt.Errorf("load translation by languages: %w", err)
 	}
 
-	return messages, nil
+	return translations, nil
 }
 
-// loadMessagesByLang returns messages for service based on provided languages.
-func (r *Repo) loadMessagesByLang(serviceID uuid.UUID, languages []language.Tag,
-) (model.TranslationSlice, error) {
+// loadTranslationsByLang returns translations for service based on provided languages.
+func (r *Repo) loadTranslationsByLang(serviceID uuid.UUID, languages []language.Tag,
+) (model.Translations, error) {
 	translations := make([]model.Translation, 0, len(languages))
 
 	if err := r.db.View(func(txn *badger.Txn) error {
 		for _, lang := range languages {
 			var translation model.Translation
 
-			item, txErr := txn.Get(messagesKey(serviceID, lang))
+			item, txErr := txn.Get(translationKey(serviceID, lang))
 			switch {
 			default:
 				if valErr := getValue(item, &translation); valErr != nil {
@@ -106,9 +106,9 @@ func (r *Repo) loadMessagesByLang(serviceID uuid.UUID, languages []language.Tag,
 	return translations, nil
 }
 
-// loadMessages returns all messages for service.
-func (r *Repo) loadMessages(serviceID uuid.UUID) (model.TranslationSlice, error) {
-	keyPrefix := []byte(messagesPrefix + serviceID.String())
+// loadTranslations returns all translations for service.
+func (r *Repo) loadTranslations(serviceID uuid.UUID) (model.Translations, error) {
+	keyPrefix := []byte(translationPrefix + serviceID.String())
 
 	var translations []model.Translation
 

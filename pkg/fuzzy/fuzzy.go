@@ -24,7 +24,7 @@ type Translator interface {
 // NoopTranslate implements the Translator interface.
 type NoopTranslate struct{}
 
-// Translate returns unmodified incoming messages.
+// Translate returns unmodified incoming translation.
 func (n *NoopTranslate) Translate(ctx context.Context,
 	translation *model.Translation,
 	targetLanguage language.Tag,

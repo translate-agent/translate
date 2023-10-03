@@ -113,7 +113,7 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 		return &model.Translation{Language: translation.Language, Original: translation.Original}, nil
 	}
 
-	translatedMessages := model.Translation{
+	translatedTranslation := model.Translation{
 		Language: targetLanguage,
 		Original: translation.Original,
 		Messages: make([]model.Message, 0, len(translation.Messages)),
@@ -138,7 +138,7 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 			return nil, fmt.Errorf("AWS translate text, message id '%s': %w", m.ID, err)
 		}
 
-		translatedMessages.Messages = append(translatedMessages.Messages, model.Message{
+		translatedTranslation.Messages = append(translatedTranslation.Messages, model.Message{
 			ID:          m.ID,
 			PluralID:    m.PluralID,
 			Description: m.Description,
@@ -149,7 +149,7 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 		)
 	}
 
-	return &translatedMessages, nil
+	return &translatedTranslation, nil
 }
 
 // helpers

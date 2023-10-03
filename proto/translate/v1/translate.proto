@@ -144,7 +144,7 @@ service TranslateService {
 
   rpc CreateTranslation(CreateTranslationRequest) returns (Translation) {
     option (google.api.http) = {
-      post: "/v1/services/{service_id}/translation",
+      post: "/v1/services/{service_id}/translations",
       body: "translation"
     };
   }

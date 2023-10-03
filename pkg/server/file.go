@@ -104,22 +104,22 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := TranslationFromData(params)
+	translation, err := TranslationFromData(params)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages.Language, err = getLanguage(params, messages)
+	translation.Language, err = getLanguage(params, translation)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	// Case for when not original, or uploading original for the first time.
-	updatedMessages := model.TranslationSlice{*messages}
+	updatedTranslations := model.Translations{*translation}
 
 	// When updating original translation, changes might affect translations - transform and update all translations.
-	if messages.Original {
-		all, err := t.repo.LoadTranslation(ctx, params.serviceID, repo.LoadTranslationOpts{})
+	if translation.Original {
+		all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
@@ -128,9 +128,9 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 			oldOriginal := all[origIdx]
 
 			// Mark new or altered translation as untranslated.
-			all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(messages))
+			all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(translation))
 			// Replace original translation with new ones.
-			all.Replace(*messages)
+			all.Replace(*translation)
 			// Add missing translation for all translations.
 			if params.populateTranslations {
 				all.PopulateTranslations()
@@ -140,12 +140,12 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 				return nil, status.Errorf(codes.Internal, "")
 			}
 
-			updatedMessages = all
+			updatedTranslations = all
 		}
 	}
 
-	for i := range updatedMessages {
-		err = t.repo.SaveTranslation(ctx, params.serviceID, &updatedMessages[i])
+	for i := range updatedTranslations {
+		err = t.repo.SaveTranslation(ctx, params.serviceID, &updatedTranslations[i])
 		switch {
 		case errors.Is(err, repo.ErrNotFound):
 			return nil, status.Errorf(codes.NotFound, "service not found")
@@ -216,17 +216,17 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := t.repo.LoadTranslation(ctx, params.serviceID,
+	translations, err := t.repo.LoadTranslations(ctx, params.serviceID,
 		repo.LoadTranslationOpts{FilterLanguages: []language.Tag{params.languageTag}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if len(messages) == 0 {
-		messages = append(messages, model.Translation{Language: params.languageTag})
+	if len(translations) == 0 {
+		translations = append(translations, model.Translation{Language: params.languageTag})
 	}
 
-	data, err := TranslationToData(params.schema, &messages[0])
+	data, err := TranslationToData(params.schema, &translations[0])
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}

@@ -1035,7 +1035,7 @@ func RegisterTranslateServiceHandlerServer(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/CreateTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/translation"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/translate.v1.TranslateService/CreateTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/translations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1356,7 +1356,7 @@ func RegisterTranslateServiceHandlerClient(ctx context.Context, mux *runtime.Ser
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/CreateTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/translation"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/translate.v1.TranslateService/CreateTranslation", runtime.WithHTTPPathPattern("/v1/services/{service_id}/translations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1498,7 +1498,7 @@ var (
 
 	pattern_TranslateService_DeleteService_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "services", "id"}, ""))
 
-	pattern_TranslateService_CreateTranslation_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "services", "service_id", "translation"}, ""))
+	pattern_TranslateService_CreateTranslation_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "services", "service_id", "translations"}, ""))
 
 	pattern_TranslateService_UpdateTranslation_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "services", "service_id", "translations", "translation.language"}, ""))
 

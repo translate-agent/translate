@@ -11,7 +11,7 @@ import (
 // extract-i18n guide and specification: https://angular.io/guide/i18n-common-translation-files
 // extract-i18n JSON example: https://github.com/angular/angular/issues/45465
 
-// Extracted messages with json format contains only id:message.
+// Extracted translation with json format contains only id:message.
 type ngJSON struct {
 	Language     language.Tag      `json:"locale"`
 	Translations map[string]string `json:"translations"`
@@ -48,13 +48,13 @@ func FromNgLocalize(data []byte, original bool) (model.Translation, error) {
 }
 
 // ToNgLocalize converts a model.Translation struct into a byte slice in @angular/localize JSON format.
-func ToNgLocalize(translations model.Translation) ([]byte, error) {
+func ToNgLocalize(translation model.Translation) ([]byte, error) {
 	ng := ngJSON{
-		Language:     translations.Language,
-		Translations: make(map[string]string, len(translations.Messages)),
+		Language:     translation.Language,
+		Translations: make(map[string]string, len(translation.Messages)),
 	}
 
-	for _, msg := range translations.Messages {
+	for _, msg := range translation.Messages {
 		ng.Translations[msg.ID] = removeEnclosingBrackets(msg.Message)
 	}
 

@@ -98,7 +98,7 @@ func FromArb(data []byte, original bool) (model.Translation, error) {
 		status = model.MessageStatusTranslated
 	}
 
-	translations := model.Translation{Language: lang, Original: original}
+	translation := model.Translation{Language: lang, Original: original}
 
 	for key, value := range dst {
 		// Ignore a key if it begins with '@' as it only supplies metadata for message not the message itself.
@@ -121,10 +121,10 @@ func FromArb(data []byte, original bool) (model.Translation, error) {
 			return model.Translation{}, fmt.Errorf("find description of '%s': %w", key, err)
 		}
 
-		translations.Messages = append(translations.Messages, msg)
+		translation.Messages = append(translation.Messages, msg)
 	}
 
-	return translations, nil
+	return translation, nil
 }
 
 // ToArb converts model.Translation into a serialized data in ARB file format.

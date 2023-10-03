@@ -146,7 +146,7 @@ func (g *GoogleTranslate) Translate(
 
 	var msgIndex int
 
-	translatedMessages := model.Translation{
+	translatedTranslation := model.Translation{
 		Language: targetLanguage,
 		Original: translation.Original,
 		Messages: make([]model.Message, 0, len(translation.Messages)),
@@ -168,13 +168,13 @@ func (g *GoogleTranslate) Translate(
 			m.Message = t.TranslatedText
 			m.Status = model.MessageStatusFuzzy
 
-			translatedMessages.Messages = append(translatedMessages.Messages, m)
+			translatedTranslation.Messages = append(translatedTranslation.Messages, m)
 
 			msgIndex++
 		}
 	}
 
-	return &translatedMessages, nil
+	return &translatedTranslation, nil
 }
 
 // parent returns path to Google project and location.

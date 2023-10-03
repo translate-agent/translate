@@ -29,11 +29,11 @@ func Test_TranslateMock(t *testing.T) {
 		}{
 			{
 				name:        "One message",
-				translation: randMessages(1, language.Latvian),
+				translation: randTranslation(1, language.Latvian),
 			},
 			{
 				name:        "Multiple messages",
-				translation: randMessages(5, language.German),
+				translation: randTranslation(5, language.German),
 			},
 		}
 
@@ -174,11 +174,11 @@ func allMocks(t *testing.T, f func(t *testing.T, mock Translator)) {
 	}
 }
 
-// randMessages returns a random messages model with the given count of messages and source language.
+// randTranslation returns a random translation model with the given count of messages and source language.
 // The messages will not be fuzzy.
-func randMessages(msgCount uint, srcLang language.Tag) *model.Translation {
+func randTranslation(msgCount uint, srcLang language.Tag) *model.Translation {
 	msgOpts := []rand.ModelMessageOption{rand.WithStatus(model.MessageStatusUntranslated)}
-	msgsOpts := []rand.ModelMessagesOption{rand.WithLanguage(srcLang)}
+	tranlationOpts := []rand.ModelTranslationOption{rand.WithLanguage(srcLang)}
 
-	return rand.ModelTranslation(msgCount, msgOpts, msgsOpts...)
+	return rand.ModelTranslation(msgCount, msgOpts, tranlationOpts...)
 }

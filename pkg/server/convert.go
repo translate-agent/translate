@@ -40,12 +40,12 @@ func TranslationFromData(params *uploadParams) (*model.Translation, error) {
 		return nil, errUnspecifiedSchema
 	}
 
-	messages, err := from(params.data, params.original)
+	translation, err := from(params.data, params.original)
 	if err != nil {
 		return nil, fmt.Errorf("convert from %s schema: %w", params.schema, err)
 	}
 
-	return &messages, nil
+	return &translation, nil
 }
 
 // TranslationToData converts model.Translation to specific schema serialized data.

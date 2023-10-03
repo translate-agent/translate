@@ -14,7 +14,7 @@ func EqualTranslations(t *testing.T, expected, actual *model.Translation) {
 		require.Equal(t, expected, actual)
 	}
 
-	require.Equal(t, expected.Language, actual.Language, "messages.language = %s, but want %s", actual.Language, expected.Language) //nolint:lll
-	require.Equal(t, expected.Original, actual.Original, "messages.original = %t, but want %t", actual.Original, expected.Original) //nolint:lll
+	require.Equal(t, expected.Language, actual.Language, "translation.language = %s, but want %s", actual.Language, expected.Language) //nolint:lll
+	require.Equal(t, expected.Original, actual.Original, "translation.original = %t, but want %t", actual.Original, expected.Original) //nolint:lll
 	require.ElementsMatch(t, expected.Messages, actual.Messages)
 }

@@ -63,12 +63,12 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 	}
 
 	// Insert into message table,
-	// on duplicate message.id and message.message_id,
+	// on duplicate message.id and message.translation_id,
 	// update message's message, description and status values.
 	stmt, err := tx.PrepareContext(
 		ctx,
 		`INSERT INTO message
-	(message_id, id, message, description, positions, status)
+	(translation_id, id, message, description, positions, status)
 VALUES
 	(UUID_TO_BIN(?), ?, ?, ?, ?, ?)
 ON DUPLICATE KEY UPDATE
@@ -104,18 +104,18 @@ ON DUPLICATE KEY UPDATE
 	return nil
 }
 
-func (r *Repo) LoadTranslation(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationOpts,
-) (model.TranslationSlice, error) {
+func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationOpts,
+) (model.Translations, error) {
 	rows, err := sq.
 		Select("mm.id, mm.message, mm.description, mm.positions, mm.status, m.language, m.original").
 		From("message mm").
-		Join("translation m ON m.id = mm.message_id").
+		Join("translation m ON m.id = mm.translation_id").
 		Where("m.service_id = UUID_TO_BIN(?)", serviceID).
 		Where(eq("m.language", langToStringSlice(opts.FilterLanguages))).
 		RunWith(r.db).
 		QueryContext(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("repo: query messages: %w", err)
+		return nil, fmt.Errorf("repo: query translations: %w", err)
 	}
 
 	defer rows.Close()
@@ -134,31 +134,31 @@ func (r *Repo) LoadTranslation(ctx context.Context, serviceID uuid.UUID, opts re
 			return nil, fmt.Errorf("repo: scan message: %w", err)
 		}
 
-		// Lookup translations by language
-		translations, ok := translationsLookup[lang]
+		// Lookup translation by language
+		translation, ok := translationsLookup[lang]
 		// If not found, create a new one
 		if !ok {
-			translations = &model.Translation{
+			translation = &model.Translation{
 				Language: language.MustParse(lang),
 				Original: original,
 			}
 			// Add to lookup
-			translationsLookup[lang] = translations
+			translationsLookup[lang] = translation
 		}
 		// Add scanned message to translations
-		translations.Messages = append(translations.Messages, msg)
+		translation.Messages = append(translation.Messages, msg)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("repo: scan messages: %w", err)
 	}
 
-	allMessages := make([]model.Translation, 0, len(translationsLookup))
+	allTranslations := make([]model.Translation, 0, len(translationsLookup))
 	for _, translation := range translationsLookup {
-		allMessages = append(allMessages, *translation)
+		allTranslations = append(allTranslations, *translation)
 	}
 
-	return allMessages, nil
+	return allTranslations, nil
 }
 
 // helpers

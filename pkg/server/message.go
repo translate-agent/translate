@@ -67,7 +67,7 @@ func (t *TranslateServiceServer) CreateTranslation(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	translation, err := t.repo.LoadTranslation(ctx, params.serviceID,
+	translation, err := t.repo.LoadTranslations(ctx, params.serviceID,
 		repo.LoadTranslationOpts{FilterLanguages: []language.Tag{params.translation.Language}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
@@ -81,13 +81,13 @@ func (t *TranslateServiceServer) CreateTranslation(
 	if !params.translation.Original {
 		// Retrieve language from original translation.
 		var originalLanguage *language.Tag
-		// TODO: to improve performance should be replaced with CheckMessagesExist db function.
-		loadTranslation, err := t.repo.LoadTranslation(ctx, params.serviceID, repo.LoadTranslationOpts{})
+		// TODO: to improve performance should be replaced with CheckTranslationExist db function.
+		loadTranslations, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
-		for _, v := range loadTranslation {
+		for _, v := range loadTranslations {
 			if v.Original {
 				originalLanguage = &v.Language
 
@@ -157,12 +157,12 @@ func (t *TranslateServiceServer) ListTranslations(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := t.repo.LoadTranslation(ctx, params.serviceID, repo.LoadTranslationOpts{})
+	translations, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationOpts{})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	return &translatev1.ListTranslationsResponse{Translations: messagesSliceToProto(messages)}, nil
+	return &translatev1.ListTranslationsResponse{Translations: translationsToProto(translations)}, nil
 }
 
 // ----------------------UpdateTranslation-------------------------------
@@ -219,7 +219,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	all, err := t.repo.LoadTranslation(ctx, params.serviceID, repo.LoadTranslationOpts{})
+	all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationOpts{})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
@@ -229,7 +229,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 	}
 
 	// Case for when not original, or uploading original for the first time.
-	updatedTranslations := model.TranslationSlice{*params.translation}
+	updatedTranslations := model.Translations{*params.translation}
 
 	if origIdx := all.OriginalIndex(); params.translation.Original && origIdx != -1 {
 		oldOriginal := all[origIdx]
@@ -270,7 +270,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 // TODO: This logic should be moved to fuzzy pkg.
 func (t *TranslateServiceServer) fuzzyTranslate(
 	ctx context.Context,
-	all model.TranslationSlice,
+	all model.Translations,
 ) error {
 	origIdx := all.OriginalIndex()
 	if origIdx == -1 {

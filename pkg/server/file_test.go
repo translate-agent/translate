@@ -157,12 +157,12 @@ func Test_GetLanguage(t *testing.T) {
 
 	// Tests
 
-	messagesDefinedParamsUndefined := args{
+	translationDefinedParamsUndefined := args{
 		params:   &uploadParams{languageTag: language.Und},
 		translation: rand.ModelTranslation(3, nil),
 	}
 
-	messagesUndefinedParamsDefined := args{
+	translationUndefinedParamsDefined := args{
 		params:   &uploadParams{languageTag: rand.Language()},
 		translation: rand.ModelTranslation(3, nil, rand.WithLanguage(language.Und)),
 	}
@@ -191,15 +191,15 @@ func Test_GetLanguage(t *testing.T) {
 		name        string
 	}{
 		{
-			name:        "Messages language is defined/params undefined",
-			args:        messagesDefinedParamsUndefined,
-			expected:    messagesDefinedParamsUndefined.translation.Language,
+			name:        "Translation language is defined/params undefined",
+			args:        translationDefinedParamsUndefined,
+			expected:    translationDefinedParamsUndefined.translation.Language,
 			expectedErr: nil,
 		},
 		{
-			name:        "Messages language is undefined/params defined",
-			args:        messagesUndefinedParamsDefined,
-			expected:    messagesUndefinedParamsDefined.params.languageTag,
+			name:        "Translation language is undefined/params defined",
+			args:        translationUndefinedParamsDefined,
+			expected:    translationUndefinedParamsDefined.params.languageTag,
 			expectedErr: nil,
 		},
 		{

@@ -27,7 +27,7 @@ type LoadTranslationOpts struct {
 type TranslationRepo interface {
 	// SaveTranslation handles both Create and Update
 	SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error
-	LoadTranslation(ctx context.Context, serviceID uuid.UUID, opts LoadTranslationOpts) (model.TranslationSlice, error)
+	LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts LoadTranslationOpts) (model.Translations, error)
 }
 
 type Repo interface {

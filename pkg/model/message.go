@@ -38,29 +38,29 @@ func (t *Translation) FindChangedMessageIDs(new *Translation) []string {
 	return ids
 }
 
-type TranslationSlice []Translation
+type Translations []Translation
 
-// HasLanguage checks if TranslationSlice contains Translation with the given language.
-func (ts TranslationSlice) HasLanguage(lang language.Tag) bool {
+// HasLanguage checks if Translations contains Translation with the given language.
+func (ts Translations) HasLanguage(lang language.Tag) bool {
 	return ts.LanguageIndex(lang) != -1
 }
 
 // LanguageIndex returns index of Translation with the given language. If not found, returns -1.
-func (ts TranslationSlice) LanguageIndex(lang language.Tag) int {
+func (ts Translations) LanguageIndex(lang language.Tag) int {
 	return slices.IndexFunc(ts, func(m Translation) bool {
 		return m.Language == lang
 	})
 }
 
 // OriginalIndex returns index of Translation with the original flag set to true. If not found, returns -1.
-func (ts TranslationSlice) OriginalIndex() int {
+func (ts Translations) OriginalIndex() int {
 	return slices.IndexFunc(ts, func(m Translation) bool {
 		return m.Original
 	})
 }
 
 // Replace replaces Translation with the same language. If not found, appends it.
-func (ts *TranslationSlice) Replace(translation Translation) {
+func (ts *Translations) Replace(translation Translation) {
 	switch idx := ts.LanguageIndex(translation.Language); idx {
 	case -1:
 		*ts = append(*ts, translation)
@@ -77,7 +77,7 @@ Example:
 
 	Input:
 	ids := { "1" }
-	TranslationSlice{
+	Translations{
 		{
 			Language: en,
 			Original: true,
@@ -91,7 +91,7 @@ Example:
 	}
 
 	Output:
-	TranslationSlice{
+	Translations{
 		{
 			Language: en,
 			Original: true,
@@ -103,7 +103,7 @@ Example:
 			Messages: [ { ID: "1", Message: "Bonjour", Status: Untranslated  }, ... ],
 		}
 */
-func (ts TranslationSlice) MarkUntranslated(ids []string) {
+func (ts Translations) MarkUntranslated(ids []string) {
 	n := len(ts)
 	if len(ids) == 0 || n == 0 || (n == 1 && ts[0].Original) {
 		return
@@ -156,7 +156,7 @@ Example:
 			Messages: [ { ID: "1", Message: "Bonjour" }, { ID: "2", Message: "World", Status: Untranslated } ],
 		},
 */
-func (ts TranslationSlice) PopulateTranslations() {
+func (ts Translations) PopulateTranslations() {
 	origIdx := slices.IndexFunc(ts, func(m Translation) bool { return m.Original })
 	if origIdx == -1 {
 		return

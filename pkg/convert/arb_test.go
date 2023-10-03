@@ -208,7 +208,7 @@ func Test_FromArb(t *testing.T) {
 func Test_ToArb(t *testing.T) {
 	t.Parallel()
 
-	translations := model.Translation{
+	translation := model.Translation{
 		Language: language.French,
 		Messages: []model.Message{
 			{
@@ -233,7 +233,7 @@ func Test_ToArb(t *testing.T) {
 		"greeting":"Welcome Sion"
 	}`)
 
-	actual, err := ToArb(translations)
+	actual, err := ToArb(translation)
 	if !assert.NoError(t, err) {
 		return
 	}

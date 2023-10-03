@@ -23,14 +23,14 @@ func Test_Translate(t *testing.T) {
 	t.Parallel()
 
 	allTranslators(t, func(t *testing.T, translator Translator, subTest testutil.SubtestFn) {
-		subTest("Multiple messages", func(ctx context.Context, t *testing.T) {
-			messages := randMessages(3, language.Latvian)
-			messages.Language = language.English // set original language
-			translatedMsgs, err := translator.Translate(ctx, messages, language.Latvian)
+		subTest("Multiple translation", func(ctx context.Context, t *testing.T) {
+			translation := randTranslation(3, language.Latvian)
+			translation.Language = language.English // set original language
+			translatedMsgs, err := translator.Translate(ctx, translation, language.Latvian)
 			require.NoError(t, err)
 
 			// Check the number of translated messages is the same as the number of input messages.
-			require.Len(t, translatedMsgs.Messages, len(messages.Messages))
+			require.Len(t, translatedMsgs.Messages, len(translation.Messages))
 
 			// Check the translated messages are not empty and are marked as fuzzy.
 			for _, m := range translatedMsgs.Messages {

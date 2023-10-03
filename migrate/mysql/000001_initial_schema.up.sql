@@ -13,13 +13,13 @@ CREATE TABLE translation (
 );
 
 CREATE TABLE message (
-  message_id BINARY(16) NOT NULL,
+  translation_id BINARY(16) NOT NULL,
   id TEXT NOT NULL,
   message TEXT NOT NULL,
   description TEXT,
   status ENUM('UNTRANSLATED', 'FUZZY', 'TRANSLATED') NOT NULL,
   positions JSON,
 
-  UNIQUE ((SHA1(id)), message_id),
-  FOREIGN KEY (message_id) REFERENCES translation (id)
+  UNIQUE ((SHA1(id)), translation_id),
+  FOREIGN KEY (translation_id) REFERENCES translation (id)
 );

@@ -82,13 +82,13 @@ func assertEqualXml(t *testing.T, expected, actual []byte) bool { //nolint:unpar
 func Test_FromXliff2(t *testing.T) {
 	t.Parallel()
 
-	originalMessages := testutilrand.ModelTranslation(
+	originalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
 		testutilrand.WithOriginal(true),
 	)
 
-	nonOriginalMessages := testutilrand.ModelTranslation(
+	nonOriginalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusUntranslated)},
 		testutilrand.WithOriginal(false),
@@ -101,13 +101,13 @@ func Test_FromXliff2(t *testing.T) {
 	}{
 		{
 			name:     "Original",
-			data:     randXliff2(originalMessages),
-			expected: originalMessages,
+			data:     randXliff2(originalTranslation),
+			expected: originalTranslation,
 		},
 		{
 			name:     "Different language",
-			data:     randXliff2(nonOriginalMessages),
-			expected: nonOriginalMessages,
+			data:     randXliff2(nonOriginalTranslation),
+			expected: nonOriginalTranslation,
 		},
 	}
 

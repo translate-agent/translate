@@ -10,7 +10,7 @@ import (
 func Test_MarkUntranslated(t *testing.T) {
 	t.Parallel()
 
-	originalMsgs := func() Translation {
+	original := func() Translation {
 		return Translation{
 			Original: true,
 			Messages: []Message{
@@ -21,7 +21,7 @@ func Test_MarkUntranslated(t *testing.T) {
 		}
 	}
 
-	nonOriginalMsgs := func() Translation {
+	nonOriginal := func() Translation {
 		return Translation{
 			Original: false,
 			Messages: []Message{
@@ -34,32 +34,32 @@ func Test_MarkUntranslated(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		messagesSlice   TranslationSlice
+		translations    Translations
 		untranslatedIds []string
 	}{
 		// Nothing is changed, untranslated IDs are not provided.
 		{
 			name:            "Without untranslated IDs",
-			messagesSlice:   TranslationSlice{originalMsgs(), nonOriginalMsgs()},
+			translations:    Translations{original(), nonOriginal()},
 			untranslatedIds: nil,
 		},
 		// Nothing is changed, messages with original flag should not be altered.
 		{
-			name:            "One original messages",
-			messagesSlice:   TranslationSlice{originalMsgs()},
+			name:            "One original translation",
+			translations:    Translations{original()},
 			untranslatedIds: []string{"1"},
 		},
 		// First message status is changed to untranslated for all messages, other messages are not changed.
 		{
-			name:            "Multiple translated messages",
-			messagesSlice:   TranslationSlice{nonOriginalMsgs(), nonOriginalMsgs()},
+			name:            "Multiple translations",
+			translations:    Translations{nonOriginal(), nonOriginal()},
 			untranslatedIds: []string{"1"},
 		},
-		// First message status is changed to untranslated for all messages except original one
+		// First message status is changed to untranslated for all translations except original one
 		// other messages are not changed.
 		{
-			name:            "Mixed messages",
-			messagesSlice:   TranslationSlice{originalMsgs(), nonOriginalMsgs()},
+			name:            "Mixed translations",
+			translations:    Translations{original(), nonOriginal()},
 			untranslatedIds: []string{"1", "2"},
 		},
 	}
@@ -69,12 +69,12 @@ func Test_MarkUntranslated(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			origIdx := tt.messagesSlice.OriginalIndex()
-			tt.messagesSlice.MarkUntranslated(tt.untranslatedIds)
+			origIdx := tt.translations.OriginalIndex()
+			tt.translations.MarkUntranslated(tt.untranslatedIds)
 
-			// For original messages, no messages should be altered, e.g. all messages should be with status translated.
+			// For original translations, no messages should be altered, e.g. all messages should be with status translated.
 			if origIdx != -1 {
-				for _, msg := range tt.messagesSlice[origIdx].Messages {
+				for _, msg := range tt.translations[origIdx].Messages {
 					require.Equal(t, MessageStatusTranslated.String(), msg.Status.String())
 				}
 			}
@@ -82,12 +82,12 @@ func Test_MarkUntranslated(t *testing.T) {
 			// For non original messages:
 			// 1. if it's ID is in untranslated IDs then it's status should be changed to untranslated.
 			// 2. if it's ID is not in untranslated IDs, it's status should be left as is, e.g. translated.
-			for _, messages := range tt.messagesSlice {
-				if messages.Original {
+			for _, translation := range tt.translations {
+				if translation.Original {
 					continue
 				}
 
-				for _, message := range messages.Messages {
+				for _, message := range translation.Messages {
 					expectedStatus := MessageStatusTranslated
 					if slices.Contains(tt.untranslatedIds, message.ID) {
 						expectedStatus = MessageStatusUntranslated
@@ -104,7 +104,7 @@ func Test_PopulateTranslations(t *testing.T) {
 	t.Parallel()
 
 	// for test1
-	onlyOriginal := TranslationSlice{
+	onlyOriginal := Translations{
 		Translation{
 			Original: true,
 			Messages: []Message{
@@ -116,7 +116,7 @@ func Test_PopulateTranslations(t *testing.T) {
 	}
 
 	// for test2
-	mixed := TranslationSlice{
+	mixed := Translations{
 		Translation{
 			Original: true,
 			Messages: []Message{
@@ -154,17 +154,17 @@ func Test_PopulateTranslations(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		messageSlice TranslationSlice
+		translations Translations
 	}{
 		{
-			// Only original messages -> noop
+			// Only original translation -> noop
 			name:         "Nothing to populate",
-			messageSlice: onlyOriginal,
+			translations: onlyOriginal,
 		},
 		{
-			// Original messages have extra messages -> translated messages should be populated with the extra messages.
+			// Original translation have extra messages -> translated messages should be populated with the extra messages.
 			name:         "Populate multiple",
-			messageSlice: mixed,
+			translations: mixed,
 		},
 	}
 
@@ -173,13 +173,13 @@ func Test_PopulateTranslations(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			tt.messageSlice.PopulateTranslations()
+			tt.translations.PopulateTranslations()
 
-			for _, messages := range tt.messageSlice {
-				require.Len(t, messages.Messages, expectedLen)
+			for _, translation := range tt.translations {
+				require.Len(t, translation.Messages, expectedLen)
 
-				// Check that all messages.messages has all messages from original.
-				for _, message := range messages.Messages {
+				// Check that all translation.messages has all messages from original.
+				for _, message := range translation.Messages {
 					require.Contains(t, expectedIds, message.ID)
 					require.Contains(t, expectedIds, message.Message)
 

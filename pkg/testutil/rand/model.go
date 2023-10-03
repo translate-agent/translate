@@ -129,32 +129,35 @@ func WithMessageFormat() ModelMessageOption {
 	}
 }
 
-// ------------------Messages------------------
+// ------------------Translation-----------------
 
 // modelTranslation generates a random model.Translation with the given
-// count of Messages.messages and using the provided options for each message.
+// count of messages.message and using the provided options for each message.
 func modelTranslation(msgCount uint, msgOpts ...ModelMessageOption) *model.Translation {
-	translations := &model.Translation{
+	translation := &model.Translation{
 		Language: Language(),
 		Original: gofakeit.Bool(),
 		Messages: make([]model.Message, msgCount),
 	}
 
 	if msgCount == 0 {
-		return translations
+		return translation
 	}
 
 	msgs := ModelMessageSlice(msgCount, msgOpts...)
 	for i, msg := range msgs {
-		translations.Messages[i] = *msg
+		translation.Messages[i] = *msg
 	}
 
-	return translations
+	return translation
 }
 
 // ModelTranslation generates a random model.Translation
 // with specific messages.message count, message and messages options.
-func ModelTranslation(msgCount uint, msgOpts []ModelMessageOption, msgsOpts ...ModelMessagesOption) *model.Translation {
+func ModelTranslation(msgCount uint,
+	msgOpts []ModelMessageOption,
+	msgsOpts ...ModelTranslationOption,
+) *model.Translation {
 	// translationF wraps modelTranslation() for mdl function.
 	translationF := func() *model.Translation {
 		return modelTranslation(msgCount, msgOpts...)
@@ -163,40 +166,40 @@ func ModelTranslation(msgCount uint, msgOpts []ModelMessageOption, msgsOpts ...M
 	return mdl(translationF, msgsOpts...)
 }
 
-// ModelTranslationSlice generates a slice of random model.Translation with the message and messages options.
-func ModelTranslationSlice(
+// ModelTranslations generates a slice of random model.Translation with the message and messages options.
+func ModelTranslations(
 	n uint,
 	msgCount uint,
 	msgOpts []ModelMessageOption,
-	msgsOpts ...ModelMessagesOption,
+	msgsOpts ...ModelTranslationOption,
 ) []*model.Translation {
 	// translationF wraps ModelTranslation() for slice function.
-	translationF := func(opts ...ModelMessagesOption) *model.Translation {
+	translationF := func(opts ...ModelTranslationOption) *model.Translation {
 		return ModelTranslation(msgCount, msgOpts, opts...)
 	}
 
 	return slice(n, translationF, msgsOpts...)
 }
 
-// ------------------Messages Opts------------------
+// ------------------Translation Opts------------------
 
-type ModelMessagesOption func(*model.Translation)
+type ModelTranslationOption func(*model.Translation)
 
 // WithLanguage sets the language of the model.Translation.
-func WithLanguage(lang language.Tag) ModelMessagesOption {
+func WithLanguage(lang language.Tag) ModelTranslationOption {
 	return func(t *model.Translation) {
 		t.Language = lang
 	}
 }
 
 // WithOriginal sets the original flag of the model.Translation.
-func WithOriginal(original bool) ModelMessagesOption {
+func WithOriginal(original bool) ModelTranslationOption {
 	return func(t *model.Translation) {
 		t.Original = original
 	}
 }
 
-func WithSameIDs(t *model.Translation) ModelMessagesOption {
+func WithSameIDs(t *model.Translation) ModelTranslationOption {
 	return func(t2 *model.Translation) {
 		for i := range t2.Messages {
 			t2.Messages[i].ID = t.Messages[i].ID

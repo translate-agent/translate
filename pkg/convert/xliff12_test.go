@@ -19,26 +19,26 @@ import (
 // TODO: XLIFF1.2 and XLIFF2.0 uses same test data and same tests, so we can merge them into one test file
 
 // randXliff12 dynamically generates a random XLIFF 1.2 file from the given translations.
-func randXliff12(translations *model.Translation) []byte {
+func randXliff12(translation *model.Translation) []byte {
 	b := new(bytes.Buffer)
 
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
 	b.WriteString("<xliff xmlns=\"urn:oasis:names:tc:xliff:document:1.2\" version=\"1.2\">")
 
-	if translations.Original {
-		fmt.Fprintf(b, "<file source-language=\"%s\" target-language=\"und\">", translations.Language)
+	if translation.Original {
+		fmt.Fprintf(b, "<file source-language=\"%s\" target-language=\"und\">", translation.Language)
 	} else {
-		fmt.Fprintf(b, "<file source-language=\"und\" target-language=\"%s\">", translations.Language)
+		fmt.Fprintf(b, "<file source-language=\"und\" target-language=\"%s\">", translation.Language)
 	}
 
 	b.WriteString("<body>")
 
 	writeMsg := func(s string) { fmt.Fprintf(b, "<target>%s</target>", s) }
-	if translations.Original {
+	if translation.Original {
 		writeMsg = func(s string) { fmt.Fprintf(b, "<source>%s</source>", s) }
 	}
 
-	for _, msg := range translations.Messages {
+	for _, msg := range translation.Messages {
 		fmt.Fprintf(b, "<trans-unit id=\"%s\">", msg.ID)
 
 		writeMsg(msg.Message)
