@@ -51,12 +51,12 @@ func Test_fuzzyTranslate(t *testing.T) {
 		{
 			name:               "Fuzzy translate untranslated messages for one message",
 			originalTranslation:   originalTranslation1,
-			translatedTranslation: randTranslatedTranslation(1, 3, originalTranslation1),
+			translatedTranslation: randTranslations(1, 3, originalTranslation1),
 		},
 		{
 			name:               "Fuzzy translate untranslated messages for five messages",
 			originalTranslation:   originalTranslation2,
-			translatedTranslation: randTranslatedTranslation(5, 5, originalTranslation2),
+			translatedTranslation: randTranslations(5, 5, originalTranslation2),
 		},
 	}
 
@@ -124,9 +124,9 @@ func randOriginalTranslation(messageCount uint) *model.Translation {
 		rand.WithLanguage(language.English))
 }
 
-// randTranslatedTranslation creates a random translation with the original flag set to false
+// randTranslations creates a random translation with the original flag set to false
 // with the same IDs as the original translation, and with translated status.
-func randTranslatedTranslation(n uint, msgCount uint, original *model.Translation) []model.Translation {
+func randTranslations(n uint, msgCount uint, original *model.Translation) []model.Translation {
 	translations := make([]model.Translation, n)
 	for i, lang := range rand.Languages(n) {
 		translations[i] = *rand.ModelTranslation(

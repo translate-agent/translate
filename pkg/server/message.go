@@ -317,7 +317,7 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 			return fmt.Errorf("translator translate messages: %w", err)
 		}
 
-		// Overwrite untranslated messages with translated messagess
+		// Overwrite untranslated messages with translated messages
 		for _, translatedMessage := range translated.Messages {
 			if untranslatedMessage, ok := untranslatedMessagesLookup[translatedMessage.ID]; ok {
 				*untranslatedMessage = translatedMessage

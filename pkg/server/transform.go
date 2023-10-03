@@ -161,12 +161,12 @@ func messageFromProto(m *translatev1.Message) (*model.Message, error) {
 	}, nil
 }
 
-// messageToProto converts []model.Message to []*translatev1.Message.
+// messagesToProto converts []model.Message to []*translatev1.Message.
 func messagesToProto(m []model.Message) []*translatev1.Message {
 	return sliceToProto(m, messageToProto)
 }
 
-// messageFromProto converts []*translatev1.Message to []model.Message.
+// messagesFromProto converts []*translatev1.Message to []model.Message.
 func messagesFromProto(m []*translatev1.Message) ([]model.Message, error) {
 	return sliceFromProto(m, messageFromProto)
 }
