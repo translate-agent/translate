@@ -171,7 +171,7 @@ func messagesFromProto(m []*translatev1.Message) ([]model.Message, error) {
 	return sliceFromProto(m, messageFromProto)
 }
 
-// ----------------------Messages----------------------
+// ----------------------Translation----------------------
 
 // translationToProto converts *model.Translation to *translatev1.Translation.
 func translationToProto(t *model.Translation) *translatev1.Translation {

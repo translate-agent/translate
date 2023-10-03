@@ -525,7 +525,7 @@ func Test_ListServices_REST(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-// ------------------Translations------------------
+// ------------------Translation------------------
 
 // POST.
 func Test_CreateTranslation_REST(t *testing.T) {
