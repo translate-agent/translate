@@ -101,7 +101,7 @@ func (t *TranslateServiceServer) CreateTranslation(
 		}
 
 		if originalLanguage != nil {
-			// Translate translation -
+			// Translate messages -
 			// untranslated text in incoming translation will be translated from original to target language.
 			targetLanguage := params.translation.Language
 			params.translation.Language = *originalLanguage
@@ -264,7 +264,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 
 // helpers
 
-// fuzzyTranslate fuzzy translates any untranslated translation,
+// fuzzyTranslate fuzzy translates any untranslated messages,
 // returns messagesSlice containing refreshed translations.
 //
 // TODO: This logic should be moved to fuzzy pkg.
@@ -288,10 +288,10 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 			continue
 		}
 
-		// Create a map to store pointers to untranslated translation
+		// Create a map to store pointers to untranslated messages
 		untranslatedMessagesLookup := make(map[string]*model.Message)
 
-		// Iterate over the translation and add any untranslated translation to the untranslated translation lookup
+		// Iterate over the messages and add any untranslated message to the untranslated messages lookup
 		for j := range all[i].Messages {
 			if all[i].Messages[j].Status == model.MessageStatusUntranslated {
 				all[i].Messages[j].Message = origMsgLookup[all[i].Messages[j].ID]
@@ -299,7 +299,7 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 			}
 		}
 
-		// Create a new translation to store the translation that need to be translated
+		// Create a new translation to store the messages that need to be translated
 		toBeTranslated := &model.Translation{
 			Language: all[origIdx].Language,
 			Messages: make([]model.Message, 0, len(untranslatedMessagesLookup)),
@@ -309,15 +309,15 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 			toBeTranslated.Messages = append(toBeTranslated.Messages, *msg)
 		}
 
-		// Translate translation -
-		// untranslated translation in toBeTranslated will be translated from original to target language.
+		// Translate messages -
+		// untranslated messages in toBeTranslated will be translated from original to target language.
 		targetLanguage := all[i].Language
 		translated, err := t.translator.Translate(ctx, toBeTranslated, targetLanguage)
 		if err != nil {
 			return fmt.Errorf("translator translate translation: %w", err)
 		}
 
-		// Overwrite untranslated translation with translated translation
+		// Overwrite untranslated messages with translated messagess
 		for _, translatedMessage := range translated.Messages {
 			if untranslatedMessage, ok := untranslatedMessagesLookup[translatedMessage.ID]; ok {
 				*untranslatedMessage = translatedMessage

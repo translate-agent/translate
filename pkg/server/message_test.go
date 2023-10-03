@@ -49,12 +49,12 @@ func Test_fuzzyTranslate(t *testing.T) {
 		assertFunc         func(t *testing.T, originalTranslation *model.Translation, translatedTranslation []model.Translation)
 	}{
 		{
-			name:               "Fuzzy translate untranslated translation for one message",
+			name:               "Fuzzy translate untranslated messages for one message",
 			originalTranslation:   originalTranslation1,
 			translatedTranslation: randTranslatedTranslation(1, 3, originalTranslation1),
 		},
 		{
-			name:               "Fuzzy translate untranslated translation for five messages",
+			name:               "Fuzzy translate untranslated messages for five messages",
 			originalTranslation:   originalTranslation2,
 			translatedTranslation: randTranslatedTranslation(5, 5, originalTranslation2),
 		},
@@ -93,7 +93,7 @@ func Test_fuzzyTranslate(t *testing.T) {
 			err := translateSrv.fuzzyTranslate(ctx, allTranslations)
 			require.NoError(t, err)
 
-			// Check that untranslated translation have been translated and marked as fuzzy for all translations.
+			// Check that untranslated messages have been translated and marked as fuzzy for all translations.
 			for _, translation := range allTranslations {
 				if translation.Original {
 					require.Equal(t, *tt.originalTranslation, translation)
