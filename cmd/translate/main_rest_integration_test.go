@@ -742,7 +742,7 @@ func Test_GetTranslations_REST(t *testing.T) {
 	}{
 		{
 			serviceID:    service.Id,
-			name:         "Happy Path, get all messages",
+			name:         "Happy Path, get all translations",
 			expectedCode: http.StatusOK,
 		},
 		{

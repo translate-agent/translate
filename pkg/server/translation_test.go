@@ -48,12 +48,12 @@ func Test_fuzzyTranslate(t *testing.T) {
 		translations []model.Translation
 	}{
 		{
-			name:               "Fuzzy translate untranslated messages for one message",
+			name:               "Fuzzy translate untranslated messages for one translation",
 			originalTranslation:   originalTranslation1,
 			translations: randTranslations(1, 3, originalTranslation1),
 		},
 		{
-			name:               "Fuzzy translate untranslated messages for five messages",
+			name:               "Fuzzy translate untranslated messages for five translations",
 			originalTranslation:   originalTranslation2,
 			translations: randTranslations(5, 5, originalTranslation2),
 		},

@@ -156,14 +156,14 @@ func modelTranslation(msgCount uint, msgOpts ...ModelMessageOption) *model.Trans
 // with specific messages.message count, message and messages options.
 func ModelTranslation(msgCount uint,
 	msgOpts []ModelMessageOption,
-	msgsOpts ...ModelTranslationOption,
+	translationOpts ...ModelTranslationOption,
 ) *model.Translation {
 	// translationF wraps modelTranslation() for mdl function.
 	translationF := func() *model.Translation {
 		return modelTranslation(msgCount, msgOpts...)
 	}
 
-	return mdl(translationF, msgsOpts...)
+	return mdl(translationF, translationOpts...)
 }
 
 // ModelTranslations generates a slice of random model.Translation with the message and messages options.
@@ -171,14 +171,14 @@ func ModelTranslations(
 	n uint,
 	msgCount uint,
 	msgOpts []ModelMessageOption,
-	msgsOpts ...ModelTranslationOption,
+	translationOpts ...ModelTranslationOption,
 ) []*model.Translation {
 	// translationF wraps ModelTranslation() for slice function.
 	translationF := func(opts ...ModelTranslationOption) *model.Translation {
 		return ModelTranslation(msgCount, msgOpts, opts...)
 	}
 
-	return slice(n, translationF, msgsOpts...)
+	return slice(n, translationF, translationOpts...)
 }
 
 // ------------------Translation Opts------------------

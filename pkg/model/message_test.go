@@ -43,13 +43,13 @@ func Test_MarkUntranslated(t *testing.T) {
 			translations:    Translations{original(), nonOriginal()},
 			untranslatedIds: nil,
 		},
-		// Nothing is changed, messages with original flag should not be altered.
+		// Nothing is changed, translation with original flag should not be altered.
 		{
 			name:            "One original translation",
 			translations:    Translations{original()},
 			untranslatedIds: []string{"1"},
 		},
-		// First message status is changed to untranslated for all messages, other messages are not changed.
+		// First message status is changed to untranslated for all translations, other messages are not changed.
 		{
 			name:            "Multiple translations",
 			translations:    Translations{nonOriginal(), nonOriginal()},
@@ -79,7 +79,7 @@ func Test_MarkUntranslated(t *testing.T) {
 				}
 			}
 
-			// For non original messages:
+			// For non original translations:
 			// 1. if it's ID is in untranslated IDs then it's status should be changed to untranslated.
 			// 2. if it's ID is not in untranslated IDs, it's status should be left as is, e.g. translated.
 			for _, translation := range tt.translations {
