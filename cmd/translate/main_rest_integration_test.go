@@ -721,7 +721,7 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 }
 
 // GET.
-func Test_GetMessages_REST(t *testing.T) {
+func Test_GetTranslations_REST(t *testing.T) {
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)

@@ -127,7 +127,8 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		if origIdx := all.OriginalIndex(); origIdx != -1 {
 			oldOriginal := all[origIdx]
 
-			// Mark new or altered translation as untranslated.
+			// Compare repo and request original translation. 
+			// Change status for new or altered translation.messages to UNTRANSLATED for all languages
 			all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(translation))
 			// Replace original translation with new ones.
 			all.Replace(*translation)

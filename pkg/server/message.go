@@ -67,13 +67,13 @@ func (t *TranslateServiceServer) CreateTranslation(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	translation, err := t.repo.LoadTranslations(ctx, params.serviceID,
+	translations, err := t.repo.LoadTranslations(ctx, params.serviceID,
 		repo.LoadTranslationOpts{FilterLanguages: []language.Tag{params.translation.Language}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if len(translation) > 0 {
+	if len(translations) > 0 {
 		return nil, status.Errorf(codes.AlreadyExists, "translation already exist for language: '%s'", params.translation.Language)
 	}
 
@@ -234,7 +234,8 @@ func (t *TranslateServiceServer) UpdateTranslation(
 	if origIdx := all.OriginalIndex(); params.translation.Original && origIdx != -1 {
 		oldOriginal := all[origIdx]
 
-		// Mark new or altered original translation as untranslated for all translations.
+		// Compare repo and request original translation. 
+		// Change status for new or altered translation.messages to UNTRANSLATED for all languages
 		all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(params.translation))
 		// Replace original translation with new ones.
 		all.Replace(*params.translation)
@@ -265,7 +266,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 // helpers
 
 // fuzzyTranslate fuzzy translates any untranslated messages,
-// returns messagesSlice containing refreshed translations.
+// returns translations containing refreshed messages.
 //
 // TODO: This logic should be moved to fuzzy pkg.
 func (t *TranslateServiceServer) fuzzyTranslate(

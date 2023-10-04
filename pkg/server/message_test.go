@@ -45,18 +45,17 @@ func Test_fuzzyTranslate(t *testing.T) {
 	tests := []struct {
 		name               string
 		originalTranslation   *model.Translation
-		translatedTranslation []model.Translation
-		assertFunc         func(t *testing.T, originalTranslation *model.Translation, translatedTranslation []model.Translation)
+		translations []model.Translation
 	}{
 		{
 			name:               "Fuzzy translate untranslated messages for one message",
 			originalTranslation:   originalTranslation1,
-			translatedTranslation: randTranslations(1, 3, originalTranslation1),
+			translations: randTranslations(1, 3, originalTranslation1),
 		},
 		{
 			name:               "Fuzzy translate untranslated messages for five messages",
 			originalTranslation:   originalTranslation2,
-			translatedTranslation: randTranslations(5, 5, originalTranslation2),
+			translations: randTranslations(5, 5, originalTranslation2),
 		},
 	}
 
@@ -65,9 +64,9 @@ func Test_fuzzyTranslate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			allTranslations := make(model.Translations, 0, len(tt.translatedTranslation)+1)
+			allTranslations := make(model.Translations, 0, len(tt.translations)+1)
 			allTranslations = append(allTranslations, *tt.originalTranslation)
-			allTranslations = append(allTranslations, tt.translatedTranslation...)
+			allTranslations = append(allTranslations, tt.translations...)
 
 			untranslatedMessageIDLookup := make(map[string]struct{})
 
