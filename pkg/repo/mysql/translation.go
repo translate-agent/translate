@@ -145,7 +145,7 @@ func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts r
 			// Add to lookup
 			translationsLookup[lang] = translation
 		}
-		// Add scanned message to translations
+		// Add scanned message to translation
 		translation.Messages = append(translation.Messages, msg)
 	}
 
