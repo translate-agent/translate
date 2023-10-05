@@ -44,7 +44,7 @@ func Test_TranslateMock(t *testing.T) {
 
 				translation := tt.translation
 				translation.Language = language.English // set original language
-				translatedTranslation, err := mock.Translate(context.Background(), translation, tt.translation.Language)
+				translated, err := mock.Translate(context.Background(), translation, tt.translation.Language)
 
 				if tt.expectedErr != nil {
 					require.ErrorContains(t, err, tt.expectedErr.Error())
@@ -54,23 +54,23 @@ func Test_TranslateMock(t *testing.T) {
 				require.NoError(t, err)
 
 				// Check the that the translated translation have the correct language.
-				require.Equal(t, tt.translation.Language, translatedTranslation.Language)
+				require.Equal(t, tt.translation.Language, translated.Language)
 
 				// Check that length matches.
-				require.Len(t, translatedTranslation.Messages, len(tt.translation.Messages))
+				require.Len(t, translated.Messages, len(tt.translation.Messages))
 
-				for i, m := range translatedTranslation.Messages {
+				for i, m := range translated.Messages {
 					// Check the translated translation.messages are not empty and are marked as fuzzy.
 					require.NotEmpty(t, m.Message)
 					require.Equal(t, model.MessageStatusFuzzy, m.Status)
 
 					// Reset the message to empty and fuzzy to original values, for the last check for side effects.
-					translatedTranslation.Messages[i].Message = tt.translation.Messages[i].Message
-					translatedTranslation.Messages[i].Status = tt.translation.Messages[i].Status
+					translated.Messages[i].Message = tt.translation.Messages[i].Message
+					translated.Messages[i].Status = tt.translation.Messages[i].Status
 				}
 
 				// Check the translated translation.messages are the same as the input messages. (Check for side effects)
-				require.ElementsMatch(t, tt.translation.Messages, translatedTranslation.Messages)
+				require.ElementsMatch(t, tt.translation.Messages, translated.Messages)
 			})
 		}
 	})

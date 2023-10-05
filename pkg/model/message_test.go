@@ -163,7 +163,7 @@ func Test_PopulateTranslations(t *testing.T) {
 			translations: onlyOriginal,
 		},
 		{
-			// Original translation have extra messages -> translated messages should be populated with the extra messages.
+			// Original translation has extra messages -> translated messages should be populated with the extra messages.
 			name:         "Populate multiple",
 			translations: mixed,
 		},

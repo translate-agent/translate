@@ -118,7 +118,7 @@ func (g *GoogleTranslate) Translate(
 		return &model.Translation{Language: translation.Language, Original: translation.Original}, nil
 	}
 
-	// Split text from translation.messages into batches to avoid exceeding
+	// Split text from translation into batches to avoid exceeding
 	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
 
 	var codePointsInBatch int
@@ -146,7 +146,7 @@ func (g *GoogleTranslate) Translate(
 
 	var msgIndex int
 
-	translatedTranslation := model.Translation{
+	translated := model.Translation{
 		Language: targetLanguage,
 		Original: translation.Original,
 		Messages: make([]model.Message, 0, len(translation.Messages)),
@@ -168,13 +168,13 @@ func (g *GoogleTranslate) Translate(
 			m.Message = t.TranslatedText
 			m.Status = model.MessageStatusFuzzy
 
-			translatedTranslation.Messages = append(translatedTranslation.Messages, m)
+			translated.Messages = append(translated.Messages, m)
 
 			msgIndex++
 		}
 	}
 
-	return &translatedTranslation, nil
+	return &translated, nil
 }
 
 // parent returns path to Google project and location.

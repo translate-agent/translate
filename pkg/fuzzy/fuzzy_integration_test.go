@@ -23,7 +23,7 @@ func Test_Translate(t *testing.T) {
 	t.Parallel()
 
 	allTranslators(t, func(t *testing.T, translator Translator, subTest testutil.SubtestFn) {
-		subTest("Multiple translation", func(ctx context.Context, t *testing.T) {
+		subTest("Multiple translations", func(ctx context.Context, t *testing.T) {
 			translation := randTranslation(3, language.Latvian)
 			translation.Language = language.English // set original language
 			translatedMsgs, err := translator.Translate(ctx, translation, language.Latvian)
