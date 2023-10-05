@@ -72,7 +72,7 @@ func Test_MarkUntranslated(t *testing.T) {
 			origIdx := tt.translations.OriginalIndex()
 			tt.translations.MarkUntranslated(tt.untranslatedIds)
 
-			// For original translations, no translation.messages should be altered, e.g. 
+			// For original translations, no translation.messages should be altered, e.g.
 			// all messages should be with status translated.
 			if origIdx != -1 {
 				for _, msg := range tt.translations[origIdx].Messages {
