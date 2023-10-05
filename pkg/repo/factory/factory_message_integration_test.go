@@ -139,7 +139,7 @@ func Test_SaveTranslationUpdate(t *testing.T) {
 		// Save updated translations
 
 		err = repository.SaveTranslation(testCtx, service.ID, expectedTranslations)
-		require.NoError(t, err, "Update messages")
+		require.NoError(t, err, "Update Translation")
 
 		// Assure that translations are updated
 

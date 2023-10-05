@@ -107,11 +107,11 @@ ON DUPLICATE KEY UPDATE
 func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationsOpts,
 ) (model.Translations, error) {
 	rows, err := sq.
-		Select("mm.id, mm.message, mm.description, mm.positions, mm.status, m.language, m.original").
-		From("message mm").
-		Join("translation m ON m.id = mm.translation_id").
-		Where("m.service_id = UUID_TO_BIN(?)", serviceID).
-		Where(eq("m.language", langToStringSlice(opts.FilterLanguages))).
+		Select("m.id, m.message, m.description, m.positions, m.status, t.language, t.original").
+		From("message m").
+		Join("translation t ON t.id = m.translation_id").
+		Where("t.service_id = UUID_TO_BIN(?)", serviceID).
+		Where(eq("t.language", langToStringSlice(opts.FilterLanguages))).
 		RunWith(r.db).
 		QueryContext(ctx)
 	if err != nil {
