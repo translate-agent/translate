@@ -77,7 +77,7 @@ func (t *TranslateServiceServer) CreateTranslation(
 		return nil, status.Errorf(codes.AlreadyExists, "translation already exist for language: '%s'", params.translation.Language)
 	}
 
-	// Translate messages when translation are not original and original language is known.
+	// Translate messages when translation is not original and original language is known.
 	if !params.translation.Original {
 		// Retrieve language from original translation.
 		var originalLanguage *language.Tag
@@ -91,7 +91,7 @@ func (t *TranslateServiceServer) CreateTranslation(
 			if v.Original {
 				originalLanguage = &v.Language
 
-				// if incoming translation are empty populate with original translation.
+				// if incoming translation is empty populate with original translation.
 				if params.translation.Messages == nil {
 					params.translation.Messages = v.Messages
 				}
@@ -234,7 +234,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 	if origIdx := all.OriginalIndex(); params.translation.Original && origIdx != -1 {
 		oldOriginal := all[origIdx]
 
-		// Compare repo and request original translation. 
+		// Compare repo and request original translation.
 		// Change status for new or altered translation.messages to UNTRANSLATED for all languages
 		all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(params.translation))
 		// Replace original translation with new ones.

@@ -105,7 +105,7 @@ func Test_SaveTranslationsMultipleLangOneService(t *testing.T) {
 			require.NoError(t, err, "Save translation")
 		}
 
-		// Assure that all translation are saved
+		// Assure that all translations are saved
 		for _, translation := range translations {
 			actualTranslations, err := repository.LoadTranslations(testCtx, service.ID,
 				repo.LoadTranslationOpts{FilterLanguages: []language.Tag{translation.Language}})
@@ -160,7 +160,7 @@ func Test_LoadTranslation(t *testing.T) {
 		langs := rand.Languages(2)
 		// translationLang is the language of the translation, for Happy Path test.
 		translationLang := langs[0]
-		// langWithNoTranslations is a different language, for No translation with language test.
+		// langWithNoTranslations are a different language, for No translation with language test.
 		// It must be different from translationLang, since otherwise that would return not nil Translation.Messages
 		// and will fail the test.
 		langWithNoTranslations := langs[1]
