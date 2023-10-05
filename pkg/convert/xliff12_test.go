@@ -18,7 +18,7 @@ import (
 
 // TODO: XLIFF1.2 and XLIFF2.0 uses same test data and same tests, so we can merge them into one test file
 
-// randXliff12 dynamically generates a random XLIFF 1.2 file from the given translations.
+// randXliff12 dynamically generates a random XLIFF 1.2 file from the given translation.
 func randXliff12(translation *model.Translation) []byte {
 	b := new(bytes.Buffer)
 
@@ -74,13 +74,13 @@ func randXliff12(translation *model.Translation) []byte {
 func Test_FromXliff12(t *testing.T) {
 	t.Parallel()
 
-	originalTranslations := testutilrand.ModelTranslation(
+	originalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
 		testutilrand.WithOriginal(true),
 	)
 
-	nonOriginalTranslations := testutilrand.ModelTranslation(
+	nonOriginalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusUntranslated)},
 		testutilrand.WithOriginal(false),
@@ -93,13 +93,13 @@ func Test_FromXliff12(t *testing.T) {
 	}{
 		{
 			name:     "Original",
-			data:     randXliff12(originalTranslations),
-			expected: originalTranslations,
+			data:     randXliff12(originalTranslation),
+			expected: originalTranslation,
 		},
 		{
 			name:     "Different language",
-			data:     randXliff12(nonOriginalTranslations),
-			expected: nonOriginalTranslations,
+			data:     randXliff12(nonOriginalTranslation),
+			expected: nonOriginalTranslation,
 		},
 	}
 
