@@ -47,15 +47,15 @@ func (t Translations) HasLanguage(lang language.Tag) bool {
 
 // LanguageIndex returns index of Translation with the given language. If not found, returns -1.
 func (t Translations) LanguageIndex(lang language.Tag) int {
-	return slices.IndexFunc(t, func(m Translation) bool {
-		return m.Language == lang
+	return slices.IndexFunc(t, func(t Translation) bool {
+		return t.Language == lang
 	})
 }
 
 // OriginalIndex returns index of Translation with the original flag set to true. If not found, returns -1.
 func (t Translations) OriginalIndex() int {
-	return slices.IndexFunc(t, func(m Translation) bool {
-		return m.Original
+	return slices.IndexFunc(t, func(t Translation) bool {
+		return t.Original
 	})
 }
 
@@ -157,7 +157,7 @@ Example:
 		},
 */
 func (t Translations) PopulateTranslations() {
-	origIdx := slices.IndexFunc(t, func(m Translation) bool { return m.Original })
+	origIdx := slices.IndexFunc(t, func(t Translation) bool { return t.Original })
 	if origIdx == -1 {
 		return
 	}

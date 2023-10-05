@@ -24,14 +24,14 @@ const (
 // ToPot function takes a model.Translation structure,
 // writes the language information and each message to a buffer in the POT file format,
 // and returns the buffer contents as a byte slice representing the POT file.
-func ToPot(m model.Translation) ([]byte, error) {
+func ToPot(t model.Translation) ([]byte, error) {
 	var b bytes.Buffer
 
-	if _, err := fmt.Fprintf(&b, "msgid \"\"\nmsgstr \"\"\n\"Language: %s\\n\"\n", m.Language); err != nil {
+	if _, err := fmt.Fprintf(&b, "msgid \"\"\nmsgstr \"\"\n\"Language: %s\\n\"\n", t.Language); err != nil {
 		return nil, fmt.Errorf("write language: %w", err)
 	}
 
-	for i, message := range m.Messages {
+	for i, message := range t.Messages {
 		if err := writeMessage(&b, i, message); err != nil {
 			return nil, fmt.Errorf("write message: %w", err)
 		}
