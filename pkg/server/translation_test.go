@@ -123,7 +123,7 @@ func randOriginalTranslation(messageCount uint) *model.Translation {
 		rand.WithLanguage(language.English))
 }
 
-// randTranslations creates a random translation with the original flag set to false
+// randTranslations creates random translations with the original flag set to false
 // with the same IDs as the original translation, and with translated status.
 func randTranslations(n uint, msgCount uint, original *model.Translation) []model.Translation {
 	translations := make([]model.Translation, n)

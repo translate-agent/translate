@@ -53,14 +53,14 @@ func Test_TranslateMock(t *testing.T) {
 
 				require.NoError(t, err)
 
-				// Check the that the translated messages have the correct language.
+				// Check the that the translated translation have the correct language.
 				require.Equal(t, tt.translation.Language, translatedTranslation.Language)
 
 				// Check that length matches.
 				require.Len(t, translatedTranslation.Messages, len(tt.translation.Messages))
 
 				for i, m := range translatedTranslation.Messages {
-					// Check the translated messages are not empty and are marked as fuzzy.
+					// Check the translated translation.messages are not empty and are marked as fuzzy.
 					require.NotEmpty(t, m.Message)
 					require.Equal(t, model.MessageStatusFuzzy, m.Status)
 
@@ -69,7 +69,7 @@ func Test_TranslateMock(t *testing.T) {
 					translatedTranslation.Messages[i].Status = tt.translation.Messages[i].Status
 				}
 
-				// Check the translated messages are the same as the input messages. (Check for side effects)
+				// Check the translated translation.messages are the same as the input messages. (Check for side effects)
 				require.ElementsMatch(t, tt.translation.Messages, translatedTranslation.Messages)
 			})
 		}

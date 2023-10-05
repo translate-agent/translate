@@ -72,7 +72,8 @@ func Test_MarkUntranslated(t *testing.T) {
 			origIdx := tt.translations.OriginalIndex()
 			tt.translations.MarkUntranslated(tt.untranslatedIds)
 
-			// For original translations, no messages should be altered, e.g. all messages should be with status translated.
+			// For original translations, no translation.messages should be altered, e.g. 
+			// all messages should be with status translated.
 			if origIdx != -1 {
 				for _, msg := range tt.translations[origIdx].Messages {
 					require.Equal(t, MessageStatusTranslated.String(), msg.Status.String())
@@ -142,7 +143,7 @@ func Test_PopulateTranslations(t *testing.T) {
 				{ID: "1", Message: "1", Status: MessageStatusTranslated},
 			},
 		},
-		// Empty messages, all messages from original should be added.
+		// Empty translations, all translation.messages from original should be added.
 		Translation{
 			Original: false,
 			Messages: []Message{},

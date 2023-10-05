@@ -101,7 +101,7 @@ func FromArb(data []byte, original bool) (model.Translation, error) {
 	translation := model.Translation{Language: lang, Original: original}
 
 	for key, value := range dst {
-		// Ignore a key if it begins with '@' as it only supplies metadata for message not the message itself.
+		// Ignore a key if it begins with '@' as it only supplies metadata for translation not the message itself.
 		if key[0] == '@' {
 			continue
 		}

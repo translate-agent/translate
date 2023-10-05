@@ -118,7 +118,7 @@ func (g *GoogleTranslate) Translate(
 		return &model.Translation{Language: translation.Language, Original: translation.Original}, nil
 	}
 
-	// Split text from messages into batches to avoid exceeding
+	// Split text from translation.messages into batches to avoid exceeding
 	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
 
 	var codePointsInBatch int

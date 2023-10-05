@@ -132,7 +132,7 @@ func WithMessageFormat() ModelMessageOption {
 // ------------------Translation-----------------
 
 // modelTranslation generates a random model.Translation with the given
-// count of messages.message and using the provided options for each message.
+// count of messages and using the provided options for each message.
 func modelTranslation(msgCount uint, msgOpts ...ModelMessageOption) *model.Translation {
 	translation := &model.Translation{
 		Language: Language(),
@@ -153,7 +153,7 @@ func modelTranslation(msgCount uint, msgOpts ...ModelMessageOption) *model.Trans
 }
 
 // ModelTranslation generates a random model.Translation
-// with specific messages.message count, message and messages options.
+// with specific message count, message and translation options.
 func ModelTranslation(msgCount uint,
 	msgOpts []ModelMessageOption,
 	translationOpts ...ModelTranslationOption,
@@ -166,7 +166,7 @@ func ModelTranslation(msgCount uint,
 	return mdl(translationF, translationOpts...)
 }
 
-// ModelTranslations generates a slice of random model.Translation with the message and messages options.
+// ModelTranslations generates a slice of random model.Translation with the message and translation options.
 func ModelTranslations(
 	n uint,
 	msgCount uint,

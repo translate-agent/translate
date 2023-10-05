@@ -38,7 +38,7 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 
 	// Check if translation already exists, if not, create a new one
 	switch err = row.Scan(&translationID); {
-	// Message already exists
+	// Translation already exists
 	default:
 		// noop
 
