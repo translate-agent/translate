@@ -119,7 +119,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 
 	// When updating original translation, changes might affect translations - transform and update all translations.
 	if translation.Original {
-		all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationOpts{})
+		all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
@@ -127,10 +127,10 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		if origIdx := all.OriginalIndex(); origIdx != -1 {
 			oldOriginal := all[origIdx]
 
-			// Compare repo and request original translation. 
+			// Compare repo and request original translation.
 			// Change status for new or altered translation.messages to UNTRANSLATED for all languages
 			all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(translation))
-			// Replace original translation with new ones.
+			// Replace original translation with new one.
 			all.Replace(*translation)
 			// Add missing messages for all translations.
 			if params.populateTranslations {
@@ -218,7 +218,7 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 	}
 
 	translations, err := t.repo.LoadTranslations(ctx, params.serviceID,
-		repo.LoadTranslationOpts{FilterLanguages: []language.Tag{params.languageTag}})
+		repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{params.languageTag}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}

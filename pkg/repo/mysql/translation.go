@@ -104,7 +104,7 @@ ON DUPLICATE KEY UPDATE
 	return nil
 }
 
-func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationOpts,
+func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationsOpts,
 ) (model.Translations, error) {
 	rows, err := sq.
 		Select("mm.id, mm.message, mm.description, mm.positions, mm.status, m.language, m.original").

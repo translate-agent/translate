@@ -72,7 +72,7 @@ func Test_SaveTranslation(t *testing.T) {
 				// Assure that the translations were saved correctly.
 
 				actualTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
-					repo.LoadTranslationOpts{FilterLanguages: []language.Tag{tt.translation.Language}})
+					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.translation.Language}})
 				require.NoError(t, err, "Load saved translations")
 
 				testutil.EqualTranslations(t, tt.translation, &actualTranslations[0])
@@ -108,7 +108,7 @@ func Test_SaveTranslationsMultipleLangOneService(t *testing.T) {
 		// Assure that all translations are saved
 		for _, translation := range translations {
 			actualTranslations, err := repository.LoadTranslations(testCtx, service.ID,
-				repo.LoadTranslationOpts{FilterLanguages: []language.Tag{translation.Language}})
+				repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{translation.Language}})
 			require.NoError(t, err, "Load saved translations")
 
 			testutil.EqualTranslations(t, translation, &actualTranslations[0])
@@ -144,7 +144,7 @@ func Test_SaveTranslationUpdate(t *testing.T) {
 		// Assure that translations are updated
 
 		actualTranslation, err := repository.LoadTranslations(testCtx, service.ID,
-			repo.LoadTranslationOpts{FilterLanguages: []language.Tag{expectedTranslations.Language}})
+			repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{expectedTranslations.Language}})
 		require.NoError(t, err, "Load updated translations")
 
 		testutil.EqualTranslations(t, expectedTranslations, &actualTranslation[0])
@@ -202,7 +202,7 @@ func Test_LoadTranslation(t *testing.T) {
 			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				actualTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
-					repo.LoadTranslationOpts{FilterLanguages: []language.Tag{tt.language}})
+					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.language}})
 				require.NoError(t, err, "Load translations")
 
 				assert.ElementsMatch(t, tt.expected, actualTranslations)
@@ -253,7 +253,7 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				actualTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
-					repo.LoadTranslationOpts{FilterLanguages: tt.languages})
+					repo.LoadTranslationsOpts{FilterLanguages: tt.languages})
 
 				require.NoError(t, err, "Load translations")
 				assert.ElementsMatch(t, actualTranslations, tt.expectedTranslations)

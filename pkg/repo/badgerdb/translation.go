@@ -47,7 +47,7 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 }
 
 // LoadTranslations retrieves translations from db based on serviceID and LoadMessageOpts.
-func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationOpts,
+func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationsOpts,
 ) (model.Translations, error) {
 	if _, err := r.LoadService(ctx, serviceID); errors.Is(err, repo.ErrNotFound) {
 		return nil, nil // Empty translation.messages for this service (Not an error)

@@ -20,14 +20,14 @@ type ServicesRepo interface {
 	DeleteService(ctx context.Context, serviceID uuid.UUID) error
 }
 
-type LoadTranslationOpts struct {
+type LoadTranslationsOpts struct {
 	FilterLanguages []language.Tag
 }
 
 type TranslationsRepo interface {
 	// SaveTranslation handles both Create and Update
 	SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error
-	LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts LoadTranslationOpts) (model.Translations, error)
+	LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts LoadTranslationsOpts) (model.Translations, error)
 }
 
 type Repo interface {

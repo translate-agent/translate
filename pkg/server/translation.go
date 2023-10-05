@@ -68,7 +68,7 @@ func (t *TranslateServiceServer) CreateTranslation(
 	}
 
 	translations, err := t.repo.LoadTranslations(ctx, params.serviceID,
-		repo.LoadTranslationOpts{FilterLanguages: []language.Tag{params.translation.Language}})
+		repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{params.translation.Language}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
@@ -82,7 +82,7 @@ func (t *TranslateServiceServer) CreateTranslation(
 		// Retrieve language from original translation.
 		var originalLanguage *language.Tag
 		// TODO: to improve performance should be replaced with CheckTranslationExist db function.
-		loadTranslations, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationOpts{})
+		loadTranslations, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
@@ -157,7 +157,7 @@ func (t *TranslateServiceServer) ListTranslations(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	translations, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationOpts{})
+	translations, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
@@ -219,7 +219,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationOpts{})
+	all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
@@ -237,7 +237,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		// Compare repo and request original translation.
 		// Change status for new or altered translation.messages to UNTRANSLATED for all languages
 		all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(params.translation))
-		// Replace original translation with new ones.
+		// Replace original translation with new one.
 		all.Replace(*params.translation)
 		// Add missing messages for all translations.
 		if params.populateTranslations {
