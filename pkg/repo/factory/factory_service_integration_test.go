@@ -127,7 +127,7 @@ func Test_LoadServices(t *testing.T) {
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
-		expectedServices := rand.ModelServiceSlice(3)
+		expectedServices := rand.ModelServices(3)
 		for _, service := range expectedServices {
 			err := repository.SaveService(testCtx, service)
 			require.NoError(t, err, "Insert test service")

@@ -47,8 +47,8 @@ func ModelService(opts ...ModelServiceOption) *model.Service {
 	return mdl(modelService, opts...)
 }
 
-// ModelServiceSlice generates a slice of random model.Service using the provided options for each service.
-func ModelServiceSlice(n uint, opts ...ModelServiceOption) []*model.Service {
+// ModelServices generates a slice of random model.Service using the provided options for each service.
+func ModelServices(n uint, opts ...ModelServiceOption) []*model.Service {
 	return slice(n, ModelService, opts...)
 }
 
@@ -89,8 +89,8 @@ func ModelMessage(opts ...ModelMessageOption) *model.Message {
 	return mdl(modelMessage, opts...)
 }
 
-// ModelMessageSlice generates a slice of random model.Message using the provided options for each message.
-func ModelMessageSlice(n uint, opts ...ModelMessageOption) []*model.Message {
+// ModelMessages generates a slice of random model.Message using the provided options for each message.
+func ModelMessages(n uint, opts ...ModelMessageOption) []*model.Message {
 	return slice(n, ModelMessage, opts...)
 }
 
@@ -144,7 +144,7 @@ func modelTranslation(msgCount uint, msgOpts ...ModelMessageOption) *model.Trans
 		return translation
 	}
 
-	msgs := ModelMessageSlice(msgCount, msgOpts...)
+	msgs := ModelMessages(msgCount, msgOpts...)
 	for i, msg := range msgs {
 		translation.Messages[i] = *msg
 	}
