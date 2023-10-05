@@ -59,7 +59,7 @@ func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts r
 	if len(opts.FilterLanguages) == 0 {
 		translations, err := r.loadTranslations(serviceID)
 		if err != nil {
-			return nil, fmt.Errorf("load translation by service '%s': %w", serviceID, err)
+			return nil, fmt.Errorf("load translations by service '%s': %w", serviceID, err)
 		}
 
 		return translations, nil
@@ -68,7 +68,7 @@ func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts r
 	// load translations based on provided languages.
 	translations, err := r.loadTranslationsByLang(serviceID, opts.FilterLanguages)
 	if err != nil {
-		return nil, fmt.Errorf("load translation by languages: %w", err)
+		return nil, fmt.Errorf("load translations by languages: %w", err)
 	}
 
 	return translations, nil
