@@ -179,7 +179,7 @@ func Test_PopulateTranslations(t *testing.T) {
 			for _, translation := range tt.translations {
 				require.Len(t, translation.Messages, expectedLen)
 
-				// Check that all translation.messages has all messages from original.
+				// Check that translation has all messages from original.
 				for _, message := range translation.Messages {
 					require.Contains(t, expectedIds, message.ID)
 					require.Contains(t, expectedIds, message.Message)
