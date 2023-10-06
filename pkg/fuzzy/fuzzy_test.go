@@ -24,16 +24,16 @@ func Test_TranslateMock(t *testing.T) {
 	allMocks(t, func(t *testing.T, mock Translator) {
 		tests := []struct {
 			expectedErr error
-			messages    *model.Messages
+			translation *model.Translation
 			name        string
 		}{
 			{
-				name:     "One message",
-				messages: randMessages(1, language.Latvian),
+				name:        "One message",
+				translation: randTranslation(1, language.Latvian),
 			},
 			{
-				name:     "Multiple messages",
-				messages: randMessages(5, language.German),
+				name:        "Multiple messages",
+				translation: randTranslation(5, language.German),
 			},
 		}
 
@@ -42,9 +42,9 @@ func Test_TranslateMock(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
-				msgs := tt.messages
-				msgs.Language = language.English // set original language
-				translatedMsgs, err := mock.Translate(context.Background(), msgs, tt.messages.Language)
+				translation := tt.translation
+				translation.Language = language.English // set original language
+				translated, err := mock.Translate(context.Background(), translation, tt.translation.Language)
 
 				if tt.expectedErr != nil {
 					require.ErrorContains(t, err, tt.expectedErr.Error())
@@ -53,24 +53,24 @@ func Test_TranslateMock(t *testing.T) {
 
 				require.NoError(t, err)
 
-				// Check the that the translated messages have the correct language.
-				require.Equal(t, tt.messages.Language, translatedMsgs.Language)
+				// Check the that the translated translation have the correct language.
+				require.Equal(t, tt.translation.Language, translated.Language)
 
 				// Check that length matches.
-				require.Len(t, translatedMsgs.Messages, len(tt.messages.Messages))
+				require.Len(t, translated.Messages, len(tt.translation.Messages))
 
-				for i, m := range translatedMsgs.Messages {
-					// Check the translated messages are not empty and are marked as fuzzy.
+				for i, m := range translated.Messages {
+					// Check the translated translation.messages are not empty and are marked as fuzzy.
 					require.NotEmpty(t, m.Message)
 					require.Equal(t, model.MessageStatusFuzzy, m.Status)
 
 					// Reset the message to empty and fuzzy to original values, for the last check for side effects.
-					translatedMsgs.Messages[i].Message = tt.messages.Messages[i].Message
-					translatedMsgs.Messages[i].Status = tt.messages.Messages[i].Status
+					translated.Messages[i].Message = tt.translation.Messages[i].Message
+					translated.Messages[i].Status = tt.translation.Messages[i].Status
 				}
 
-				// Check the translated messages are the same as the input messages. (Check for side effects)
-				require.ElementsMatch(t, tt.messages.Messages, translatedMsgs.Messages)
+				// Check the translated translation.messages are the same as the input messages. (Check for side effects)
+				require.ElementsMatch(t, tt.translation.Messages, translated.Messages)
 			})
 		}
 	})
@@ -174,11 +174,11 @@ func allMocks(t *testing.T, f func(t *testing.T, mock Translator)) {
 	}
 }
 
-// randMessages returns a random messages model with the given count of messages and source language.
+// randTranslation returns a random translation model with the given count of messages and source language.
 // The messages will not be fuzzy.
-func randMessages(msgCount uint, srcLang language.Tag) *model.Messages {
+func randTranslation(msgCount uint, srcLang language.Tag) *model.Translation {
 	msgOpts := []rand.ModelMessageOption{rand.WithStatus(model.MessageStatusUntranslated)}
-	msgsOpts := []rand.ModelMessagesOption{rand.WithLanguage(srcLang)}
+	translationOpts := []rand.ModelTranslationOption{rand.WithLanguage(srcLang)}
 
-	return rand.ModelMessages(msgCount, msgOpts, msgsOpts...)
+	return rand.ModelTranslation(msgCount, msgOpts, translationOpts...)
 }

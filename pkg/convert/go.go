@@ -8,10 +8,10 @@ import (
 	"golang.org/x/text/message/pipeline"
 )
 
-// ToGo converts a model.Messages structure into a JSON byte slice
+// ToGo converts a model.Translation structure into a JSON byte slice
 // by first converting it into a format suitable for the pipeline and then encoding it using JSON.
-func ToGo(m model.Messages) ([]byte, error) {
-	pipelineMsgs := messagesToPipeline(m)
+func ToGo(t model.Translation) ([]byte, error) {
+	pipelineMsgs := translationToPipeline(t)
 
 	msg, err := json.Marshal(pipelineMsgs)
 	if err != nil {
@@ -22,25 +22,25 @@ func ToGo(m model.Messages) ([]byte, error) {
 }
 
 // FromGo takes a JSON-encoded byte slice, decodes it into a pipeline.Messages structure,
-// and then converts it into a model.Messages structure using the messagesFromPipeline function.
-func FromGo(b []byte, original bool) (model.Messages, error) {
+// and then converts it into a model.Translation structure using the translationFromPipeline function.
+func FromGo(b []byte, original bool) (model.Translation, error) {
 	var pipelineMsgs pipeline.Messages
 
 	if err := json.Unmarshal(b, &pipelineMsgs); err != nil {
-		return model.Messages{}, fmt.Errorf("decode JSON to pipeline.Messages: %w", err)
+		return model.Translation{}, fmt.Errorf("decode JSON to pipeline.Messages: %w", err)
 	}
 
-	return messagesFromPipeline(pipelineMsgs, original), nil
+	return translationFromPipeline(pipelineMsgs, original), nil
 }
 
-// messagesToPipeline converts a model.Messages structure into a pipeline.Messages structure.
-func messagesToPipeline(m model.Messages) pipeline.Messages {
+// translationToPipeline converts a model.Translation structure into a pipeline.Messages structure.
+func translationToPipeline(t model.Translation) pipeline.Messages {
 	pipelineMsg := pipeline.Messages{
-		Language: m.Language,
-		Messages: make([]pipeline.Message, 0, len(m.Messages)),
+		Language: t.Language,
+		Messages: make([]pipeline.Message, 0, len(t.Messages)),
 	}
 
-	for _, value := range m.Messages {
+	for _, value := range t.Messages {
 		msg := pipeline.Message{
 			ID:          pipeline.IDList{value.ID},
 			Translation: pipeline.Text{Msg: removeEnclosingBrackets(value.Message)},
@@ -62,9 +62,9 @@ func messagesToPipeline(m model.Messages) pipeline.Messages {
 	return pipelineMsg
 }
 
-// messagesFromPipeline converts a pipeline.Messages structure into a model.Messages structure.
-func messagesFromPipeline(m pipeline.Messages, original bool) model.Messages {
-	msgs := model.Messages{
+// translationFromPipeline converts a pipeline.Messages structure into a model.Translation structure.
+func translationFromPipeline(m pipeline.Messages, original bool) model.Translation {
+	translation := model.Translation{
 		Language: m.Language,
 		Messages: make([]model.Message, 0, len(m.Messages)),
 		Original: original,
@@ -96,8 +96,8 @@ func messagesFromPipeline(m pipeline.Messages, original bool) model.Messages {
 			msg.Positions = []string{value.Position}
 		}
 
-		msgs.Messages = append(msgs.Messages, msg)
+		translation.Messages = append(translation.Messages, msg)
 	}
 
-	return msgs
+	return translation
 }

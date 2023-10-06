@@ -18,7 +18,7 @@ func Test_FromNgLocalize(t *testing.T) {
 		expectedErr error
 		input       []byte
 		name        string
-		expected    model.Messages
+		expected    model.Translation
 	}{
 		// Positive tests
 		{
@@ -31,7 +31,7 @@ func Test_FromNgLocalize(t *testing.T) {
           "Welcome": "Bienvenue"
         }
       }`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.French,
 				Original: true,
 				Messages: []model.Message{
@@ -59,7 +59,7 @@ func Test_FromNgLocalize(t *testing.T) {
 				}
 			}
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.French,
 				Original: false,
 				Messages: []model.Message{
@@ -104,7 +104,7 @@ func Test_FromNgLocalize(t *testing.T) {
 
 			require.NoError(t, err)
 
-			testutil.EqualMessages(t, &tt.expected, &actual)
+			testutil.EqualTranslations(t, &tt.expected, &actual)
 		})
 	}
 }
@@ -116,7 +116,7 @@ func Test_ToNgLocalize(t *testing.T) {
 		name        string
 		expected    []byte
 		expectedErr error
-		input       model.Messages
+		input       model.Translation
 	}{
 		{
 			name: "All OK",
@@ -129,7 +129,7 @@ func Test_ToNgLocalize(t *testing.T) {
           "Feedback": "We appreciate your feedback. Thank you for using our service."
         }
       }`),
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{

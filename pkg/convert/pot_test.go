@@ -19,11 +19,11 @@ func Test_ToPot(t *testing.T) {
 	tests := []struct {
 		name     string
 		expected []byte
-		input    model.Messages
+		input    model.Translation
 	}{
 		{
 			name: "all values are provided",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -68,7 +68,7 @@ msgstr "Au revoir!"
 		},
 		{
 			name: "msgstr in curly braces",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -90,7 +90,7 @@ msgstr "Bonjour le monde!"
 		},
 		{
 			name: "msgstr with curly braces inside",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -108,7 +108,7 @@ msgstr "Bonjour {} le monde!"
 		},
 		{
 			name: "msgstr with slash inside",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -126,7 +126,7 @@ msgstr "Bonjour \ le monde!"
 		},
 		{
 			name: "msgstr with pipe inside",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -144,7 +144,7 @@ msgstr "Bonjour | le monde!"
 		},
 		{
 			name: "msgstr with double pipe inside",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -162,7 +162,7 @@ msgstr "Bonjour || le monde!"
 		},
 		{
 			name: "multiline description",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -196,7 +196,7 @@ msgstr "Au revoir!"
 		},
 		{
 			name: "multiline msgid",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -231,7 +231,7 @@ msgstr "Au revoir!"
 		},
 		{
 			name: "single msgid with newline",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -264,7 +264,7 @@ msgstr "Au revoir!"
 		},
 		{
 			name: "multiline msgstr",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -299,7 +299,7 @@ msgstr "Au revoir!"
 		},
 		{
 			name: "multiline msgstr in curly braces",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -323,7 +323,7 @@ msgstr ""
 		},
 		{
 			name: "qouted msgstr",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -356,7 +356,7 @@ msgstr "Au revoir!"
 		},
 		{
 			name: "qouted msgstr in curly braces",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -378,7 +378,7 @@ msgstr "This is a \"quoted\" string"
 		},
 		{
 			name: "qouted msgid",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -411,7 +411,7 @@ msgstr "Au revoir!"
 		},
 		{
 			name: "mixed fuzzy values",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -443,7 +443,7 @@ msgstr "Au revoir!"
 		},
 		{
 			name: "plural msgstr",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -469,7 +469,7 @@ msgstr[1] "Il y a %d pommes."
 		},
 		{
 			name: "single message",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -491,7 +491,7 @@ msgstr "Il y a pomme."
 		},
 		{
 			name: "single message with new line",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -515,7 +515,7 @@ msgstr ""
 		},
 		{
 			name: "single message with quoted message",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -537,7 +537,7 @@ msgstr "Il y a \"pomme\"."
 		},
 		{
 			name: "plural msgstr with new line",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -565,7 +565,7 @@ msgstr[1] "Il y a %d pommes."
 		},
 		{
 			name: "plural msgstr with new lines",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -601,7 +601,7 @@ msgstr[1] ""
 		},
 		{
 			name: "missing fuzzy values",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{ID: "Hello, world!", Message: "Bonjour le monde!", Description: "A simple greeting"},
@@ -622,7 +622,7 @@ msgstr "Au revoir!"
 		},
 		{
 			name: "missing description",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
@@ -653,7 +653,7 @@ msgstr "Au revoir!"
 		},
 		{
 			name: "missing description and fuzzy",
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{ID: "Hello, world!", Message: "Bonjour le monde!"},
@@ -693,7 +693,7 @@ func TestFromPot(t *testing.T) {
 		expectedErr error
 		input       []byte
 		name        string
-		expected    model.Messages
+		expected    model.Translation
 	}{
 		{
 			name: "valid input",
@@ -709,7 +709,7 @@ func TestFromPot(t *testing.T) {
 							msgid "Goodbye"
 							msgstr "Goodbye, world!"
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.English,
 				Original: false,
 				Messages: []model.Message{
@@ -742,7 +742,7 @@ func TestFromPot(t *testing.T) {
 							msgid "Goodbye"
 							msgstr "Goodbye, world!"
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.English,
 				Original: false,
 				Messages: []model.Message{
@@ -773,7 +773,7 @@ func TestFromPot(t *testing.T) {
 							msgid "Goodbye"
 							msgstr "Goodbye, world!"
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.English,
 				Original: false,
 				Messages: []model.Message{
@@ -804,7 +804,7 @@ func TestFromPot(t *testing.T) {
 							msgid "Goodbye"
 							msgstr "Goodbye, world!"
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.English,
 				Original: false,
 				Messages: []model.Message{
@@ -840,7 +840,7 @@ func TestFromPot(t *testing.T) {
 							msgid "Goodbye"
 							msgstr "Goodbye, world!"
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.English,
 				Original: false,
 				Messages: []model.Message{
@@ -871,7 +871,7 @@ func TestFromPot(t *testing.T) {
 							"Hello2\n"
 							msgstr "Hello, world!"
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.English,
 				Original: false,
 				Messages: []model.Message{
@@ -919,7 +919,7 @@ func TestFromPot(t *testing.T) {
 						msgstr[0] "produit"
 						msgstr[1] "%s produits"
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.French,
 				Original: false,
 				Messages: []model.Message{
@@ -969,7 +969,7 @@ when * {%s produits}
 							msgid "hi"
 							msgstr "ciao"
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.Italian,
 				Original: false,
 				Messages: []model.Message{
@@ -1003,7 +1003,7 @@ when * {Il y a {$count} pommes.}
 							msgstr[0] "Il y a %d pomme."
 							msgstr[1] "Il y a %d pommes."
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.French,
 				Original: false,
 				Messages: []model.Message{
@@ -1036,7 +1036,7 @@ when * {Il y a {$count} pommes.}
 							"Il y a %d\n"
 							"pommes.\n"
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.French,
 				Original: false,
 				Messages: []model.Message{
@@ -1065,7 +1065,7 @@ when * {Il y a {$count} pommes.}
 							"pomme.\n"
 							msgstr[1] "Il y a %d pommes."
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.French,
 				Original: false,
 				Messages: []model.Message{
@@ -1088,7 +1088,7 @@ when * {Il y a {$count} pommes.}
 							msgid "Hello"
 							msgstr ""
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.English,
 				Original: true,
 				Messages: []model.Message{
@@ -1113,7 +1113,7 @@ when * {Il y a {$count} pommes.}
 							msgstr[0] ""
 							msgstr[1] ""
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.English,
 				Original: true,
 				Messages: []model.Message{
@@ -1162,7 +1162,7 @@ when * {There are {$count} apples.}
 							msgid "+ {%s} hello"
 							msgstr ""
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.English,
 				Original: true,
 				Messages: []model.Message{
@@ -1182,7 +1182,7 @@ when * {There are {$count} apples.}
 							msgid "+ | hello"
 							msgstr ""
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.English,
 				Original: true,
 				Messages: []model.Message{
@@ -1202,7 +1202,7 @@ when * {There are {$count} apples.}
 							msgid "+ || hello"
 							msgstr ""
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.English,
 				Original: true,
 				Messages: []model.Message{
@@ -1222,7 +1222,7 @@ when * {There are {$count} apples.}
 							msgid "+ \ hello"
 							msgstr ""
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.English,
 				Original: true,
 				Messages: []model.Message{
@@ -1245,7 +1245,7 @@ when * {There are {$count} apples.}
 							msgstr[0] "Il y a %d pomme {test}."
 							msgstr[1] "Il y a %d pommes {tests}."
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.French,
 				Original: false,
 				Messages: []model.Message{
@@ -1272,7 +1272,7 @@ when * {Il y a {$count} pommes \{tests\}.}
 							msgstr[0] "Il y a %d pomme |."
 							msgstr[1] "Il y a %d pommes |."
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.French,
 				Original: false,
 				Messages: []model.Message{
@@ -1299,7 +1299,7 @@ when * {Il y a {$count} pommes \|.}
 							msgstr[0] "Il y a %d pomme \."
 							msgstr[1] "Il y a %d pommes \."
 			`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.French,
 				Original: false,
 				Messages: []model.Message{
@@ -1329,7 +1329,7 @@ when * {Il y a {$count} pommes \\.}
 			}
 
 			require.NoError(t, err)
-			testutil.EqualMessages(t, &tt.expected, &result)
+			testutil.EqualTranslations(t, &tt.expected, &result)
 		})
 	}
 }
@@ -1341,14 +1341,14 @@ func Test_TransformMessage(t *testing.T) {
 
 	lang := language.MustParse(gofakeit.LanguageBCP())
 
-	msg := model.Messages{
+	translation := model.Translation{
 		Language: lang,
 		Messages: make([]model.Message, 0, n),
 		Original: false,
 	}
 
 	for i := 0; i < n; i++ {
-		msg.Messages = append(msg.Messages, model.Message{
+		translation.Messages = append(translation.Messages, model.Message{
 			ID:          gofakeit.SentenceSimple(),
 			Description: gofakeit.SentenceSimple(),
 			Status:      model.MessageStatusUntranslated,
@@ -1356,11 +1356,11 @@ func Test_TransformMessage(t *testing.T) {
 		)
 	}
 
-	msgPot, err := ToPot(msg)
+	msgPot, err := ToPot(translation)
 	require.NoError(t, err)
 
-	restoredMsg, err := FromPot(msgPot, msg.Original)
+	restoredTranslation, err := FromPot(msgPot, translation.Original)
 	require.NoError(t, err)
 
-	assert.Equal(t, msg, restoredMsg)
+	assert.Equal(t, translation, restoredTranslation)
 }

@@ -20,19 +20,19 @@ type ServicesRepo interface {
 	DeleteService(ctx context.Context, serviceID uuid.UUID) error
 }
 
-type LoadMessagesOpts struct {
+type LoadTranslationsOpts struct {
 	FilterLanguages []language.Tag
 }
 
-type MessagesRepo interface {
-	// SaveMessages handles both Create and Update
-	SaveMessages(ctx context.Context, serviceID uuid.UUID, messages *model.Messages) error
-	LoadMessages(ctx context.Context, serviceID uuid.UUID, opts LoadMessagesOpts) (model.MessagesSlice, error)
+type TranslationsRepo interface {
+	// SaveTranslation handles both Create and Update
+	SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error
+	LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts LoadTranslationsOpts) (model.Translations, error)
 }
 
 type Repo interface {
 	ServicesRepo
-	MessagesRepo
+	TranslationsRepo
 
 	io.Closer
 }

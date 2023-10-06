@@ -267,7 +267,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		assert.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
-	// Messages has language tag, but CLI parameter 'language' is not set.
+	// Translation has language tag, but CLI parameter 'language' is not set.
 	t.Run("OK, local without lang parameter", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
@@ -385,7 +385,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		assert.Nil(t, res)
 	})
 
-	// Messages does not have language tag, and CLI parameter 'language' is not set.
+	// Translation does not have language tag, and CLI parameter 'language' is not set.
 	t.Run("error, language could not be determined", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
@@ -597,10 +597,10 @@ func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.Tag) {
 	t.Helper()
 
-	messages := rand.ModelMessages(3, nil)
+	translation := rand.ModelTranslation(3, nil)
 
-	data, err := server.MessagesToData(schema, messages)
-	require.NoError(t, err, "convert rand messages to serialized data")
+	data, err := server.TranslationToData(schema, translation)
+	require.NoError(t, err, "convert rand translation to serialized data")
 
-	return data, messages.Language
+	return data, translation.Language
 }

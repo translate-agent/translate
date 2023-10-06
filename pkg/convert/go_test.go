@@ -14,7 +14,7 @@ import (
 func TestToGo(t *testing.T) {
 	t.Parallel()
 
-	modelMsg := model.Messages{
+	translation := model.Translation{
 		Language: language.English,
 		Messages: []model.Message{
 			{
@@ -61,7 +61,7 @@ func TestToGo(t *testing.T) {
 		]
 	}`)
 
-	actual, err := ToGo(modelMsg)
+	actual, err := ToGo(translation)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -72,7 +72,7 @@ func TestToGo(t *testing.T) {
 func TestFromGo(t *testing.T) {
 	t.Parallel()
 
-	modelMsg := model.Messages{
+	translation := model.Translation{
 		Language: language.English,
 		Original: false,
 		Messages: []model.Message{
@@ -129,8 +129,8 @@ func TestFromGo(t *testing.T) {
 	}
 	`)
 
-	actual, err := FromGo(input, modelMsg.Original)
+	actual, err := FromGo(input, translation.Original)
 	require.NoError(t, err)
 
-	testutil.EqualMessages(t, &modelMsg, &actual)
+	testutil.EqualTranslations(t, &translation, &actual)
 }

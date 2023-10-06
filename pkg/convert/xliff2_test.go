@@ -17,31 +17,31 @@ import (
 	testutilrand "go.expect.digital/translate/pkg/testutil/rand"
 )
 
-func randXliff2(messages *model.Messages) []byte {
+func randXliff2(translation *model.Translation) []byte {
 	b := new(bytes.Buffer)
 
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
 
-	if messages.Original {
+	if translation.Original {
 		fmt.Fprintf(
 			b,
 			"<xliff xmlns=\"urn:oasis:names:tc:xliff:document:2.0\" version=\"2.0\" srcLang=\"%s\" trgLang=\"und\">",
-			messages.Language)
+			translation.Language)
 	} else {
 		fmt.Fprintf(
 			b,
 			"<xliff xmlns=\"urn:oasis:names:tc:xliff:document:2.0\" version=\"2.0\" srcLang=\"und\" trgLang=\"%s\">",
-			messages.Language)
+			translation.Language)
 	}
 
 	b.WriteString("<file>")
 
 	writeMsg := func(s string) { fmt.Fprintf(b, "<segment><target>%s</target></segment>", s) }
-	if messages.Original {
+	if translation.Original {
 		writeMsg = func(s string) { fmt.Fprintf(b, "<segment><source>%s</source></segment>", s) }
 	}
 
-	for _, msg := range messages.Messages {
+	for _, msg := range translation.Messages {
 		fmt.Fprintf(b, "<unit id=\"%s\">", msg.ID)
 
 		if msg.Description != "" || len(msg.Positions) > 0 {
@@ -82,13 +82,13 @@ func assertEqualXml(t *testing.T, expected, actual []byte) bool { //nolint:unpar
 func Test_FromXliff2(t *testing.T) {
 	t.Parallel()
 
-	originalMessages := testutilrand.ModelMessages(
+	originalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
 		testutilrand.WithOriginal(true),
 	)
 
-	nonOriginalMessages := testutilrand.ModelMessages(
+	nonOriginalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusUntranslated)},
 		testutilrand.WithOriginal(false),
@@ -96,18 +96,18 @@ func Test_FromXliff2(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		expected *model.Messages
+		expected *model.Translation
 		data     []byte
 	}{
 		{
 			name:     "Original",
-			data:     randXliff2(originalMessages),
-			expected: originalMessages,
+			data:     randXliff2(originalTranslation),
+			expected: originalTranslation,
 		},
 		{
 			name:     "Different language",
-			data:     randXliff2(nonOriginalMessages),
-			expected: nonOriginalMessages,
+			data:     randXliff2(nonOriginalTranslation),
+			expected: nonOriginalTranslation,
 		},
 	}
 
@@ -123,7 +123,7 @@ func Test_FromXliff2(t *testing.T) {
 				actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
 			}
 
-			testutil.EqualMessages(t, tt.expected, &actual)
+			testutil.EqualTranslations(t, tt.expected, &actual)
 		})
 	}
 }
@@ -136,10 +136,10 @@ func Test_ToXliff2(t *testing.T) {
 		testutilrand.WithStatus(model.MessageStatusUntranslated),
 	}
 
-	messages := testutilrand.ModelMessages(4, msgOpts, testutilrand.WithOriginal(true))
-	expected := randXliff2(messages)
+	translation := testutilrand.ModelTranslation(4, msgOpts, testutilrand.WithOriginal(true))
+	expected := randXliff2(translation)
 
-	actual, err := ToXliff2(*messages)
+	actual, err := ToXliff2(*translation)
 	require.NoError(t, err)
 
 	assertEqualXml(t, expected, actual)
@@ -158,18 +158,18 @@ func Test_TransformXLIFF2(t *testing.T) {
 		MaxCount: 100,
 		Values: func(values []reflect.Value, _ *rand.Rand) {
 			values[0] = reflect.ValueOf(
-				testutilrand.ModelMessages(3, msgOpts, testutilrand.WithOriginal(true))) // input generator
+				testutilrand.ModelTranslation(3, msgOpts, testutilrand.WithOriginal(true))) // input generator
 		},
 	}
 
-	f := func(expected *model.Messages) bool {
+	f := func(expected *model.Translation) bool {
 		serialized, err := ToXliff2(*expected)
 		require.NoError(t, err)
 
 		parsed, err := FromXliff2(serialized, expected.Original)
 		require.NoError(t, err)
 
-		testutil.EqualMessages(t, expected, &parsed)
+		testutil.EqualTranslations(t, expected, &parsed)
 
 		return true
 	}

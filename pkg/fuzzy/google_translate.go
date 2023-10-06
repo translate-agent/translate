@@ -107,18 +107,18 @@ func NewGoogleTranslate(
 
 func (g *GoogleTranslate) Translate(
 	ctx context.Context,
-	messages *model.Messages,
+	translation *model.Translation,
 	targetLanguage language.Tag,
-) (*model.Messages, error) {
-	if messages == nil {
+) (*model.Translation, error) {
+	if translation == nil {
 		return nil, nil
 	}
 
-	if len(messages.Messages) == 0 {
-		return &model.Messages{Language: messages.Language, Original: messages.Original}, nil
+	if len(translation.Messages) == 0 {
+		return &model.Translation{Language: translation.Language, Original: translation.Original}, nil
 	}
 
-	// Split text from messages into batches to avoid exceeding
+	// Split text from translation into batches to avoid exceeding
 	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
 
 	var codePointsInBatch int
@@ -126,7 +126,7 @@ func (g *GoogleTranslate) Translate(
 	batch := make([]string, 0, googleTranslateRequestLimit)
 	batches := make([][]string, 0, 1)
 
-	for _, v := range messages.Messages {
+	for _, v := range translation.Messages {
 		codePointsInMsg := utf8.RuneCountInString(v.Message)
 
 		if len(batch) == googleTranslateRequestLimit || codePointsInBatch+codePointsInMsg > googleTranslateCodePointsLimit {
@@ -146,16 +146,16 @@ func (g *GoogleTranslate) Translate(
 
 	var msgIndex int
 
-	translatedMessages := model.Messages{
+	translated := model.Translation{
 		Language: targetLanguage,
-		Original: messages.Original,
-		Messages: make([]model.Message, 0, len(messages.Messages)),
+		Original: translation.Original,
+		Messages: make([]model.Message, 0, len(translation.Messages)),
 	}
 
 	for i := range batches {
 		res, err := g.client.TranslateText(ctx, &translatepb.TranslateTextRequest{
 			Parent:             parent(),
-			SourceLanguageCode: messages.Language.String(),
+			SourceLanguageCode: translation.Language.String(),
 			TargetLanguageCode: targetLanguage.String(),
 			Contents:           batches[i],
 		})
@@ -164,17 +164,17 @@ func (g *GoogleTranslate) Translate(
 		}
 
 		for _, t := range res.Translations {
-			m := messages.Messages[msgIndex]
+			m := translation.Messages[msgIndex]
 			m.Message = t.TranslatedText
 			m.Status = model.MessageStatusFuzzy
 
-			translatedMessages.Messages = append(translatedMessages.Messages, m)
+			translated.Messages = append(translated.Messages, m)
 
 			msgIndex++
 		}
 	}
 
-	return &translatedMessages, nil
+	return &translated, nil
 }
 
 // parent returns path to Google project and location.

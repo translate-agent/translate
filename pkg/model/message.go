@@ -10,27 +10,27 @@ import (
 	"golang.org/x/text/language"
 )
 
-type Messages struct {
+type Translation struct {
 	Language language.Tag
 	Messages []Message
 	Original bool
 }
 
 /*
-FindChangedMessageIDs returns a list of message IDs that have been altered in the new Messages e.g.
+FindChangedMessageIDs returns a list of message IDs that have been altered in the new Translation e.g.
  1. The message.message has been changed
  2. The message with new ID has been added.
 */
-func (m *Messages) FindChangedMessageIDs(new *Messages) []string {
-	lookup := make(map[string]int, len(m.Messages))
-	for i := range m.Messages {
-		lookup[m.Messages[i].ID] = i
+func (t *Translation) FindChangedMessageIDs(new *Translation) []string {
+	lookup := make(map[string]int, len(t.Messages))
+	for i := range t.Messages {
+		lookup[t.Messages[i].ID] = i
 	}
 
 	var ids []string
 
 	for _, msg := range new.Messages {
-		if idx, ok := lookup[msg.ID]; !ok || m.Messages[idx].Message != msg.Message {
+		if idx, ok := lookup[msg.ID]; !ok || t.Messages[idx].Message != msg.Message {
 			ids = append(ids, msg.ID)
 		}
 	}
@@ -38,34 +38,34 @@ func (m *Messages) FindChangedMessageIDs(new *Messages) []string {
 	return ids
 }
 
-type MessagesSlice []Messages
+type Translations []Translation
 
-// HasLanguage checks if MessagesSlice contains Messages with the given language.
-func (ms MessagesSlice) HasLanguage(lang language.Tag) bool {
-	return ms.LanguageIndex(lang) != -1
+// HasLanguage checks if Translations contains Translation with the given language.
+func (t Translations) HasLanguage(lang language.Tag) bool {
+	return t.LanguageIndex(lang) != -1
 }
 
-// LanguageIndex returns index of Messages with the given language. If not found, returns -1.
-func (ms MessagesSlice) LanguageIndex(lang language.Tag) int {
-	return slices.IndexFunc(ms, func(m Messages) bool {
-		return m.Language == lang
+// LanguageIndex returns index of Translation with the given language. If not found, returns -1.
+func (t Translations) LanguageIndex(lang language.Tag) int {
+	return slices.IndexFunc(t, func(t Translation) bool {
+		return t.Language == lang
 	})
 }
 
-// OriginalIndex returns index of Messages with the original flag set to true. If not found, returns -1.
-func (ms MessagesSlice) OriginalIndex() int {
-	return slices.IndexFunc(ms, func(m Messages) bool {
-		return m.Original
+// OriginalIndex returns index of Translation with the original flag set to true. If not found, returns -1.
+func (t Translations) OriginalIndex() int {
+	return slices.IndexFunc(t, func(t Translation) bool {
+		return t.Original
 	})
 }
 
-// Replace replaces Messages with the same language. If not found, appends it.
-func (ms *MessagesSlice) Replace(messages Messages) {
-	switch idx := ms.LanguageIndex(messages.Language); idx {
+// Replace replaces Translation with the same language. If not found, appends it.
+func (t *Translations) Replace(translation Translation) {
+	switch idx := t.LanguageIndex(translation.Language); idx {
 	case -1:
-		*ms = append(*ms, messages)
+		*t = append(*t, translation)
 	default:
-		(*ms)[idx] = messages
+		(*t)[idx] = translation
 	}
 }
 
@@ -77,7 +77,7 @@ Example:
 
 	Input:
 	ids := { "1" }
-	MessagesSlice{
+	Translations{
 		{
 			Language: en,
 			Original: true,
@@ -91,7 +91,7 @@ Example:
 	}
 
 	Output:
-	MessagesSlice{
+	Translations{
 		{
 			Language: en,
 			Original: true,
@@ -103,22 +103,22 @@ Example:
 			Messages: [ { ID: "1", Message: "Bonjour", Status: Untranslated  }, ... ],
 		}
 */
-func (ms MessagesSlice) MarkUntranslated(ids []string) {
-	n := len(ms)
-	if len(ids) == 0 || n == 0 || (n == 1 && ms[0].Original) {
+func (t Translations) MarkUntranslated(ids []string) {
+	n := len(t)
+	if len(ids) == 0 || n == 0 || (n == 1 && t[0].Original) {
 		return
 	}
 
 	slices.Sort(ids)
 
-	for _, messages := range ms {
-		if messages.Original {
+	for _, translation := range t {
+		if translation.Original {
 			continue
 		}
 
-		for i := range messages.Messages {
-			if _, found := slices.BinarySearch(ids, messages.Messages[i].ID); found {
-				messages.Messages[i].Status = MessageStatusUntranslated
+		for i := range translation.Messages {
+			if _, found := slices.BinarySearch(ids, translation.Messages[i].ID); found {
+				translation.Messages[i].Status = MessageStatusUntranslated
 			}
 		}
 	}
@@ -130,7 +130,7 @@ PopulateTranslations adds missing messages from the original language to other l
 Example:
 
 	Input:
-	MessagesSlice{
+	Translations{
 		{
 			Language: en,
 			Original: true,
@@ -144,7 +144,7 @@ Example:
 	}
 
 	Output:
-	MessagesSlice{
+	Translations{
 		{
 			Language: en,
 			Original: true,
@@ -156,16 +156,16 @@ Example:
 			Messages: [ { ID: "1", Message: "Bonjour" }, { ID: "2", Message: "World", Status: Untranslated } ],
 		},
 */
-func (ms MessagesSlice) PopulateTranslations() {
-	origIdx := slices.IndexFunc(ms, func(m Messages) bool { return m.Original })
+func (t Translations) PopulateTranslations() {
+	origIdx := slices.IndexFunc(t, func(t Translation) bool { return t.Original })
 	if origIdx == -1 {
 		return
 	}
 
 	var wg sync.WaitGroup
 
-	for i := range ms {
-		if ms[i].Original {
+	for i := range t {
+		if t[i].Original {
 			continue
 		}
 
@@ -174,17 +174,17 @@ func (ms MessagesSlice) PopulateTranslations() {
 		populate := func(i int) {
 			defer wg.Done()
 
-			lookup := make(map[string]struct{}, len(ms[i].Messages))
-			for j := range ms[i].Messages {
-				lookup[ms[i].Messages[j].ID] = struct{}{}
+			lookup := make(map[string]struct{}, len(t[i].Messages))
+			for j := range t[i].Messages {
+				lookup[t[i].Messages[j].ID] = struct{}{}
 			}
 
-			for j := range ms[origIdx].Messages {
-				if _, ok := lookup[ms[origIdx].Messages[j].ID]; !ok {
-					newMsg := ms[origIdx].Messages[j]
+			for j := range t[origIdx].Messages {
+				if _, ok := lookup[t[origIdx].Messages[j].ID]; !ok {
+					newMsg := t[origIdx].Messages[j]
 					newMsg.Status = MessageStatusUntranslated
 
-					ms[i].Messages = append(ms[i].Messages, newMsg)
+					t[i].Messages = append(t[i].Messages, newMsg)
 				}
 			}
 		}

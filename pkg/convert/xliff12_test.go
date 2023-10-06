@@ -18,27 +18,27 @@ import (
 
 // TODO: XLIFF1.2 and XLIFF2.0 uses same test data and same tests, so we can merge them into one test file
 
-// randXliff12 dynamically generates a random XLIFF 1.2 file from the given messages.
-func randXliff12(messages *model.Messages) []byte {
+// randXliff12 dynamically generates a random XLIFF 1.2 file from the given translation.
+func randXliff12(translation *model.Translation) []byte {
 	b := new(bytes.Buffer)
 
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
 	b.WriteString("<xliff xmlns=\"urn:oasis:names:tc:xliff:document:1.2\" version=\"1.2\">")
 
-	if messages.Original {
-		fmt.Fprintf(b, "<file source-language=\"%s\" target-language=\"und\">", messages.Language)
+	if translation.Original {
+		fmt.Fprintf(b, "<file source-language=\"%s\" target-language=\"und\">", translation.Language)
 	} else {
-		fmt.Fprintf(b, "<file source-language=\"und\" target-language=\"%s\">", messages.Language)
+		fmt.Fprintf(b, "<file source-language=\"und\" target-language=\"%s\">", translation.Language)
 	}
 
 	b.WriteString("<body>")
 
 	writeMsg := func(s string) { fmt.Fprintf(b, "<target>%s</target>", s) }
-	if messages.Original {
+	if translation.Original {
 		writeMsg = func(s string) { fmt.Fprintf(b, "<source>%s</source>", s) }
 	}
 
-	for _, msg := range messages.Messages {
+	for _, msg := range translation.Messages {
 		fmt.Fprintf(b, "<trans-unit id=\"%s\">", msg.ID)
 
 		writeMsg(msg.Message)
@@ -74,13 +74,13 @@ func randXliff12(messages *model.Messages) []byte {
 func Test_FromXliff12(t *testing.T) {
 	t.Parallel()
 
-	originalMessages := testutilrand.ModelMessages(
+	originalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
 		testutilrand.WithOriginal(true),
 	)
 
-	nonOriginalMessages := testutilrand.ModelMessages(
+	nonOriginalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusUntranslated)},
 		testutilrand.WithOriginal(false),
@@ -88,18 +88,18 @@ func Test_FromXliff12(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		expected *model.Messages
+		expected *model.Translation
 		data     []byte
 	}{
 		{
 			name:     "Original",
-			data:     randXliff12(originalMessages),
-			expected: originalMessages,
+			data:     randXliff12(originalTranslation),
+			expected: originalTranslation,
 		},
 		{
 			name:     "Different language",
-			data:     randXliff12(nonOriginalMessages),
-			expected: nonOriginalMessages,
+			data:     randXliff12(nonOriginalTranslation),
+			expected: nonOriginalTranslation,
 		},
 	}
 
@@ -115,7 +115,7 @@ func Test_FromXliff12(t *testing.T) {
 				actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
 			}
 
-			testutil.EqualMessages(t, tt.expected, &actual)
+			testutil.EqualTranslations(t, tt.expected, &actual)
 		})
 	}
 }
@@ -128,10 +128,10 @@ func Test_ToXliff12(t *testing.T) {
 		testutilrand.WithStatus(model.MessageStatusUntranslated),
 	}
 
-	messages := testutilrand.ModelMessages(4, msgOpts, testutilrand.WithOriginal(true))
-	expected := randXliff12(messages)
+	translation := testutilrand.ModelTranslation(4, msgOpts, testutilrand.WithOriginal(true))
+	expected := randXliff12(translation)
 
-	actual, err := ToXliff12(*messages)
+	actual, err := ToXliff12(*translation)
 	require.NoError(t, err)
 
 	assertEqualXml(t, expected, actual)
@@ -150,18 +150,18 @@ func Test_TransformXLIFF12(t *testing.T) {
 		MaxCount: 100,
 		Values: func(values []reflect.Value, _ *rand.Rand) {
 			values[0] = reflect.ValueOf(
-				testutilrand.ModelMessages(3, msgOpts, testutilrand.WithOriginal(true))) // input generator
+				testutilrand.ModelTranslation(3, msgOpts, testutilrand.WithOriginal(true))) // input generator
 		},
 	}
 
-	f := func(expected *model.Messages) bool {
+	f := func(expected *model.Translation) bool {
 		serialized, err := ToXliff12(*expected)
 		require.NoError(t, err)
 
 		parsed, err := FromXliff12(serialized, expected.Original)
 		require.NoError(t, err)
 
-		testutil.EqualMessages(t, expected, &parsed)
+		testutil.EqualTranslations(t, expected, &parsed)
 
 		return true
 	}

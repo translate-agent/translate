@@ -67,28 +67,28 @@ func (u *uploadParams) validate() error {
 	return nil
 }
 
-// getLanguage returns the language tag for an upload based on the upload parameters and messages.
-// It returns an error if no language is set or if the languages in the upload parameters and messages are mismatched.
-func getLanguage(reqParams *uploadParams, messages *model.Messages) (language.Tag, error) {
+// getLanguage returns the language tag for an upload based on the upload parameters and translation.
+// It returns an error if no language is set or if the languages in the upload parameters and translation are mismatched.
+func getLanguage(reqParams *uploadParams, translation *model.Translation) (language.Tag, error) {
 	und := language.Und
 
-	// Scenario 1: Both messages and params have undefined language
-	if reqParams.languageTag == und && messages.Language == und {
+	// Scenario 1: Both translation and params have undefined language
+	if reqParams.languageTag == und && translation.Language == und {
 		return und, errors.New("no language is set")
 	}
-	// Scenario 2: The languages in messages and params are different
-	if reqParams.languageTag != und && messages.Language != und && messages.Language != reqParams.languageTag {
+	// Scenario 2: The languages in translation and params are different
+	if reqParams.languageTag != und && translation.Language != und && translation.Language != reqParams.languageTag {
 		return und, errors.New("languages are mismatched")
 	}
-	// Scenario 3: The language in messages is undefined but the language in params is defined
-	if messages.Language == und {
+	// Scenario 3: The language in translation is undefined but the language in params is defined
+	if translation.Language == und {
 		return reqParams.languageTag, nil
 	}
 
 	// Scenario 4 and 5:
-	// The language in messages is defined but the language in params is undefined
-	// The languages in messages and params are the same
-	return messages.Language, nil
+	// The language in translation is defined but the language in params is undefined
+	// The languages in translation and params are the same
+	return translation.Language, nil
 }
 
 func (t *TranslateServiceServer) UploadTranslationFile(
@@ -104,22 +104,22 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := MessagesFromData(params)
+	translation, err := TranslationFromData(params)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages.Language, err = getLanguage(params, messages)
+	translation.Language, err = getLanguage(params, translation)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	// Case for when not original, or uploading original for the first time.
-	updatedMessages := model.MessagesSlice{*messages}
+	updatedTranslations := model.Translations{*translation}
 
-	// When updating original messages, changes might affect translations - transform and update all translations.
-	if messages.Original {
-		all, err := t.repo.LoadMessages(ctx, params.serviceID, repo.LoadMessagesOpts{})
+	// When updating original translation, changes might affect translations - transform and update all translations.
+	if translation.Original {
+		all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
@@ -127,10 +127,11 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		if origIdx := all.OriginalIndex(); origIdx != -1 {
 			oldOriginal := all[origIdx]
 
-			// Mark new or altered messages as untranslated.
-			all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(messages))
-			// Replace original messages with new ones.
-			all.Replace(*messages)
+			// Compare repo and request original translation.
+			// Change status for new or altered translation.messages to UNTRANSLATED for all languages
+			all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(translation))
+			// Replace original translation with new one.
+			all.Replace(*translation)
 			// Add missing messages for all translations.
 			if params.populateTranslations {
 				all.PopulateTranslations()
@@ -140,12 +141,12 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 				return nil, status.Errorf(codes.Internal, "")
 			}
 
-			updatedMessages = all
+			updatedTranslations = all
 		}
 	}
 
-	for i := range updatedMessages {
-		err = t.repo.SaveMessages(ctx, params.serviceID, &updatedMessages[i])
+	for i := range updatedTranslations {
+		err = t.repo.SaveTranslation(ctx, params.serviceID, &updatedTranslations[i])
 		switch {
 		case errors.Is(err, repo.ErrNotFound):
 			return nil, status.Errorf(codes.NotFound, "service not found")
@@ -216,17 +217,17 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	messages, err := t.repo.LoadMessages(ctx, params.serviceID,
-		repo.LoadMessagesOpts{FilterLanguages: []language.Tag{params.languageTag}})
+	translations, err := t.repo.LoadTranslations(ctx, params.serviceID,
+		repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{params.languageTag}})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if len(messages) == 0 {
-		messages = append(messages, model.Messages{Language: params.languageTag})
+	if len(translations) == 0 {
+		translations = append(translations, model.Translation{Language: params.languageTag})
 	}
 
-	data, err := MessagesToData(params.schema, &messages[0])
+	data, err := TranslationToData(params.schema, &translations[0])
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}

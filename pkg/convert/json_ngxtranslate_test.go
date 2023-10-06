@@ -17,13 +17,13 @@ func Test_FromNgxTranslate(t *testing.T) {
 		name        string
 		input       []byte
 		expectedErr error
-		expected    model.Messages
+		expected    model.Translation
 	}{
 		// Positive tests
 		{
 			name:  "Not nested",
 			input: []byte(`{"message":"example"}`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Original: true,
 				Messages: []model.Message{
 					{
@@ -37,7 +37,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 		{
 			name:  "Nested normally",
 			input: []byte(`{"message":{"example":"message1"}}`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Original: false,
 				Messages: []model.Message{
 					{
@@ -51,7 +51,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 		{
 			name:  "Nested with dot",
 			input: []byte(`{"message.example":""}`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Original: false,
 				Messages: []model.Message{
 					{
@@ -65,7 +65,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 		{
 			name:  "Nested mixed",
 			input: []byte(`{"message.example":"message1","msg":{"example":"message2"}}`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Original: true,
 				Messages: []model.Message{
 					{
@@ -106,7 +106,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			testutil.EqualMessages(t, &tt.expected, &actual)
+			testutil.EqualTranslations(t, &tt.expected, &actual)
 		})
 	}
 }
@@ -114,7 +114,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 func Test_ToNgxTranslate(t *testing.T) {
 	t.Parallel()
 
-	input := model.Messages{
+	input := model.Translation{
 		Messages: []model.Message{
 			{
 				ID:      "message",

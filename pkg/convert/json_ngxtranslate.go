@@ -9,14 +9,14 @@ import (
 
 // FromNgxTranslate  parses the JSON-encoded byte slice representing messages in the ngx-translate format,
 // recursively traverses the map, extracts the key-value pairs, converts the message strings,
-// and constructs a model.Messages structure.
-func FromNgxTranslate(b []byte, original bool) (messages model.Messages, err error) {
-	messages.Original = original
+// and constructs a model.Translation structure.
+func FromNgxTranslate(b []byte, original bool) (translation model.Translation, err error) {
+	translation.Original = original
 
 	var dst map[string]interface{}
 
 	if err = json.Unmarshal(b, &dst); err != nil {
-		return messages, fmt.Errorf("unmarshal from ngx-translate to model.Messages: %w", err)
+		return translation, fmt.Errorf("unmarshal from ngx-translate to model.Translation: %w", err)
 	}
 
 	var traverseMap func(key string, value interface{}) error
@@ -31,7 +31,7 @@ func FromNgxTranslate(b []byte, original bool) (messages model.Messages, err err
 		default:
 			return fmt.Errorf("unsupported value type %T for key %s", value, key)
 		case string:
-			messages.Messages = append(messages.Messages, model.Message{
+			translation.Messages = append(translation.Messages, model.Message{
 				ID:      key,
 				Message: convertToMessageFormatSingular(v),
 				Status:  status,
@@ -52,23 +52,23 @@ func FromNgxTranslate(b []byte, original bool) (messages model.Messages, err err
 	}
 
 	if err = traverseMap("", dst); err != nil {
-		return messages, fmt.Errorf("traverse ngx-translate: %w", err)
+		return translation, fmt.Errorf("traverse ngx-translate: %w", err)
 	}
 
-	return messages, nil
+	return translation, nil
 }
 
-// ToNgxTranslate converts a model.Messages structure into the ngx-translate format.
-func ToNgxTranslate(messages model.Messages) (b []byte, err error) {
-	dst := make(map[string]string, len(messages.Messages))
+// ToNgxTranslate converts a model.Translation structure into the ngx-translate format.
+func ToNgxTranslate(translation model.Translation) (b []byte, err error) {
+	dst := make(map[string]string, len(translation.Messages))
 
-	for _, msg := range messages.Messages {
+	for _, msg := range translation.Messages {
 		dst[msg.ID] = removeEnclosingBrackets(msg.Message)
 	}
 
 	b, err = json.Marshal(dst)
 	if err != nil {
-		return nil, fmt.Errorf("marshal from model.Messages to ngx-translate: %w", err)
+		return nil, fmt.Errorf("marshal from model.Translation to ngx-translate: %w", err)
 	}
 
 	return b, nil
