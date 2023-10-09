@@ -22,47 +22,6 @@ func Test_FromArb(t *testing.T) {
 	}{
 		// Positive tests
 		{
-			name: "Combination of messages",
-			input: []byte(`
-			{
-				"title": "Hello World!",
-				"@title": {
-					"description": "Message to greet the World"
-				},
-				"greeting": "Welcome {user}!",
-				"@greeting": {
-					"placeholders": {
-						"user": {
-							"type": "string",
-							"example": "Bob"
-						}
-					}
-				},
-				"farewell": "Goodbye friend"
-			}`),
-			expected: model.Translation{
-				Original: true,
-				Messages: []model.Message{
-					{
-						ID:          "title",
-						Message:     "{Hello World!}",
-						Description: "Message to greet the World",
-						Status:      model.MessageStatusTranslated,
-					},
-					{
-						ID:      "greeting",
-						Message: "{Welcome \\{user\\}!}",
-						Status:  model.MessageStatusTranslated,
-					},
-					{
-						ID:      "farewell",
-						Message: "{Goodbye friend}",
-						Status:  model.MessageStatusTranslated,
-					},
-				},
-			},
-		},
-		{
 			name: "Message with placeholder",
 			input: []byte(`
 			{
@@ -92,7 +51,7 @@ func Test_FromArb(t *testing.T) {
 					},
 					{
 						ID:      "greeting",
-						Message: "{Welcome \\{user\\}!}",
+						Message: `{Welcome \{user\}!}`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{
