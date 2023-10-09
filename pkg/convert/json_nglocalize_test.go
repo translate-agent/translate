@@ -49,6 +49,33 @@ func Test_FromNgLocalize(t *testing.T) {
 			},
 		},
 		{
+			name: "Message with placeholder",
+			input: []byte(`
+      {
+        "locale": "fr",
+        "translations": {
+          "Hello": "Bonjour {le monde}",
+          "Welcome": "Bienvenue"
+        }
+      }`),
+			expected: model.Translation{
+				Language: language.French,
+				Original: true,
+				Messages: []model.Message{
+					{
+						ID:      "Hello",
+						Message: `{Bonjour \{le monde\}}`,
+						Status:  model.MessageStatusTranslated,
+					},
+					{
+						ID:      "Welcome",
+						Message: "{Bienvenue}",
+						Status:  model.MessageStatusTranslated,
+					},
+				},
+			},
+		},
+		{
 			name: "Translated",
 			input: []byte(`
 			{
