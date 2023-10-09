@@ -35,6 +35,20 @@ func Test_FromNgxTranslate(t *testing.T) {
 			},
 		},
 		{
+			name:  "Message with placeholder",
+			input: []byte(`{"message":"hello {world}"}`),
+			expected: model.Translation{
+				Original: true,
+				Messages: []model.Message{
+					{
+						ID:      "message",
+						Message: `{hello \{world\}}`,
+						Status:  model.MessageStatusTranslated,
+					},
+				},
+			},
+		},
+		{
 			name:  "Nested normally",
 			input: []byte(`{"message":{"example":"message1"}}`),
 			expected: model.Translation{
