@@ -72,34 +72,14 @@ func TestToGo(t *testing.T) {
 func TestFromGo(t *testing.T) {
 	t.Parallel()
 
-	translation := model.Translation{
-		Language: language.English,
-		Original: false,
-		Messages: []model.Message{
-			{
-				ID:          "1",
-				Message:     "{translatedMessage1}",
-				Description: "description1",
-				Positions:   []string{"src/config.go:10"},
-				Status:      model.MessageStatusFuzzy,
-			},
-			{
-				ID:          "2",
-				Message:     "{translatedMessage2}",
-				Description: "description2",
-				Positions:   []string{"src/config.go:20"},
-				Status:      model.MessageStatusFuzzy,
-			},
-			{
-				ID:          "3",
-				Message:     "",
-				Description: "description3",
-				Status:      model.MessageStatusUntranslated,
-			},
-		},
-	}
-
-	input := []byte(`
+	tests := []struct {
+		name     string
+		input    []byte
+		expected model.Translation
+	}{
+		{
+			name: "valid input",
+			input: []byte(`
 	{
 		"language": "en",
 		"messages": [
@@ -127,10 +107,92 @@ func TestFromGo(t *testing.T) {
 			}
 		]
 	}
-	`)
+	`),
+			expected: model.Translation{
+				Language: language.English,
+				Original: false,
+				Messages: []model.Message{
+					{
+						ID:          "1",
+						Message:     "{translatedMessage1}",
+						Description: "description1",
+						Positions:   []string{"src/config.go:10"},
+						Status:      model.MessageStatusFuzzy,
+					},
+					{
+						ID:          "2",
+						Message:     "{translatedMessage2}",
+						Description: "description2",
+						Positions:   []string{"src/config.go:20"},
+						Status:      model.MessageStatusFuzzy,
+					},
+					{
+						ID:          "3",
+						Message:     "",
+						Description: "description3",
+						Status:      model.MessageStatusUntranslated,
+					},
+				},
+			},
+		},
+		{
+			name: "translation with curly braces",
+			input: []byte(`
+	{
+		"language": "en",
+		"messages": [
+			{
+				"id": "1",
+				"meaning": "description1",
+				"message": "message1",
+				"translation": "translatedMessage1",
+				"position": "src/config.go:10",
+				"fuzzy":true
+			},
+			{
+				"id": "2",
+				"meaning": "description2",
+				"message": "message2",
+				"translation": "hello, {world}",
+				"position": "src/config.go:20",
+				"fuzzy":true
+			}
+		]
+	}
+	`),
+			expected: model.Translation{
+				Language: language.English,
+				Original: false,
+				Messages: []model.Message{
+					{
+						ID:          "1",
+						Message:     "{translatedMessage1}",
+						Description: "description1",
+						Positions:   []string{"src/config.go:10"},
+						Status:      model.MessageStatusFuzzy,
+					},
+					{
+						ID:          "2",
+						Message:     `{hello, \{world\}}`,
+						Description: "description2",
+						Positions:   []string{"src/config.go:20"},
+						Status:      model.MessageStatusFuzzy,
+					},
+				},
+			},
+		},
+	}
 
-	actual, err := FromGo(input, translation.Original)
-	require.NoError(t, err)
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	testutil.EqualTranslations(t, &translation, &actual)
+			actual, err := FromGo(tt.input, tt.expected.Original)
+
+			require.NoError(t, err)
+
+			testutil.EqualTranslations(t, &tt.expected, &actual)
+		})
+	}
 }
