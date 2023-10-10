@@ -74,37 +74,31 @@ func (t *TranslateServiceServer) CreateTranslation(
 	}
 
 	if len(translations) > 0 {
-		return nil, status.Errorf(codes.AlreadyExists, "translation already exist for language: '%s'", params.translation.Language)
+		return nil, status.Errorf(codes.AlreadyExists,
+			"translation already exist for language: '%s'", params.translation.Language)
 	}
 
-	// Translate messages when translation is not original and original language is known.
-	if !params.translation.Original {
-		// Retrieve language from original translation.
-		var originalLanguage *language.Tag
+	switch params.translation.Original {
+	default:
+	// noop
+	case false: // Translate messages when translation is not original and original language is known.
 		// TODO: to improve performance should be replaced with CheckTranslationExist db function.
 		loadTranslations, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
-		for _, v := range loadTranslations {
-			if v.Original {
-				originalLanguage = &v.Language
+		if origIdx := loadTranslations.OriginalIndex(); origIdx != -1 {
+			targetLanguage := params.translation.Language
+			params.translation.Language = loadTranslations[origIdx].Language
 
-				// if incoming translation is empty populate with original translation.
-				if params.translation.Messages == nil {
-					params.translation.Messages = v.Messages
-				}
-
-				break
+			// if incoming translation is empty populate with original translation.
+			if params.translation.Messages == nil {
+				params.translation.Messages = loadTranslations[origIdx].Messages
 			}
-		}
 
-		if originalLanguage != nil {
 			// Translate messages -
 			// untranslated text in incoming translation will be translated from original to target language.
-			targetLanguage := params.translation.Language
-			params.translation.Language = *originalLanguage
 			params.translation, err = t.translator.Translate(ctx, params.translation, targetLanguage)
 			if err != nil {
 				return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
@@ -248,7 +242,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 			all.PopulateTranslations()
 		}
 
-		if err := t.fuzzyTranslate(ctx, all); err != nil {
+		if err = t.fuzzyTranslate(ctx, all); err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 	}
@@ -314,6 +308,7 @@ func (t *TranslateServiceServer) fuzzyTranslate(
 		// Translate messages -
 		// untranslated messages in toBeTranslated will be translated from original to target language.
 		targetLanguage := all[i].Language
+
 		translated, err := t.translator.Translate(ctx, toBeTranslated, targetLanguage)
 		if err != nil {
 			return fmt.Errorf("translator translate messages: %w", err)

@@ -68,7 +68,7 @@ func (u *uploadParams) validate() error {
 }
 
 // getLanguage returns the language tag for an upload based on the upload parameters and translation.
-// It returns an error if no language is set or if the languages in the upload parameters and translation are mismatched.
+// Returns an error if no language is set or if the languages in the upload parameters and translation are mismatched.
 func getLanguage(reqParams *uploadParams, translation *model.Translation) (language.Tag, error) {
 	und := language.Und
 
@@ -142,7 +142,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 			all.PopulateTranslations()
 		}
 
-		if err := t.fuzzyTranslate(ctx, all); err != nil {
+		if err = t.fuzzyTranslate(ctx, all); err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 	}
@@ -150,6 +150,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	// Update affected translations
 	for i := range all {
 		err = t.repo.SaveTranslation(ctx, params.serviceID, &all[i])
+
 		switch {
 		case errors.Is(err, repo.ErrNotFound):
 			return nil, status.Errorf(codes.NotFound, "service not found")
