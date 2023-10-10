@@ -718,6 +718,7 @@ func matchingTranslationExistsInService(
 	}
 
 	require.NotNil(t, t2)
-	require.ElementsMatch(t, t1.Messages, t2.Messages)
+	require.Equal(t, t1.Original, t2.Original)
 	require.Equal(t, t1.Language, t2.Language)
+	require.ElementsMatch(t, t1.Messages, t2.Messages)
 }
