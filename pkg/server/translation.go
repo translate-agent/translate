@@ -249,12 +249,11 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		}
 
 		updatedTranslations = all
-
 	}
 
 	// Update messages for all translations
 	for i := range updatedTranslations {
-		err = t.repo.SaveTranslation(ctx, params.serviceID, &all[i])
+		err = t.repo.SaveTranslation(ctx, params.serviceID, &updatedTranslations[i])
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}

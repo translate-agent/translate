@@ -683,6 +683,41 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.expectedCode, status.Code(err))
+
+			if tt.request == happyReq {
+				matchingTranslationExistsInService(ctx, t, tt.request.ServiceId, resp)
+			}
 		})
 	}
+}
+
+// matchingTranslationExistsInService checks incoming translation is equal to translation
+// with same language returned from listTranslations.
+func matchingTranslationExistsInService(
+	ctx context.Context,
+	t *testing.T,
+	serviceID string,
+	t1 *translatev1.Translation,
+) {
+	t.Helper()
+
+	resp, err := client.ListTranslations(ctx, &translatev1.ListTranslationsRequest{
+		ServiceId: serviceID,
+	})
+
+	require.NoError(t, err)
+	require.NotEmpty(t, resp)
+
+	var t2 *translatev1.Translation
+
+	for i := range resp.Translations {
+		if resp.Translations[i].Language == t1.Language {
+			t2 = resp.Translations[i]
+			break
+		}
+	}
+
+	require.NotNil(t, t2)
+	require.ElementsMatch(t, t1.Messages, t2.Messages)
+	require.Equal(t, t1.Language, t2.Language)
 }
