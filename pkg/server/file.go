@@ -68,7 +68,7 @@ func (u *uploadParams) validate() error {
 }
 
 // getLanguage returns the language tag for an upload based on the upload parameters and translation.
-// It returns an error if no language is set or if the languages in the upload parameters and translation are mismatched.
+// Returns an error if no language is set or if the languages in the upload parameters and translation are mismatched.
 func getLanguage(reqParams *uploadParams, translation *model.Translation) (language.Tag, error) {
 	und := language.Und
 
@@ -117,10 +117,14 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	// Case for when not original, or uploading original for the first time.
 	updatedTranslations := model.Translations{*translation}
 
-	// When updating original translation, changes might affect translations - transform and update all translations.
-	if translation.Original {
-		all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
-		if err != nil {
+	switch translation.Original {
+	default:
+		// noop
+	case true:
+		// When updating original translation, changes might affect translations - transform and update all translations.
+		var all model.Translations
+
+		if all, err = t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{}); err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 
@@ -137,7 +141,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 				all.PopulateTranslations()
 			}
 
-			if err := t.fuzzyTranslate(ctx, all); err != nil {
+			if err = t.fuzzyTranslate(ctx, all); err != nil {
 				return nil, status.Errorf(codes.Internal, "")
 			}
 
@@ -147,6 +151,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 
 	for i := range updatedTranslations {
 		err = t.repo.SaveTranslation(ctx, params.serviceID, &updatedTranslations[i])
+
 		switch {
 		case errors.Is(err, repo.ErrNotFound):
 			return nil, status.Errorf(codes.NotFound, "service not found")

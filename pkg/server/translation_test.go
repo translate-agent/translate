@@ -15,7 +15,10 @@ const mockTranslation = "{Translated}"
 
 type mockTranslator struct{}
 
-func (m *mockTranslator) Translate(ctx context.Context, translation *model.Translation, targetLanguage language.Tag) (*model.Translation, error) {
+func (m *mockTranslator) Translate(ctx context.Context,
+	translation *model.Translation,
+	targetLanguage language.Tag,
+) (*model.Translation, error) {
 	newTranslation := &model.Translation{
 		Language: targetLanguage,
 		Messages: make([]model.Message, 0, len(translation.Messages)),
@@ -35,27 +38,24 @@ func (m *mockTranslator) Translate(ctx context.Context, translation *model.Trans
 func Test_fuzzyTranslate(t *testing.T) {
 	t.Parallel()
 
-	ctx := context.Background()
-
 	translateSrv := NewTranslateServiceServer(nil, &mockTranslator{})
-
 	originalTranslation1 := randOriginalTranslation(3)
 	originalTranslation2 := randOriginalTranslation(10)
 
 	tests := []struct {
-		name               string
-		originalTranslation   *model.Translation
-		translations []model.Translation
+		name                string
+		originalTranslation *model.Translation
+		translations        []model.Translation
 	}{
 		{
-			name:               "Fuzzy translate untranslated messages for one translation",
-			originalTranslation:   originalTranslation1,
-			translations: randTranslations(1, 3, originalTranslation1),
+			name:                "Fuzzy translate untranslated messages for one translation",
+			originalTranslation: originalTranslation1,
+			translations:        randTranslations(1, 3, originalTranslation1),
 		},
 		{
-			name:               "Fuzzy translate untranslated messages for five translations",
-			originalTranslation:   originalTranslation2,
-			translations: randTranslations(5, 5, originalTranslation2),
+			name:                "Fuzzy translate untranslated messages for five translations",
+			originalTranslation: originalTranslation2,
+			translations:        randTranslations(5, 5, originalTranslation2),
 		},
 	}
 
@@ -64,33 +64,10 @@ func Test_fuzzyTranslate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			allTranslations := make(model.Translations, 0, len(tt.translations)+1)
-			allTranslations = append(allTranslations, *tt.originalTranslation)
-			allTranslations = append(allTranslations, tt.translations...)
+			allTranslations := append(model.Translations{*tt.originalTranslation}, tt.translations...)
+			untranslatedMessageIDLookup := randomUntranslatedMessages(t, allTranslations)
 
-			untranslatedMessageIDLookup := make(map[string]struct{})
-
-			// Randomly set message status to untranslated
-			for _, msg := range tt.originalTranslation.Messages {
-				if gofakeit.Bool() {
-					untranslatedMessageIDLookup[msg.ID] = struct{}{}
-				}
-			}
-
-			for i := range allTranslations {
-				if allTranslations[i].Original {
-					continue
-				}
-
-				for j := range allTranslations[i].Messages {
-					if _, ok := untranslatedMessageIDLookup[allTranslations[i].Messages[j].ID]; ok {
-						allTranslations[i].Messages[j].Status = model.MessageStatusUntranslated
-					}
-				}
-			}
-
-			err := translateSrv.fuzzyTranslate(ctx, allTranslations)
-			require.NoError(t, err)
+			require.NoError(t, translateSrv.fuzzyTranslate(context.Background(), allTranslations))
 
 			// Check that untranslated messages have been translated and marked as fuzzy for all translations.
 			for _, translation := range allTranslations {
@@ -137,4 +114,42 @@ func randTranslations(n uint, msgCount uint, original *model.Translation) []mode
 	}
 
 	return translations
+}
+
+// randomUntranslatedMessages randomly sets message status to untranslated for all translations,
+// returns map containing untranslated message ids.
+func randomUntranslatedMessages(t *testing.T, translations model.Translations) map[string]struct{} {
+	t.Helper()
+
+	untranslatedMessageIDLookup := make(map[string]struct{})
+	origIdx := translations.OriginalIndex()
+
+	if origIdx == -1 {
+		return nil
+	}
+
+	for _, v := range translations[origIdx].Messages {
+		untranslatedMessageIDLookup[v.ID] = struct{}{}
+	}
+
+	// Randomly set message status to untranslated
+	for _, msg := range translations[origIdx].Messages {
+		if gofakeit.Bool() {
+			untranslatedMessageIDLookup[msg.ID] = struct{}{}
+		}
+	}
+
+	for i := range translations {
+		if translations[i].Original {
+			continue
+		}
+
+		for j := range translations[i].Messages {
+			if _, ok := untranslatedMessageIDLookup[translations[i].Messages[j].ID]; ok {
+				translations[i].Messages[j].Status = model.MessageStatusUntranslated
+			}
+		}
+	}
+
+	return untranslatedMessageIDLookup
 }
