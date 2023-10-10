@@ -116,8 +116,9 @@ func randTranslations(n uint, msgCount uint, original *model.Translation) []mode
 	return translations
 }
 
-// randomUntranslatedMessageStatus randomly sets message status to untranslated for all translations,
-// returns map containing untranslated message ids.
+// randomUntranslatedMessageStatus randomly sets the message status to untranslated,
+// starting with the original and then remaining translations.
+// Returns a map containing the untranslated message IDs.
 func randomUntranslatedMessageStatus(t *testing.T, translations model.Translations) map[string]struct{} {
 	t.Helper()
 
