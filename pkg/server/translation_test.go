@@ -65,7 +65,7 @@ func Test_fuzzyTranslate(t *testing.T) {
 			t.Parallel()
 
 			allTranslations := append(model.Translations{*tt.originalTranslation}, tt.translations...)
-			untranslatedMessageIDLookup := randomUntranslatedMessages(t, allTranslations)
+			untranslatedMessageIDLookup := randomUntranslatedMessageStatus(t, allTranslations)
 
 			require.NoError(t, translateSrv.fuzzyTranslate(context.Background(), allTranslations))
 
@@ -116,17 +116,18 @@ func randTranslations(n uint, msgCount uint, original *model.Translation) []mode
 	return translations
 }
 
-// randomUntranslatedMessages randomly sets message status to untranslated for all translations,
+// randomUntranslatedMessageStatus randomly sets message status to untranslated for all translations,
 // returns map containing untranslated message ids.
-func randomUntranslatedMessages(t *testing.T, translations model.Translations) map[string]struct{} {
+func randomUntranslatedMessageStatus(t *testing.T, translations model.Translations) map[string]struct{} {
 	t.Helper()
 
-	untranslatedMessageIDLookup := make(map[string]struct{})
 	origIdx := translations.OriginalIndex()
 
 	if origIdx == -1 {
 		return nil
 	}
+
+	untranslatedMessageIDLookup := make(map[string]struct{})
 
 	for _, v := range translations[origIdx].Messages {
 		untranslatedMessageIDLookup[v.ID] = struct{}{}
