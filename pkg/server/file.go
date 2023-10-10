@@ -114,42 +114,42 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	var translations model.Translations
+	var all model.Translations
 
 	if translation.Original {
-		if translations, err = t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{}); err != nil {
+		if all, err = t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{}); err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 	}
 
-	origIdx := translations.OriginalIndex()
+	origIdx := all.OriginalIndex()
 
 	switch {
 	default:
 		// Original translation is not affected, changes will not affect other translations - update incoming translation.
-		translations = model.Translations{*translation}
+		all = model.Translations{*translation}
 	case translation.Original && origIdx != -1:
 		// Original translation is affected, changes might affect other translations - transform and update all translations.
-		oldOriginal := translations[origIdx]
+		oldOriginal := all[origIdx]
 
 		// Compare repo and request original translation.
 		// Change status for new or altered translation.messages to UNTRANSLATED for all languages
-		translations.MarkUntranslated(oldOriginal.FindChangedMessageIDs(translation))
+		all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(translation))
 		// Replace original translation with new one.
-		translations.Replace(*translation)
+		all.Replace(*translation)
 		// Add missing messages for all translations.
 		if params.populateTranslations {
-			translations.PopulateTranslations()
+			all.PopulateTranslations()
 		}
 
-		if err := t.fuzzyTranslate(ctx, translations); err != nil {
+		if err := t.fuzzyTranslate(ctx, all); err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 	}
 
-	// Update translations
-	for i := range translations {
-		err = t.repo.SaveTranslation(ctx, params.serviceID, &translations[i])
+	// Update affected translations
+	for i := range all {
+		err = t.repo.SaveTranslation(ctx, params.serviceID, &all[i])
 		switch {
 		case errors.Is(err, repo.ErrNotFound):
 			return nil, status.Errorf(codes.NotFound, "service not found")

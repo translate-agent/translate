@@ -219,43 +219,43 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	translations, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
+	all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if !translations.HasLanguage(params.translation.Language) {
+	if !all.HasLanguage(params.translation.Language) {
 		return nil, status.Errorf(codes.NotFound, "no translation for language: '%s'", params.translation.Language)
 	}
 
-	origIdx := translations.OriginalIndex()
+	origIdx := all.OriginalIndex()
 
 	switch {
 	default:
 		// Original translation is not affected, changes will not affect other translations - update incoming translation.
-		translations = model.Translations{*params.translation}
+		all = model.Translations{*params.translation}
 	case params.translation.Original && origIdx != -1:
 		// Original translation is affected, changes might affect other translations - transform and update all translations.
-		oldOriginal := translations[origIdx]
+		oldOriginal := all[origIdx]
 
 		// Compare repo and request original translation.
 		// Change status for new or altered translation.messages to UNTRANSLATED for all languages
-		translations.MarkUntranslated(oldOriginal.FindChangedMessageIDs(params.translation))
+		all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(params.translation))
 		// Replace original translation with new one.
-		translations.Replace(*params.translation)
+		all.Replace(*params.translation)
 		// Add missing messages for all translations.
 		if params.populateTranslations {
-			translations.PopulateTranslations()
+			all.PopulateTranslations()
 		}
 
-		if err := t.fuzzyTranslate(ctx, translations); err != nil {
+		if err := t.fuzzyTranslate(ctx, all); err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
 	}
 
-	// Update translations
-	for i := range translations {
-		err = t.repo.SaveTranslation(ctx, params.serviceID, &translations[i])
+	// Update affected translations
+	for i := range all {
+		err = t.repo.SaveTranslation(ctx, params.serviceID, &all[i])
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
