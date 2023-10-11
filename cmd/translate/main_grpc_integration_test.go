@@ -697,7 +697,7 @@ func matchingTranslationExistsInService(
 	ctx context.Context,
 	t *testing.T,
 	serviceID string,
-	t1 *translatev1.Translation,
+	translation *translatev1.Translation,
 ) {
 	t.Helper()
 
@@ -708,17 +708,17 @@ func matchingTranslationExistsInService(
 	require.NoError(t, err)
 	require.NotEmpty(t, resp)
 
-	var t2 *translatev1.Translation
+	var translationFromService *translatev1.Translation
 
 	for i := range resp.Translations {
-		if resp.Translations[i].Language == t1.Language {
-			t2 = resp.Translations[i]
+		if resp.Translations[i].Language == translation.Language {
+			translationFromService = resp.Translations[i]
 			break
 		}
 	}
 
-	require.NotNil(t, t2)
-	require.Equal(t, t1.Original, t2.Original)
-	require.Equal(t, t1.Language, t2.Language)
-	require.ElementsMatch(t, t1.Messages, t2.Messages)
+	require.NotNil(t, translationFromService)
+	require.Equal(t, translation.Original, translationFromService.Original)
+	require.Equal(t, translation.Language, translationFromService.Language)
+	require.ElementsMatch(t, translation.Messages, translationFromService.Messages)
 }
