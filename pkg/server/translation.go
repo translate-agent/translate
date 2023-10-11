@@ -222,10 +222,14 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		return nil, status.Errorf(codes.NotFound, "no translation for language: '%s'", params.translation.Language)
 	}
 
-	// Case for when not original, or uploading original for the first time.
-	updatedTranslations := model.Translations{*params.translation}
+	origIdx := all.OriginalIndex()
 
-	if origIdx := all.OriginalIndex(); params.translation.Original && origIdx != -1 {
+	switch {
+	default:
+		// Original translation is not affected, changes will not affect other translations - update incoming translation.
+		all = model.Translations{*params.translation}
+	case params.translation.Original && origIdx != -1:
+		// Original translation is affected, changes might affect other translations - transform and update all translations.
 		oldOriginal := all[origIdx]
 
 		// Compare repo and request original translation.
@@ -241,12 +245,10 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		if err = t.fuzzyTranslate(ctx, all); err != nil {
 			return nil, status.Errorf(codes.Internal, "")
 		}
-
-		updatedTranslations = all
 	}
 
-	// Update messages for all translations
-	for i := range updatedTranslations {
+	// Update affected translations
+	for i := range all {
 		err = t.repo.SaveTranslation(ctx, params.serviceID, &all[i])
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "")
