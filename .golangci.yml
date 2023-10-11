@@ -3,7 +3,7 @@ run:
     - integration
   timeout: 2m
   skip-dirs:
-    - pkg/server
+    - pkg/pb
 linters:
   enable:
     - asciicheck
