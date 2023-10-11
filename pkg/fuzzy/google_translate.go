@@ -115,7 +115,7 @@ func (g *GoogleTranslate) Translate(
 	}
 
 	if len(translation.Messages) == 0 {
-		return &model.Translation{Language: translation.Language, Original: translation.Original}, nil
+		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
 	}
 
 	// Split text from translation into batches to avoid exceeding
