@@ -3,21 +3,23 @@ CREATE TABLE service (
   name VARCHAR(255)
 );
 
-CREATE TABLE message (
+CREATE TABLE translation (
   id BINARY(16) PRIMARY KEY,
   service_id BINARY(16) NOT NULL,
   language VARCHAR(20) NOT NULL,
+  original BOOLEAN NOT NULL DEFAULT false,
 
   FOREIGN KEY (service_id) REFERENCES service (id)
 );
 
-CREATE TABLE message_message (
-  message_id BINARY(16) NOT NULL,
+CREATE TABLE message (
+  translation_id BINARY(16) NOT NULL,
   id TEXT NOT NULL,
   message TEXT NOT NULL,
   description TEXT,
-  fuzzy TINYINT(1),
+  status ENUM('UNTRANSLATED', 'FUZZY', 'TRANSLATED') NOT NULL,
+  positions JSON,
 
-  UNIQUE ((SHA1(id)), message_id),
-  FOREIGN KEY (message_id) REFERENCES message (id)
+  UNIQUE ((SHA1(id)), translation_id),
+  FOREIGN KEY (translation_id) REFERENCES translation (id)
 );

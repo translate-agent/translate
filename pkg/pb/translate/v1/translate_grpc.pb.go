@@ -25,9 +25,9 @@ const (
 	TranslateService_CreateService_FullMethodName           = "/translate.v1.TranslateService/CreateService"
 	TranslateService_UpdateService_FullMethodName           = "/translate.v1.TranslateService/UpdateService"
 	TranslateService_DeleteService_FullMethodName           = "/translate.v1.TranslateService/DeleteService"
-	TranslateService_CreateMessages_FullMethodName          = "/translate.v1.TranslateService/CreateMessages"
-	TranslateService_UpdateMessages_FullMethodName          = "/translate.v1.TranslateService/UpdateMessages"
-	TranslateService_ListMessages_FullMethodName            = "/translate.v1.TranslateService/ListMessages"
+	TranslateService_CreateTranslation_FullMethodName       = "/translate.v1.TranslateService/CreateTranslation"
+	TranslateService_UpdateTranslation_FullMethodName       = "/translate.v1.TranslateService/UpdateTranslation"
+	TranslateService_ListTranslations_FullMethodName        = "/translate.v1.TranslateService/ListTranslations"
 	TranslateService_UploadTranslationFile_FullMethodName   = "/translate.v1.TranslateService/UploadTranslationFile"
 	TranslateService_DownloadTranslationFile_FullMethodName = "/translate.v1.TranslateService/DownloadTranslationFile"
 )
@@ -41,9 +41,9 @@ type TranslateServiceClient interface {
 	CreateService(ctx context.Context, in *CreateServiceRequest, opts ...grpc.CallOption) (*Service, error)
 	UpdateService(ctx context.Context, in *UpdateServiceRequest, opts ...grpc.CallOption) (*Service, error)
 	DeleteService(ctx context.Context, in *DeleteServiceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	CreateMessages(ctx context.Context, in *CreateMessagesRequest, opts ...grpc.CallOption) (*Messages, error)
-	UpdateMessages(ctx context.Context, in *UpdateMessagesRequest, opts ...grpc.CallOption) (*Messages, error)
-	ListMessages(ctx context.Context, in *ListMessagesRequest, opts ...grpc.CallOption) (*ListMessagesResponse, error)
+	CreateTranslation(ctx context.Context, in *CreateTranslationRequest, opts ...grpc.CallOption) (*Translation, error)
+	UpdateTranslation(ctx context.Context, in *UpdateTranslationRequest, opts ...grpc.CallOption) (*Translation, error)
+	ListTranslations(ctx context.Context, in *ListTranslationsRequest, opts ...grpc.CallOption) (*ListTranslationsResponse, error)
 	UploadTranslationFile(ctx context.Context, in *UploadTranslationFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DownloadTranslationFile(ctx context.Context, in *DownloadTranslationFileRequest, opts ...grpc.CallOption) (*DownloadTranslationFileResponse, error)
 }
@@ -101,27 +101,27 @@ func (c *translateServiceClient) DeleteService(ctx context.Context, in *DeleteSe
 	return out, nil
 }
 
-func (c *translateServiceClient) CreateMessages(ctx context.Context, in *CreateMessagesRequest, opts ...grpc.CallOption) (*Messages, error) {
-	out := new(Messages)
-	err := c.cc.Invoke(ctx, TranslateService_CreateMessages_FullMethodName, in, out, opts...)
+func (c *translateServiceClient) CreateTranslation(ctx context.Context, in *CreateTranslationRequest, opts ...grpc.CallOption) (*Translation, error) {
+	out := new(Translation)
+	err := c.cc.Invoke(ctx, TranslateService_CreateTranslation_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *translateServiceClient) UpdateMessages(ctx context.Context, in *UpdateMessagesRequest, opts ...grpc.CallOption) (*Messages, error) {
-	out := new(Messages)
-	err := c.cc.Invoke(ctx, TranslateService_UpdateMessages_FullMethodName, in, out, opts...)
+func (c *translateServiceClient) UpdateTranslation(ctx context.Context, in *UpdateTranslationRequest, opts ...grpc.CallOption) (*Translation, error) {
+	out := new(Translation)
+	err := c.cc.Invoke(ctx, TranslateService_UpdateTranslation_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *translateServiceClient) ListMessages(ctx context.Context, in *ListMessagesRequest, opts ...grpc.CallOption) (*ListMessagesResponse, error) {
-	out := new(ListMessagesResponse)
-	err := c.cc.Invoke(ctx, TranslateService_ListMessages_FullMethodName, in, out, opts...)
+func (c *translateServiceClient) ListTranslations(ctx context.Context, in *ListTranslationsRequest, opts ...grpc.CallOption) (*ListTranslationsResponse, error) {
+	out := new(ListTranslationsResponse)
+	err := c.cc.Invoke(ctx, TranslateService_ListTranslations_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -155,9 +155,9 @@ type TranslateServiceServer interface {
 	CreateService(context.Context, *CreateServiceRequest) (*Service, error)
 	UpdateService(context.Context, *UpdateServiceRequest) (*Service, error)
 	DeleteService(context.Context, *DeleteServiceRequest) (*emptypb.Empty, error)
-	CreateMessages(context.Context, *CreateMessagesRequest) (*Messages, error)
-	UpdateMessages(context.Context, *UpdateMessagesRequest) (*Messages, error)
-	ListMessages(context.Context, *ListMessagesRequest) (*ListMessagesResponse, error)
+	CreateTranslation(context.Context, *CreateTranslationRequest) (*Translation, error)
+	UpdateTranslation(context.Context, *UpdateTranslationRequest) (*Translation, error)
+	ListTranslations(context.Context, *ListTranslationsRequest) (*ListTranslationsResponse, error)
 	UploadTranslationFile(context.Context, *UploadTranslationFileRequest) (*emptypb.Empty, error)
 	DownloadTranslationFile(context.Context, *DownloadTranslationFileRequest) (*DownloadTranslationFileResponse, error)
 	mustEmbedUnimplementedTranslateServiceServer()
@@ -182,14 +182,14 @@ func (UnimplementedTranslateServiceServer) UpdateService(context.Context, *Updat
 func (UnimplementedTranslateServiceServer) DeleteService(context.Context, *DeleteServiceRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteService not implemented")
 }
-func (UnimplementedTranslateServiceServer) CreateMessages(context.Context, *CreateMessagesRequest) (*Messages, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateMessages not implemented")
+func (UnimplementedTranslateServiceServer) CreateTranslation(context.Context, *CreateTranslationRequest) (*Translation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateTranslation not implemented")
 }
-func (UnimplementedTranslateServiceServer) UpdateMessages(context.Context, *UpdateMessagesRequest) (*Messages, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateMessages not implemented")
+func (UnimplementedTranslateServiceServer) UpdateTranslation(context.Context, *UpdateTranslationRequest) (*Translation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateTranslation not implemented")
 }
-func (UnimplementedTranslateServiceServer) ListMessages(context.Context, *ListMessagesRequest) (*ListMessagesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListMessages not implemented")
+func (UnimplementedTranslateServiceServer) ListTranslations(context.Context, *ListTranslationsRequest) (*ListTranslationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTranslations not implemented")
 }
 func (UnimplementedTranslateServiceServer) UploadTranslationFile(context.Context, *UploadTranslationFileRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UploadTranslationFile not implemented")
@@ -300,56 +300,56 @@ func _TranslateService_DeleteService_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TranslateService_CreateMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateMessagesRequest)
+func _TranslateService_CreateTranslation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTranslationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TranslateServiceServer).CreateMessages(ctx, in)
+		return srv.(TranslateServiceServer).CreateTranslation(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TranslateService_CreateMessages_FullMethodName,
+		FullMethod: TranslateService_CreateTranslation_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TranslateServiceServer).CreateMessages(ctx, req.(*CreateMessagesRequest))
+		return srv.(TranslateServiceServer).CreateTranslation(ctx, req.(*CreateTranslationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TranslateService_UpdateMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateMessagesRequest)
+func _TranslateService_UpdateTranslation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateTranslationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TranslateServiceServer).UpdateMessages(ctx, in)
+		return srv.(TranslateServiceServer).UpdateTranslation(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TranslateService_UpdateMessages_FullMethodName,
+		FullMethod: TranslateService_UpdateTranslation_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TranslateServiceServer).UpdateMessages(ctx, req.(*UpdateMessagesRequest))
+		return srv.(TranslateServiceServer).UpdateTranslation(ctx, req.(*UpdateTranslationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TranslateService_ListMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListMessagesRequest)
+func _TranslateService_ListTranslations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTranslationsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TranslateServiceServer).ListMessages(ctx, in)
+		return srv.(TranslateServiceServer).ListTranslations(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TranslateService_ListMessages_FullMethodName,
+		FullMethod: TranslateService_ListTranslations_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TranslateServiceServer).ListMessages(ctx, req.(*ListMessagesRequest))
+		return srv.(TranslateServiceServer).ListTranslations(ctx, req.(*ListTranslationsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -418,16 +418,16 @@ var TranslateService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TranslateService_DeleteService_Handler,
 		},
 		{
-			MethodName: "CreateMessages",
-			Handler:    _TranslateService_CreateMessages_Handler,
+			MethodName: "CreateTranslation",
+			Handler:    _TranslateService_CreateTranslation_Handler,
 		},
 		{
-			MethodName: "UpdateMessages",
-			Handler:    _TranslateService_UpdateMessages_Handler,
+			MethodName: "UpdateTranslation",
+			Handler:    _TranslateService_UpdateTranslation_Handler,
 		},
 		{
-			MethodName: "ListMessages",
-			Handler:    _TranslateService_ListMessages_Handler,
+			MethodName: "ListTranslations",
+			Handler:    _TranslateService_ListTranslations_Handler,
 		},
 		{
 			MethodName: "UploadTranslationFile",

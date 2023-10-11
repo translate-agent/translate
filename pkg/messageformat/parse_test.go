@@ -117,6 +117,21 @@ func Test_Parse(t *testing.T) {
 			input:       "match $count :number} ",
 			expectedErr: fmt.Errorf("expression does not start with \"{\""),
 		},
+		{
+			name:     "input with curly braces in it",
+			input:    `{Chart [\{\}] was added to dashboard [\{\}]}`,
+			expected: []interface{}{NodeText{Text: "Chart [{}] was added to dashboard [{}]"}},
+		},
+		{
+			name:     "input with plus sign in it ",
+			input:    `{+ vēl %s}`,
+			expected: []interface{}{NodeText{Text: "+ vēl %s"}},
+		},
+		{
+			name:     "input with minus sign in it ",
+			input:    `{- vēl %s}`,
+			expected: []interface{}{NodeText{Text: "- vēl %s"}},
+		},
 	} {
 		test := test
 

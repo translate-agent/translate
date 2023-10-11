@@ -11,11 +11,17 @@ import (
 
 var errUnspecifiedSchema = errors.New("unspecified schema")
 
-// MessagesFromData converts in specific schema serialized data to model.Messages.
-func MessagesFromData(schema translatev1.Schema, data []byte) (*model.Messages, error) {
-	var from func([]byte) (model.Messages, error)
+/*
+TranslationFromData converts in specific schema serialized data to model.Translation.
+  - If original is true, then all messages are marked as TRANSLATED
+  - If original is false, then all messages are marked as UNTRANSLATED or FUZZY (if schema supports fuzzy translation)
 
-	switch schema {
+TODO: Add support for converting non original, but already translated messages and mark them as TRANSLATED
+*/
+func TranslationFromData(params *uploadParams) (*model.Translation, error) {
+	var from func([]byte, bool) (model.Translation, error)
+
+	switch params.schema {
 	case translatev1.Schema_ARB:
 		from = convert.FromArb
 	case translatev1.Schema_GO:
@@ -34,17 +40,17 @@ func MessagesFromData(schema translatev1.Schema, data []byte) (*model.Messages, 
 		return nil, errUnspecifiedSchema
 	}
 
-	messages, err := from(data)
+	translation, err := from(params.data, params.original)
 	if err != nil {
-		return nil, fmt.Errorf("convert from %s schema: %w", schema, err)
+		return nil, fmt.Errorf("convert from %s schema: %w", params.schema, err)
 	}
 
-	return &messages, nil
+	return &translation, nil
 }
 
-// MessagesToData converts model.Messages to specific schema serialized data.
-func MessagesToData(schema translatev1.Schema, messages *model.Messages) ([]byte, error) {
-	var to func(model.Messages) ([]byte, error)
+// TranslationToData converts model.Translation to specific schema serialized data.
+func TranslationToData(schema translatev1.Schema, translation *model.Translation) ([]byte, error) {
+	var to func(model.Translation) ([]byte, error)
 
 	switch schema {
 	case translatev1.Schema_ARB:
@@ -66,11 +72,11 @@ func MessagesToData(schema translatev1.Schema, messages *model.Messages) ([]byte
 	}
 
 	// Prevent nil pointer dereference.
-	if messages == nil {
-		messages = &model.Messages{}
+	if translation == nil {
+		translation = &model.Translation{}
 	}
 
-	data, err := to(*messages)
+	data, err := to(*translation)
 	if err != nil {
 		return nil, fmt.Errorf("convert to %s schema: %w", schema, err)
 	}

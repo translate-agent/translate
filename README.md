@@ -6,7 +6,13 @@ Running latest all in one image
 docker run -d --name translate-all-in-one \
   -p 8080:8080 \
   -p 16686:16686 \
-  -v /tmp/badger:/tmp/badger \
+  -e TRANSLATE_OTHER_GOOGLE_PROJECT_ID={Google project id} \
+  -e TRANSLATE_OTHER_GOOGLE_LOCATION={Google location} \
+  -e TRANSLATE_OTHER_AWS_ACCESS_KEY_ID={AWS access key id} \
+  -e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY={AWS secret access key} \
+  -e TRANSLATE_OTHER_AWS_REGION={AWS region} \
+  -v path/to/google_account_key.json:/app/google_account_key.json \
+  -v /data/badgerdb:/data/badgerdb \
   expectdigital/translate-agent-all-in-one:latest
 ```
 Remove existing, pull latest and run
@@ -14,17 +20,29 @@ Remove existing, pull latest and run
 docker rm -f translate-all-in-one 2> /dev/null; docker pull expectdigital/translate-agent-all-in-one; docker run -d --name translate-all-in-one \
   -p 8080:8080 \
   -p 16686:16686 \
-  -v /tmp/badger:/tmp/badger \
+  -e TRANSLATE_OTHER_GOOGLE_PROJECT_ID={Google project id} \
+  -e TRANSLATE_OTHER_GOOGLE_LOCATION={Google location} \
+  -e TRANSLATE_OTHER_AWS_ACCESS_KEY_ID={AWS access key id} \
+  -e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY={AWS secret access key} \
+  -e TRANSLATE_OTHER_AWS_REGION={AWS region} \
+  -v path/to/google_account_key.json:/app/google_account_key.json \
+  -v /data/badgerdb:/data/badgerdb \
   expectdigital/translate-agent-all-in-one
 ```
 
 ### All-in-one image docker run arguments description
-| Argument                                | Description                                            |
-| --------------------------------------- | ------------------------------------------------------ |
-| `-p 8080:8080`                          | Translate service port                                 |
-| `-p 16686:16686`                        | Jaeger UI port                                         |
-| `-v path/to/badger-dir:/tmp/badger`     | Path for BadgerDB db for data persistency *(Optional)* |
-| `-v path/to/envoy.yaml:/app/envoy.yaml` | Path to custom envoy.yaml *(Optional)*                 |
+| Argument                                                              | Description                                            |
+|-----------------------------------------------------------------------|--------------------------------------------------------|
+| `-p 8080:8080`                                                        | Translate service port                                 |
+| `-p 16686:16686`                                                      | Jaeger UI port                                         |
+| `-e TRANSLATE_OTHER_GOOGLE_PROJECT_ID={Google project id}`            | Google project id                                      |
+| `-e TRANSLATE_OTHER_GOOGLE_LOCATION={Google location}`                | Google  location                                       |
+| `-e TRANSLATE_OTHER_AWS_ACCESS_KEY_ID={AWS access key id}`            | AWS access key id                                      |
+| `-e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY={AWS secret access key}     | AWS secret access key                                  |
+| `-e TRANSLATE_OTHER_AWS_REGION={AWS region}`                          | AWS region                                             |
+| `-v path/to/google_account_key.json:/app/google_account_key.json`     | Path to Google account key                             |
+| `-v path/to/badger-dir:/data/badgerdb`                                | Path for BadgerDB db for data persistency *(Optional)* |
+| `-v path/to/envoy.yaml:/app/envoy.yaml`                               | Path to custom envoy.yaml *(Optional)*                 |
 
 ## TypeScript client
 

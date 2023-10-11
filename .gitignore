@@ -8,13 +8,10 @@
 *.so
 *.dylib
 
-!.env.test
-
 translate.yaml
 
 # earthly
 .arg
-.env
 .secret
 
 # Output of the go coverage tool, specifically when used with LiteIDE
@@ -24,3 +21,6 @@ translate.yaml
 # vendor/
 
 .go-version
+.env.test
+google_account_key.json
+.DS_Store

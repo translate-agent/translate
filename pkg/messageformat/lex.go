@@ -171,7 +171,16 @@ func lexText(l *lexer) stateFn {
 			return l.emitToken(mkTokenErrorf("unexpected EOF"))
 		}
 
-		text += string(v)
+		if v == '\\' {
+			nextElement := l.next()
+
+			switch nextElement {
+			case '|', '{', '}', '\\':
+				text += string(nextElement)
+			}
+		} else {
+			text += string(v)
+		}
 
 		if l.peek() == '}' || l.peek() == '{' {
 			return l.emitToken(mkToken(tokenTypeText, text))
@@ -201,13 +210,13 @@ func lexExpr(l *lexer) stateFn {
 			return lexText(l)
 		}
 	case '$':
-		return lexVariable(l)
+		return processChar(l, lexVariable)
 	case ':':
-		return lexFunction(l)
+		return processChar(l, lexFunction)
 	case '+':
-		return lexOpeningFunction(l)
+		return processFunction(l, lexOpeningFunction)
 	case '-':
-		return lexClosingFunction(l)
+		return processFunction(l, lexClosingFunction)
 	case '{':
 		l.exprDepth++
 		l.insideExpr = true
@@ -273,10 +282,6 @@ func lexClosingFunction(l *lexer) stateFn {
 func lexFunction(l *lexer) stateFn {
 	first := l.next()
 
-	if !isNameFirstChar(first) {
-		return l.emitToken(mkTokenErrorf(`invalid first character %s in function at %d`, string(first), l.pos))
-	}
-
 	function := string(first)
 
 	for {
@@ -293,10 +298,6 @@ func lexFunction(l *lexer) stateFn {
 
 func lexVariable(l *lexer) stateFn {
 	first := l.next()
-
-	if !isNameFirstChar(first) {
-		return l.emitToken(mkTokenErrorf(`invalid first character %s in variable at %d`, string(first), l.pos))
-	}
 
 	variable := string(first)
 
@@ -326,8 +327,6 @@ func isAlpha(v rune) bool {
 //	/ %x370-37D / %x37F-1FFF / %x200C-200D
 //	/ %x2070-218F / %x2C00-2FEF / %x3001-D7FF
 //	/ %xF900-FDCF / %xFDF0-FFFD / %x10000-EFFFF
-//
-//nolint:gocognit
 func isNameFirstChar(v rune) bool {
 	return isAlpha(v) ||
 		v == '_' ||
@@ -360,4 +359,24 @@ func isNameChar(v rune) bool {
 // isSpace reports whether r is a space character.
 func isSpace(r rune) bool {
 	return r == ' ' || r == '\t' || r == '\r' || r == '\n'
+}
+
+func processFunction(l *lexer, f func(*lexer) stateFn) stateFn {
+	if l.exprDepth > 1 {
+		return f(l)
+	}
+
+	l.backup()
+
+	return lexText(l)
+}
+
+func processChar(l *lexer, f func(*lexer) stateFn) stateFn {
+	if isAlpha(l.peek()) {
+		return f(l)
+	}
+
+	l.backup()
+
+	return lexText(l)
 }

@@ -38,7 +38,7 @@ func Parse(text string) ([]interface{}, error) {
 
 	tree, err := p.parse()
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse: %w", err)
+		return nil, fmt.Errorf("parse MessageFormat: %w", err)
 	}
 
 	return tree, nil

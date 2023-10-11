@@ -141,7 +141,8 @@ func messageToProto(m *model.Message) *translatev1.Message {
 		Id:          m.ID,
 		Message:     m.Message,
 		Description: m.Description,
-		Fuzzy:       m.Fuzzy,
+		Status:      translatev1.Message_Status(m.Status),
+		Positions:   m.Positions,
 	}
 }
 
@@ -155,57 +156,59 @@ func messageFromProto(m *translatev1.Message) (*model.Message, error) {
 		ID:          m.Id,
 		Message:     m.Message,
 		Description: m.Description,
-		Fuzzy:       m.Fuzzy,
+		Status:      model.MessageStatus(m.Status),
+		Positions:   m.Positions,
 	}, nil
 }
 
-// messageSliceToProto converts []model.Message to []*translatev1.Message.
-func messageSliceToProto(m []model.Message) []*translatev1.Message {
+// messagesToProto converts []model.Message to []*translatev1.Message.
+func messagesToProto(m []model.Message) []*translatev1.Message {
 	return sliceToProto(m, messageToProto)
 }
 
-// messageSliceFromProto converts []*translatev1.Message to []model.Message.
-func messageSliceFromProto(m []*translatev1.Message) ([]model.Message, error) {
+// messagesFromProto converts []*translatev1.Message to []model.Message.
+func messagesFromProto(m []*translatev1.Message) ([]model.Message, error) {
 	return sliceFromProto(m, messageFromProto)
 }
 
-// ----------------------Messages----------------------
+// ----------------------Translation----------------------
 
-// messagesToProto converts *model.Messages to *translatev1.Messages.
-func messagesToProto(m *model.Messages) *translatev1.Messages {
-	if m == nil {
+// translationToProto converts *model.Translation to *translatev1.Translation.
+func translationToProto(t *model.Translation) *translatev1.Translation {
+	if t == nil {
 		return nil
 	}
 
-	return &translatev1.Messages{
-		Language: languageToProto(m.Language),
-		Messages: messageSliceToProto(m.Messages),
+	return &translatev1.Translation{
+		Language: languageToProto(t.Language),
+		Original: t.Original,
+		Messages: messagesToProto(t.Messages),
 	}
 }
 
-// messagesFromProto converts *translatev1.Messages to *model.Messages.
-func messagesFromProto(m *translatev1.Messages) (*model.Messages, error) {
-	if m == nil {
+// translationFromProto converts *translatev1.Translation to *model.Translation.
+func translationFromProto(t *translatev1.Translation) (*model.Translation, error) {
+	if t == nil {
 		return nil, nil
 	}
 
 	var (
-		err  error
-		msgs = &model.Messages{}
+		err         error
+		translation = &model.Translation{Original: t.Original}
 	)
 
-	if msgs.Language, err = languageFromProto(m.Language); err != nil {
+	if translation.Language, err = languageFromProto(t.Language); err != nil {
 		return nil, fmt.Errorf("transform language tag: %w", err)
 	}
 
-	if msgs.Messages, err = messageSliceFromProto(m.Messages); err != nil {
-		return nil, fmt.Errorf("transform messages: %w", err)
+	if translation.Messages, err = messagesFromProto(t.Messages); err != nil {
+		return nil, fmt.Errorf("transform translation: %w", err)
 	}
 
-	return msgs, nil
+	return translation, nil
 }
 
-// messagesSliceToProto converts []model.Messages to []*translatev1.Messages.
-func messagesSliceToProto(m []model.Messages) []*translatev1.Messages {
-	return sliceToProto(m, messagesToProto)
+// translationsToProto converts []model.Translation to []*translatev1.Translation.
+func translationsToProto(m []model.Translation) []*translatev1.Translation {
+	return sliceToProto(m, translationToProto)
 }

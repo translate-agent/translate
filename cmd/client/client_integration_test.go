@@ -20,10 +20,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/cmd/client/cmd"
 	translatesrv "go.expect.digital/translate/cmd/translate/service"
-	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/server"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/rand"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/text/language"
 	"google.golang.org/grpc"
@@ -157,6 +157,67 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		assert.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
+	t.Run("OK, with local file and original flag", func(t *testing.T) {
+		ctx, _ := testutil.Trace(t)
+
+		service := createService(ctx, t)
+		require.NotNil(t, service)
+
+		file, err := os.CreateTemp(t.TempDir(), "test")
+		require.NoError(t, err)
+
+		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
+
+		_, err = file.Write(data)
+		require.NoError(t, err)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
+			"service", "upload",
+			"--address", addr,
+			"--insecure", "true",
+
+			"--language", lang.String(),
+			"--original", "true",
+			"--file", file.Name(),
+			"--schema", "json_ng_localize",
+			"--service", service.Id,
+		})
+
+		require.NoError(t, err)
+		assert.Equal(t, "File uploaded successfully.\n", string(res))
+	})
+
+	t.Run("OK, with local file, original=true populate=false", func(t *testing.T) {
+		ctx, _ := testutil.Trace(t)
+
+		service := createService(ctx, t)
+		require.NotNil(t, service)
+
+		file, err := os.CreateTemp(t.TempDir(), "test")
+		require.NoError(t, err)
+
+		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
+
+		_, err = file.Write(data)
+		require.NoError(t, err)
+
+		res, err := cmd.ExecuteWithParams(ctx, []string{
+			"service", "upload",
+			"--address", addr,
+			"--insecure", "true",
+
+			"--language", lang.String(),
+			"--original", "true",
+			"--file", file.Name(),
+			"--schema", "json_ng_localize",
+			"--service", service.Id,
+			"--populate_translations", "false",
+		})
+
+		require.NoError(t, err)
+		assert.Equal(t, "File uploaded successfully.\n", string(res))
+	})
+
 	t.Run("OK, file from URL", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
@@ -206,7 +267,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		assert.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
-	// Messages has language tag, but CLI parameter 'language' is not set.
+	// Translation has language tag, but CLI parameter 'language' is not set.
 	t.Run("OK, local without lang parameter", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
@@ -245,11 +306,11 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 		_, err = file.Write([]byte(`
 		{
-		  "locale": "xyz-ZY-Latn",
-		  "translations": {
+			"locale": "xyz-ZY-Latn",
+			"translations": {
 			"Hello": "Bonjour",
 			"Welcome": "Bienvenue"
-		  }
+			}
 		}`))
 
 		require.NoError(t, err)
@@ -324,7 +385,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		assert.Nil(t, res)
 	})
 
-	// Messages does not have language tag, and CLI parameter 'language' is not set.
+	// Translation does not have language tag, and CLI parameter 'language' is not set.
 	t.Run("error, language could not be determined", func(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
@@ -536,20 +597,10 @@ func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.Tag) {
 	t.Helper()
 
-	n := gofakeit.IntRange(1, 5)
-	lang := language.MustParse(gofakeit.LanguageBCP())
-	messages := model.Messages{
-		Language: lang,
-		Messages: make([]model.Message, 0, n),
-	}
+	translation := rand.ModelTranslation(3, nil)
 
-	for i := 0; i < n; i++ {
-		message := model.Message{ID: gofakeit.SentenceSimple(), Description: gofakeit.SentenceSimple()}
-		messages.Messages = append(messages.Messages, message)
-	}
+	data, err := server.TranslationToData(schema, translation)
+	require.NoError(t, err, "convert rand translation to serialized data")
 
-	data, err := server.MessagesToData(schema, &messages)
-	require.NoError(t, err, "convert rand messages to serialized data")
-
-	return data, lang
+	return data, translation.Language
 }

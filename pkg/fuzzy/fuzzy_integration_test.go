@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
+	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
@@ -22,19 +23,19 @@ func Test_Translate(t *testing.T) {
 	t.Parallel()
 
 	allTranslators(t, func(t *testing.T, translator Translator, subTest testutil.SubtestFn) {
-		subTest("Multiple messages", func(ctx context.Context, t *testing.T) {
-			messages := randMessages(3, language.English)
-
-			translatedMsgs, err := translator.Translate(ctx, messages, language.Latvian)
+		subTest("Multiple translations", func(ctx context.Context, t *testing.T) {
+			translation := randTranslation(3, language.Latvian)
+			translation.Language = language.English // set original language
+			translated, err := translator.Translate(ctx, translation, language.Latvian)
 			require.NoError(t, err)
 
 			// Check the number of translated messages is the same as the number of input messages.
-			require.Len(t, translatedMsgs.Messages, len(messages.Messages))
+			require.Len(t, translated.Messages, len(translation.Messages))
 
 			// Check the translated messages are not empty and are marked as fuzzy.
-			for _, m := range translatedMsgs.Messages {
+			for _, m := range translated.Messages {
 				require.NotEmpty(t, m.Message)
-				require.True(t, m.Fuzzy)
+				require.Equal(t, model.MessageStatusFuzzy, m.Status)
 			}
 		})
 	})
@@ -45,11 +46,24 @@ func Test_Translate(t *testing.T) {
 // translators is a map of all possible translation services, e.g. Google Translate, DeepL, etc.
 var translators = map[string]Translator{
 	"GoogleTranslate": nil,
+	"AWSTranslate":    nil,
+}
+
+// initAWSTranslate creates a new AWS Translate service and adds it to the translators map.
+func initAWSTranslate(ctx context.Context) error {
+	at, err := NewAWSTranslate(ctx, WithDefaultAWSClient(ctx))
+	if err != nil {
+		return fmt.Errorf("create new AWS Translate: %w", err)
+	}
+
+	translators["AWSTranslate"] = at
+
+	return nil
 }
 
 // initGoogleTranslate creates a new Google Translate service and adds it to the translators map.
 func initGoogleTranslate(ctx context.Context) (func() error, error) {
-	gt, closer, err := NewGoogleTranslate(ctx, WithDefaultClient(ctx))
+	gt, closer, err := NewGoogleTranslate(ctx, WithDefaultGoogleClient(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("create new Google Translate: %w", err)
 	}
@@ -72,13 +86,12 @@ func testMain(m *testing.M) int {
 	// Google Translate
 	gtCloser, err := initGoogleTranslate(ctx)
 	if err != nil {
-		// If the Google Translate API key is not set, skip the Google Translate tests.
-		if strings.Contains(err.Error(), "api key is not set") {
-			log.Println("Google Translate API key is not set. Skipping Google Translate tests.")
-		} else {
-			// All other errors are fatal.
-			log.Fatal(err)
-		}
+		log.Fatal(err)
+	}
+
+	// AWS Translate
+	if err = initAWSTranslate(ctx); err != nil {
+		log.Fatal(err)
 	}
 
 	// Close all connections

@@ -1,11 +1,13 @@
 package convert
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
+	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
 
@@ -16,10 +18,11 @@ func Test_FromNgLocalize(t *testing.T) {
 		expectedErr error
 		input       []byte
 		name        string
-		expected    model.Messages
+		expected    model.Translation
 	}{
+		// Positive tests
 		{
-			name: "All OK",
+			name: "Original",
 			input: []byte(`
       {
         "locale": "fr",
@@ -28,21 +31,52 @@ func Test_FromNgLocalize(t *testing.T) {
           "Welcome": "Bienvenue"
         }
       }`),
-			expected: model.Messages{
+			expected: model.Translation{
 				Language: language.French,
+				Original: true,
 				Messages: []model.Message{
 					{
 						ID:      "Hello",
 						Message: "{Bonjour}",
+						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "Welcome",
 						Message: "{Bienvenue}",
+						Status:  model.MessageStatusTranslated,
 					},
 				},
 			},
-			expectedErr: nil,
 		},
+		{
+			name: "Translated",
+			input: []byte(`
+			{
+				"locale": "fr",
+				"translations": {
+					"Hello": "Bonjour",
+					"Welcome": ""
+				}
+			}
+			`),
+			expected: model.Translation{
+				Language: language.French,
+				Original: false,
+				Messages: []model.Message{
+					{
+						ID:      "Hello",
+						Message: "{Bonjour}",
+						Status:  model.MessageStatusUntranslated,
+					},
+					{
+						ID:      "Welcome",
+						Message: "",
+						Status:  model.MessageStatusUntranslated,
+					},
+				},
+			},
+		},
+		// Negative tests
 		{
 			name: "Malformed language",
 			input: []byte(`
@@ -53,7 +87,7 @@ func Test_FromNgLocalize(t *testing.T) {
           "Welcome": "Bienvenue"
         }
       }`),
-			expectedErr: fmt.Errorf("language: subtag \"xyz\" is well-formed but unknown"),
+			expectedErr: errors.New("language: subtag \"xyz\" is well-formed but unknown"),
 		},
 	}
 	for _, tt := range tests {
@@ -61,19 +95,16 @@ func Test_FromNgLocalize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromNgLocalize(tt.input)
+			actual, err := FromNgLocalize(tt.input, tt.expected.Original)
 
 			if tt.expectedErr != nil {
 				assert.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
-			assert.Equal(t, tt.expected.Language, actual.Language)
-			assert.ElementsMatch(t, tt.expected.Messages, actual.Messages)
+			testutil.EqualTranslations(t, &tt.expected, &actual)
 		})
 	}
 }
@@ -85,7 +116,7 @@ func Test_ToNgLocalize(t *testing.T) {
 		name        string
 		expected    []byte
 		expectedErr error
-		input       model.Messages
+		input       model.Translation
 	}{
 		{
 			name: "All OK",
@@ -98,7 +129,7 @@ func Test_ToNgLocalize(t *testing.T) {
           "Feedback": "We appreciate your feedback. Thank you for using our service."
         }
       }`),
-			input: model.Messages{
+			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{

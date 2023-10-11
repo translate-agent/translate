@@ -56,7 +56,7 @@ func Test_lex(t *testing.T) {
 			},
 		},
 		{
-			name:  "expr with variable and function and text",
+			name:  "expr with variable, function and text",
 			input: "{Hello, {$guest :person} is here}",
 			expected: []Token{
 				tokenSeparatorOpen,
@@ -71,7 +71,7 @@ func Test_lex(t *testing.T) {
 			},
 		},
 		{
-			name:  "expr with variable and function and text",
+			name:  "expr with variable, function and text",
 			input: "{{+button}Submit{-button}}",
 			expected: []Token{
 				tokenSeparatorOpen,
@@ -186,23 +186,6 @@ func Test_lex(t *testing.T) {
 			},
 		},
 		{
-			name:  "invalid variable",
-			input: "{$ count :number}",
-			expected: []Token{
-				tokenSeparatorOpen,
-				mkTokenErrorf(`invalid first character %s in variable at %d`, " ", 3),
-			},
-		},
-		{
-			name:  "invalid function",
-			input: "{$count : number}",
-			expected: []Token{
-				tokenSeparatorOpen,
-				mkToken(tokenTypeVariable, "count"),
-				mkTokenErrorf(`invalid first character %s in function at %d`, " ", 10),
-			},
-		},
-		{
 			name:  "invalid opening function",
 			input: "{{+ button}}",
 			expected: []Token{
@@ -221,6 +204,76 @@ func Test_lex(t *testing.T) {
 				tokenSeparatorClose,
 				tokenSeparatorOpen,
 				mkTokenErrorf(`invalid first character %v of function at %d`, "-", 13),
+			},
+		},
+		{
+			name:  "input with curly braces",
+			input: `{Chart [\{\}] was added to dashboard [\{\}]}`,
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "Chart [{}] was added to dashboard [{}]"),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name:  "input with pipes",
+			input: `{Chart [\|] was added to dashboard [\|]}`,
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "Chart [|] was added to dashboard [|]"),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name:  "input with slashes",
+			input: `{Chart [\\] was added to dashboard [\\]}`,
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "Chart [\\] was added to dashboard [\\]"),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name:  "input with plus sign",
+			input: `{+ vēl %s}`,
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "+ vēl %s"),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name:  "input with minus sign",
+			input: `{- vēl %s}`,
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "- vēl %s"),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name:  "input with dollar sign",
+			input: `{$ vēl %s}`,
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "$ vēl %s"),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name:  "input with colon sign",
+			input: `{: vēl %s}`,
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, ": vēl %s"),
+				tokenSeparatorClose,
+				tokenEOF,
 			},
 		},
 	} {

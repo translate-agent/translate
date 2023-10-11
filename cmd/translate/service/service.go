@@ -14,6 +14,11 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.expect.digital/translate/pkg/fuzzy"
+	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/repo/factory"
+	"go.expect.digital/translate/pkg/server"
+	"go.expect.digital/translate/pkg/tracer"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/net/http2"
@@ -21,11 +26,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
-
-	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/repo"
-	"go.expect.digital/translate/pkg/server"
-	"go.expect.digital/translate/pkg/tracer"
 )
 
 var cfgFile string
@@ -73,12 +73,43 @@ var rootCmd = &cobra.Command{
 
 		mux := runtime.NewServeMux()
 
-		repo, err := repo.NewRepo(ctx, viper.GetString("service.db"))
+		repo, err := factory.NewRepo(ctx, viper.GetString("service.db"))
 		if err != nil {
 			log.Panicf("create new repo: %v", err)
 		}
 
-		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo))
+		defer func() {
+			if closeErr := repo.Close(); closeErr != nil {
+				log.Printf("close repo: %v", closeErr)
+			}
+		}()
+
+		var translator fuzzy.Translator
+
+		switch viper.GetString("service.translator") {
+		case "":
+			translator = &fuzzy.NoopTranslate{}
+		case "AWSTranslate":
+			translator, err = fuzzy.NewAWSTranslate(ctx, fuzzy.WithDefaultAWSClient(ctx))
+		case "GoogleTranslate":
+			var closeTranslate func() error
+			translator, closeTranslate, err = fuzzy.NewGoogleTranslate(
+				ctx, fuzzy.WithDefaultGoogleClient(ctx))
+
+			defer func() {
+				if closeErr := closeTranslate(); closeErr != nil {
+					log.Printf("close GoogleTranslate client: %v\n", closeErr)
+				}
+			}()
+		default:
+			log.Fatalf("unsupported translator: %s\n", viper.GetString("service.translator"))
+		}
+
+		if err != nil {
+			log.Fatalf("create new %s client: %v\n", viper.GetString("service.translator"), err)
+		}
+
+		translatev1.RegisterTranslateServiceServer(grpcServer, server.NewTranslateServiceServer(repo, translator))
 
 		// gRPC Server Reflection provides information about publicly-accessible gRPC services on a server,
 		// and assists clients at runtime to construct RPC requests and responses without precompiled service information.
@@ -127,7 +158,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "translate.yaml", "config file")
 	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
 	rootCmd.PersistentFlags().String("host", "0.0.0.0", "host to run service on")
-	rootCmd.PersistentFlags().String("db", "badgerdb", repo.Usage())
+	rootCmd.PersistentFlags().String("db", "badgerdb", factory.Usage())
+	rootCmd.PersistentFlags().String("translator", "", fuzzy.Usage())
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -158,5 +190,10 @@ func initConfig() {
 	err = viper.BindPFlag("service.db", rootCmd.Flags().Lookup("db"))
 	if err != nil {
 		log.Panicf("bind db flag: %v", err)
+	}
+
+	err = viper.BindPFlag("service.translator", rootCmd.Flags().Lookup("translator"))
+	if err != nil {
+		log.Panicf("bind translator flag: %v", err)
 	}
 }

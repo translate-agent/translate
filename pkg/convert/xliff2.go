@@ -25,36 +25,40 @@ type xliff2File struct {
 }
 
 type unit struct {
-	ID     string  `xml:"id,attr"`                  // messages.messages[n].ID
+	ID     string  `xml:"id,attr"`                  // translation.messages[n].ID
 	Notes  *[]note `xml:"notes>note"`               // Set as pointer to avoid empty <notes></notes> when marshalling.
-	Source string  `xml:"segment>source"`           // messages.messages[n].Message (if no target language is set)
-	Target string  `xml:"segment>target,omitempty"` // messages.messages[n].Message (if target language is set)
+	Source string  `xml:"segment>source"`           // translation.messages[n].Message (if no target language is set)
+	Target string  `xml:"segment>target,omitempty"` // translation.messages[n].Message (if target language is set)
 	// No unified standard about storing fuzzy values
 }
 
 type note struct {
 	Category string `xml:"category,attr"`
-	Content  string `xml:",chardata"` // messages.messages[n].Description (if Category == "description")
+	Content  string `xml:",chardata"` // translation.messages[n].Description (if Category == "description")
 }
 
-// FromXliff2 converts serialized data from the XML data in the XLIFF 2 format into a model.Messages struct.
-func FromXliff2(data []byte) (model.Messages, error) {
+// FromXliff2 converts serialized data from the XML data in the XLIFF 2 format into a model.Translation struct.
+// For now original param is ignored.
+func FromXliff2(data []byte, original bool) (model.Translation, error) {
 	var xlf xliff2
+
 	if err := xml.Unmarshal(data, &xlf); err != nil {
-		return model.Messages{}, fmt.Errorf("unmarshal xliff2: %w", err)
+		return model.Translation{}, fmt.Errorf("unmarshal xliff2: %w", err)
 	}
 
-	messages := model.Messages{
-		Language: xlf.SrcLang,
+	translation := model.Translation{
+		Language: xlf.TrgLang,
+		Original: xlf.TrgLang == language.Und,
 		Messages: make([]model.Message, 0, len(xlf.File.Units)),
 	}
 
-	getMessage := func(u unit) string { return u.Source }
+	getMessage := func(u unit) string { return u.Target }
+	status := model.MessageStatusUntranslated
 
-	// Check if a target language is set
-	if xlf.TrgLang != language.Und {
-		messages.Language = xlf.TrgLang
-		getMessage = func(u unit) string { return u.Target }
+	if translation.Original {
+		translation.Language = xlf.SrcLang
+		getMessage = func(u unit) string { return u.Source }
+		status = model.MessageStatusTranslated
 	}
 
 	findDescription := func(u unit) string {
@@ -68,37 +72,46 @@ func FromXliff2(data []byte) (model.Messages, error) {
 	}
 
 	for _, unit := range xlf.File.Units {
-		messages.Messages = append(messages.Messages, model.Message{
+		message := getMessage(unit)
+
+		translation.Messages = append(translation.Messages, model.Message{
 			ID:          unit.ID,
-			Message:     convertToMessageFormatSingular(getMessage(unit)),
+			Message:     convertToMessageFormatSingular(message),
 			Description: findDescription(unit),
+			Positions:   positionsFromXliff2(unit.Notes),
+			Status:      status,
 		})
 	}
 
-	return messages, nil
+	return translation, nil
 }
 
-// ToXliff2 converts a model.Messages struct into a byte slice in the XLIFF 2 format.
-func ToXliff2(messages model.Messages) ([]byte, error) {
+// ToXliff2 converts a model.Translation struct into a byte slice in the XLIFF 2 format.
+func ToXliff2(translation model.Translation) ([]byte, error) {
 	xlf := xliff2{
 		Version: "2.0",
-		SrcLang: messages.Language,
+		SrcLang: translation.Language,
 		File: xliff2File{
-			Units: make([]unit, 0, len(messages.Messages)),
+			Units: make([]unit, 0, len(translation.Messages)),
 		},
 	}
 
-	for _, msg := range messages.Messages {
-		var notes *[]note
-		if msg.Description != "" {
-			notes = &[]note{{Category: "description", Content: msg.Description}}
-		}
-
-		xlf.File.Units = append(xlf.File.Units, unit{
+	for _, msg := range translation.Messages {
+		u := unit{
 			ID:     msg.ID,
 			Source: removeEnclosingBrackets(msg.Message),
-			Notes:  notes,
-		})
+			Notes:  positionsToXliff2(msg.Positions),
+		}
+
+		if msg.Description != "" {
+			if u.Notes == nil {
+				u.Notes = &[]note{{Category: "description", Content: msg.Description}}
+			} else {
+				*u.Notes = append(*u.Notes, note{Category: "description", Content: msg.Description})
+			}
+		}
+
+		xlf.File.Units = append(xlf.File.Units, u)
 	}
 
 	data, err := xml.Marshal(&xlf)
@@ -107,4 +120,38 @@ func ToXliff2(messages model.Messages) ([]byte, error) {
 	}
 
 	return append([]byte(xml.Header), data...), nil
+}
+
+// helpers
+
+// positionsFromXliff2 extracts line positions from unit []note.
+func positionsFromXliff2(notes *[]note) model.Positions {
+	if notes == nil {
+		return nil
+	}
+
+	var positions model.Positions
+
+	for _, note := range *notes {
+		if note.Category == "location" {
+			positions = append(positions, note.Content)
+		}
+	}
+
+	return positions
+}
+
+// positionsFromXliff2 transforms line positions to location []note.
+func positionsToXliff2(positions model.Positions) *[]note {
+	if len(positions) == 0 {
+		return nil
+	}
+
+	notes := make([]note, 0, len(positions))
+
+	for _, pos := range positions {
+		notes = append(notes, note{Category: "location", Content: pos})
+	}
+
+	return &notes
 }

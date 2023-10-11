@@ -4,15 +4,27 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
+	"unicode/utf8"
 
-	"cloud.google.com/go/translate"
+	translate "cloud.google.com/go/translate/apiv3"
+	"cloud.google.com/go/translate/apiv3/translatepb"
+	"github.com/googleapis/gax-go/v2"
 	"github.com/spf13/viper"
 	"go.expect.digital/translate/pkg/model"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/text/language"
 	"google.golang.org/api/option"
-	htransport "google.golang.org/api/transport/http"
+	"google.golang.org/grpc"
+)
+
+// List of the google request limits based on TranslateTextRequest.contents description:
+// https://github.com/googleapis/googleapis/blob/master/google/cloud/translate/v3/translation_service.proto
+const (
+	// googleTranslateRequestLimit limits the number of strings per translation request.
+	googleTranslateRequestLimit = 1024
+
+	// googleTranslateCodePointsLimit limits the number of Unicode codepoints per single translation request.
+	googleTranslateCodePointsLimit = 30_000
 )
 
 // --------------------Definitions--------------------
@@ -21,7 +33,11 @@ import (
 // This interface helps to mock the Google Translate client in unit tests.
 // https://pkg.go.dev/cloud.google.com/go/translate#Client
 type googleClient interface {
-	Translate(context.Context, []string, language.Tag, *translate.Options) ([]translate.Translation, error)
+	TranslateText(
+		ctx context.Context,
+		req *translatepb.TranslateTextRequest,
+		opts ...gax.CallOption,
+	) (*translatepb.TranslateTextResponse, error)
 	io.Closer
 }
 
@@ -32,37 +48,27 @@ type GoogleTranslate struct {
 
 type GoogleTranslateOption func(*GoogleTranslate) error
 
-// WithClient sets the Google Translate client.
-func WithClient(c googleClient) GoogleTranslateOption {
+// WithGoogleClient sets the Google Translate client.
+func WithGoogleClient(c googleClient) GoogleTranslateOption {
 	return func(g *GoogleTranslate) error {
 		g.client = c
 		return nil
 	}
 }
 
-// WithDefaultClient creates a new Google Translate client with the API key from the viper.
-func WithDefaultClient(ctx context.Context) GoogleTranslateOption {
+// WithDefaultGoogleClient creates a new Google Translate client with the API key from the viper.
+func WithDefaultGoogleClient(ctx context.Context) GoogleTranslateOption {
 	return func(g *GoogleTranslate) error {
 		var err error
 
-		apiKey := viper.GetString("translate_services.google_translate.api_key")
-		if apiKey == "" {
-			return fmt.Errorf("with default client: google translate api key is not set")
-		}
-
 		// Create new Google Cloud service transport with the base of OpenTelemetry HTTP transport.
-		trans, err := htransport.NewTransport(
-			ctx,
-			otelhttp.NewTransport(http.DefaultTransport),
-			option.WithAPIKey(apiKey),
+		g.client, err = translate.NewTranslationClient(ctx,
+			option.WithCredentialsFile(viper.GetString("other.google.account_key")),
+			option.WithGRPCDialOption(grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor())),
+			option.WithGRPCDialOption(grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor())),
 		)
 		if err != nil {
-			return fmt.Errorf("with default client: new transport: %w", err)
-		}
-
-		g.client, err = translate.NewClient(ctx, option.WithHTTPClient(&http.Client{Transport: trans}))
-		if err != nil {
-			return fmt.Errorf("with default client: new google translate client: %w", err)
+			return fmt.Errorf("init Google translate client: %w", err)
 		}
 
 		return nil
@@ -83,9 +89,15 @@ func NewGoogleTranslate(
 	}
 
 	// Ping the Google Translate API to ensure that the client is working.
-	_, err = gt.client.Translate(ctx, []string{"Hello World!"}, language.Latvian, nil)
+	req := &translatepb.TranslateTextRequest{
+		Parent:             parent(),
+		TargetLanguageCode: language.Latvian.String(),
+		Contents:           []string{"Hello World!"},
+	}
+
+	_, err = gt.client.TranslateText(ctx, req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("google translate client: ping google translate: %w", err)
+		return nil, nil, fmt.Errorf("google translate client: ping: %w", err)
 	}
 
 	return gt, gt.client.Close, nil
@@ -95,48 +107,80 @@ func NewGoogleTranslate(
 
 func (g *GoogleTranslate) Translate(
 	ctx context.Context,
-	messages *model.Messages,
-	targetLang language.Tag,
-) (*model.Messages, error) {
-	if messages == nil {
+	translation *model.Translation,
+	targetLanguage language.Tag,
+) (*model.Translation, error) {
+	if translation == nil {
 		return nil, nil
 	}
 
-	if len(messages.Messages) == 0 {
-		return &model.Messages{Language: targetLang}, nil
+	if len(translation.Messages) == 0 {
+		return &model.Translation{Language: translation.Language, Original: translation.Original}, nil
 	}
 
-	// Extract the strings to be send to the Google Translate API.
-	targetTexts := make([]string, 0, len(messages.Messages))
-	for _, m := range messages.Messages {
-		targetTexts = append(targetTexts, m.Message)
+	// Split text from translation into batches to avoid exceeding
+	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
+
+	var codePointsInBatch int
+
+	batch := make([]string, 0, googleTranslateRequestLimit)
+	batches := make([][]string, 0, 1)
+
+	for _, v := range translation.Messages {
+		codePointsInMsg := utf8.RuneCountInString(v.Message)
+
+		if len(batch) == googleTranslateRequestLimit || codePointsInBatch+codePointsInMsg > googleTranslateCodePointsLimit {
+			batches = append(batches, batch)
+			batch = make([]string, 0, googleTranslateRequestLimit)
+
+			codePointsInBatch = 0
+		}
+
+		batch = append(batch, v.Message)
+		codePointsInBatch += codePointsInMsg
 	}
 
-	// Set source language if defined, otherwise let Google Translate detect it.
-	opts := &translate.Options{}
-	if messages.Language != language.Und {
-		opts = &translate.Options{Source: messages.Language}
+	batches = append(batches, batch)
+
+	// Translate text batches using Google Translate client.
+
+	var msgIndex int
+
+	translated := model.Translation{
+		Language: targetLanguage,
+		Original: translation.Original,
+		Messages: make([]model.Message, 0, len(translation.Messages)),
 	}
 
-	translations, err := g.client.Translate(ctx, targetTexts, targetLang, opts)
-	if err != nil {
-		return nil, fmt.Errorf("google translate client: translate: %w", err)
-	}
-
-	translatedMessages := model.Messages{
-		Language: targetLang,
-		Messages: make([]model.Message, 0, len(translations)),
-	}
-
-	for i, t := range translations {
-		translatedMessages.Messages = append(translatedMessages.Messages, model.Message{
-			ID:          messages.Messages[i].ID,
-			PluralID:    messages.Messages[i].PluralID,
-			Description: messages.Messages[i].Description,
-			Message:     t.Text,
-			Fuzzy:       true,
+	for i := range batches {
+		res, err := g.client.TranslateText(ctx, &translatepb.TranslateTextRequest{
+			Parent:             parent(),
+			SourceLanguageCode: translation.Language.String(),
+			TargetLanguageCode: targetLanguage.String(),
+			Contents:           batches[i],
 		})
+		if err != nil {
+			return nil, fmt.Errorf("google translate client: translate texts from batch #%d: %w", i, err)
+		}
+
+		for _, t := range res.Translations {
+			m := translation.Messages[msgIndex]
+			m.Message = t.TranslatedText
+			m.Status = model.MessageStatusFuzzy
+
+			translated.Messages = append(translated.Messages, m)
+
+			msgIndex++
+		}
 	}
 
-	return &translatedMessages, nil
+	return &translated, nil
+}
+
+// parent returns path to Google project and location.
+func parent() string {
+	projectId := viper.GetString("other.google.project_id")
+	location := viper.GetString("other.google.location")
+
+	return fmt.Sprintf("projects/%s/locations/%s", projectId, location)
 }

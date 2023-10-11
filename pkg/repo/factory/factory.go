@@ -1,15 +1,21 @@
-package repo
+package factory
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
+	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/repo/badgerdb"
 	"go.expect.digital/translate/pkg/repo/mysql"
 )
 
-var SupportedDBs = []string{"mysql", "badgerdb"}
+const (
+	BadgerDB = "badgerdb"
+	MySQL    = "mysql"
+)
+
+var SupportedDBs = []string{MySQL, BadgerDB}
 
 // Usage returns a string describing the supported databases for CLI.
 func Usage() string {
@@ -17,9 +23,9 @@ func Usage() string {
 }
 
 // NewRepo creates a new repo based on the provided database string.
-func NewRepo(ctx context.Context, db string) (Repo, error) {
+func NewRepo(ctx context.Context, db string) (repo.Repo, error) {
 	var (
-		repo Repo
+		repo repo.Repo
 		err  error
 	)
 

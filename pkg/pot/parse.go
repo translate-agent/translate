@@ -9,7 +9,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-type headerNode struct {
+type HeaderNode struct {
 	Language    language.Tag
 	Translator  string
 	PluralForms pluralForm
@@ -20,13 +20,13 @@ type pluralForm struct {
 	NPlurals int
 }
 
-type messageNode struct {
+type MessageNode struct {
 	MsgCtxt               string
 	MsgId                 string
 	MsgIdPlural           string
 	TranslatorComment     []string
 	ExtractedComment      []string
-	Reference             string
+	References            []string
 	Flag                  string
 	MsgCtxtPrevCtxt       string
 	MsgIdPrevUntPluralStr string
@@ -35,26 +35,26 @@ type messageNode struct {
 }
 
 type Po struct {
-	Header   headerNode
-	Messages []messageNode
+	Header   HeaderNode
+	Messages []MessageNode
 }
 
 // TokensToPo function takes a slice of Token objects and converts them into a Po object representing
 // a PO (Portable Object) file. It returns the generated Po object and an error.
 func TokensToPo(tokens []Token) (Po, error) {
-	var messages []messageNode
+	var messages []MessageNode
 
-	currentMessage := messageNode{}
-	header := headerNode{}
+	currentMessage := MessageNode{}
+	header := HeaderNode{}
 
 	for i, token := range tokens {
-		if token.Value == "" && token.Type == MsgStr {
+		if token.Value == "" && token.Type == TokenTypeMsgStr {
 			prevToken, err := previousToken(tokens, i)
 			if err != nil {
 				return Po{}, fmt.Errorf("get previous token: %w", err)
 			}
 			// Skip an empty default msgstr in the header if it exists
-			if prevToken.Type == MsgId && prevToken.Value == "" {
+			if prevToken.Type == TokenTypeMsgId && prevToken.Value == "" {
 				continue
 			}
 		}
@@ -63,47 +63,47 @@ func TokensToPo(tokens []Token) (Po, error) {
 		token.Value = replacer.Replace(token.Value)
 
 		switch token.Type {
-		case HeaderLanguage:
+		case TokenTypeHeaderLanguage:
 			headerLang, err := language.Parse(token.Value)
 			if err != nil {
 				return Po{}, fmt.Errorf("invalid language: %w", err)
 			}
 
 			header.Language = headerLang
-		case HeaderTranslator:
+		case TokenTypeHeaderTranslator:
 			header.Translator = token.Value
-		case HeaderPluralForms:
+		case TokenTypeHeaderPluralForms:
 			pf, err := parsePluralForms(token.Value)
 			if err != nil {
 				return Po{}, fmt.Errorf("invalid plural forms: %w", err)
 			}
 
 			header.PluralForms = pf
-		case MsgCtxt:
+		case TokenTypeMsgCtxt:
 			currentMessage.MsgCtxt = token.Value
-		case ExtractedComment:
+		case TokenTypeExtractedComment:
 			currentMessage.ExtractedComment = append(currentMessage.ExtractedComment, token.Value)
-		case Reference:
-			currentMessage.Reference = token.Value
-		case Flag:
+		case TokenTypeReference:
+			currentMessage.References = append(currentMessage.References, token.Value)
+		case TokenTypeFlag:
 			currentMessage.Flag = token.Value
-		case TranslatorComment:
+		case TokenTypeTranslatorComment:
 			currentMessage.TranslatorComment = append(currentMessage.TranslatorComment, token.Value)
-		case MsgctxtPreviousContext:
+		case TokenTypeMsgctxtPreviousContext:
 			currentMessage.MsgCtxtPrevCtxt = token.Value
-		case MsgidPluralPrevUntStrPlural:
+		case TokenTypeMsgidPluralPrevUntStrPlural:
 			currentMessage.MsgIdPrevUntPluralStr = token.Value
-		case MsgidPrevUntStr:
+		case TokenTypeMsgidPrevUntStr:
 			currentMessage.MsgIdPrevUnt = token.Value
-		case MsgId:
+		case TokenTypeMsgId:
 			currentMessage.MsgId = token.Value
-		case PluralMsgId:
+		case TokenTypePluralMsgId:
 			currentMessage.MsgIdPlural = token.Value
-		case MsgStr:
+		case TokenTypeMsgStr:
 			currentMessage.MsgStr = []string{token.Value}
 			messages = append(messages, currentMessage)
-			currentMessage = messageNode{}
-		case PluralMsgStr:
+			currentMessage = MessageNode{}
+		case TokenTypePluralMsgStr:
 			switch {
 			case token.Index == 0:
 				currentMessage.MsgStr = []string{token.Value}
@@ -115,12 +115,19 @@ func TokensToPo(tokens []Token) (Po, error) {
 
 			if header.PluralForms.NPlurals == len(currentMessage.MsgStr) {
 				messages = append(messages, currentMessage)
-				currentMessage = messageNode{}
+				currentMessage = MessageNode{}
 			}
-			// In our model.Messages currently there are no place to store these headers/metadata about translation file.
-		case HeaderReportMsgidBugsTo, HeaderProjectIdVersion, HeaderPOTCreationDate, HeaderPORevisionDate,
-			HeaderLanguageTeam, HeaderLastTranslator, HeaderXGenerator, HeaderMIMEVersion, HeaderContentType,
-			HeaderContentTransferEncoding:
+			// In our model.Translation currently there are no place to store these headers/metadata about translation file.
+		case TokenTypeHeaderReportMsgidBugsTo,
+			TokenTypeHeaderProjectIdVersion,
+			TokenTypeHeaderPOTCreationDate,
+			TokenTypeHeaderPORevisionDate,
+			TokenTypeHeaderLanguageTeam,
+			TokenTypeHeaderLastTranslator,
+			TokenTypeHeaderXGenerator,
+			TokenTypeHeaderMIMEVersion,
+			TokenTypeHeaderContentType,
+			TokenTypeHeaderContentTransferEncoding:
 			continue
 		}
 	}

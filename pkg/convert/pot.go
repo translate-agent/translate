@@ -21,17 +21,17 @@ const (
 	MsgStr       poTag = "msgstr"
 )
 
-// ToPot function takes a model.Messages structure,
+// ToPot function takes a model.Translation structure,
 // writes the language information and each message to a buffer in the POT file format,
 // and returns the buffer contents as a byte slice representing the POT file.
-func ToPot(m model.Messages) ([]byte, error) {
+func ToPot(t model.Translation) ([]byte, error) {
 	var b bytes.Buffer
 
-	if _, err := fmt.Fprintf(&b, "msgid \"\"\nmsgstr \"\"\n\"Language: %s\\n\"\n", m.Language); err != nil {
+	if _, err := fmt.Fprintf(&b, "msgid \"\"\nmsgstr \"\"\n\"Language: %s\\n\"\n", t.Language); err != nil {
 		return nil, fmt.Errorf("write language: %w", err)
 	}
 
-	for i, message := range m.Messages {
+	for i, message := range t.Messages {
 		if err := writeMessage(&b, i, message); err != nil {
 			return nil, fmt.Errorf("write message: %w", err)
 		}
@@ -41,44 +41,70 @@ func ToPot(m model.Messages) ([]byte, error) {
 }
 
 // FromPot function parses a POT file by tokenizing and converting it into a pot.Po structure.
-func FromPot(b []byte) (model.Messages, error) {
+func FromPot(b []byte, original bool) (model.Translation, error) {
 	const pluralCountLimit = 2
 
 	tokens, err := pot.Lex(bytes.NewReader(b))
 	if err != nil {
-		return model.Messages{}, fmt.Errorf("divide po file to tokens: %w", err)
+		return model.Translation{}, fmt.Errorf("divide po file to tokens: %w", err)
 	}
 
 	po, err := pot.TokensToPo(tokens)
 	if err != nil {
-		return model.Messages{}, fmt.Errorf("convert tokens to pot.Po: %w", err)
+		return model.Translation{}, fmt.Errorf("convert tokens to pot.Po: %w", err)
+	}
+
+	if po.Header.PluralForms.NPlurals > pluralCountLimit {
+		return model.Translation{}, errors.New("plural forms with more than 2 forms are not implemented yet")
 	}
 
 	messages := make([]model.Message, 0, len(po.Messages))
+
+	singularValue := func(v pot.MessageNode) string { return v.MsgStr[0] }
+	pluralValue := func(v pot.MessageNode) []string { return v.MsgStr }
+	getStatus := func(v pot.MessageNode) model.MessageStatus {
+		if strings.Contains(v.Flag, "fuzzy") {
+			return model.MessageStatusFuzzy
+		}
+
+		return model.MessageStatusUntranslated
+	}
+
+	if original {
+		singularValue = func(v pot.MessageNode) string { return v.MsgId }
+		pluralValue = func(v pot.MessageNode) []string { return []string{v.MsgId, v.MsgIdPlural} }
+		getStatus = func(_ pot.MessageNode) model.MessageStatus { return model.MessageStatusTranslated }
+	}
+
+	convert := func(v pot.MessageNode) string { return convertToMessageFormatSingular(singularValue(v)) }
+
+	if po.Header.PluralForms.NPlurals == pluralCountLimit {
+		convert = func(v pot.MessageNode) string {
+			if v.MsgIdPlural == "" {
+				return convertToMessageFormatSingular(singularValue(v))
+			}
+
+			return convertPluralsToMessageString(pluralValue(v))
+		}
+	}
 
 	for _, node := range po.Messages {
 		message := model.Message{
 			ID:          node.MsgId,
 			PluralID:    node.MsgIdPlural,
 			Description: strings.Join(node.ExtractedComment, "\n "),
-			Fuzzy:       strings.Contains(node.Flag, "fuzzy"),
-		}
-
-		switch {
-		case po.Header.PluralForms.NPlurals > pluralCountLimit:
-			return model.Messages{}, errors.New("plural forms with more than 2 forms are not implemented yet")
-		case po.Header.PluralForms.NPlurals == pluralCountLimit && node.MsgIdPlural != "":
-			message.Message = convertPluralsToMessageString(node.MsgStr)
-		default:
-			message.Message = convertToMessageFormatSingular(node.MsgStr[0])
+			Positions:   node.References,
+			Message:     convert(node),
+			Status:      getStatus(node),
 		}
 
 		messages = append(messages, message)
 	}
 
-	return model.Messages{
+	return model.Translation{
 		Language: po.Header.Language,
 		Messages: messages,
+		Original: original,
 	}, nil
 }
 
@@ -226,7 +252,7 @@ func writeMultiline(b *bytes.Buffer, tag poTag, lines []string) error {
 // It returns a slice of strings representing the individual lines.
 func getPoTagLines(str string) []string {
 	encodedStr := strconv.Quote(str)
-
+	encodedStr = strings.ReplaceAll(encodedStr, "\\\\", "\\")
 	encodedStr = encodedStr[1 : len(encodedStr)-1] // trim quotes
 	lines := strings.Split(encodedStr, "\\n")
 
@@ -269,7 +295,13 @@ func writeMessage(b *bytes.Buffer, index int, message model.Message) error {
 		}
 	}
 
-	if message.Fuzzy {
+	for _, pos := range message.Positions {
+		if _, err := fmt.Fprintf(b, "#: %s\n", pos); err != nil {
+			return fmt.Errorf("write positions: %w", err)
+		}
+	}
+
+	if message.Status == model.MessageStatusFuzzy {
 		if _, err := fmt.Fprint(b, "#, fuzzy\n"); err != nil {
 			return fmt.Errorf("write fuzzy: %w", err)
 		}
@@ -310,6 +342,7 @@ func convertPluralsToMessageString(plurals []string) string {
 	sb.WriteString("match {$count :number}\n")
 
 	for i, plural := range plurals {
+		plural = escapeSpecialChars(plural)
 		line := strings.ReplaceAll(strings.TrimSpace(plural), "%d", "{$count}")
 
 		var count string

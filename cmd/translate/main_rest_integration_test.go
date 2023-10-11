@@ -178,7 +178,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
 	require.NoError(t, err, "create test translation file")
 
-	// Change messages and upload again with the same language and serviceID
+	// Change translation and upload again with the same language and serviceID
 	uploadReq.Data = randUploadData(t, uploadReq.Schema, language.MustParse(uploadReq.Language))
 
 	resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, uploadReq))
@@ -207,12 +207,12 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 
 	happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
 
-	happyReqNoMessagesServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
+	happyReqNoTranslationServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
 
-	happyReqNoMessagesLanguage := randDownloadRequest(service.Id, rand.Language().String())
+	happyReqNoTranslationLanguage := randDownloadRequest(service.Id, rand.Language().String())
 	// Ensure that the language is not the same as the uploaded one.
-	for happyReqNoMessagesLanguage.Language == uploadRequest.Language {
-		happyReqNoMessagesLanguage.Language = rand.Language().String()
+	for happyReqNoTranslationLanguage.Language == uploadRequest.Language {
+		happyReqNoTranslationLanguage.Language = rand.Language().String()
 	}
 
 	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
@@ -230,13 +230,13 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 		},
 
 		{
-			name:         "Happy path no messages with language",
-			request:      happyReqNoMessagesLanguage,
+			name:         "Happy path no translation with language",
+			request:      happyReqNoTranslationLanguage,
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:         "Happy path no messages with Service ID",
-			request:      happyReqNoMessagesServiceID,
+			name:         "Happy path no translation with Service ID",
+			request:      happyReqNoTranslationServiceID,
 			expectedCode: http.StatusOK,
 		},
 		{
@@ -525,10 +525,10 @@ func Test_ListServices_REST(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-// ------------------Messages------------------
+// ------------------Translation------------------
 
 // POST.
-func Test_CreateMessages_REST(t *testing.T) {
+func Test_CreateTranslation_REST(t *testing.T) {
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
@@ -538,27 +538,27 @@ func Test_CreateMessages_REST(t *testing.T) {
 	service := createService(ctx, t)
 	langs := rand.Languages(2)
 
-	serviceWithMsgs := createService(ctx, t)
-	uploadReq := randUploadRequest(t, serviceWithMsgs.Id)
+	serviceWithTranslations := createService(ctx, t)
+	uploadReq := randUploadRequest(t, serviceWithTranslations.Id)
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
 	require.NoError(t, err, "create test translation file")
 
 	tests := []struct {
-		messages     *translatev1.Messages
+		translation  *translatev1.Translation
 		name         string
 		serviceID    string
 		expectedCode int
 	}{
 		{
-			name:         "Happy path, create messages",
+			name:         "Happy path, create translation",
 			serviceID:    service.Id,
-			messages:     randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+			translation:  randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
 			expectedCode: http.StatusOK,
 		},
 		{
-			name:      "Happy path, empty messages.messages",
+			name:      "Happy path, empty translation.messages",
 			serviceID: service.Id,
-			messages: &translatev1.Messages{
+			translation: &translatev1.Translation{
 				Language: langs[1].String(),
 			},
 			expectedCode: http.StatusOK,
@@ -566,26 +566,26 @@ func Test_CreateMessages_REST(t *testing.T) {
 		{
 			name:         "Not found, service not found",
 			serviceID:    gofakeit.UUID(),
-			messages:     randMessages(t, nil),
+			translation:  randTranslation(t, nil),
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "Bad request, messages not provided",
+			name:         "Bad request, translation not provided",
 			serviceID:    service.Id,
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name:      "Bad request, messages.language not provided",
+			name:      "Bad request, translation.language not provided",
 			serviceID: service.Id,
-			messages: &translatev1.Messages{
+			translation: &translatev1.Translation{
 				Language: "",
 			},
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name:      "Status conflict, service already has messages for specified language",
-			serviceID: serviceWithMsgs.Id,
-			messages: &translatev1.Messages{
+			name:      "Status conflict, service already has translation for specified language",
+			serviceID: serviceWithTranslations.Id,
+			translation: &translatev1.Translation{
 				Language: uploadReq.Language,
 			},
 			expectedCode: http.StatusConflict,
@@ -595,13 +595,13 @@ func Test_CreateMessages_REST(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			body, err := json.Marshal(tt.messages)
-			require.NoError(t, err, "marshal messages")
+			body, err := json.Marshal(tt.translation)
+			require.NoError(t, err, "marshal translation")
 
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.serviceID + "/messages",
+				Path:   "v1/services/" + tt.serviceID + "/translations",
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(body))
@@ -617,7 +617,7 @@ func Test_CreateMessages_REST(t *testing.T) {
 	}
 }
 
-func Test_UpdateMessages_REST(t *testing.T) {
+func Test_UpdateTranslation_REST(t *testing.T) {
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
@@ -626,39 +626,39 @@ func Test_UpdateMessages_REST(t *testing.T) {
 	service := createService(ctx, t)
 	langs := rand.Languages(2)
 
-	_, err := client.CreateMessages(ctx, &translatev1.CreateMessagesRequest{
-		ServiceId: service.Id,
-		Messages:  randMessages(t, &translatev1.Messages{Language: langs[0].String()}),
+	_, err := client.CreateTranslation(ctx, &translatev1.CreateTranslationRequest{
+		ServiceId:   service.Id,
+		Translation: randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
 	})
-	require.NoError(t, err, "create test messages")
+	require.NoError(t, err, "create test translation")
 
 	// helper for update request generation
-	randUpdateMessageReq := func(lang string) *translatev1.UpdateMessagesRequest {
+	randUpdateTranslationReq := func(lang string) *translatev1.UpdateTranslationRequest {
 		if lang == "" {
 			lang = rand.Language().String()
 		}
 
-		return &translatev1.UpdateMessagesRequest{
-			ServiceId: service.Id,
-			Messages:  randMessages(t, &translatev1.Messages{Language: lang}),
+		return &translatev1.UpdateTranslationRequest{
+			ServiceId:   service.Id,
+			Translation: randTranslation(t, &translatev1.Translation{Language: lang}),
 		}
 	}
 
-	happyReq := randUpdateMessageReq(langs[0].String()) // uploaded messages language
+	happyReq := randUpdateTranslationReq(langs[0].String()) // uploaded translation language
 
-	notFoundMessagesReq := randUpdateMessageReq(langs[1].String()) // different language without messages
+	notFoundTranslationReq := randUpdateTranslationReq(langs[1].String()) // different language without translation
 
-	notFoundServiceID := randUpdateMessageReq("")
+	notFoundServiceID := randUpdateTranslationReq("")
 	notFoundServiceID.ServiceId = gofakeit.UUID()
 
-	invalidArgumentNilMessagesReq := randUpdateMessageReq("")
-	invalidArgumentNilMessagesReq.Messages = nil
+	invalidArgumentNilTranslationReq := randUpdateTranslationReq("")
+	invalidArgumentNilTranslationReq.Translation = nil
 
-	invalidArgumentUndMessagesLanguageReq := randUpdateMessageReq("")
-	invalidArgumentUndMessagesLanguageReq.Messages.Language = ""
+	invalidArgumentUndTranslationLanguageReq := randUpdateTranslationReq("")
+	invalidArgumentUndTranslationLanguageReq.Translation.Language = ""
 
 	tests := []struct {
-		request      *translatev1.UpdateMessagesRequest
+		request      *translatev1.UpdateTranslationRequest
 		name         string
 		expectedCode uint
 	}{
@@ -669,7 +669,7 @@ func Test_UpdateMessages_REST(t *testing.T) {
 		},
 		{
 			name:         "Message does not exists",
-			request:      notFoundMessagesReq,
+			request:      notFoundTranslationReq,
 			expectedCode: http.StatusNotFound,
 		},
 		{
@@ -678,13 +678,13 @@ func Test_UpdateMessages_REST(t *testing.T) {
 			expectedCode: http.StatusNotFound,
 		},
 		{
-			name:         "Invalid argument nil messages",
-			request:      invalidArgumentNilMessagesReq,
+			name:         "Invalid argument nil translation",
+			request:      invalidArgumentNilTranslationReq,
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name:         "Invalid argument und messages.language",
-			request:      invalidArgumentUndMessagesLanguageReq,
+			name:         "Invalid argument und translation.language",
+			request:      invalidArgumentUndTranslationLanguageReq,
 			expectedCode: http.StatusBadRequest,
 		},
 	}
@@ -692,13 +692,19 @@ func Test_UpdateMessages_REST(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			body, err := json.Marshal(tt.request.Messages)
-			require.NoError(t, err, "marshal messages")
+			body, err := json.Marshal(tt.request.Translation)
+			require.NoError(t, err, "marshal translation")
+
+			language := langs[0].String()
+
+			if tt.request.Translation != nil {
+				language = tt.request.Translation.Language
+			}
 
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.request.ServiceId + "/messages",
+				Path:   "v1/services/" + tt.request.ServiceId + "/translations/" + language,
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(body))
@@ -715,7 +721,7 @@ func Test_UpdateMessages_REST(t *testing.T) {
 }
 
 // GET.
-func Test_GetMessages_REST(t *testing.T) {
+func Test_GetTranslations_REST(t *testing.T) {
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
@@ -736,7 +742,7 @@ func Test_GetMessages_REST(t *testing.T) {
 	}{
 		{
 			serviceID:    service.Id,
-			name:         "Happy Path, get all messages",
+			name:         "Happy Path, get all translations",
 			expectedCode: http.StatusOK,
 		},
 		{
@@ -756,7 +762,7 @@ func Test_GetMessages_REST(t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   host + ":" + port,
-				Path:   "v1/services/" + tt.serviceID + "/messages",
+				Path:   "v1/services/" + tt.serviceID + "/translations",
 			}
 
 			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)

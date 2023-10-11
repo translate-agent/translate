@@ -1,6 +1,8 @@
 package convert
 
-import "strings"
+import (
+	"strings"
+)
 
 // convertToMessageFormatSingular wraps the input string with curly braces and returns the modified string.
 func convertToMessageFormatSingular(message string) string {
@@ -8,7 +10,23 @@ func convertToMessageFormatSingular(message string) string {
 		return ""
 	}
 
+	message = escapeSpecialChars(message)
+
 	return "{" + message + "}"
+}
+
+// escapeSpecialChars escapes special characters in a string.
+// https://github.com/unicode-org/message-format-wg/blob/main/spec/syntax.md#text
+func escapeSpecialChars(message string) string {
+	if strings.Contains(message, "{") ||
+		strings.Contains(message, "}") ||
+		strings.Contains(message, "\\") ||
+		strings.Contains(message, "|") {
+		r := strings.NewReplacer("{", "\\{", "}", "\\}", "\\", "\\\\", "|", "\\|")
+		return r.Replace(message)
+	}
+
+	return message
 }
 
 // removeEnclosingBrackets replaces '{' and '}', temporarily maintain only the singular form.

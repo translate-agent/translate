@@ -21,12 +21,20 @@ message Message {
   string id = 1;
   string message = 2;
   string description = 3;
-  bool fuzzy = 4;
+  Status status = 4;
+  repeated string positions = 5;
+
+  enum Status {
+    TRANSLATED = 0;
+    FUZZY = 1;
+    UNTRANSLATED = 2;
+  }
 }
 
-message Messages {
+message Translation {
   string language = 1;
-  repeated Message messages = 2;
+  bool original = 2;
+  repeated Message messages = 3;
 }
 
 message Service {
@@ -41,6 +49,8 @@ message UploadTranslationFileRequest {
   bytes data = 2;
   Schema schema = 3;
   string service_id = 4;
+  bool original = 5;
+  bool populate_translations = 6;
 }
 
 message DownloadTranslationFileRequest {
@@ -53,24 +63,25 @@ message DownloadTranslationFileResponse {
   bytes data = 1;
 }
 
-// --------------Messages requests/responses-------------------
+// --------------Translation requests/responses-------------------
 
-message CreateMessagesRequest {
+message CreateTranslationRequest {
   string service_id = 1;
-  Messages messages = 2;
+  Translation translation = 2;
 }
 
-message ListMessagesRequest {
+message ListTranslationsRequest {
   string service_id = 1;
 }
 
-message ListMessagesResponse {
-  repeated Messages messages = 1;
+message ListTranslationsResponse {
+  repeated Translation translations = 1;
 }
 
-message UpdateMessagesRequest {
+message UpdateTranslationRequest {
   string service_id = 1;
-  Messages messages = 2;
+  bool populate_translations = 2;
+  Translation translation = 3;
 }
 
 // -----------------Service requests/responses-----------------------
@@ -131,22 +142,22 @@ service TranslateService {
     option (google.api.http) = {delete: "/v1/services/{id}"};
   }
 
-  rpc CreateMessages(CreateMessagesRequest) returns (Messages) {
+  rpc CreateTranslation(CreateTranslationRequest) returns (Translation) {
     option (google.api.http) = {
-      post: "/v1/services/{service_id}/messages",
-      body: "messages"
+      post: "/v1/services/{service_id}/translations",
+      body: "translation"
     };
   }
 
-  rpc UpdateMessages(UpdateMessagesRequest) returns (Messages) {
+  rpc UpdateTranslation(UpdateTranslationRequest) returns (Translation) {
     option (google.api.http) = {
-      put: "/v1/services/{service_id}/messages"
-      body: "messages"
+      put: "/v1/services/{service_id}/translations/{translation.language}"
+      body: "translation"
     };
   }
 
-  rpc ListMessages(ListMessagesRequest) returns (ListMessagesResponse) {
-    option (google.api.http) = {get: "/v1/services/{service_id}/messages"};
+  rpc ListTranslations(ListTranslationsRequest) returns (ListTranslationsResponse) {
+    option (google.api.http) = {get: "/v1/services/{service_id}/translations"};
   }
 
   rpc UploadTranslationFile(UploadTranslationFileRequest) returns (google.protobuf.Empty) {

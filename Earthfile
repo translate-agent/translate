@@ -1,14 +1,70 @@
 VERSION 0.7
+PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
 
-ARG --global go_version=1.20.5
-ARG --global golangci_lint_version=1.53.3
-ARG --global bufbuild_version=1.22.0
+ARG --global go_version=1.21.1
+ARG --global golangci_lint_version=1.54.2
+ARG --global bufbuild_version=1.26.1
 ARG --global migrate_version=4.16.2
-ARG --global sqlfluff_version=2.1.1
+ARG --global sqlfluff_version=2.3.2
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
+
+# Local dev flow
+
+init:
+  LOCALLY
+  RUN earthly secret --org expect.digital --project translate-agent get google_account_key > google_account_key.json
+  RUN \
+    echo "# OpenTelemetry" > .env.test && \
+    echo "OTEL_SERVICE_NAME=translate" >> .env.test && \
+    echo "OTEL_EXPORTER_OTLP_INSECURE=true" >> .env.test && \
+    echo "OTEL_RESOURCE_ATTRIBUTES=deployment.environment=test" >> .env.test && \
+    echo "" >> .env.test && \
+    echo "# Translate Service" >> .env.test && \
+    echo "TRANSLATE_SERVICE_PORT=8080" >> .env.test && \
+    echo "TRANSLATE_SERVICE_HOST=0.0.0.0" >> .env.test && \
+    echo "TRANSLATE_SERVICE_DB=badgerdb" >> .env.test && \
+    echo "TRANSLATE_SERVICE_TRANSLATOR=GoogleTranslate" >> .env.test && \
+    echo "" >> .env.test && \
+    echo "# MySQL" >> .env.test && \
+    echo "TRANSLATE_DB_MYSQL_HOST=0.0.0.0" >> .env.test && \
+    echo "TRANSLATE_DB_MYSQL_PORT=3306" >> .env.test && \
+    echo "TRANSLATE_DB_MYSQL_USER=root" >> .env.test && \
+    echo "TRANSLATE_DB_MYSQL_PASSWORD=" >> .env.test && \
+    echo "TRANSLATE_DB_MYSQL_DATABASE=translate" >> .env.test && \
+    echo "" >> .env.test && \
+    echo "# BadgerDB" >> .env.test && \
+    echo "TRANSLATE_DB_BADGERDB_PATH=" >> .env.test && \
+    echo "" >> .env.test && \
+    echo "# Google Translate API" >> .env.test && \
+    echo "TRANSLATE_OTHER_GOOGLE_PROJECT_ID=expect-digital" >> .env.test && \
+    echo "TRANSLATE_OTHER_GOOGLE_LOCATION=global" >> .env.test && \
+    echo "TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY=$(pwd)/google_account_key.json" >> .env.test && \
+    echo "" >> .env.test && \
+    echo "# AWS Translate API" >> .env.test && \
+    echo "TRANSLATE_OTHER_AWS_ACCESS_KEY_ID=$(earthly secret --org expect.digital --project translate-agent get aws_access_key_id)" >> .env.test && \
+    echo "TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY=$(earthly secret --org expect.digital --project translate-agent get aws_secret_access_key)" >> .env.test && \
+    echo "TRANSLATE_OTHER_AWS_REGION=eu-west-2" >> .env.test
+  RUN \
+    echo "db=mysql" > .arg && \
+    echo "db_host=host.docker.internal" >> .arg && \
+    echo "db_port=3306" >> .arg && \
+    echo "db_user=root" >> .arg && \
+    echo "db_schema=translate" >> .arg
+  RUN echo "db_password=" >> .secret
+
+up:
+  LOCALLY
+  RUN docker compose --project-name=translate --project-directory=.earthly up --detach --wait --timeout 60
+  BUILD +migrate --db=mysql
+
+down:
+  LOCALLY
+  RUN docker compose --project-name=translate --project-directory=.earthly down -v --remove-orphans
+
+# Others
 
 deps:
   WORKDIR /translate
@@ -22,8 +78,8 @@ go:
   WORKDIR /translate
   COPY --dir cmd pkg .
   COPY --platform=linux/$USERARCH +proto/translate/v1/* pkg/pb/translate/v1
-  SAVE ARTIFACT /translate 
-
+  SAVE ARTIFACT /translate
+  
 proto:
   FROM bufbuild/buf:$bufbuild_version
   ENV BUF_CACHE_DIR=/.cache/buf_cache
@@ -89,7 +145,7 @@ lint-go:
   WORKDIR translate
   COPY +go/translate .
   COPY .golangci.yml .
-  RUN --mount=type=cache,target=/root/.cache/golangci_lint golangci-lint run
+  RUN --mount=type=cache,target=/root/.cache/golangci_lint golangci-lint run --timeout 3m
 
 lint-proto:
   FROM bufbuild/buf:$bufbuild_version
@@ -109,12 +165,15 @@ test-unit:
   RUN --mount=type=cache,target=/go/pkg/mod go test ./...
 
 test-integration:
-  FROM earthly/dind:alpine
+  FROM earthly/dind:alpine-3.18
   COPY .earthly/compose.yaml compose.yaml
   COPY +go/translate /translate
   COPY --dir migrate/mysql migrate
   WITH DOCKER --compose compose.yaml --service mysql --pull migrate/migrate:v$migrate_version --pull golang:$go_version-alpine
-    RUN --no-cache --secret=googletranslate_api_key \
+    RUN \
+      --secret=aws_access_key_id \
+      --secret=aws_secret_access_key \
+      --mount=type=secret,target=/translate/google_account_key.json,id=google_account_key \
       --mount=type=cache,target=/go/pkg/mod \
       --mount=type=cache,target=/root/.cache/go-build \
 
@@ -128,7 +187,7 @@ test-integration:
         up && \
 
       # Run integration tests
-      docker run \ 
+      docker run \
         --network=host \
         -v /go/pkg/mod:/go/pkg/mod \
         -v /root/.cache/go-build:/root/.cache/go-build \
@@ -137,7 +196,12 @@ test-integration:
         -e TRANSLATE_DB_MYSQL_PORT=3306 \
         -e TRANSLATE_DB_MYSQL_DATABASE=translate \
         -e TRANSLATE_DB_MYSQL_USER=root \
-        -e TRANSLATE_OTHER_GOOGLE_TRANSLATE_API_KEY=$googletranslate_api_key \
+        -e TRANSLATE_OTHER_AWS_ACCESS_KEY_ID=$aws_access_key_id \
+        -e TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY=$aws_secret_access_key \
+        -e TRANSLATE_OTHER_AWS_REGION=eu-west-2 \
+        -e TRANSLATE_OTHER_GOOGLE_PROJECT_ID=expect-digital \
+        -e TRANSLATE_OTHER_GOOGLE_LOCATION=global \
+        -e TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY=/translate/google_account_key.json \
         golang:$go_version-alpine go test -C /translate --tags=integration -count=1 ./...
   END
 
@@ -149,7 +213,7 @@ test:
 
 build:
   ARG GOARCH=$USERARCH
-  ENV CGO_ENABLED=0 
+  ENV CGO_ENABLED=0
   COPY --platform=linux/$USERARCH +go/translate translate
   WORKDIR translate
   RUN \
@@ -178,10 +242,10 @@ image-multiplatform:
 
 # -----------------------All-in-one image-----------------------
 
-# jeager is helper target for all-in-one image, it removes the need 
+# jeager is helper target for all-in-one image, it removes the need
 # to download the correct jaeger image on every build
 jaeger:
-  FROM jaegertracing/all-in-one:1.46
+  FROM jaegertracing/all-in-one:1.47
   SAVE ARTIFACT /go/bin/all-in-one-linux jaeger
 
 image-all-in-one:
@@ -205,9 +269,10 @@ image-all-in-one:
   COPY --platform=linux/$USERARCH (+build/bin/translate --GOARCH=$TARGETARCH) /usr/local/bin/translate # client
 
   # Set required environment variables
-  ENV TRANSLATE_DB_BADGERDB_PATH=/tmp/badger
+  ENV TRANSLATE_DB_BADGERDB_PATH=/data/badgerdb
   ENV OTEL_SERVICE_NAME=translate
   ENV OTEL_EXPORTER_OTLP_INSECURE=true
+  ENV TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY=/app/google_account_key.json
 
   ENTRYPOINT ["supervisord","-c","/app/supervisord.conf"]
   SAVE IMAGE --push $registry/translate-agent-all-in-one:$tag

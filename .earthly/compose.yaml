@@ -11,13 +11,14 @@ services:
       - MYSQL_DATABASE=translate
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
     healthcheck:
-      test: "/etc/init.d/mysql status"
+      test: "mysqladmin status"
       interval: 1s
-      timeout: 10s
-      retries: 10
+      timeout: 60s
+      retries: 60
+    restart: always
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:1.47
     container_name: jaeger
     hostname: jaeger
     networks:
@@ -34,6 +35,7 @@ services:
       - "14269:14269"
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+    restart: always
 
   envoy:
     image: envoyproxy/envoy:v1.26-latest
@@ -43,6 +45,7 @@ services:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
     networks:
       - translate
+    restart: always
 
 networks:
   translate:
