@@ -67,6 +67,29 @@ func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 	return service
 }
 
+// createTranslation creates a random translation, and calls the CreateTranslation RPC.
+func createTranslation(
+	ctx context.Context,
+	t *testing.T,
+	serviceID string,
+	override *translatev1.Translation,
+) *translatev1.Translation {
+	t.Helper()
+
+	require.NotEmpty(t, serviceID)
+
+	ctx, span := testutil.Tracer().Start(ctx, "test: create translation")
+	defer span.End()
+
+	translation, err := client.CreateTranslation(ctx, &translatev1.CreateTranslationRequest{
+		ServiceId:   serviceID,
+		Translation: randTranslation(t, override),
+	})
+	require.NoError(t, err, "create test translation")
+
+	return translation
+}
+
 func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	t.Parallel()
 
@@ -429,16 +452,19 @@ func Test_ListServices_gRPC(t *testing.T) {
 func randTranslation(t *testing.T, override *translatev1.Translation) *translatev1.Translation {
 	t.Helper()
 
-	lang := rand.Language().String()
-	if override != nil {
-		lang = override.Language
-	}
-
-	n := gofakeit.IntRange(1, 5)
+	n := gofakeit.IntRange(0, 3)
 
 	translation := &translatev1.Translation{
-		Language: lang,
+		Language: rand.Language().String(),
 		Messages: make([]*translatev1.Message, 0, n),
+	}
+
+	if override != nil && override.Language != "" {
+		translation.Language = override.Language
+	}
+
+	if override != nil && override.Original {
+		translation.Original = override.Original
 	}
 
 	for i := 0; i < n; i++ {
@@ -467,11 +493,14 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
+	langs := rand.Languages(3)
 	service := createService(ctx, t)
-	langs := rand.Languages(2)
+	createTranslation(ctx, t, service.Id,
+		&translatev1.Translation{Original: true, Language: langs[2].String()})
 
 	serviceWithTranslations := createService(ctx, t)
 	uploadReq := randUploadRequest(t, serviceWithTranslations.Id)
+
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
 	require.NoError(t, err, "create test translation file")
 
@@ -544,6 +573,10 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.expectedCode, status.Code(err))
+
+			if status.Code(err) == codes.OK {
+				require.Equal(t, tt.request.Translation.Language, translation.Language)
+			}
 		})
 	}
 }

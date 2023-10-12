@@ -110,7 +110,7 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 	}
 
 	if len(translation.Messages) == 0 {
-		return &model.Translation{Language: translation.Language, Original: translation.Original}, nil
+		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
 	}
 
 	translated := model.Translation{

@@ -29,5 +29,7 @@ func (n *NoopTranslate) Translate(ctx context.Context,
 	translation *model.Translation,
 	targetLanguage language.Tag,
 ) (*model.Translation, error) {
+	translation.Language = targetLanguage
+
 	return translation, nil
 }
