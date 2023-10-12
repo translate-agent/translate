@@ -10,6 +10,8 @@ import (
 	"testing"
 	"testing/quick"
 
+	"golang.org/x/text/language"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
@@ -95,9 +97,10 @@ func Test_FromXliff2(t *testing.T) {
 	)
 
 	tests := []struct {
-		name     string
-		expected *model.Translation
-		data     []byte
+		name                string
+		expected            *model.Translation
+		data                []byte
+		containsSpecialChar bool
 	}{
 		{
 			name:     "Original",
@@ -109,6 +112,33 @@ func Test_FromXliff2(t *testing.T) {
 			data:     randXliff2(nonOriginalTranslation),
 			expected: nonOriginalTranslation,
 		},
+		{
+			name:                "message with placeholder",
+			containsSpecialChar: true,
+			data: randXliff2(
+				&model.Translation{
+					Language: language.English,
+					Original: false,
+					Messages: []model.Message{
+						{
+							ID:      "a",
+							Message: "hello, {world}",
+						},
+					},
+				},
+			),
+			expected: &model.Translation{
+				Original: false,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "a",
+						Message: `{hello, \{world\}}`,
+						Status:  model.MessageStatusUntranslated,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -119,10 +149,14 @@ func Test_FromXliff2(t *testing.T) {
 			actual, err := FromXliff2(tt.data, tt.expected.Original)
 			require.NoError(t, err)
 
-			for i := range actual.Messages {
-				actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
+			if !tt.containsSpecialChar {
+				for i := range actual.Messages {
+					actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
+				}
 			}
 
+			t.Logf("actual: %v", &actual)
+			t.Logf("expectd: %v", tt.expected)
 			testutil.EqualTranslations(t, tt.expected, &actual)
 		})
 	}

@@ -62,6 +62,10 @@ func FromXliff2(data []byte, original bool) (model.Translation, error) {
 	}
 
 	findDescription := func(u unit) string {
+		if u.Notes == nil {
+			return ""
+		}
+
 		for _, note := range *u.Notes {
 			if note.Category == "description" {
 				return note.Content
