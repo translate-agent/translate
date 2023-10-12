@@ -155,8 +155,6 @@ func Test_FromXliff2(t *testing.T) {
 				}
 			}
 
-			t.Logf("actual: %v", &actual)
-			t.Logf("expectd: %v", tt.expected)
 			testutil.EqualTranslations(t, tt.expected, &actual)
 		})
 	}
