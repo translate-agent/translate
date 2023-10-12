@@ -14,6 +14,7 @@ import (
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
 	testutilrand "go.expect.digital/translate/pkg/testutil/rand"
+	"golang.org/x/text/language"
 )
 
 // TODO: XLIFF1.2 and XLIFF2.0 uses same test data and same tests, so we can merge them into one test file
@@ -87,9 +88,10 @@ func Test_FromXliff12(t *testing.T) {
 	)
 
 	tests := []struct {
-		name     string
-		expected *model.Translation
-		data     []byte
+		name                string
+		expected            *model.Translation
+		data                []byte
+		containsSpecialChar bool
 	}{
 		{
 			name:     "Original",
@@ -101,6 +103,33 @@ func Test_FromXliff12(t *testing.T) {
 			data:     randXliff12(nonOriginalTranslation),
 			expected: nonOriginalTranslation,
 		},
+		{
+			name:                "message with placeholder",
+			containsSpecialChar: true,
+			data: randXliff12(
+				&model.Translation{
+					Language: language.English,
+					Original: false,
+					Messages: []model.Message{
+						{
+							ID:      "a",
+							Message: "hello, {world}",
+						},
+					},
+				},
+			),
+			expected: &model.Translation{
+				Original: false,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "a",
+						Message: `{hello, \{world\}}`,
+						Status:  model.MessageStatusUntranslated,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -111,8 +140,10 @@ func Test_FromXliff12(t *testing.T) {
 			actual, err := FromXliff12(tt.data, tt.expected.Original)
 			require.NoError(t, err)
 
-			for i := range actual.Messages {
-				actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
+			if !tt.containsSpecialChar {
+				for i := range actual.Messages {
+					actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
+				}
 			}
 
 			testutil.EqualTranslations(t, tt.expected, &actual)
