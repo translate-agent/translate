@@ -104,7 +104,7 @@ func Test_FromXliff12(t *testing.T) {
 			expected: nonOriginalTranslation,
 		},
 		{
-			name:                "message with placeholder",
+			name:                "Message with special chars",
 			containsSpecialChar: true,
 			data: randXliff12(
 				&model.Translation{

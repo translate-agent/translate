@@ -78,7 +78,7 @@ func TestFromGo(t *testing.T) {
 		expected model.Translation
 	}{
 		{
-			name: "valid input",
+			name: "Valid input",
 			input: []byte(`
 	{
 		"language": "en",
@@ -136,7 +136,7 @@ func TestFromGo(t *testing.T) {
 			},
 		},
 		{
-			name: "translation with curly braces",
+			name: "Message with special chars",
 			input: []byte(`
 	{
 		"language": "en",

@@ -49,7 +49,7 @@ func Test_FromNgLocalize(t *testing.T) {
 			},
 		},
 		{
-			name: "Message with placeholder",
+			name: "Message with special chars",
 			input: []byte(`
       {
         "locale": "fr",

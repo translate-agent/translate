@@ -35,7 +35,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 			},
 		},
 		{
-			name:  "Message with placeholder",
+			name:  "Message with special chars",
 			input: []byte(`{"message":"hello {world}"}`),
 			expected: model.Translation{
 				Original: true,

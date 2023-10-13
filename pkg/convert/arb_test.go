@@ -22,7 +22,7 @@ func Test_FromArb(t *testing.T) {
 	}{
 		// Positive tests
 		{
-			name: "Message with placeholder",
+			name: "Message with special chars",
 			input: []byte(`
 			{
 				"title": "Hello World!",
