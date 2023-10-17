@@ -147,8 +147,7 @@ func Test_FromXliff2(t *testing.T) {
 
 			actual, err := FromXliff2(tt.data, tt.expected.Original)
 			require.NoError(t, err)
-			t.Logf("expected %v:", tt.expected.Messages)
-			t.Logf("actual %v:", &actual.Messages)
+
 			testutil.EqualTranslations(t, tt.expected, &actual)
 		})
 	}
