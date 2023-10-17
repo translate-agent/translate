@@ -36,13 +36,13 @@ func Test_FromNgxTranslate(t *testing.T) {
 		},
 		{
 			name:  "Message with special chars",
-			input: []byte(`{"message":"hello {world}"}`),
+			input: []byte(`{"message":"Order #{Id} has been canceled for {ClientName} | \\"}`),
 			expected: model.Translation{
 				Original: true,
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: `{hello \{world\}}`,
+						Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},

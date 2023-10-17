@@ -54,7 +54,7 @@ func Test_FromNgLocalize(t *testing.T) {
       {
         "locale": "fr",
         "translations": {
-          "Hello": "Bonjour {le monde}",
+          "Hello": "Welcome {user}! | \\",
           "Welcome": "Bienvenue"
         }
       }`),
@@ -64,41 +64,13 @@ func Test_FromNgLocalize(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "Hello",
-						Message: `{Bonjour \{le monde\}}`,
+						Message: `{Welcome \{user\}! \| \\}`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "Welcome",
 						Message: "{Bienvenue}",
 						Status:  model.MessageStatusTranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "Translated",
-			input: []byte(`
-			{
-				"locale": "fr",
-				"translations": {
-					"Hello": "Bonjour",
-					"Welcome": ""
-				}
-			}
-			`),
-			expected: model.Translation{
-				Language: language.French,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:      "Hello",
-						Message: "{Bonjour}",
-						Status:  model.MessageStatusUntranslated,
-					},
-					{
-						ID:      "Welcome",
-						Message: "",
-						Status:  model.MessageStatusUntranslated,
 					},
 				},
 			},

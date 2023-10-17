@@ -198,7 +198,7 @@ func (t Translations) PopulateTranslations() {
 type Message struct {
 	ID          string
 	PluralID    string
-	Message     string
+	Message     string // Message contains MessageFormat V2 formatted value
 	Description string
 	Positions   Positions
 	Status      MessageStatus

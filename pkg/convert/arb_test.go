@@ -29,7 +29,7 @@ func Test_FromArb(t *testing.T) {
 				"@title": {
 					"description": "Message to greet the World"
 				},
-				"greeting": "Welcome {user}!",
+				"greeting": "Welcome {user} | \\ !",
 				"@greeting": {
 					"placeholders": {
 						"user": {
@@ -51,7 +51,7 @@ func Test_FromArb(t *testing.T) {
 					},
 					{
 						ID:      "greeting",
-						Message: `{Welcome \{user\}!}`,
+						Message: `{Welcome \{user\} \| \\ !}`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{

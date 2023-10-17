@@ -34,9 +34,9 @@ func randXliff12(translation *model.Translation) []byte {
 
 	b.WriteString("<body>")
 
-	writeMsg := func(s string) { fmt.Fprintf(b, "<target>%s</target>", s) }
+	writeMsg := func(s string) { fmt.Fprintf(b, "<target>%s</target>", s[1:len(s)-1]) }
 	if translation.Original {
-		writeMsg = func(s string) { fmt.Fprintf(b, "<source>%s</source>", s) }
+		writeMsg = func(s string) { fmt.Fprintf(b, "<source>%s</source>", s[1:len(s)-1]) }
 	}
 
 	for _, msg := range translation.Messages {
@@ -104,7 +104,7 @@ func Test_FromXliff12(t *testing.T) {
 			expected: nonOriginalTranslation,
 		},
 		{
-			name:                "Message with special chars",
+			name:                "Message with special chars {}",
 			containsSpecialChar: true,
 			data: randXliff12(
 				&model.Translation{
@@ -112,8 +112,8 @@ func Test_FromXliff12(t *testing.T) {
 					Original: false,
 					Messages: []model.Message{
 						{
-							ID:      "a",
-							Message: "hello, {world}",
+							ID:      "order canceled",
+							Message: "{Order #{Id} has been canceled for {ClientName} | \\}",
 						},
 					},
 				},
@@ -123,8 +123,8 @@ func Test_FromXliff12(t *testing.T) {
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:      "a",
-						Message: `{hello, \{world\}}`,
+						ID:      "order canceled",
+						Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
 						Status:  model.MessageStatusUntranslated,
 					},
 				},
@@ -139,12 +139,6 @@ func Test_FromXliff12(t *testing.T) {
 
 			actual, err := FromXliff12(tt.data, tt.expected.Original)
 			require.NoError(t, err)
-
-			if !tt.containsSpecialChar {
-				for i := range actual.Messages {
-					actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
-				}
-			}
 
 			testutil.EqualTranslations(t, tt.expected, &actual)
 		})
@@ -173,7 +167,6 @@ func Test_TransformXLIFF12(t *testing.T) {
 
 	msgOpts := []testutilrand.ModelMessageOption{
 		// Enclose message in curly braces, as ToXliff2() removes them, and FromXliff2() adds them again
-		testutilrand.WithMessageFormat(),
 		testutilrand.WithStatus(model.MessageStatusTranslated),
 	}
 

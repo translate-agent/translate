@@ -153,7 +153,7 @@ func TestFromGo(t *testing.T) {
 				"id": "2",
 				"meaning": "description2",
 				"message": "message2",
-				"translation": "hello, {world}",
+				"translation": "Order #{Id} has been canceled for {ClientName} | \\",
 				"position": "src/config.go:20",
 				"fuzzy":true
 			}
@@ -173,7 +173,7 @@ func TestFromGo(t *testing.T) {
 					},
 					{
 						ID:          "2",
-						Message:     `{hello, \{world\}}`,
+						Message:     `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
 						Description: "description2",
 						Positions:   []string{"src/config.go:20"},
 						Status:      model.MessageStatusFuzzy,
