@@ -149,6 +149,21 @@ func Test_ToNgLocalize(t *testing.T) {
 			},
 			expectedErr: nil,
 		},
+		{
+			name:     "Message with special chars",
+			expected: []byte(`{"locale": "en","translations": {"Welcome": "Welcome to our website {user} 99|100 \\"}}`),
+			input: model.Translation{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Welcome",
+						Message:     "{Welcome to our website \\{user\\} 99\\|100 \\\\}",
+						Description: "To welcome a new visitor",
+					},
+				},
+			},
+			expectedErr: nil,
+		},
 	}
 	for _, tt := range tests {
 		tt := tt

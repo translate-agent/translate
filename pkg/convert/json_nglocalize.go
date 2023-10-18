@@ -55,7 +55,7 @@ func ToNgLocalize(translation model.Translation) ([]byte, error) {
 	}
 
 	for _, msg := range translation.Messages {
-		ng.Translations[msg.ID] = removeEnclosingBrackets(msg.Message)
+		ng.Translations[msg.ID] = removeEscapeSpecialChars(removeEnclosingBrackets(msg.Message))
 	}
 
 	data, err := json.Marshal(ng)
