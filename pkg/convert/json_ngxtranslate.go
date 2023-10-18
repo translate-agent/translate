@@ -63,7 +63,7 @@ func ToNgxTranslate(translation model.Translation) (b []byte, err error) {
 	dst := make(map[string]string, len(translation.Messages))
 
 	for _, msg := range translation.Messages {
-		dst[msg.ID] = removeEnclosingBrackets(msg.Message)
+		dst[msg.ID] = removeEscapeSpecialChars(removeEnclosingBrackets(msg.Message))
 	}
 
 	b, err = json.Marshal(dst)

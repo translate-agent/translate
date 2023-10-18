@@ -128,25 +128,53 @@ func Test_FromNgxTranslate(t *testing.T) {
 func Test_ToNgxTranslate(t *testing.T) {
 	t.Parallel()
 
-	input := model.Translation{
-		Messages: []model.Message{
-			{
-				ID:      "message",
-				Message: "{example}",
+	tests := []struct {
+		expected []byte
+		name     string
+		input    model.Translation
+	}{
+		{
+			name: "valid input",
+			input: model.Translation{
+				Messages: []model.Message{
+					{
+						ID:      "message",
+						Message: "{example}",
+					},
+					{
+						ID:      "message.example",
+						Message: "{message1}",
+					},
+				},
 			},
-			{
-				ID:      "message.example",
-				Message: "{message1}",
+			expected: []byte(`{"message":"example","message.example":"message1"}`),
+		},
+		{
+			name: "message with special chars",
+			input: model.Translation{
+				Messages: []model.Message{
+					{
+						ID:      "message",
+						Message: "{welcome \\{user\\} \\| \\\\",
+					},
+				},
 			},
+			expected: []byte(`{"message":"welcome {user} | \\"}`),
 		},
 	}
 
-	expected := []byte(`{"message":"example","message.example":"message1"}`)
-	actual, err := ToNgxTranslate(input)
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	if !assert.NoError(t, err) {
-		return
+			actual, err := ToNgxTranslate(tt.input)
+
+			if !assert.NoError(t, err) {
+				return
+			}
+
+			assert.Equal(t, tt.expected, actual)
+		})
 	}
-
-	assert.Equal(t, expected, actual)
 }
