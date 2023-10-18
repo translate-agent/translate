@@ -88,10 +88,9 @@ func Test_FromXliff12(t *testing.T) {
 	)
 
 	tests := []struct {
-		name                string
-		expected            *model.Translation
-		data                []byte
-		containsSpecialChar bool
+		name     string
+		expected *model.Translation
+		data     []byte
 	}{
 		{
 			name:     "Original",
@@ -104,8 +103,7 @@ func Test_FromXliff12(t *testing.T) {
 			expected: nonOriginalTranslation,
 		},
 		{
-			name:                "Message with special chars {}",
-			containsSpecialChar: true,
+			name: "Message with special chars {}",
 			data: randXliff12(
 				&model.Translation{
 					Language: language.English,
@@ -113,7 +111,7 @@ func Test_FromXliff12(t *testing.T) {
 					Messages: []model.Message{
 						{
 							ID:      "order canceled",
-							Message: "{Order #{Id} has been canceled for {ClientName} | \\}",
+							Message: `{Order #{Id} has been canceled for {ClientName} | \}`,
 						},
 					},
 				},
@@ -154,12 +152,53 @@ func Test_ToXliff12(t *testing.T) {
 	}
 
 	translation := testutilrand.ModelTranslation(4, msgOpts, testutilrand.WithOriginal(true))
-	expected := randXliff12(translation)
 
-	actual, err := ToXliff12(*translation)
-	require.NoError(t, err)
+	tests := []struct {
+		name     string
+		data     *model.Translation
+		expected []byte
+	}{
+		{
+			name:     "valid input",
+			data:     translation,
+			expected: randXliff12(translation),
+		},
+		{
+			name: "message with special chars",
+			data: &model.Translation{
+				Original: true,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "common.welcome",
+						Message: "{User #\\{ID\\} \\| \\\\}",
+					},
+				},
+			},
+			expected: []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file source-language="en" target-language="und">
+    <body>
+      <trans-unit id="common.welcome">
+        <source>User #{ID} | \</source>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>`),
+		},
+	}
 
-	assertEqualXml(t, expected, actual)
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual, err := ToXliff12(*tt.data)
+			require.NoError(t, err)
+
+			assertEqualXml(t, tt.expected, actual)
+		})
+	}
 }
 
 func Test_TransformXLIFF12(t *testing.T) {

@@ -102,7 +102,7 @@ func ToXliff12(translation model.Translation) ([]byte, error) {
 	for _, msg := range translation.Messages {
 		xlf.File.Body.TransUnits = append(xlf.File.Body.TransUnits, transUnit{
 			ID:            msg.ID,
-			Source:        removeEnclosingBrackets(msg.Message),
+			Source:        removeEscapeSpecialChars(removeEnclosingBrackets(msg.Message)),
 			Note:          msg.Description,
 			ContextGroups: positionsToXliff12(msg.Positions),
 		})

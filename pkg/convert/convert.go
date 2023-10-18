@@ -29,8 +29,22 @@ func escapeSpecialChars(message string) string {
 	return message
 }
 
-// removeEnclosingBrackets replaces '{' and '}', temporarily maintain only the singular form.
+// removeEscapeSpecialChars checks if a given string contains specific escape sequences (e.g., "\{"),
+// and if found, it replaces them with their unescaped equivalents (e.g., "{" for "\{").
+func removeEscapeSpecialChars(message string) string {
+	if strings.Contains(message, "\\{") ||
+		strings.Contains(message, "\\}") ||
+		strings.Contains(message, "\\\\") ||
+		strings.Contains(message, "\\|") {
+		r := strings.NewReplacer("\\{", "{", "\\}", "}", "\\\\", "\\", "\\|", "|")
+		return r.Replace(message)
+	}
+
+	return message
+}
+
+// removeEnclosingBrackets replaces  '{' prefix and '}' suffix, temporarily maintain only the singular form.
 func removeEnclosingBrackets(message string) string {
-	replacer := strings.NewReplacer("{", "", "}", "")
-	return replacer.Replace(message)
+	message = strings.TrimPrefix(message, "{")
+	return strings.TrimSuffix(message, "}")
 }

@@ -103,7 +103,7 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 	for _, msg := range translation.Messages {
 		u := unit{
 			ID:     msg.ID,
-			Source: removeEnclosingBrackets(msg.Message),
+			Source: removeEscapeSpecialChars(removeEnclosingBrackets(msg.Message)),
 			Notes:  positionsToXliff2(msg.Positions),
 		}
 
