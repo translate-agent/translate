@@ -135,7 +135,7 @@ func ToArb(translation model.Translation) ([]byte, error) {
 	dst["@@locale"] = translation.Language
 
 	for _, msg := range translation.Messages {
-		dst[msg.ID] = removeEnclosingBrackets(msg.Message)
+		dst[msg.ID] = removeEscapeSpecialChars(removeEnclosingBrackets(msg.Message))
 		if len(msg.Description) > 0 {
 			dst["@"+msg.ID] = map[string]string{"description": msg.Description}
 		}

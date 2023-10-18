@@ -167,22 +167,28 @@ func Test_FromArb(t *testing.T) {
 func Test_ToArb(t *testing.T) {
 	t.Parallel()
 
-	translation := model.Translation{
-		Language: language.French,
-		Messages: []model.Message{
-			{
-				ID:          "title",
-				Message:     "{Hello World!}",
-				Description: "Message to greet the World",
+	tests := []struct {
+		name     string
+		expected []byte
+		input    model.Translation
+	}{
+		{
+			name: "valid input",
+			input: model.Translation{
+				Language: language.French,
+				Messages: []model.Message{
+					{
+						ID:          "title",
+						Message:     "{Hello World!}",
+						Description: "Message to greet the World",
+					},
+					{
+						ID:      "greeting",
+						Message: "{Welcome Sion}",
+					},
+				},
 			},
-			{
-				ID:      "greeting",
-				Message: "{Welcome Sion}",
-			},
-		},
-	}
-
-	expected := []byte(`
+			expected: []byte(`
 	{
 		"@@locale":"fr",
 		"title":"Hello World!",
@@ -190,12 +196,48 @@ func Test_ToArb(t *testing.T) {
 			"description":"Message to greet the World"
 		},
 		"greeting":"Welcome Sion"
-	}`)
-
-	actual, err := ToArb(translation)
-	if !assert.NoError(t, err) {
-		return
+	}`),
+		},
+		{
+			name: "Message with special chars",
+			expected: []byte(`
+			{
+				"@@locale":"en",
+				"farewell":"Goodbye friend",
+				"greeting":"Welcome {user} | \\ !",
+				"title":"Hello World!"
+			}`),
+			input: model.Translation{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "title",
+						Message: "{Hello World!}",
+					},
+					{
+						ID:      "greeting",
+						Message: `{Welcome \{user\} \| \\ !}`,
+					},
+					{
+						ID:      "farewell",
+						Message: "{Goodbye friend}",
+					},
+				},
+			},
+		},
 	}
 
-	assert.JSONEq(t, string(expected), string(actual))
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual, err := ToArb(tt.input)
+			if !assert.NoError(t, err) {
+				return
+			}
+
+			assert.JSONEq(t, string(tt.expected), string(actual))
+		})
+	}
 }
