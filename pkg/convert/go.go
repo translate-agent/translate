@@ -43,7 +43,7 @@ func translationToPipeline(t model.Translation) pipeline.Messages {
 	for _, value := range t.Messages {
 		msg := pipeline.Message{
 			ID:          pipeline.IDList{value.ID},
-			Translation: pipeline.Text{Msg: removeEnclosingBrackets(value.Message)},
+			Translation: pipeline.Text{Msg: removeEscapeSpecialChars(removeEnclosingBrackets(value.Message))},
 			Meaning:     value.Description,
 			Fuzzy:       value.Status == model.MessageStatusFuzzy,
 		}
