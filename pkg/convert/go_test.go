@@ -75,7 +75,7 @@ func TestToGo(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "2",
-						Message:     `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
+						Message:     `{Order #\{Id\} has been canceled for \{ClientName\} \| \}`,
 						Description: "description2",
 						Positions:   []string{"src/config.go:20"},
 						Status:      model.MessageStatusFuzzy,

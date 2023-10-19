@@ -28,7 +28,7 @@ func Test_ToPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{Bonjour \\{user\\} \\| \\\\}",
+						Message:     `{Bonjour \{user\} \| \\}`,
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 						Positions: []string{

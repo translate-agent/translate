@@ -171,7 +171,7 @@ func Test_ToXliff12(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "common.welcome",
-						Message: "{User #\\{ID\\} \\| \\\\}",
+						Message: `{User #\{ID\} \| \\}`,
 					},
 				},
 			},

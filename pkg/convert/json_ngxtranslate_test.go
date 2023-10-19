@@ -155,7 +155,7 @@ func Test_ToNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: "{welcome \\{user\\} \\| \\\\",
+						Message: `{welcome \{user\} \| \`,
 					},
 				},
 			},

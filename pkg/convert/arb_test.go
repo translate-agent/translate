@@ -216,7 +216,7 @@ func Test_ToArb(t *testing.T) {
 					},
 					{
 						ID:      "greeting",
-						Message: `{Welcome \{user\} \| \\ !}`,
+						Message: `{Welcome \{user\} \| \ !}`,
 					},
 					{
 						ID:      "farewell",

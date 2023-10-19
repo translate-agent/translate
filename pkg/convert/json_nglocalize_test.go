@@ -157,7 +157,7 @@ func Test_ToNgLocalize(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Welcome",
-						Message:     "{Welcome to our website \\{user\\} 99\\|100 \\\\}",
+						Message:     `{Welcome to our website \{user\} 99\|100 \}`,
 						Description: "To welcome a new visitor",
 					},
 				},
