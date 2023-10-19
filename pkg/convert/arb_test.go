@@ -46,7 +46,7 @@ func Test_FromArb(t *testing.T) {
 					{
 						ID:          "title",
 						Message:     "{Hello World!}",
-						Description: "Message to greet the World",
+						Description: `Message to greet the World`,
 						Status:      model.MessageStatusTranslated,
 					},
 					{
@@ -56,7 +56,7 @@ func Test_FromArb(t *testing.T) {
 					},
 					{
 						ID:      "farewell",
-						Message: "{Goodbye friend}",
+						Message: `{Goodbye friend}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -78,7 +78,7 @@ func Test_FromArb(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "title",
-						Message:     "",
+						Message:     ``,
 						Description: "Message to greet the World",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -179,12 +179,12 @@ func Test_ToArb(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "title",
-						Message:     "{Hello World!}",
+						Message:     `{Hello World!}`,
 						Description: "Message to greet the World",
 					},
 					{
 						ID:      "greeting",
-						Message: "{Welcome Sion}",
+						Message: `{Welcome Sion}`,
 					},
 				},
 			},
@@ -200,6 +200,23 @@ func Test_ToArb(t *testing.T) {
 		},
 		{
 			name: "Message with special chars",
+			input: model.Translation{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "title",
+						Message: `{Hello World!}`,
+					},
+					{
+						ID:      "greeting",
+						Message: `{Welcome \{user\} \| \\ !}`,
+					},
+					{
+						ID:      "farewell",
+						Message: `{Goodbye friend}`,
+					},
+				},
+			},
 			expected: []byte(`
 			{
 				"@@locale":"en",
@@ -207,23 +224,6 @@ func Test_ToArb(t *testing.T) {
 				"greeting":"Welcome {user} | \\ !",
 				"title":"Hello World!"
 			}`),
-			input: model.Translation{
-				Language: language.English,
-				Messages: []model.Message{
-					{
-						ID:      "title",
-						Message: "{Hello World!}",
-					},
-					{
-						ID:      "greeting",
-						Message: `{Welcome \{user\} \| \ !}`,
-					},
-					{
-						ID:      "farewell",
-						Message: "{Goodbye friend}",
-					},
-				},
-			},
 		},
 	}
 
