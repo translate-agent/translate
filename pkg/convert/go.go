@@ -11,7 +11,10 @@ import (
 // ToGo converts a model.Translation structure into a JSON byte slice
 // by first converting it into a format suitable for the pipeline and then encoding it using JSON.
 func ToGo(t model.Translation) ([]byte, error) {
-	pipelineMsgs := translationToPipeline(t)
+	pipelineMsgs, err := translationToPipeline(t)
+	if err != nil {
+		return nil, fmt.Errorf("convert model.Translation to pipeline.Messages: %w", err)
+	}
 
 	msg, err := json.Marshal(pipelineMsgs)
 	if err != nil {
@@ -34,16 +37,21 @@ func FromGo(b []byte, original bool) (model.Translation, error) {
 }
 
 // translationToPipeline converts a model.Translation structure into a pipeline.Messages structure.
-func translationToPipeline(t model.Translation) pipeline.Messages {
+func translationToPipeline(t model.Translation) (pipeline.Messages, error) {
 	pipelineMsg := pipeline.Messages{
 		Language: t.Language,
 		Messages: make([]pipeline.Message, 0, len(t.Messages)),
 	}
 
 	for _, value := range t.Messages {
+		message, err := getMsg(value.Message)
+		if err != nil {
+			return pipeline.Messages{}, fmt.Errorf("convert node to messageformat.NodeText: %w", err)
+		}
+
 		msg := pipeline.Message{
 			ID:          pipeline.IDList{value.ID},
-			Translation: pipeline.Text{Msg: removeEscapeSpecialChars(removeEnclosingBrackets(value.Message))},
+			Translation: pipeline.Text{Msg: message},
 			Meaning:     value.Description,
 			Fuzzy:       value.Status == model.MessageStatusFuzzy,
 		}
@@ -59,7 +67,7 @@ func translationToPipeline(t model.Translation) pipeline.Messages {
 		}
 	}
 
-	return pipelineMsg
+	return pipelineMsg, nil
 }
 
 // translationFromPipeline converts a pipeline.Messages structure into a model.Translation structure.

@@ -3,8 +3,9 @@ package convert
 import (
 	"errors"
 	"fmt"
-	"go.expect.digital/translate/pkg/messageformat"
 	"strings"
+
+	"go.expect.digital/translate/pkg/messageformat"
 )
 
 // convertToMessageFormatSingular wraps the input string with curly braces and returns the modified string.
@@ -52,7 +53,7 @@ func removeEnclosingBrackets(message string) string {
 	return strings.TrimSuffix(message, "}")
 }
 
-func extractMFTextNode(message string) (string, error) {
+func getMsg(message string) (string, error) {
 	nodes, err := messageformat.Parse(message)
 	if err != nil {
 		return "", fmt.Errorf("parse message: %w", err)
@@ -62,9 +63,10 @@ func extractMFTextNode(message string) (string, error) {
 		nodeTxt, ok := node.(messageformat.NodeText)
 		if !ok {
 			return "", errors.New("convert node to messageformat.NodeText")
+		} else {
+			return nodeTxt.Text, nil
 		}
-
-		return nodeTxt.Text, nil
 	}
+
 	return "", errors.New("input message is empty")
 }

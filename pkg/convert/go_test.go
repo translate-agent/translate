@@ -26,7 +26,7 @@ func TestToGo(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "1",
-						Message:     "{message1}",
+						Message:     `{message1}`,
 						Description: "description1",
 						Positions:   []string{"src/config.go:10", "src/config.go:20"},
 						Status:      model.MessageStatusFuzzy,
@@ -75,7 +75,7 @@ func TestToGo(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "2",
-						Message:     `{Order #\{Id\} has been canceled for \{ClientName\} \| \}`,
+						Message:     `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
 						Description: "description2",
 						Positions:   []string{"src/config.go:20"},
 						Status:      model.MessageStatusFuzzy,
@@ -160,21 +160,21 @@ func TestFromGo(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "1",
-						Message:     "{translatedMessage1}",
+						Message:     `{translatedMessage1}`,
 						Description: "description1",
 						Positions:   []string{"src/config.go:10"},
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "2",
-						Message:     "{translatedMessage2}",
+						Message:     `{translatedMessage2}`,
 						Description: "description2",
 						Positions:   []string{"src/config.go:20"},
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "3",
-						Message:     "",
+						Message:     ``,
 						Description: "description3",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -212,7 +212,7 @@ func TestFromGo(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "1",
-						Message:     "{translatedMessage1}",
+						Message:     `{translatedMessage1}`,
 						Description: "description1",
 						Positions:   []string{"src/config.go:10"},
 						Status:      model.MessageStatusFuzzy,

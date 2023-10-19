@@ -3,6 +3,7 @@ package convert
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/mitchellh/mapstructure"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
@@ -136,10 +137,12 @@ func ToArb(translation model.Translation) ([]byte, error) {
 
 	for _, msg := range translation.Messages {
 		var err error
-		dst[msg.ID], err = extractMFTextNode(msg.Message)
+
+		dst[msg.ID], err = getMsg(msg.Message)
 		if err != nil {
 			return nil, fmt.Errorf("parse NodeText %w", err)
 		}
+
 		if len(msg.Description) > 0 {
 			dst["@"+msg.ID] = map[string]string{"description": msg.Description}
 		}
