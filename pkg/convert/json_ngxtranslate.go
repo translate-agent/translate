@@ -63,7 +63,10 @@ func ToNgxTranslate(translation model.Translation) (b []byte, err error) {
 	dst := make(map[string]string, len(translation.Messages))
 
 	for _, msg := range translation.Messages {
-		dst[msg.ID] = removeEscapeSpecialChars(removeEnclosingBrackets(msg.Message))
+		dst[msg.ID], err = getMsg(msg.Message)
+		if err != nil {
+			return nil, fmt.Errorf("parse NodeText %w", err)
+		}
 	}
 
 	b, err = json.Marshal(dst)
