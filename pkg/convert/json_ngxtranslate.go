@@ -65,7 +65,7 @@ func ToNgxTranslate(translation model.Translation) (b []byte, err error) {
 	for _, msg := range translation.Messages {
 		dst[msg.ID], err = getMsg(msg.Message)
 		if err != nil {
-			return nil, fmt.Errorf("parse NodeText %w", err)
+			return nil, fmt.Errorf("get message value: %w", err)
 		}
 	}
 

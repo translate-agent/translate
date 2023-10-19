@@ -103,7 +103,7 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 	for _, msg := range translation.Messages {
 		message, err := getMsg(msg.Message)
 		if err != nil {
-			return nil, fmt.Errorf("parse NodeText %w", err)
+			return nil, fmt.Errorf("get message value: %w", err)
 		}
 
 		u := unit{

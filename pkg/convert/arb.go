@@ -140,7 +140,7 @@ func ToArb(translation model.Translation) ([]byte, error) {
 
 		dst[msg.ID], err = getMsg(msg.Message)
 		if err != nil {
-			return nil, fmt.Errorf("parse NodeText %w", err)
+			return nil, fmt.Errorf("get message value: %w", err)
 		}
 
 		if len(msg.Description) > 0 {

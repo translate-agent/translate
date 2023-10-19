@@ -59,7 +59,7 @@ func ToNgLocalize(translation model.Translation) ([]byte, error) {
 
 		ng.Translations[msg.ID], err = getMsg(msg.Message)
 		if err != nil {
-			return nil, fmt.Errorf("parse NodeText %w", err)
+			return nil, fmt.Errorf("get message value: %w", err)
 		}
 	}
 

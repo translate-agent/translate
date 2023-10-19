@@ -41,9 +41,7 @@ func getMsg(message string) (string, error) {
 
 	for _, node := range nodes {
 		nodeTxt, ok := node.(messageformat.NodeText)
-		if !ok {
-			return "", errors.New("convert node to messageformat.NodeText")
-		} else {
+		if ok {
 			return nodeTxt.Text, nil
 		}
 	}
