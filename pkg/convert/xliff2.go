@@ -101,9 +101,14 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 	}
 
 	for _, msg := range translation.Messages {
+		message, err := getMsg(msg.Message)
+		if err != nil {
+			return nil, fmt.Errorf("parse NodeText %w", err)
+		}
+
 		u := unit{
 			ID:     msg.ID,
-			Source: removeEscapeSpecialChars(removeEnclosingBrackets(msg.Message)),
+			Source: message,
 			Notes:  positionsToXliff2(msg.Positions),
 		}
 
