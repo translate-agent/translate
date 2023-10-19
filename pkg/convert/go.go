@@ -46,7 +46,7 @@ func translationToPipeline(t model.Translation) (pipeline.Messages, error) {
 	for _, value := range t.Messages {
 		message, err := getMsg(value.Message)
 		if err != nil {
-			return pipeline.Messages{}, fmt.Errorf("convert node to messageformat.NodeText: %w", err)
+			return pipeline.Messages{}, fmt.Errorf("parse NodeText %w", err)
 		}
 
 		msg := pipeline.Message{

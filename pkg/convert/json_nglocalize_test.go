@@ -37,12 +37,12 @@ func Test_FromNgLocalize(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "Hello",
-						Message: "{Bonjour}",
+						Message: `{Bonjour}`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "Welcome",
-						Message: "{Bienvenue}",
+						Message: `{Bienvenue}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -69,7 +69,7 @@ func Test_FromNgLocalize(t *testing.T) {
 					},
 					{
 						ID:      "Welcome",
-						Message: "{Bienvenue}",
+						Message: `{Bienvenue}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -133,35 +133,35 @@ func Test_ToNgLocalize(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Welcome",
-						Message:     "{Welcome to our website!}",
+						Message:     `{Welcome to our website!}`,
 						Description: "To welcome a new visitor",
 					},
 					{
 						ID:          "Error",
-						Message:     "{Something went wrong. Please try again later.}",
+						Message:     `{Something went wrong. Please try again later.}`,
 						Description: "To inform the user of an error",
 					},
 					{
 						ID:      "Feedback",
-						Message: "{We appreciate your feedback. Thank you for using our service.}",
+						Message: `{We appreciate your feedback. Thank you for using our service.}`,
 					},
 				},
 			},
 			expectedErr: nil,
 		},
 		{
-			name:     "Message with special chars",
-			expected: []byte(`{"locale": "en","translations": {"Welcome": "Welcome to our website {user} 99|100 \\"}}`),
+			name: "Message with special chars",
 			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
 					{
 						ID:          "Welcome",
-						Message:     `{Welcome to our website \{user\} 99\|100 \}`,
+						Message:     `{Welcome to our website \{user\} 99\|100 \\}`,
 						Description: "To welcome a new visitor",
 					},
 				},
 			},
+			expected:    []byte(`{"locale": "en","translations": {"Welcome": "Welcome to our website {user} 99|100 \\"}}`),
 			expectedErr: nil,
 		},
 	}
