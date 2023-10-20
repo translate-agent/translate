@@ -87,7 +87,8 @@ proto:
   WORKDIR proto
   RUN \
     --mount=type=cache,target=$BUF_CACHE_DIR \
-      buf mod update && buf build && buf generate
+    --mount=type=cache,target=$BUF_CACHE_DIR,mode=0700 \
+       buf mod update && buf build && buf generate
 
   RUN sed -i'.bak' '/client.UploadTranslationFile/i \
   \\tfile, _, err := req.FormFile("file")\n\

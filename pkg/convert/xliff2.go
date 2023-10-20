@@ -62,6 +62,10 @@ func FromXliff2(data []byte, original bool) (model.Translation, error) {
 	}
 
 	findDescription := func(u unit) string {
+		if u.Notes == nil {
+			return ""
+		}
+
 		for _, note := range *u.Notes {
 			if note.Category == "description" {
 				return note.Content
@@ -97,9 +101,14 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 	}
 
 	for _, msg := range translation.Messages {
+		message, err := getMsg(msg.Message)
+		if err != nil {
+			return nil, fmt.Errorf("get message value: %w", err)
+		}
+
 		u := unit{
 			ID:     msg.ID,
-			Source: removeEnclosingBrackets(msg.Message),
+			Source: message,
 			Notes:  positionsToXliff2(msg.Positions),
 		}
 

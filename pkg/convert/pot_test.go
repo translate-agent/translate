@@ -22,6 +22,34 @@ func Test_ToPot(t *testing.T) {
 		input    model.Translation
 	}{
 		{
+			name: "message with special chars",
+			input: model.Translation{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Hello",
+						Message:     `{Bonjour \{user\} \| \\}`,
+						Description: "A simple greeting",
+						Status:      model.MessageStatusFuzzy,
+						Positions: []string{
+							"examples/simple/example.clj:10",
+							"examples/simple/example.clj:20",
+						},
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: en\n"
+#. A simple greeting
+#: examples/simple/example.clj:10
+#: examples/simple/example.clj:20
+#, fuzzy
+msgid "Hello"
+msgstr "Bonjour {user} | \"
+`),
+		},
+		{
 			name: "all values are provided",
 			input: model.Translation{
 				Language: language.English,

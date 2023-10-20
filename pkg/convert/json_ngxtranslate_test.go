@@ -28,7 +28,21 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: "{example}",
+						Message: `{example}`,
+						Status:  model.MessageStatusTranslated,
+					},
+				},
+			},
+		},
+		{
+			name:  "Message with special chars",
+			input: []byte(`{"message":"Order #{Id} has been canceled for {ClientName} | \\"}`),
+			expected: model.Translation{
+				Original: true,
+				Messages: []model.Message{
+					{
+						ID:      "message",
+						Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -42,7 +56,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
-						Message: "{message1}",
+						Message: `{message1}`,
 						Status:  model.MessageStatusUntranslated,
 					},
 				},
@@ -56,7 +70,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
-						Message: "",
+						Message: ``,
 						Status:  model.MessageStatusUntranslated,
 					},
 				},
@@ -70,12 +84,12 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
-						Message: "{message1}",
+						Message: `{message1}`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "msg.example",
-						Message: "{message2}",
+						Message: `{message2}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -114,25 +128,55 @@ func Test_FromNgxTranslate(t *testing.T) {
 func Test_ToNgxTranslate(t *testing.T) {
 	t.Parallel()
 
-	input := model.Translation{
-		Messages: []model.Message{
-			{
-				ID:      "message",
-				Message: "{example}",
+	tests := []struct {
+		expected []byte
+		name     string
+		input    model.Translation
+	}{
+		{
+			name: "valid input",
+			input: model.Translation{
+				Messages: []model.Message{
+					{
+						ID:      "message",
+						Message: `{example}`,
+					},
+					{
+						ID:      "message.example",
+						Message: `{message1}`,
+					},
+				},
 			},
-			{
-				ID:      "message.example",
-				Message: "{message1}",
+			expected: []byte(`{"message":"example","message.example":"message1"}`),
+		},
+		{
+			name: "message with special chars",
+			input: model.Translation{
+				Messages: []model.Message{
+					{
+						ID:      "message",
+						Message: `{Welcome \{user\} \| \\ !}`,
+					},
+				},
 			},
+			expected: []byte(`{"message":"Welcome {user} | \\ !"}`),
 		},
 	}
 
-	expected := []byte(`{"message":"example","message.example":"message1"}`)
-	actual, err := ToNgxTranslate(input)
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	if !assert.NoError(t, err) {
-		return
+			actual, err := ToNgxTranslate(tt.input)
+
+			if !assert.NoError(t, err) {
+				return
+			}
+
+			t.Logf("actual: %v", string(actual))
+			t.Logf("expect: %v", string(tt.expected))
+			assert.Equal(t, tt.expected, actual)
+		})
 	}
-
-	assert.Equal(t, expected, actual)
 }

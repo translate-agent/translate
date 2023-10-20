@@ -22,14 +22,14 @@ func Test_FromArb(t *testing.T) {
 	}{
 		// Positive tests
 		{
-			name: "Combination of messages",
+			name: "Message with special chars",
 			input: []byte(`
 			{
 				"title": "Hello World!",
 				"@title": {
 					"description": "Message to greet the World"
 				},
-				"greeting": "Welcome {user}!",
+				"greeting": "Welcome {user} | \\ !",
 				"@greeting": {
 					"placeholders": {
 						"user": {
@@ -46,58 +46,17 @@ func Test_FromArb(t *testing.T) {
 					{
 						ID:          "title",
 						Message:     "{Hello World!}",
-						Description: "Message to greet the World",
+						Description: `Message to greet the World`,
 						Status:      model.MessageStatusTranslated,
 					},
 					{
 						ID:      "greeting",
-						Message: "{Welcome \\{user\\}!}",
+						Message: `{Welcome \{user\} \| \\ !}`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "farewell",
-						Message: "{Goodbye friend}",
-						Status:  model.MessageStatusTranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "Message with placeholder",
-			input: []byte(`
-			{
-				"title": "Hello World!",
-				"@title": {
-					"description": "Message to greet the World"
-				},
-				"greeting": "Welcome {user}!",
-				"@greeting": {
-					"placeholders": {
-						"user": {
-							"type": "string",
-							"example": "Bob"
-						}
-					}
-				},
-				"farewell": "Goodbye friend"
-			}`),
-			expected: model.Translation{
-				Original: true,
-				Messages: []model.Message{
-					{
-						ID:          "title",
-						Message:     "{Hello World!}",
-						Description: "Message to greet the World",
-						Status:      model.MessageStatusTranslated,
-					},
-					{
-						ID:      "greeting",
-						Message: "{Welcome \\{user\\}!}",
-						Status:  model.MessageStatusTranslated,
-					},
-					{
-						ID:      "farewell",
-						Message: "{Goodbye friend}",
+						Message: `{Goodbye friend}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -119,7 +78,7 @@ func Test_FromArb(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "title",
-						Message:     "",
+						Message:     ``,
 						Description: "Message to greet the World",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -208,22 +167,28 @@ func Test_FromArb(t *testing.T) {
 func Test_ToArb(t *testing.T) {
 	t.Parallel()
 
-	translation := model.Translation{
-		Language: language.French,
-		Messages: []model.Message{
-			{
-				ID:          "title",
-				Message:     "{Hello World!}",
-				Description: "Message to greet the World",
+	tests := []struct {
+		name     string
+		expected []byte
+		input    model.Translation
+	}{
+		{
+			name: "valid input",
+			input: model.Translation{
+				Language: language.French,
+				Messages: []model.Message{
+					{
+						ID:          "title",
+						Message:     `{Hello World!}`,
+						Description: "Message to greet the World",
+					},
+					{
+						ID:      "greeting",
+						Message: `{Welcome Sion}`,
+					},
+				},
 			},
-			{
-				ID:      "greeting",
-				Message: "{Welcome Sion}",
-			},
-		},
-	}
-
-	expected := []byte(`
+			expected: []byte(`
 	{
 		"@@locale":"fr",
 		"title":"Hello World!",
@@ -231,12 +196,48 @@ func Test_ToArb(t *testing.T) {
 			"description":"Message to greet the World"
 		},
 		"greeting":"Welcome Sion"
-	}`)
-
-	actual, err := ToArb(translation)
-	if !assert.NoError(t, err) {
-		return
+	}`),
+		},
+		{
+			name: "Message with special chars",
+			input: model.Translation{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "title",
+						Message: `{Hello World!}`,
+					},
+					{
+						ID:      "greeting",
+						Message: `{Welcome \{user\} \| \\ !}`,
+					},
+					{
+						ID:      "farewell",
+						Message: `{Goodbye friend}`,
+					},
+				},
+			},
+			expected: []byte(`
+			{
+				"@@locale":"en",
+				"farewell":"Goodbye friend",
+				"greeting":"Welcome {user} | \\ !",
+				"title":"Hello World!"
+			}`),
+		},
 	}
 
-	assert.JSONEq(t, string(expected), string(actual))
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual, err := ToArb(tt.input)
+			if !assert.NoError(t, err) {
+				return
+			}
+
+			assert.JSONEq(t, string(tt.expected), string(actual))
+		})
+	}
 }
