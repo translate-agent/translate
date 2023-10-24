@@ -350,7 +350,7 @@ func convertPluralsToMessageString(plurals []string) string {
 		if i == len(plurals)-1 {
 			count = "*"
 		} else {
-			count = fmt.Sprintf("%d", i+1)
+			count = strconv.Itoa(i + 1)
 		}
 
 		sb.WriteString(fmt.Sprintf("when %s {%s}\n", count, line))

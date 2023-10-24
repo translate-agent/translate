@@ -20,5 +20,5 @@ func parseFieldMask(message proto.Message, paths []string) (model.Mask, error) {
 	// the path foo.bar is redundant because it is already covered by the path foo
 	parsedMask.Normalize()
 
-	return parsedMask.Paths, nil
+	return parsedMask.GetPaths(), nil
 }

@@ -163,9 +163,9 @@ func (g *GoogleTranslate) Translate(
 			return nil, fmt.Errorf("google translate client: translate texts from batch #%d: %w", i, err)
 		}
 
-		for _, t := range res.Translations {
+		for _, t := range res.GetTranslations() {
 			m := translation.Messages[msgIndex]
-			m.Message = t.TranslatedText
+			m.Message = t.GetTranslatedText()
 			m.Status = model.MessageStatusFuzzy
 
 			translated.Messages = append(translated.Messages, m)

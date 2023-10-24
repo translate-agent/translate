@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLex(t *testing.T) {
@@ -192,13 +193,11 @@ func TestLex(t *testing.T) {
 			result, err := Lex(r)
 
 			if tt.expectedErr != nil {
-				assert.Errorf(t, err, tt.expectedErr.Error())
+				require.Errorf(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			assert.Equal(t, tt.expected, result)
 		})
