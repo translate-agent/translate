@@ -9,7 +9,6 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
@@ -229,5 +228,5 @@ func Test_TransformXLIFF12(t *testing.T) {
 		return true
 	}
 
-	assert.NoError(t, quick.Check(f, conf))
+	require.NoError(t, quick.Check(f, conf))
 }

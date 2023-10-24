@@ -141,7 +141,7 @@ func parseUpdateServiceParams(req *translatev1.UpdateServiceRequest) (*updateSer
 
 	// Parse field mask (if any)
 	if reqUpdateMask != nil {
-		params.mask, err = parseFieldMask(reqService, reqUpdateMask.Paths)
+		params.mask, err = parseFieldMask(reqService, reqUpdateMask.GetPaths())
 		if err != nil {
 			return nil, fmt.Errorf("parse field mask: %w", err)
 		}
@@ -222,7 +222,7 @@ type deleteServiceParams struct {
 }
 
 func parseDeleteServiceRequest(req *translatev1.DeleteServiceRequest) (*deleteServiceParams, error) {
-	id, err := uuidFromProto(req.Id)
+	id, err := uuidFromProto(req.GetId())
 	if err != nil {
 		return nil, fmt.Errorf("parse id: %w", err)
 	}

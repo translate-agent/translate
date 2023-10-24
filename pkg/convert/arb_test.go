@@ -233,9 +233,7 @@ func Test_ToArb(t *testing.T) {
 			t.Parallel()
 
 			actual, err := ToArb(tt.input)
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			assert.JSONEq(t, string(tt.expected), string(actual))
 		})

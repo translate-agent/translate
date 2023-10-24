@@ -68,7 +68,7 @@ func Test_ParseUploadParams(t *testing.T) {
 			params, err := parseUploadTranslationFileRequestParams(tt.request)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -138,11 +138,11 @@ func Test_ValidateUploadParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }
@@ -227,7 +227,7 @@ func Test_GetLanguage(t *testing.T) {
 			actual, err := getLanguage(tt.args.params, tt.args.translation)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -290,7 +290,7 @@ func Test_ParseDownloadParams(t *testing.T) {
 			params, err := parseDownloadTranslationFileRequestParams(tt.request)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -357,11 +357,11 @@ func Test_ValidateDownloadParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }

@@ -141,7 +141,7 @@ func Test_Parse(t *testing.T) {
 			l, err := Parse(test.input)
 
 			if test.expectedErr != nil {
-				assert.Errorf(t, err, test.expectedErr.Error())
+				require.Errorf(t, err, test.expectedErr.Error())
 				return
 			}
 

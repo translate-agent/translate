@@ -100,16 +100,16 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 	// Requests
 
-	happyRequest := randUploadRequest(t, service.Id)
+	happyRequest := randUploadRequest(t, service.GetId())
 
 	happyRequestNoLangInReq := &translatev1.UploadTranslationFileRequest{
-		ServiceId: service.Id,
+		ServiceId: service.GetId(),
 		// NG Localize has language in the file.
 		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, rand.Language()),
 		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
 	}
 
-	invalidArgumentMissingServiceRequest := randUploadRequest(t, service.Id)
+	invalidArgumentMissingServiceRequest := randUploadRequest(t, service.GetId())
 	invalidArgumentMissingServiceRequest.ServiceId = ""
 
 	notFoundServiceIDRequest := randUploadRequest(t, gofakeit.UUID())
@@ -162,13 +162,13 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 
 	// Upload initial
 
-	uploadReq := randUploadRequest(t, service.Id)
+	uploadReq := randUploadRequest(t, service.GetId())
 
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
 	require.NoError(t, err, "create test translation file")
 
 	// Change translation and upload again with the same language and serviceID
-	uploadReq.Data = randUploadData(t, uploadReq.Schema, language.MustParse(uploadReq.Language))
+	uploadReq.Data = randUploadData(t, uploadReq.GetSchema(), language.MustParse(uploadReq.GetLanguage()))
 
 	_, err = client.UploadTranslationFile(ctx, uploadReq)
 
@@ -191,24 +191,24 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	// Prepare
 	service := createService(ctx, t)
 
-	uploadRequest := randUploadRequest(t, service.Id)
+	uploadRequest := randUploadRequest(t, service.GetId())
 
 	_, err := client.UploadTranslationFile(ctx, uploadRequest)
 	require.NoError(t, err, "create test translation file")
 
 	// Requests
 
-	happyRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+	happyRequest := randDownloadRequest(service.GetId(), uploadRequest.GetLanguage())
 
-	happyReqNoTranslationServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.Language)
+	happyReqNoTranslationServiceID := randDownloadRequest(gofakeit.UUID(), uploadRequest.GetLanguage())
 
-	happyReqNoTranslationLanguage := randDownloadRequest(service.Id, rand.Language().String())
+	happyReqNoTranslationLanguage := randDownloadRequest(service.GetId(), rand.Language().String())
 	// Ensure that the language is not the same as the uploaded one.
-	for happyReqNoTranslationLanguage.Language == uploadRequest.Language {
+	for happyReqNoTranslationLanguage.GetLanguage() == uploadRequest.GetLanguage() {
 		happyReqNoTranslationLanguage.Language = rand.Language().String()
 	}
 
-	unspecifiedSchemaRequest := randDownloadRequest(service.Id, uploadRequest.Language)
+	unspecifiedSchemaRequest := randDownloadRequest(service.GetId(), uploadRequest.GetLanguage())
 	unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
 
 	tests := []struct {
@@ -352,7 +352,7 @@ func Test_UpdateService_gRPC(t *testing.T) {
 		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			// Change the ID to the one of the service that was created in the prepare step.
-			tt.request.Service.Id = tt.serviceToUpdate.Id
+			tt.request.Service.Id = tt.serviceToUpdate.GetId()
 
 			_, err := client.UpdateService(ctx, tt.request)
 
@@ -379,7 +379,7 @@ func Test_GetService_gRPC(t *testing.T) {
 	}{
 		{
 			name:         "Happy Path",
-			request:      &translatev1.GetServiceRequest{Id: service.Id},
+			request:      &translatev1.GetServiceRequest{Id: service.GetId()},
 			expectedCode: codes.OK,
 		},
 		{
@@ -416,7 +416,7 @@ func Test_DeleteService_gRPC(t *testing.T) {
 		expectedCode codes.Code
 	}{
 		{
-			request:      &translatev1.DeleteServiceRequest{Id: service.Id},
+			request:      &translatev1.DeleteServiceRequest{Id: service.GetId()},
 			name:         "Happy Path",
 			expectedCode: codes.OK,
 		},
@@ -459,12 +459,12 @@ func randTranslation(t *testing.T, override *translatev1.Translation) *translate
 		Messages: make([]*translatev1.Message, 0, n),
 	}
 
-	if override != nil && override.Language != "" {
-		translation.Language = override.Language
+	if override != nil && override.GetLanguage() != "" {
+		translation.Language = override.GetLanguage()
 	}
 
-	if override != nil && override.Original {
-		translation.Original = override.Original
+	if override != nil && override.GetOriginal() {
+		translation.Original = override.GetOriginal()
 	}
 
 	for i := 0; i < n; i++ {
@@ -478,10 +478,10 @@ func randTranslation(t *testing.T, override *translatev1.Translation) *translate
 		for j := 0; j < gofakeit.Number(0, 2); j++ {
 			v, _ := url.Parse(gofakeit.URL())
 			lineNumber := gofakeit.Number(0, 10_000)
-			message.Positions = append(message.Positions, fmt.Sprintf("%s:%d", v.Path, lineNumber))
+			message.Positions = append(message.GetPositions(), fmt.Sprintf("%s:%d", v.Path, lineNumber))
 		}
 
-		translation.Messages = append(translation.Messages, message)
+		translation.Messages = append(translation.GetMessages(), message)
 	}
 
 	return translation
@@ -495,11 +495,11 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 	// Prepare
 	langs := rand.Languages(3)
 	service := createService(ctx, t)
-	createTranslation(ctx, t, service.Id,
+	createTranslation(ctx, t, service.GetId(),
 		&translatev1.Translation{Original: true, Language: langs[2].String()})
 
 	serviceWithTranslations := createService(ctx, t)
-	uploadReq := randUploadRequest(t, serviceWithTranslations.Id)
+	uploadReq := randUploadRequest(t, serviceWithTranslations.GetId())
 
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
 	require.NoError(t, err, "create test translation file")
@@ -512,7 +512,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 		{
 			name: "Happy path, create translation",
 			request: &translatev1.CreateTranslationRequest{
-				ServiceId:   service.Id,
+				ServiceId:   service.GetId(),
 				Translation: randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
 			},
 			expectedCode: codes.OK,
@@ -520,7 +520,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 		{
 			name: "Happy path, empty translation.messages",
 			request: &translatev1.CreateTranslationRequest{
-				ServiceId: service.Id,
+				ServiceId: service.GetId(),
 				Translation: &translatev1.Translation{
 					Language: langs[1].String(),
 				},
@@ -538,14 +538,14 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 		{
 			name: "Invalid argument, translation not provided",
 			request: &translatev1.CreateTranslationRequest{
-				ServiceId: service.Id,
+				ServiceId: service.GetId(),
 			},
 			expectedCode: codes.InvalidArgument,
 		},
 		{
 			name: "Invalid argument, translation.language not provided",
 			request: &translatev1.CreateTranslationRequest{
-				ServiceId: service.Id,
+				ServiceId: service.GetId(),
 				Translation: &translatev1.Translation{
 					Language: "",
 				},
@@ -555,9 +555,9 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 		{
 			name: "Already exists, service already has translation for specified language",
 			request: &translatev1.CreateTranslationRequest{
-				ServiceId: serviceWithTranslations.Id,
+				ServiceId: serviceWithTranslations.GetId(),
 				Translation: &translatev1.Translation{
-					Language: uploadReq.Language,
+					Language: uploadReq.GetLanguage(),
 				},
 			},
 			expectedCode: codes.AlreadyExists,
@@ -575,7 +575,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 			assert.Equal(t, tt.expectedCode, status.Code(err))
 
 			if status.Code(err) == codes.OK {
-				require.Equal(t, tt.request.Translation.Language, translation.Language)
+				require.Equal(t, tt.request.GetTranslation().GetLanguage(), translation.GetLanguage())
 			}
 		})
 	}
@@ -590,7 +590,7 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 	service := createService(ctx, t)
 
 	for i := 0; i < gofakeit.IntRange(1, 5); i++ {
-		uploadRequest := randUploadRequest(t, service.Id)
+		uploadRequest := randUploadRequest(t, service.GetId())
 		_, err := client.UploadTranslationFile(ctx, uploadRequest)
 		require.NoError(t, err, "create test translation file")
 	}
@@ -604,7 +604,7 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 	}{
 		{
 			name:         "Happy path, get all translations",
-			request:      &translatev1.ListTranslationsRequest{ServiceId: service.Id},
+			request:      &translatev1.ListTranslationsRequest{ServiceId: service.GetId()},
 			expectedCode: codes.OK,
 		},
 		{
@@ -643,7 +643,7 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 	langs := rand.Languages(2)
 
 	_, err := client.CreateTranslation(ctx, &translatev1.CreateTranslationRequest{
-		ServiceId:   service.Id,
+		ServiceId:   service.GetId(),
 		Translation: randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
 	})
 
@@ -656,7 +656,7 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 		}
 
 		return &translatev1.UpdateTranslationRequest{
-			ServiceId:   service.Id,
+			ServiceId:   service.GetId(),
 			Translation: randTranslation(t, &translatev1.Translation{Language: lang}),
 		}
 	}
@@ -718,7 +718,7 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 			assert.Equal(t, tt.expectedCode, status.Code(err))
 
 			if tt.request == happyReq {
-				matchingTranslationExistsInService(ctx, t, tt.request.ServiceId, resp)
+				matchingTranslationExistsInService(ctx, t, tt.request.GetServiceId(), resp)
 			}
 		})
 	}
@@ -743,15 +743,15 @@ func matchingTranslationExistsInService(
 
 	var translationFromService *translatev1.Translation
 
-	for i := range resp.Translations {
-		if resp.Translations[i].Language == translation.Language {
-			translationFromService = resp.Translations[i]
+	for i := range resp.GetTranslations() {
+		if resp.GetTranslations()[i].GetLanguage() == translation.GetLanguage() {
+			translationFromService = resp.GetTranslations()[i]
 			break
 		}
 	}
 
 	require.NotNil(t, translationFromService)
-	require.Equal(t, translation.Original, translationFromService.Original)
-	require.Equal(t, translation.Language, translationFromService.Language)
-	require.ElementsMatch(t, translation.Messages, translationFromService.Messages)
+	require.Equal(t, translation.GetOriginal(), translationFromService.GetOriginal())
+	require.Equal(t, translation.GetLanguage(), translationFromService.GetLanguage())
+	require.ElementsMatch(t, translation.GetMessages(), translationFromService.GetMessages())
 }

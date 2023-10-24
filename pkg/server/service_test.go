@@ -42,7 +42,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 			name:    "Happy Path",
 			request: happyReqWithID,
 			expected: &getServiceParams{
-				id: uuid.MustParse(happyReqWithID.Id),
+				id: uuid.MustParse(happyReqWithID.GetId()),
 			},
 			expectedErr: nil,
 		},
@@ -68,7 +68,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 			actual, err := parseGetServiceRequestParams(tt.request)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -106,11 +106,11 @@ func Test_ValidateGetServiceParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }
@@ -161,10 +161,10 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:    "Happy Path",
 			request: happyReq,
 			expected: &updateServiceParams{
-				mask: happyReq.UpdateMask.Paths,
+				mask: happyReq.GetUpdateMask().GetPaths(),
 				service: &model.Service{
-					ID:   uuid.MustParse(happyReq.Service.Id),
-					Name: happyReq.Service.Name,
+					ID:   uuid.MustParse(happyReq.GetService().GetId()),
+					Name: happyReq.GetService().GetName(),
 				},
 			},
 			expectedErr: nil,
@@ -173,10 +173,10 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:    "Happy Path Without Service ID",
 			request: happyReqWithoutServiceID,
 			expected: &updateServiceParams{
-				mask: happyReqWithoutServiceID.UpdateMask.Paths,
+				mask: happyReqWithoutServiceID.GetUpdateMask().GetPaths(),
 				service: &model.Service{
 					ID:   uuid.Nil,
-					Name: happyReqWithoutServiceID.Service.Name,
+					Name: happyReqWithoutServiceID.GetService().GetName(),
 				},
 			},
 			expectedErr: nil,
@@ -186,7 +186,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:    "Happy Path Without Service",
 			request: happyReqWithoutService,
 			expected: &updateServiceParams{
-				mask:    happyReqWithoutService.UpdateMask.Paths,
+				mask:    happyReqWithoutService.GetUpdateMask().GetPaths(),
 				service: nil,
 			},
 		},
@@ -196,8 +196,8 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			expected: &updateServiceParams{
 				mask: nil,
 				service: &model.Service{
-					ID:   uuid.MustParse(happyReqWithoutUpdateMask.Service.Id),
-					Name: happyReqWithoutUpdateMask.Service.Name,
+					ID:   uuid.MustParse(happyReqWithoutUpdateMask.GetService().GetId()),
+					Name: happyReqWithoutUpdateMask.GetService().GetName(),
 				},
 			},
 		},
@@ -221,7 +221,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			actual, err := parseUpdateServiceParams(tt.request)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -289,11 +289,11 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }
@@ -388,7 +388,7 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 		{
 			name:        "Happy Path With ID",
 			request:     happyReqWithID,
-			expected:    &deleteServiceParams{id: uuid.MustParse(happyReqWithID.Id)},
+			expected:    &deleteServiceParams{id: uuid.MustParse(happyReqWithID.GetId())},
 			expectedErr: nil,
 		},
 		{
@@ -412,7 +412,7 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 			actual, err := parseDeleteServiceRequest(tt.request)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -460,11 +460,11 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }
@@ -503,8 +503,8 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 			expectedErr: nil,
 			expected: &createServiceParams{
 				service: &model.Service{
-					ID:   uuid.MustParse(happyReqWithServiceID.Service.Id),
-					Name: happyReqWithServiceID.Service.Name,
+					ID:   uuid.MustParse(happyReqWithServiceID.GetService().GetId()),
+					Name: happyReqWithServiceID.GetService().GetName(),
 				},
 			},
 		},
@@ -515,7 +515,7 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 			expected: &createServiceParams{
 				service: &model.Service{
 					ID:   uuid.Nil,
-					Name: happyReqWithoutServiceID.Service.Name,
+					Name: happyReqWithoutServiceID.GetService().GetName(),
 				},
 			},
 		},
@@ -542,7 +542,7 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 			actual, err := parseCreateServiceParams(tt.request)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -598,11 +598,11 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }

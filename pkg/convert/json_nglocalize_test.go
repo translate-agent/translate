@@ -97,7 +97,7 @@ func Test_FromNgLocalize(t *testing.T) {
 			actual, err := FromNgLocalize(tt.input, tt.expected.Original)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -173,13 +173,11 @@ func Test_ToNgLocalize(t *testing.T) {
 			actual, err := ToNgLocalize(tt.input)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			assert.JSONEq(t, string(tt.expected), string(actual))
 		})

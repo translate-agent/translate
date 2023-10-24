@@ -38,8 +38,8 @@ func newLsCmd() *cobra.Command {
 			tbl := table.New("ID", "Name")
 			tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 
-			for _, v := range resp.Services {
-				tbl.AddRow(v.Id, v.Name)
+			for _, v := range resp.GetServices() {
+				tbl.AddRow(v.GetId(), v.GetName())
 			}
 
 			tbl.WithWriter(cmd.OutOrStdout())

@@ -23,10 +23,11 @@ func Test_TransformUUID(t *testing.T) {
 		f := func(expectedID uuid.UUID) bool {
 			restoredID, err := uuidFromProto(uuidToProto(expectedID))
 
-			return assert.NoError(t, err) && assert.Equal(t, expectedID, restoredID)
+			require.NoError(t, err)
+			return assert.Equal(t, expectedID, restoredID)
 		}
 
-		assert.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
+		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
 	})
 
 	// Separate check with Nil UUID.
@@ -54,11 +55,12 @@ func Test_TransformLanguage(t *testing.T) {
 
 	f := func(expectedLangTag language.Tag) bool {
 		restoredLangTag, err := languageFromProto(languageToProto(expectedLangTag))
+		require.NoError(t, err)
 
-		return assert.NoError(t, err) && assert.Equal(t, expectedLangTag, restoredLangTag)
+		return assert.Equal(t, expectedLangTag, restoredLangTag)
 	}
 
-	assert.NoError(t, quick.Check(f, conf))
+	require.NoError(t, quick.Check(f, conf))
 }
 
 func Test_TransformService(t *testing.T) {
@@ -69,11 +71,11 @@ func Test_TransformService(t *testing.T) {
 
 		f := func(expectedService model.Service) bool {
 			restoredService, err := serviceFromProto(serviceToProto(&expectedService))
-
-			return assert.NoError(t, err) && assert.Equal(t, expectedService, *restoredService)
+			require.NoError(t, err)
+			return assert.Equal(t, expectedService, *restoredService)
 		}
 
-		assert.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
+		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
 	})
 
 	t.Run("Services to proto to services", func(t *testing.T) {
@@ -81,9 +83,10 @@ func Test_TransformService(t *testing.T) {
 
 		f := func(expectedServices []model.Service) bool {
 			restoredServices, err := servicesFromProto(servicesToProto(expectedServices))
-
-			return assert.NoError(t, err) && assert.ElementsMatch(t, expectedServices, restoredServices)
+			require.NoError(t, err)
+			return assert.ElementsMatch(t, expectedServices, restoredServices)
 		}
-		assert.NoError(t, quick.Check(f, &quick.Config{MaxCount: 100}))
+
+		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 100}))
 	})
 }

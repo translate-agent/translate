@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"sync"
 	"syscall"
 	"testing"
@@ -93,5 +94,5 @@ func mustGetFreePort() string {
 	// Get the port number from the address that the Listener is listening on.
 	addr := l.Addr().(*net.TCPAddr)
 
-	return fmt.Sprint(addr.Port)
+	return strconv.Itoa(addr.Port)
 }

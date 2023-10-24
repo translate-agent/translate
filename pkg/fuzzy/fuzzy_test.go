@@ -90,16 +90,16 @@ func (m *MockGoogleTranslateClient) TranslateText(
 	opts ...gax.CallOption,
 ) (*translatepb.TranslateTextResponse, error) {
 	// Mock the Bad request error for unsupported language.Afrikaans.
-	if req.TargetLanguageCode == language.Afrikaans.String() {
+	if req.GetTargetLanguageCode() == language.Afrikaans.String() {
 		return nil, errors.New("mock: bad request: unsupported language")
 	}
 
 	res := &translatepb.TranslateTextResponse{
-		Translations: make([]*translatepb.Translation, 0, len(req.Contents)),
+		Translations: make([]*translatepb.Translation, 0, len(req.GetContents())),
 	}
 
-	for range req.Contents {
-		res.Translations = append(res.Translations, &translatepb.Translation{TranslatedText: gofakeit.SentenceSimple()})
+	for range req.GetContents() {
+		res.Translations = append(res.GetTranslations(), &translatepb.Translation{TranslatedText: gofakeit.SentenceSimple()})
 	}
 
 	return res, nil

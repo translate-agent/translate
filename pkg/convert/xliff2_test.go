@@ -237,5 +237,5 @@ func Test_TransformXLIFF2(t *testing.T) {
 		return true
 	}
 
-	assert.NoError(t, quick.Check(f, conf))
+	require.NoError(t, quick.Check(f, conf))
 }

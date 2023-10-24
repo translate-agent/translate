@@ -115,7 +115,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 
 			actual, err := FromNgxTranslate(tt.input, tt.expected.Original)
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -170,9 +170,7 @@ func Test_ToNgxTranslate(t *testing.T) {
 
 			actual, err := ToNgxTranslate(tt.input)
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			t.Logf("actual: %v", string(actual))
 			t.Logf("expect: %v", string(tt.expected))
