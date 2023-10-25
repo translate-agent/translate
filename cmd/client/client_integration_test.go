@@ -308,14 +308,14 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 		require.NoError(t, err)
 
-		_, err = file.Write([]byte(`
+		_, err = file.WriteString(`
 		{
 			"locale": "xyz-ZY-Latn",
 			"translations": {
 			"Hello": "Bonjour",
 			"Welcome": "Bienvenue"
 			}
-		}`))
+		}`)
 
 		require.NoError(t, err)
 
