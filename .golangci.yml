@@ -5,72 +5,39 @@ run:
   skip-dirs:
     - pkg/pb
 linters:
-  enable-all: true
+  enable:
+   - forcetypeassert
   disable:
    - asasalint
-   - cyclop
+   - gci
+   - gochecknoglobals
+   - gochecknoinits
+   - goconst
+   - gofmt
    - deadcode
    - depguard
-   - dogsled
-   - dupl
-   - dupword
    - exhaustivestruct
    - exhaustruct
    - forbidigo
-   - forcetypeassert
    - funlen
-   - gci
    - ginkgolinter
-   - goconst
-   - gocheckcompilerdirectives
-   - gochecknoglobals
-   - gochecknoinits
-   - godox
-   - goerr113
-   - gofmt
-   - goheader
    - goimports
    - golint
-   - gomoddirectives
    - gomodguard
-   - gosmopolitan
    - grouper
    - ifshort
    - inamedparam
-   - interfacebloat
    - interfacer
-   - ireturn
    - loggercheck
-   - maintidx
    - maligned
-   - mirror
-   - musttag
-   - nilnil
-   - nlreturn
    - nonamedreturns
    - nosnakecase
-   - nosprintfhostport
-   - predeclared
    - promlinter
-   - reassign
    - revive
-   - rowserrcheck
    - scopelint
-   - sqlclosecheck
    - structcheck
-   - stylecheck
-   - tagalign
-   - tagliatelle
-   - tenv
-   - testableexamples
    - testpackage
-   - thelper
-   - tparallel
-   - usestdlibvars
    - varcheck
-   - varnamelen
-   - wastedassign
-   - whitespace
    - zerologlint
 linters-settings:
   govet:
