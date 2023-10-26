@@ -117,7 +117,7 @@ func Test_FromArb(t *testing.T) {
 					}
 				}
 			}`),
-			expectedErr: errors.New("'Description' expected type 'string', got unconvertible type 'map[string]interface {}'"),
+			expectedErr: errors.New("'description' expected type 'string', got unconvertible type 'map[string]interface {}', value: 'map[meaning:When you greet someone]'"),
 		},
 		{
 			name: "With malformed locale",

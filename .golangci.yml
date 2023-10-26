@@ -8,15 +8,18 @@ linters:
   enable:
    - forcetypeassert
    - mirror
+   - musttag
   disable:
    - asasalint
    - gci
    - gochecknoglobals
    - gochecknoinits
    - goconst
+   - godox
    - gofmt
    - deadcode
    - depguard
+   - dupl
    - exhaustivestruct
    - exhaustruct
    - forbidigo
