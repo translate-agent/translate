@@ -8,16 +8,12 @@ linters:
   enable-all: true
   disable:
    - asasalint
-   - cyclop
    - deadcode
    - depguard
-   - dogsled
    - dupl
-   - dupword
    - exhaustivestruct
    - exhaustruct
    - forbidigo
-   - forcetypeassert
    - funlen
    - gci
    - ginkgolinter
@@ -73,6 +69,8 @@ linters:
    - whitespace
    - zerologlint
 linters-settings:
+  cyclop:
+    max-complexity: 30
   govet:
     enable-all: true
   importas:
