@@ -98,7 +98,7 @@ func mustGetFreePort() string {
 	// Get the port number from the address that the Listener is listening on.
 	addr, ok := l.Addr().(*net.TCPAddr)
 	if !ok {
-		log.Panic("could not assert to *net.TCPAddr")
+		log.Panic("get free port address")
 	}
 
 	return strconv.Itoa(addr.Port)
