@@ -29,5 +29,6 @@
   },
   "go.formatTool": "gofumpt",
   "go.lintOnSave": "workspace",
-  "go.lintTool": "golangci-lint"
+  "go.lintTool": "golangci-lint",
+  "editor.formatOnSave": true
 }
