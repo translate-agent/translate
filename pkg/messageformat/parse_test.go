@@ -75,7 +75,7 @@ func Test_Parse(t *testing.T) {
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Buy one \\ apple!"}}},
+						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Buy one \\\\ apple!"}}},
 						{Keys: []string{"*"}, Message: []interface{}{
 							NodeText{Text: "Buy "},
 							NodeVariable{Name: "count"},
@@ -120,7 +120,7 @@ func Test_Parse(t *testing.T) {
 		{
 			name:     "input with curly braces in it",
 			input:    `{Chart [\{\}] was added to dashboard [\{\}]}`,
-			expected: []interface{}{NodeText{Text: "Chart [{}] was added to dashboard [{}]"}},
+			expected: []interface{}{NodeText{Text: "Chart [\\{\\}] was added to dashboard [\\{\\}]"}},
 		},
 		{
 			name:     "input with plus sign in it ",

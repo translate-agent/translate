@@ -24,6 +24,7 @@ const (
 	tokenTypeClosingFunction
 	tokenTypeKeyword
 	tokenTypeLiteral
+	tokenTypeOption
 )
 
 const (
@@ -51,6 +52,7 @@ func lex(input string) *lexer {
 type lexer struct {
 	input        string
 	token        Token
+	prevToken    Token
 	pos          int
 	exprDepth    int
 	textToFollow bool
@@ -96,6 +98,7 @@ func (l *lexer) nextToken() Token {
 		state := state(l)
 
 		if state == nil {
+			l.prevToken = l.token
 			return l.token
 		}
 	}
@@ -160,30 +163,27 @@ func lexLiteral(l *lexer) stateFn {
 func lexText(l *lexer) stateFn {
 	l.textToFollow = false
 
-	var text string
+	var sb strings.Builder
 
-	for {
+	// Loop until we encounter a curly brace.
+	for l.peek() != '}' && l.peek() != '{' {
 		v := l.next()
 
+		// EOF is not supposed to be in the text.
 		if v == eof {
 			return l.emitToken(mkTokenErrorf("unexpected EOF"))
 		}
 
+		// Write the character to the buffer.
+		sb.WriteRune(v)
+
+		// If we just wrote a backslash, write the next character too.
 		if v == '\\' {
-			nextElement := l.next()
-
-			switch nextElement {
-			case '|', '{', '}', '\\':
-				text += string(nextElement)
-			}
-		} else {
-			text += string(v)
-		}
-
-		if l.peek() == '}' || l.peek() == '{' {
-			return l.emitToken(mkToken(tokenTypeText, text))
+			sb.WriteRune(l.next())
 		}
 	}
+
+	return l.emitToken(mkToken(tokenTypeText, sb.String()))
 }
 
 func lexExpr(l *lexer) stateFn {
@@ -199,6 +199,10 @@ func lexExpr(l *lexer) stateFn {
 
 	switch v {
 	default:
+		if (l.prevToken.typ == tokenTypeFunction || l.prevToken.typ == tokenTypeOption) && v == ' ' {
+			return lexOption(l)
+		}
+
 		if isSpace(v) && !l.textToFollow {
 			l.nextToken()
 			return nil
@@ -289,6 +293,21 @@ func lexFunction(l *lexer) stateFn {
 	}
 }
 
+func lexOption(l *lexer) stateFn {
+	var sb strings.Builder
+
+	for {
+		v := l.next()
+
+		if v == ' ' || v == '}' {
+			l.backup()
+			return l.emitToken(mkToken(tokenTypeOption, sb.String()))
+		}
+
+		sb.WriteRune(v)
+	}
+}
+
 func lexVariable(l *lexer) stateFn {
 	first := l.next()
 
@@ -305,6 +324,28 @@ func lexVariable(l *lexer) stateFn {
 		variable += string(v)
 	}
 }
+
+func processFunction(l *lexer, f func(*lexer) stateFn) stateFn {
+	if l.exprDepth > 1 {
+		return f(l)
+	}
+
+	l.backup()
+
+	return lexText(l)
+}
+
+func processChar(l *lexer, f func(*lexer) stateFn) stateFn {
+	if isAlpha(l.peek()) {
+		return f(l)
+	}
+
+	l.backup()
+
+	return lexText(l)
+}
+
+// helpers
 
 // isAlpha returns true if v is alphabetic character.
 func isAlpha(v rune) bool {
@@ -352,24 +393,4 @@ func isNameChar(v rune) bool {
 // isSpace reports whether r is a space character.
 func isSpace(r rune) bool {
 	return r == ' ' || r == '\t' || r == '\r' || r == '\n'
-}
-
-func processFunction(l *lexer, f func(*lexer) stateFn) stateFn {
-	if l.exprDepth > 1 {
-		return f(l)
-	}
-
-	l.backup()
-
-	return lexText(l)
-}
-
-func processChar(l *lexer, f func(*lexer) stateFn) stateFn {
-	if isAlpha(l.peek()) {
-		return f(l)
-	}
-
-	l.backup()
-
-	return lexText(l)
 }
