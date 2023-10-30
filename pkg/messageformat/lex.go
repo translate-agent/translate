@@ -53,7 +53,6 @@ type lexer struct {
 	token        Token
 	pos          int
 	exprDepth    int
-	insideExpr   bool
 	textToFollow bool
 	whenFound    bool
 }
@@ -89,7 +88,7 @@ func (l *lexer) nextToken() Token {
 
 	state := lexOutsideExpr
 
-	if l.insideExpr {
+	if l.exprDepth > 0 {
 		state = lexExpr
 	}
 
@@ -122,7 +121,6 @@ func lexOutsideExpr(l *lexer) stateFn {
 
 		if v == '{' {
 			l.exprDepth++
-			l.insideExpr = true
 
 			return l.emitToken(mkToken(tokenTypeSeparatorOpen, "{"))
 		}
@@ -219,17 +217,12 @@ func lexExpr(l *lexer) stateFn {
 		return processFunction(l, lexClosingFunction)
 	case '{':
 		l.exprDepth++
-		l.insideExpr = true
 		l.token = mkToken(tokenTypeSeparatorOpen, "{")
 
 		return nil
 	case '}':
 		l.exprDepth--
 		l.textToFollow = true
-
-		if l.exprDepth == 0 {
-			l.insideExpr = false
-		}
 
 		l.token = mkToken(tokenTypeSeparatorClose, "}")
 
