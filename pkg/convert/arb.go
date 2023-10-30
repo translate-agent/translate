@@ -54,7 +54,7 @@ func FromArb(data []byte, original bool) (model.Translation, error) {
 		}
 
 		var meta struct {
-			Description string `json:"description"`
+			Description string `json:"description" mapstructure:"description"`
 		}
 
 		if err := mapstructure.Decode(subKeyMap, &meta); err != nil {
