@@ -36,7 +36,6 @@ linters:
    - loggercheck
    - maintidx
    - maligned
-   - musttag
    - nilnil
    - nlreturn
    - nonamedreturns
