@@ -195,7 +195,7 @@ func Test_ToXliff12(t *testing.T) {
 			actual, err := ToXliff12(*tt.data)
 			require.NoError(t, err)
 
-			assertEqualXml(t, tt.expected, actual)
+			assertEqualXML(t, tt.expected, actual)
 		})
 	}
 }

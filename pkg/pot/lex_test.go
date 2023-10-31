@@ -65,12 +65,12 @@ func TestLex(t *testing.T) {
 				"#| msgid previous id\n" +
 				"#| msgid_plural previous id plural\n",
 			expected: []Token{
-				tokenMsgId(""),
+				tokenMsgID(""),
 				tokenMsgStr(""),
 				tokenHeaderTranslator("John Doe <johndoe@example.com>"),
 				tokenHeaderLanguage("en-US"),
 				tokenHeaderPluralForms("nplurals=2; plural=(n != 1);"),
-				tokenHeaderProjectIdVersion("1.2"),
+				tokenHeaderProjectIDVersion("1.2"),
 				tokenHeaderPOTCreationDate("10.02.2022."),
 				tokenHeaderPORevisionDate("10.02.2022."),
 				tokenHeaderLastTranslator("John Doe"),
@@ -81,9 +81,9 @@ func TestLex(t *testing.T) {
 				tokenHeaderXGenerator("Poedit 2.2"),
 				tokenHeaderReportMsgidBugsTo("support@lingohub.com"),
 				tokenMsgCtxt("ctxt"),
-				tokenMsgId("id"),
+				tokenMsgID("id"),
 				tokenMsgStr("str"),
-				tokenPluralMsgId("There are %d oranges"),
+				tokenPluralMsgID("There are %d oranges"),
 				tokenPluralMsgStr("There is %d orange", 0),
 				tokenPluralMsgStr("There are %d oranges", 1),
 				tokenTranslatorComment("translator-comment"),
@@ -105,10 +105,10 @@ func TestLex(t *testing.T) {
 				"msgid \"\"\n\"multiline id\"\n\"multiline id 2\"\n" +
 				"msgstr \"\"\n\"text line 1\"\n\"next line 2\"\n",
 			expected: []Token{
-				tokenMsgId(""),
+				tokenMsgID(""),
 				tokenMsgStr(""),
 				tokenHeaderLanguage("en-GB"),
-				tokenMsgId("multiline id multiline id 2"),
+				tokenMsgID("multiline id multiline id 2"),
 				tokenMsgStr("text line 1 next line 2"),
 			},
 		},
@@ -123,12 +123,12 @@ func TestLex(t *testing.T) {
 				"msgstr[0] \"There is %d orange\"\n\"There is 1 orange\"\n" +
 				"msgstr[1] \"There are %d oranges\"\n\"There are 1900000 oranges\"\n",
 			expected: []Token{
-				tokenMsgId(""),
+				tokenMsgID(""),
 				tokenMsgStr(""),
 				tokenHeaderLanguage("en-US"),
 				tokenHeaderPluralForms("nplurals=2; plural=(n != 1);"),
-				tokenMsgId("multiline id multiline id 2"),
-				tokenPluralMsgId("There are %d oranges There are 1900000 oranges"),
+				tokenMsgID("multiline id multiline id 2"),
+				tokenPluralMsgID("There are %d oranges There are 1900000 oranges"),
 				tokenPluralMsgStr("There is %d orange There is 1 orange", 0),
 				tokenPluralMsgStr("There are %d oranges There are 1900000 oranges", 1),
 			},
@@ -140,7 +140,7 @@ func TestLex(t *testing.T) {
 				"\"Language: en-US\\n\"\n" +
 				"\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n",
 			expected: []Token{
-				tokenMsgId(""),
+				tokenMsgID(""),
 				tokenMsgStr(""),
 				tokenHeaderLanguage("en-US"),
 				tokenHeaderPluralForms("nplurals=2; plural=(n != 1);"),
@@ -155,11 +155,11 @@ func TestLex(t *testing.T) {
 				"msgid \"\"quoted\" id\"\n" +
 				"msgstr \"\"quoted\" str\"\n",
 			expected: []Token{
-				tokenMsgId(""),
+				tokenMsgID(""),
 				tokenMsgStr(""),
 				tokenHeaderLanguage("en-US"),
 				tokenHeaderPluralForms("nplurals=2; plural=(n != 1);"),
-				tokenMsgId("\"quoted\" id"),
+				tokenMsgID("\"quoted\" id"),
 				tokenMsgStr("\"quoted\" str"),
 			},
 		},

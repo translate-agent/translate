@@ -179,8 +179,8 @@ func (g *GoogleTranslate) Translate(
 
 // parent returns path to Google project and location.
 func parent() string {
-	projectId := viper.GetString("other.google.project_id")
+	projectID := viper.GetString("other.google.project_id")
 	location := viper.GetString("other.google.location")
 
-	return fmt.Sprintf("projects/%s/locations/%s", projectId, location)
+	return fmt.Sprintf("projects/%s/locations/%s", projectID, location)
 }

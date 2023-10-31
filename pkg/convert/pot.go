@@ -15,8 +15,8 @@ import (
 type poTag string
 
 const (
-	MsgId        poTag = "msgid"
-	PluralId     poTag = "msgid_plural"
+	MsgID        poTag = "msgid"
+	PluralID     poTag = "msgid_plural"
 	MsgStrPlural poTag = "msgstr[%d]"
 	MsgStr       poTag = "msgstr"
 )
@@ -71,8 +71,8 @@ func FromPot(b []byte, original bool) (model.Translation, error) {
 	}
 
 	if original {
-		singularValue = func(v pot.MessageNode) string { return v.MsgId }
-		pluralValue = func(v pot.MessageNode) []string { return []string{v.MsgId, v.MsgIdPlural} }
+		singularValue = func(v pot.MessageNode) string { return v.MsgID }
+		pluralValue = func(v pot.MessageNode) []string { return []string{v.MsgID, v.MsgIDPlural} }
 		getStatus = func(_ pot.MessageNode) model.MessageStatus { return model.MessageStatusTranslated }
 	}
 
@@ -80,7 +80,7 @@ func FromPot(b []byte, original bool) (model.Translation, error) {
 
 	if po.Header.PluralForms.NPlurals == pluralCountLimit {
 		convert = func(v pot.MessageNode) string {
-			if v.MsgIdPlural == "" {
+			if v.MsgIDPlural == "" {
 				return convertToMessageFormatSingular(singularValue(v))
 			}
 
@@ -90,8 +90,8 @@ func FromPot(b []byte, original bool) (model.Translation, error) {
 
 	for _, node := range po.Messages {
 		message := model.Message{
-			ID:          node.MsgId,
-			PluralID:    node.MsgIdPlural,
+			ID:          node.MsgID,
+			PluralID:    node.MsgIDPlural,
 			Description: strings.Join(node.ExtractedComment, "\n "),
 			Positions:   node.References,
 			Message:     convert(node),
@@ -313,7 +313,7 @@ func writeMessage(b *bytes.Buffer, index int, message model.Message) error {
 // writeTags writes specific tags (MsgId, MsgStr, PluralId, MsgStrPlural)
 // along with their corresponding values to a bytes.Buffer.
 func writeTags(b *bytes.Buffer, message model.Message) error {
-	if err := writeToPoTag(b, MsgId, message.ID); err != nil {
+	if err := writeToPoTag(b, MsgID, message.ID); err != nil {
 		return fmt.Errorf("format msgid: %w", err)
 	}
 
@@ -324,7 +324,7 @@ func writeTags(b *bytes.Buffer, message model.Message) error {
 		}
 	} else {
 		// plural
-		if err := writeToPoTag(b, PluralId, message.PluralID); err != nil {
+		if err := writeToPoTag(b, PluralID, message.PluralID); err != nil {
 			return fmt.Errorf("format msgid_plural: %w", err)
 		}
 		if err := writeToPoTag(b, MsgStrPlural, message.Message); err != nil {
