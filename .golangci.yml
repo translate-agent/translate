@@ -5,53 +5,67 @@ run:
   skip-dirs:
     - pkg/pb
 linters:
-  enable:
-    - asciicheck
-    - bidichk
-    - bodyclose
-    - containedctx
-    - contextcheck
-    - decorder
-    - durationcheck
-    - errcheck
-    - errchkjson
-    - errname
-    - errorlint
-    - execinquery
-    - exhaustive
-    - exportloopref
-    - gocognit
-    - goconst
-    - gocritic
-    - gocyclo
-    - godot
-    - gofumpt
-    - gomnd
-    - goprintffuncname
-    - gosec
-    - gosimple
-    - govet
-    - importas
-    - ineffassign
-    - lll
-    - makezero
-    - misspell
-    - nakedret
-    - nestif
-    - nilerr
-    - noctx
-    - nolintlint
-    - paralleltest
-    - prealloc
-    - staticcheck
-    - typecheck
-    - unconvert
-    - unparam
-    - unused
-    - wrapcheck
-    - wsl
-    - importas
+  enable-all: true
+  disable:
+   - asasalint
+   - deadcode
+   - depguard
+   - dupl
+   - exhaustivestruct
+   - exhaustruct
+   - forbidigo
+   - funlen
+   - gci
+   - ginkgolinter
+   - goconst
+   - gochecknoglobals
+   - gochecknoinits
+   - godox
+   - goerr113
+   - gofmt
+   - goheader
+   - goimports
+   - golint
+   - gomodguard
+   - gosmopolitan
+   - grouper
+   - ifshort
+   - inamedparam
+   - interfacer
+   - ireturn
+   - loggercheck
+   - maintidx
+   - maligned
+   - nilnil
+   - nlreturn
+   - nonamedreturns
+   - nosnakecase
+   - nosprintfhostport
+   - predeclared
+   - promlinter
+   - reassign
+   - revive
+   - rowserrcheck
+   - scopelint
+   - sqlclosecheck
+   - structcheck
+   - stylecheck
+   - tagalign
+   - tagliatelle
+   - tenv
+   - testableexamples
+   - testpackage
+   - thelper
+   - tparallel
+   - usestdlibvars
+   - varcheck
+   - varnamelen
+   - wastedassign
+   - whitespace
+   - zerologlint
 linters-settings:
+  cyclop:
+    max-complexity: 30
   govet:
     enable-all: true
   importas:

@@ -7,6 +7,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_TokensToPo(t *testing.T) {
@@ -190,7 +191,7 @@ func Test_TokensToPo(t *testing.T) {
 			t.Parallel()
 			result, err := TokensToPo(tt.input)
 			if tt.expectedErr != nil {
-				assert.Errorf(t, err, tt.expectedErr.Error())
+				require.Errorf(t, err, tt.expectedErr.Error())
 			}
 
 			assert.Equal(t, tt.expected, result)

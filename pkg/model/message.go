@@ -11,9 +11,9 @@ import (
 )
 
 type Translation struct {
-	Language language.Tag
-	Messages []Message
-	Original bool
+	Language language.Tag `json:"language"`
+	Messages []Message    `json:"messages"`
+	Original bool         `json:"original"`
 }
 
 /*

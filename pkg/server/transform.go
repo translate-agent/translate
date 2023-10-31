@@ -107,11 +107,11 @@ func serviceFromProto(s *translatev1.Service) (*model.Service, error) {
 	}
 
 	var (
-		service = &model.Service{Name: s.Name}
+		service = &model.Service{Name: s.GetName()}
 		err     error
 	)
 
-	service.ID, err = uuidFromProto(s.Id)
+	service.ID, err = uuidFromProto(s.GetId())
 	if err != nil {
 		return nil, fmt.Errorf("transform id: %w", err)
 	}
@@ -153,11 +153,11 @@ func messageFromProto(m *translatev1.Message) (*model.Message, error) {
 	}
 
 	return &model.Message{
-		ID:          m.Id,
-		Message:     m.Message,
-		Description: m.Description,
-		Status:      model.MessageStatus(m.Status),
-		Positions:   m.Positions,
+		ID:          m.GetId(),
+		Message:     m.GetMessage(),
+		Description: m.GetDescription(),
+		Status:      model.MessageStatus(m.GetStatus()),
+		Positions:   m.GetPositions(),
 	}, nil
 }
 
@@ -194,14 +194,14 @@ func translationFromProto(t *translatev1.Translation) (*model.Translation, error
 
 	var (
 		err         error
-		translation = &model.Translation{Original: t.Original}
+		translation = &model.Translation{Original: t.GetOriginal()}
 	)
 
-	if translation.Language, err = languageFromProto(t.Language); err != nil {
+	if translation.Language, err = languageFromProto(t.GetLanguage()); err != nil {
 		return nil, fmt.Errorf("transform language tag: %w", err)
 	}
 
-	if translation.Messages, err = messagesFromProto(t.Messages); err != nil {
+	if translation.Messages, err = messagesFromProto(t.GetMessages()); err != nil {
 		return nil, fmt.Errorf("transform translation: %w", err)
 	}
 

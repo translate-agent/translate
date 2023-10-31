@@ -117,7 +117,7 @@ func Test_FromArb(t *testing.T) {
 					}
 				}
 			}`),
-			expectedErr: errors.New("'Description' expected type 'string', got unconvertible type 'map[string]interface {}'"),
+			expectedErr: errors.New("'description' expected type 'string', got unconvertible type 'map[string]interface {}', value: 'map[meaning:When you greet someone]'"), //nolint:lll
 		},
 		{
 			name: "With malformed locale",
@@ -233,9 +233,7 @@ func Test_ToArb(t *testing.T) {
 			t.Parallel()
 
 			actual, err := ToArb(tt.input)
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			assert.JSONEq(t, string(tt.expected), string(actual))
 		})

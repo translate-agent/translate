@@ -181,7 +181,7 @@ func Test_DeleteService(t *testing.T) {
 
 				// check if really is deleted
 				_, err = repository.LoadService(ctx, tt.serviceID)
-				assert.ErrorIs(t, err, repo.ErrNotFound)
+				require.ErrorIs(t, err, repo.ErrNotFound)
 			})
 		}
 	})

@@ -106,9 +106,7 @@ func TestToGo(t *testing.T) {
 			t.Parallel()
 
 			actual, err := ToGo(tt.input)
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			assert.JSONEq(t, string(tt.expected), string(actual))
 		})

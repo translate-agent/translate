@@ -704,10 +704,9 @@ msgstr "Au revoir!"
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			result, err := ToPot(tt.input)
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			assert.Equal(t, tt.expected, result)
 		})
@@ -1352,7 +1351,7 @@ when * {Il y a {$count} pommes \\.}
 
 			result, err := FromPot(tt.input, tt.expected.Original)
 			if tt.expectedErr != nil {
-				assert.Errorf(t, err, tt.expectedErr.Error())
+				require.Errorf(t, err, tt.expectedErr.Error())
 				return
 			}
 

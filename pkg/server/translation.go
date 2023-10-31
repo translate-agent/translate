@@ -27,11 +27,11 @@ func parseCreateTranslationRequestParams(req *translatev1.CreateTranslationReque
 		err error
 	)
 
-	if p.serviceID, err = uuidFromProto(req.ServiceId); err != nil {
+	if p.serviceID, err = uuidFromProto(req.GetServiceId()); err != nil {
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	if p.translation, err = translationFromProto(req.Translation); err != nil {
+	if p.translation, err = translationFromProto(req.GetTranslation()); err != nil {
 		return nil, fmt.Errorf("parse translation: %w", err)
 	}
 
@@ -173,11 +173,11 @@ func parseUpdateTranslationRequestParams(req *translatev1.UpdateTranslationReque
 		err    error
 	)
 
-	if params.serviceID, err = uuidFromProto(req.ServiceId); err != nil {
+	if params.serviceID, err = uuidFromProto(req.GetServiceId()); err != nil {
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	if params.translation, err = translationFromProto(req.Translation); err != nil {
+	if params.translation, err = translationFromProto(req.GetTranslation()); err != nil {
 		return nil, fmt.Errorf("parse translation: %w", err)
 	}
 
