@@ -39,7 +39,6 @@ linters:
    - nlreturn
    - nonamedreturns
    - nosnakecase
-   - predeclared
    - promlinter
    - reassign
    - revive
