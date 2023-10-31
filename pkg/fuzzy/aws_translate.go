@@ -106,7 +106,7 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 	targetLanguage language.Tag,
 ) (*model.Translation, error) {
 	if translation == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	if len(translation.Messages) == 0 {

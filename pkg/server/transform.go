@@ -103,7 +103,7 @@ func serviceToProto(s *model.Service) *translatev1.Service {
 // serviceFromProto converts translatev1.Service to model.Service.
 func serviceFromProto(s *translatev1.Service) (*model.Service, error) {
 	if s == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	var (
@@ -149,7 +149,7 @@ func messageToProto(m *model.Message) *translatev1.Message {
 // messageFromProto converts *translatev1.Message to *model.Message.
 func messageFromProto(m *translatev1.Message) (*model.Message, error) {
 	if m == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	return &model.Message{
@@ -189,7 +189,7 @@ func translationToProto(t *model.Translation) *translatev1.Translation {
 // translationFromProto converts *translatev1.Translation to *model.Translation.
 func translationFromProto(t *translatev1.Translation) (*model.Translation, error) {
 	if t == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	var (
