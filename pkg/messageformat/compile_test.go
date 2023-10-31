@@ -45,12 +45,12 @@ func Test_Compile(t *testing.T) {
 			expected: "{\\{\\}\\|\\!\\@\\#\\%\\*\\<\\>\\/\\?\\~\\\\}",
 		},
 		{
-			name:     "text contains with plus sign",
+			name:     "text contains plus sign",
 			input:    []interface{}{NodeText{Text: "+ vēl \\%s"}},
 			expected: "{+ vēl \\%s}",
 		},
 		{
-			name:     "text contains with minus sign",
+			name:     "text contains minus sign",
 			input:    []interface{}{NodeText{Text: "- vēl \\%s"}},
 			expected: "{- vēl \\%s}",
 		},

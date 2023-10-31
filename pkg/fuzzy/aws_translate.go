@@ -140,7 +140,7 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 				Text: ptr(text[i]),
 			})
 		if err != nil {
-			return nil, fmt.Errorf("AWS translate: translate texts #%d: %w", i, err)
+			return nil, fmt.Errorf("AWS translate: translate text #%d: %w", i, err)
 		}
 
 		translatedText = append(translatedText, *translateOutput.TranslatedText)

@@ -68,7 +68,7 @@ func (t *TextNodes) fromAST(ast AST) {
 	for i := range ast {
 		switch v := ast[i].(type) {
 		default:
-			// noop
+			continue
 		case NodeText:
 			*t = append(*t, TextNode{
 				NodeText: v,

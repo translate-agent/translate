@@ -142,7 +142,7 @@ func (g *GoogleTranslate) Translate(
 			Contents:           batches[i],
 		})
 		if err != nil {
-			return nil, fmt.Errorf("google translate client: translate texts from batch #%d: %w", i, err)
+			return nil, fmt.Errorf("google translate client: translate text #%d from batch: %w", i, err)
 		}
 
 		for i := range res.GetTranslations() {

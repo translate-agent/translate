@@ -41,6 +41,8 @@ func (m *message) writeExpr(n NodeExpr) error {
 	switch v := n.Value.(type) {
 	default:
 		return fmt.Errorf("unsupported node type '%T' for expression value", n.Value)
+	case nil:
+		break
 	case NodeVariable:
 		expr.WriteString("$" + v.Name)
 
