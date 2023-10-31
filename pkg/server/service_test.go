@@ -432,8 +432,8 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 
 	happyParams := randParams()
 
-	emptyIdParams := randParams()
-	emptyIdParams.id = uuid.Nil
+	emptyIDParams := randParams()
+	emptyIDParams.id = uuid.Nil
 
 	tests := []struct {
 		params      *deleteServiceParams
@@ -447,7 +447,7 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 		},
 		{
 			name:        "Empty ID",
-			params:      emptyIdParams,
+			params:      emptyIDParams,
 			expectedErr: errors.New("'id' is required"),
 		},
 	}
@@ -562,8 +562,8 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 	happyParams := randParams()
 
 	// when creating a service, the service.ID is optional and validation passes.
-	happyParamsEmptyServiceId := randParams()
-	happyParamsEmptyServiceId.service.ID = uuid.Nil
+	happyParamsEmptyServiceID := randParams()
+	happyParamsEmptyServiceID.service.ID = uuid.Nil
 
 	emptyServiceParams := randParams()
 	emptyServiceParams.service = nil
@@ -580,7 +580,7 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 		},
 		{
 			name:        "Happy Path Empty Service ID",
-			params:      happyParamsEmptyServiceId,
+			params:      happyParamsEmptyServiceID,
 			expectedErr: nil,
 		},
 		{
