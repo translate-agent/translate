@@ -192,6 +192,11 @@ func Lex(r io.Reader) ([]Token, error) {
 
 		line := scanner.Text()
 
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+
 		token, err := parseLine(line, &tokens)
 		if err != nil {
 			return nil, fmt.Errorf("parse line %d: %w", lineNumber, err)
@@ -210,11 +215,6 @@ func Lex(r io.Reader) ([]Token, error) {
 // parseLine function processes the line based on different prefixes
 // and returns a pointer to a Token object and an error.
 func parseLine(line string, tokens *[]Token) (*Token, error) {
-	line = strings.TrimSpace(line)
-	if len(line) == 0 {
-		return nil, nil
-	}
-
 	switch {
 	case strings.HasPrefix(line, "\"Language:"):
 		return parseToken(line, TokenTypeHeaderLanguage)
@@ -362,7 +362,7 @@ func parseMultilineToken(line string, tokens *[]Token) (*Token, error) {
 		(*tokens)[len(*tokens)-1] = lastToken
 	}
 
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }
 
 // parseMultilineString removes all double quote characters from the input line string and returns the modified string.
