@@ -10,6 +10,7 @@ import (
 	"cloud.google.com/go/translate/apiv3/translatepb"
 	"github.com/googleapis/gax-go/v2"
 	"github.com/spf13/viper"
+	mf "go.expect.digital/translate/pkg/messageformat"
 	"go.expect.digital/translate/pkg/model"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/text/language"
@@ -118,40 +119,21 @@ func (g *GoogleTranslate) Translate(
 		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
 	}
 
+	// Extract translatable text from translation.
+	asts, err := mf.ParseTranslation(translation)
+	if err != nil {
+		return nil, fmt.Errorf("google translate: parse translation messages: %w", err)
+	}
+
+	textNodes := mf.GetTextNodes(asts)
+	text := textNodes.GetText()
+
 	// Split text from translation into batches to avoid exceeding
 	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
-
-	var codePointsInBatch int
-
-	batch := make([]string, 0, googleTranslateRequestLimit)
-	batches := make([][]string, 0, 1)
-
-	for _, v := range translation.Messages {
-		codePointsInMsg := utf8.RuneCountInString(v.Message)
-
-		if len(batch) == googleTranslateRequestLimit || codePointsInBatch+codePointsInMsg > googleTranslateCodePointsLimit {
-			batches = append(batches, batch)
-			batch = make([]string, 0, googleTranslateRequestLimit)
-
-			codePointsInBatch = 0
-		}
-
-		batch = append(batch, v.Message)
-		codePointsInBatch += codePointsInMsg
-	}
-
-	batches = append(batches, batch)
+	batches := textToBatches(text, googleTranslateRequestLimit)
+	translatedText := make([]string, 0, len(text))
 
 	// Translate text batches using Google Translate client.
-
-	var msgIndex int
-
-	translated := model.Translation{
-		Language: targetLanguage,
-		Original: translation.Original,
-		Messages: make([]model.Message, 0, len(translation.Messages)),
-	}
-
 	for i := range batches {
 		res, err := g.client.TranslateText(ctx, &translatepb.TranslateTextRequest{
 			Parent:             parent(),
@@ -163,19 +145,40 @@ func (g *GoogleTranslate) Translate(
 			return nil, fmt.Errorf("google translate client: translate texts from batch #%d: %w", i, err)
 		}
 
-		for _, t := range res.Translations {
-			m := translation.Messages[msgIndex]
-			m.Message = t.TranslatedText
-			m.Status = model.MessageStatusFuzzy
-
-			translated.Messages = append(translated.Messages, m)
-
-			msgIndex++
+		for i := range res.Translations {
+			translatedText = append(translatedText, res.Translations[i].TranslatedText)
 		}
+	}
+
+	// Overwrite text nodes in ASTs to include newly translated text.
+	if err := textNodes.OverwriteText(translatedText); err != nil {
+		return nil, fmt.Errorf("google translate: overwrite text nodes in ASTs: %w", err)
+	}
+
+	// create translation with newly translated messages.
+	translated := model.Translation{
+		Language: targetLanguage,
+		Original: translation.Original,
+		Messages: make([]model.Message, len(translation.Messages)),
+	}
+
+	for i := range asts {
+		var err error
+
+		m := translation.Messages[i]
+
+		if m.Message, err = mf.Compile(asts[i]); err != nil {
+			return nil, fmt.Errorf("google translate: compile AST '#%d': %w", i, err)
+		}
+
+		m.Status = model.MessageStatusFuzzy
+		translated.Messages[i] = m
 	}
 
 	return &translated, nil
 }
+
+// helpers
 
 // parent returns path to Google project and location.
 func parent() string {
@@ -183,4 +186,30 @@ func parent() string {
 	location := viper.GetString("other.google.location")
 
 	return fmt.Sprintf("projects/%s/locations/%s", projectId, location)
+}
+
+// textToBatches splits text into batches with predefined maximum amount of elements.
+func textToBatches(text []string, batchLimit int) [][]string {
+	var codePointsInBatch int
+
+	batch := make([]string, 0, batchLimit)
+	batches := make([][]string, 0, 1)
+
+	for _, text := range text {
+		codePointsInMsg := utf8.RuneCountInString(text)
+
+		if len(batch) == googleTranslateRequestLimit || codePointsInBatch+codePointsInMsg > googleTranslateCodePointsLimit {
+			batches = append(batches, batch)
+			batch = make([]string, 0, googleTranslateRequestLimit)
+
+			codePointsInBatch = 0
+		}
+
+		batch = append(batch, text)
+		codePointsInBatch += codePointsInMsg
+	}
+
+	batches = append(batches, batch)
+
+	return batches
 }
