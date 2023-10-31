@@ -64,7 +64,7 @@ func gRPCUploadFileToRESTReq(
 
 	body, contentType := attachFile(req.GetData(), t)
 
-	r, err := http.NewRequestWithContext(ctx, "PUT", u.String(), body)
+	r, err := http.NewRequestWithContext(ctx, http.MethodPut, u.String(), body)
 	require.NoError(t, err, "create request")
 
 	r.Header.Add("Content-Type", contentType)
@@ -89,7 +89,7 @@ func gRPCDownloadFileToRESTReq(
 		RawQuery: query.Encode(),
 	}
 
-	r, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+	r, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	require.NoError(t, err, "create request")
 
 	return r
@@ -311,7 +311,7 @@ func Test_CreateService_REST(t *testing.T) {
 				Path:   "v1/services",
 			}
 
-			req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(body))
+			req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewBuffer(body))
 			require.NoError(t, err, "create request")
 
 			resp, err := otelhttp.DefaultClient.Do(req)
@@ -352,7 +352,7 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 		Path:   "v1/services/" + service.GetId(),
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(putBodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, u.String(), bytes.NewBuffer(putBodyBytes))
 	require.NoError(t, err, "create request")
 
 	resp, err := otelhttp.DefaultClient.Do(req)
@@ -387,7 +387,7 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 		Path:   "v1/services/" + service.GetId(),
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "PATCH", u.String(), bytes.NewReader(patchBodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, u.String(), bytes.NewReader(patchBodyBytes))
 	require.NoError(t, err, "create request")
 
 	resp, err := otelhttp.DefaultClient.Do(req)
@@ -437,7 +437,7 @@ func Test_GetService_REST(t *testing.T) {
 				Path:   "v1/services/" + tt.service.GetId(),
 			}
 
-			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 			require.NoError(t, err, "create request")
 
 			resp, err := otelhttp.DefaultClient.Do(req)
@@ -489,7 +489,7 @@ func Test_DeleteService_REST(t *testing.T) {
 				Path:   "v1/services/" + tt.service.GetId(),
 			}
 
-			req, err := http.NewRequestWithContext(ctx, "DELETE", u.String(), nil)
+			req, err := http.NewRequestWithContext(ctx, http.MethodDelete, u.String(), nil)
 			require.NoError(t, err, "create request")
 
 			resp, err := otelhttp.DefaultClient.Do(req)
@@ -514,7 +514,7 @@ func Test_ListServices_REST(t *testing.T) {
 		Path:   "v1/services",
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	require.NoError(t, err, "create request")
 
 	resp, err := otelhttp.DefaultClient.Do(req)
@@ -604,7 +604,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 				Path:   "v1/services/" + tt.serviceID + "/translations",
 			}
 
-			req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewBuffer(body))
+			req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewBuffer(body))
 			require.NoError(t, err, "create request")
 
 			resp, err := otelhttp.DefaultClient.Do(req)
@@ -707,7 +707,7 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 				Path:   "v1/services/" + tt.request.GetServiceId() + "/translations/" + language,
 			}
 
-			req, err := http.NewRequestWithContext(ctx, "PUT", u.String(), bytes.NewBuffer(body))
+			req, err := http.NewRequestWithContext(ctx, http.MethodPut, u.String(), bytes.NewBuffer(body))
 			require.NoError(t, err, "create request")
 
 			resp, err := otelhttp.DefaultClient.Do(req)
@@ -765,7 +765,7 @@ func Test_GetTranslations_REST(t *testing.T) {
 				Path:   "v1/services/" + tt.serviceID + "/translations",
 			}
 
-			req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 			require.NoError(t, err, "create request")
 
 			resp, err := otelhttp.DefaultClient.Do(req)
