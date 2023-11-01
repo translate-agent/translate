@@ -23,7 +23,7 @@ type message struct {
 
 /*
 Compile builds 'Message Format v2' message by traversing provided slice of nodes
-in abstract syntax tree (AST), returns message string and error.
+in abstract syntax tree (AST), returns MF2 string value of message and error.
 
 Example:
 
@@ -64,7 +64,7 @@ func Compile(ast AST) (string, error) {
 	return m.String(), nil
 }
 
-// writeExpr writes MF2 expression to the message.
+// writeExpr writes expression from NodeExpr to the receiving message.
 func (m *message) writeExpr(n NodeExpr) error {
 	if reflect.DeepEqual(n, NodeExpr{}) {
 		return errors.New("expression node must not be empty")
@@ -98,7 +98,7 @@ func (m *message) writeExpr(n NodeExpr) error {
 	return nil
 }
 
-// writeMatch writes MF2 matcher body to the message.
+// writeMatch writes matcher from NodeMatch to the receiving message.
 func (m *message) writeMatch(n NodeMatch) error {
 	if len(n.Selectors) == 0 {
 		return errors.New("there must be at least one selector")
@@ -132,7 +132,7 @@ func (m *message) writeMatch(n NodeMatch) error {
 	return nil
 }
 
-// writeVariant writes MF2 matcher variant to the message.
+// writeVariant writes match variant from NodeVariant to the receiving message.
 func (m *message) writeVariant(n NodeVariant) error {
 	for i, v := range n.Keys {
 		if i == 0 {
@@ -149,7 +149,7 @@ func (m *message) writeVariant(n NodeVariant) error {
 	return nil
 }
 
-// writeFunc writes MF2 expression function to the message.
+// writeFunc writes function from NodeFunc to the receiving message.
 // TODO: add ability to process markup-like functions e.g.
 // {+button}Submit{-button} or {+link}cancel{-link}.
 func (m *message) writeFunc(n NodeFunction) error {
@@ -183,8 +183,8 @@ func (m *message) writeFunc(n NodeFunction) error {
 	return nil
 }
 
-// writeText writes MF2 text to the message.
-func (m *message) writeText(n NodeText, pos int, ast []interface{}) {
+// writeText writes text from NodeText to the receiving message.
+func (m *message) writeText(n NodeText, pos int, ast AST) {
 	switch {
 	default: // nodeText set in middle
 		m.WriteString(n.Text)
@@ -197,8 +197,8 @@ func (m *message) writeText(n NodeText, pos int, ast []interface{}) {
 	}
 }
 
-// writeVar writes MF2 variable to the message.
-func (m *message) writeVar(n NodeVariable, ast []interface{}) {
+// writeVar writes variable from NodeVariable to the receiving message.
+func (m *message) writeVar(n NodeVariable, ast AST) {
 	switch len(ast) {
 	default:
 		m.WriteString("{$" + n.Name + "}")
@@ -207,8 +207,9 @@ func (m *message) writeVar(n NodeVariable, ast []interface{}) {
 	}
 }
 
-// fromAST constructs message from nodes in abstract syntax tree.
-func (m *message) fromAST(ast []interface{}) error {
+// fromAST traverses MF2 nodes in the abstract syntax tree (AST)
+// writes constructed message parts to the receiving message.
+func (m *message) fromAST(ast AST) error {
 	for i := range ast {
 		switch v := ast[i].(type) {
 		default:

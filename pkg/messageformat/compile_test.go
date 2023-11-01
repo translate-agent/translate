@@ -87,6 +87,25 @@ func Test_Compile(t *testing.T) {
 			expected: "{- vēl \\%s}",
 		},
 		{
+			name: "message with placeholder",
+			input: AST{
+				NodeText{Text: "Hello "},
+				NodeExpr{Value: NodeVariable{Name: "name"}},
+				NodeText{Text: ", your card expires on "},
+				NodeExpr{
+					Value: NodeVariable{Name: "exp"},
+					Function: NodeFunction{
+						Name: "datetime",
+						Options: []NodeOption{
+							{Name: "skeleton", Value: "yMMMdE"},
+						},
+					},
+				},
+				NodeText{Text: "!"},
+			},
+			expected: "{Hello {$name}, your card expires on {$exp :datetime skeleton=yMMMdE}!}",
+		},
+		{
 			name: "match, single variant",
 			input: AST{
 				NodeMatch{
