@@ -54,7 +54,7 @@ func Test_Compile(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: errors.New("number of keys 2 for variant #0 don't match number of match selectors 1"),
+			expectedErr: errors.New("number of keys '2' for variant #0 don't match number of match selectors '1'"),
 		},
 		{
 			name:     "single text node",

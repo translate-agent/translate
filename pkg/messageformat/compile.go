@@ -51,6 +51,10 @@ func (m *message) writeExpr(n NodeExpr) error {
 	case nil:
 		break
 	case NodeVariable:
+		if strings.HasPrefix(v.Name, ":") {
+			return fmt.Errorf("invalid prefix ':' for variable name '%s'", v.Name)
+		}
+
 		expr.WriteString("$" + v.Name)
 
 		if n.Function.Name != "" {
@@ -89,7 +93,7 @@ func (m *message) writeMatch(n NodeMatch) error {
 
 	for i := range n.Variants {
 		if len(n.Variants[i].Keys) != numberOfSelectors {
-			return fmt.Errorf("number of keys %d for variant #%d don't match number of match selectors %d",
+			return fmt.Errorf("number of keys '%d' for variant #%d don't match number of match selectors '%d'",
 				len(n.Variants[i].Keys), i, numberOfSelectors)
 		}
 
@@ -119,7 +123,13 @@ func (m *message) writeVariant(n NodeVariant) error {
 }
 
 // writeFunc writes MF2 expression function to the message.
+// TODO: add ability to process markup-like functions e.g.
+// {+button}Submit{-button} or {+link}cancel{-link}.
 func (m *message) writeFunc(n NodeFunction) error {
+	if strings.HasPrefix(n.Name, ":") {
+		return fmt.Errorf("invalid prefix ':' for function name '%s'", n.Name)
+	}
+
 	if n.Name == "" {
 		return nil
 	}
@@ -127,6 +137,10 @@ func (m *message) writeFunc(n NodeFunction) error {
 	m.WriteString(":" + n.Name)
 
 	for i := range n.Options {
+		if strings.HasPrefix(n.Options[i].Name, ":") {
+			return fmt.Errorf("invalid prefix ':' for option name '%s'", n.Options[i].Name)
+		}
+
 		m.WriteString(" " + n.Options[i].Name + "=")
 
 		switch v := n.Options[i].Value.(type) {
