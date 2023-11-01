@@ -1,4 +1,3 @@
-// tests
 package messageformat
 
 import (
