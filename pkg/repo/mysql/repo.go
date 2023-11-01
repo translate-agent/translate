@@ -21,26 +21,20 @@ func (r *Repo) Close() error {
 	return nil
 }
 
-// Option interface used for setting optional Repo properties.
-type Option interface {
-	apply(*Repo) error
-}
-
-type optionFunc func(*Repo) error
-
-func (o optionFunc) apply(c *Repo) error { return o(c) }
+// Option function used for setting optional Repo properties.
+type Option func(*Repo) error
 
 func WithDB(db *sql.DB) Option {
-	return optionFunc(func(r *Repo) error {
+	return func(r *Repo) error {
 		r.db = db
 
 		return nil
-	})
+	}
 }
 
 // WithDefaultDB reads configuration data from Viper and uses it to create a new DB.
 func WithDefaultDB(ctx context.Context) Option {
-	return optionFunc(func(r *Repo) (err error) {
+	return func(r *Repo) (err error) {
 		conf := DefaultConf()
 
 		r.db, err = NewDB(ctx, conf)
@@ -49,23 +43,24 @@ func WithDefaultDB(ctx context.Context) Option {
 		}
 
 		return nil
-	})
+	}
 }
 
 func WithConf(ctx context.Context, conf *Conf) Option {
-	return optionFunc(func(r *Repo) (err error) {
+	return func(r *Repo) (err error) {
 		if r.db, err = NewDB(ctx, conf); err != nil {
 			return fmt.Errorf("apply db conf to repo")
 		}
+
 		return nil
-	})
+	}
 }
 
 func NewRepo(opts ...Option) (*Repo, error) {
 	r := new(Repo)
 
 	for _, opt := range opts {
-		if err := opt.apply(r); err != nil {
+		if err := opt(r); err != nil {
 			return nil, fmt.Errorf("apply option to repo: :%w", err)
 		}
 	}

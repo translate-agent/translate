@@ -32,7 +32,6 @@ linters:
    - ifshort
    - inamedparam
    - interfacer
-   - ireturn
    - loggercheck
    - maintidx
    - maligned
