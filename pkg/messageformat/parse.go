@@ -3,6 +3,7 @@ package messageformat
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type parser struct {
@@ -30,7 +31,10 @@ func (p *parser) collect() {
 	}
 }
 
-func Parse(text string) ([]interface{}, error) {
+// Parse parses a MessageFormat string and returns Abstract Syntax Tree.
+//
+//	ast, err := Parse({"Hello World"}) // AST{NodeText{Text: "Hello World"}}
+func Parse(text string) (AST, error) {
 	var p parser
 	p.text = text
 	p.lex = lex(text)
@@ -44,8 +48,8 @@ func Parse(text string) ([]interface{}, error) {
 	return tree, nil
 }
 
-func (p *parser) parse() ([]interface{}, error) {
-	var tree []interface{}
+func (p *parser) parse() (AST, error) {
+	var tree AST
 
 	for p.pos < len(p.tokens) {
 		token := p.currentToken()
@@ -61,12 +65,12 @@ func (p *parser) parse() ([]interface{}, error) {
 
 			tree = append(tree, match)
 		case token.typ == tokenTypeSeparatorOpen:
-			text, err := p.parseText()
+			nodes, err := p.parseInsideCurly()
 			if err != nil {
 				return nil, fmt.Errorf("parse text: %w", err)
 			}
 
-			tree = append(tree, text...)
+			tree = append(tree, nodes...)
 		case token.typ == tokenTypeEOF:
 			return tree, nil
 		}
@@ -77,35 +81,33 @@ func (p *parser) parse() ([]interface{}, error) {
 	return tree, nil
 }
 
-func (p *parser) parseText() ([]interface{}, error) {
+// parseInsideCurly parses texts and expressions inside curly braces.
+func (p *parser) parseInsideCurly() ([]interface{}, error) {
 	if p.currentToken().typ != tokenTypeSeparatorOpen {
-		return nil, errors.New(`text does not start with "{"`)
+		return nil, errors.New("exp does not start with \"{\"")
 	}
 
-	var text []interface{}
+	var nodes []interface{}
 
 	for !p.isEOF() {
 		token := p.nextToken()
 
 		switch token.typ {
 		case tokenTypeText:
-			text = append(text, NodeText{Text: token.val})
+			nodes = append(nodes, NodeText{Text: token.val})
 		case tokenTypeSeparatorOpen:
-			variable, err := p.parseVariable()
+			expr, err := p.parseExpr()
 			if err != nil {
 				return nil, fmt.Errorf("parse variable: %w", err)
 			}
 
-			text = append(text, variable)
-			p.pos++
+			nodes = append(nodes, expr)
 		case tokenTypeSeparatorClose:
-			p.pos++
-
-			return text, nil
+			return nodes, nil
 		case tokenTypeKeyword, tokenTypeLiteral,
 			tokenTypeFunction, tokenTypeVariable,
 			tokenTypeEOF, tokenTypeError,
-			tokenTypeOpeningFunction, tokenTypeClosingFunction:
+			tokenTypeOpeningFunction, tokenTypeClosingFunction, tokenTypeOption:
 		}
 	}
 
@@ -128,9 +130,10 @@ func (p *parser) parseMatch() (NodeMatch, error) {
 
 		switch token.val {
 		case KeywordMatch:
-			p.pos++
+			p.pos++ // skip "match" token
 
 			expr, err := p.parseExpr()
+			p.pos++ // skip "}" token
 			if err != nil {
 				return NodeMatch{}, fmt.Errorf("parse expr: %w", err)
 			}
@@ -141,6 +144,7 @@ func (p *parser) parseMatch() (NodeMatch, error) {
 			if err != nil {
 				return NodeMatch{}, fmt.Errorf("parse variant: %w", err)
 			}
+			p.pos++ // skip "}" token
 
 			match.Variants = append(match.Variants, variant)
 		}
@@ -163,15 +167,10 @@ func (p *parser) parseExpr() (NodeExpr, error) {
 		case tokenTypeVariable:
 			expr.Value = NodeVariable{Name: token.val}
 		case tokenTypeFunction:
-			function, err := p.parseFunction()
-			if err != nil {
-				return NodeExpr{}, fmt.Errorf("parse function: %w", err)
-			}
-
-			expr.Function = function
+			expr.Function.Name = token.val
+		case tokenTypeOption:
+			expr.Function.Options = append(expr.Function.Options, p.parseOption())
 		case tokenTypeSeparatorClose:
-			p.pos++
-
 			return expr, nil
 		case tokenTypeKeyword, tokenTypeSeparatorOpen,
 			tokenTypeLiteral, tokenTypeText,
@@ -196,40 +195,20 @@ func (p *parser) parseVariant() (NodeVariant, error) {
 
 	p.pos++
 
-	text, err := p.parseText()
+	nodes, err := p.parseInsideCurly()
 	if err != nil {
 		return NodeVariant{}, fmt.Errorf("parse text: %w", err)
 	}
 
-	variant.Message = append(variant.Message, text...)
+	variant.Message = append(variant.Message, nodes...)
 
 	return variant, nil
 }
 
-func (p *parser) parseFunction() (NodeFunction, error) {
-	var function NodeFunction
+func (p *parser) parseOption() NodeOption {
+	split := strings.Split(p.currentToken().val, "=")
 
-	if p.tokens[p.pos-1].typ != tokenTypeVariable {
-		return function, errors.New(`function does not follow variable`)
-	}
-
-	function.Name = p.currentToken().val
-
-	return function, nil
-}
-
-func (p *parser) parseVariable() (NodeVariable, error) {
-	p.pos++
-
-	var variable NodeVariable
-
-	if p.tokens[p.pos-1].typ != tokenTypeSeparatorOpen {
-		return variable, errors.New(`function does not follow placeholder open`)
-	}
-
-	variable.Name = p.currentToken().val
-
-	return variable, nil
+	return NodeOption{Name: split[0], Value: split[1]}
 }
 
 func (p *parser) currentToken() Token {

@@ -38,14 +38,22 @@ func Test_Parse(t *testing.T) {
 			expected: AST{NodeText{Text: "Hello, \\{World\\}"}},
 		},
 		{
-			name:     "text with variable",
-			input:    "{Hello {$var} World}",
-			expected: AST{NodeText{Text: "Hello "}, NodeVariable{Name: "var"}, NodeText{Text: " World"}},
+			name:  "text with variable",
+			input: "{Hello {$var} World}",
+			expected: AST{
+				NodeText{Text: "Hello "},
+				NodeExpr{Value: NodeVariable{Name: "var"}},
+				NodeText{Text: " World"},
+			},
 		},
 		{
-			name:     "text with function",
-			input:    "{Hello {:func} World}",
-			expected: AST{NodeText{Text: "Hello "}, NodeFunction{Name: "func"}, NodeText{Text: " World"}},
+			name:  "text with function",
+			input: "{Hello {:func} World}",
+			expected: AST{
+				NodeText{Text: "Hello "},
+				NodeExpr{Function: NodeFunction{Name: "func"}},
+				NodeText{Text: " World"},
+			},
 		},
 		{
 			name:  "extracted placeholder pythonVar",
@@ -141,7 +149,7 @@ func Test_Parse(t *testing.T) {
 						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Buy one \\\\ apple\\!"}}},
 						{Keys: []string{"*"}, Message: []interface{}{
 							NodeText{Text: "Buy "},
-							NodeVariable{Name: "count"},
+							NodeExpr{Value: NodeVariable{Name: "count"}},
 							NodeText{Text: " apples\\!"},
 						}},
 					},
@@ -161,13 +169,13 @@ func Test_Parse(t *testing.T) {
 						{Keys: []string{"0"}, Message: []interface{}{NodeText{Text: "No apples\\!"}}},
 						{Keys: []string{"1"}, Message: []interface{}{
 							NodeText{Text: "Buy "},
-							NodeVariable{Name: "count"},
-							NodeVariable{Name: "counts"},
+							NodeExpr{Value: NodeVariable{Name: "count"}},
+							NodeExpr{Value: NodeVariable{Name: "counts"}},
 							NodeText{Text: " apple\\!"},
 						}},
 						{Keys: []string{"*"}, Message: []interface{}{
 							NodeText{Text: "Buy "},
-							NodeVariable{Name: "count"},
+							NodeExpr{Value: NodeVariable{Name: "count"}},
 							NodeText{Text: " apples 2\\!"},
 						}},
 					},
