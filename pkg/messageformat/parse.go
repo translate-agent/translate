@@ -134,6 +134,7 @@ func (p *parser) parseMatch() (NodeMatch, error) {
 
 			expr, err := p.parseExpr()
 			p.pos++ // skip "}" token
+
 			if err != nil {
 				return NodeMatch{}, fmt.Errorf("parse expr: %w", err)
 			}
