@@ -12,17 +12,49 @@ func Test_Compile(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range []struct {
-		err error
+		expectedErr error
 
 		name     string
 		expected string
 		input    AST
 	}{
 		{
-			name:     "no nodes",
-			input:    []interface{}{},
-			expected: "",
-			err:      errors.New("AST must contain at least one node"),
+			name:        "error, no nodes",
+			input:       []interface{}{},
+			expected:    "",
+			expectedErr: errors.New("AST must contain at least one node"),
+		},
+		{
+			name:        "error, empty node expression",
+			input:       []interface{}{NodeExpr{}},
+			expectedErr: errors.New("expression node must not be empty"),
+		},
+		{
+			name: "error, no selectors",
+			input: []interface{}{
+				NodeMatch{
+					Variants: []NodeVariant{
+						{
+							Keys: []string{"1"},
+						},
+					},
+				},
+			},
+			expectedErr: errors.New("there must be at least one selector"),
+		},
+		{
+			name: "error, mismatching number of keys and selectors",
+			input: []interface{}{
+				NodeMatch{
+					Selectors: []NodeExpr{{Value: NodeVariable{Name: "one"}, Function: NodeFunction{Name: "func"}}},
+					Variants: []NodeVariant{
+						{
+							Keys: []string{"1", "2"},
+						},
+					},
+				},
+			},
+			expectedErr: errors.New("number of keys 2 for variant #0 don't match number of match selectors 1"),
 		},
 		{
 			name:     "single text node",
@@ -135,10 +167,13 @@ func Test_Compile(t *testing.T) {
 				"when * {Buy {$count} apples 2\\!}",
 		},
 		{
-			name: "match, three variants",
+			name: "match, three variants, two selectors",
 			input: []interface{}{
 				NodeMatch{
-					Selectors: []NodeExpr{{Value: NodeVariable{Name: "userName"}, Function: NodeFunction{Name: "hasCase"}}},
+					Selectors: []NodeExpr{
+						{Value: NodeVariable{Name: "userName"}, Function: NodeFunction{Name: "hasCase"}},
+						{Value: NodeVariable{Name: "userLastName"}, Function: NodeFunction{Name: "hasCase"}},
+					},
 					Variants: []NodeVariant{
 						{
 							Keys: []string{"0", "vocative"},
@@ -180,17 +215,31 @@ func Test_Compile(t *testing.T) {
 							Keys: []string{"*", "neutral"},
 							Message: []interface{}{
 								NodeText{
-									Text: "Hello\\!",
+									Text: "Hello ",
+								},
+								NodeExpr{
+									NodeVariable{Name: "userLastName"},
+									NodeFunction{
+										Name: "person",
+										Options: []NodeOption{
+											{Name: "case", Value: "neutral"},
+											{Name: "format", Value: "printf"},
+											{Name: "type", Value: "string"},
+										},
+									},
+								},
+								NodeText{
+									Text: "\\.",
 								},
 							},
 						},
 					},
 				},
 			},
-			expected: "match {$userName :hasCase} " +
+			expected: "match {$userName :hasCase} {$userLastName :hasCase} " +
 				"when 0 vocative {Hello, {$userName :person case=vocative format=printf type=string}\\!} " +
 				"when 1 accusative {Please welcome {$userName :person case=accusative format=printf type=string}\\!} " +
-				"when * neutral {Hello\\!}",
+				"when * neutral {Hello {$userLastName :person case=neutral format=printf type=string}\\.}",
 		},
 		{
 			name: "match, variants with no variables",
@@ -250,7 +299,11 @@ func Test_Compile(t *testing.T) {
 
 			l, err := Compile(test.input)
 
-			require.Equal(t, test.err, err)
+			if test.expectedErr != nil {
+				require.ErrorContains(t, err, test.expectedErr.Error())
+				return
+			}
+
 			assert.Equal(t, test.expected, l)
 		})
 	}

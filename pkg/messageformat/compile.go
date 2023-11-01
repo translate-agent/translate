@@ -3,6 +3,7 @@ package messageformat
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -14,6 +15,8 @@ const (
 )
 
 // message stores MF2 message.
+// Specification draft for MF2 syntax:
+// https://github.com/unicode-org/message-format-wg/blob/main/spec/syntax.md
 type message struct {
 	strings.Builder
 }
@@ -36,6 +39,10 @@ func Compile(ast AST) (string, error) {
 
 // writeExpr writes MF2 expression to the message.
 func (m *message) writeExpr(n NodeExpr) error {
+	if reflect.DeepEqual(n, NodeExpr{}) {
+		return errors.New("expression node must not be empty")
+	}
+
 	var expr message
 
 	switch v := n.Value.(type) {
@@ -62,15 +69,30 @@ func (m *message) writeExpr(n NodeExpr) error {
 
 // writeMatch writes MF2 matcher body to the message.
 func (m *message) writeMatch(n NodeMatch) error {
+	if len(n.Selectors) == 0 {
+		return errors.New("there must be at least one selector")
+	}
+
 	m.WriteString(match + " ")
 
 	for i := range n.Selectors {
+		if i > 0 {
+			m.WriteByte(' ')
+		}
+
 		if err := m.writeExpr(n.Selectors[i]); err != nil {
 			return fmt.Errorf("write expression: %w", err)
 		}
 	}
 
+	numberOfSelectors := len(n.Selectors)
+
 	for i := range n.Variants {
+		if len(n.Variants[i].Keys) != numberOfSelectors {
+			return fmt.Errorf("number of keys %d for variant #%d don't match number of match selectors %d",
+				len(n.Variants[i].Keys), i, numberOfSelectors)
+		}
+
 		if err := m.writeVariant(n.Variants[i]); err != nil {
 			return fmt.Errorf("write variant: %w", err)
 		}
