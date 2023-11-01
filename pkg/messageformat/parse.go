@@ -31,9 +31,22 @@ func (p *parser) collect() {
 	}
 }
 
-// Parse parses a MessageFormat string and returns Abstract Syntax Tree.
+// Parse parses a MessageFormat2 string and returns Abstract Syntax Tree for it.
 //
-//	ast, err := Parse({"Hello World"}) // AST{NodeText{Text: "Hello World"}}
+// Examples:
+//
+// Simple cases:
+//
+//	{"Hello World"} -> AST{NodeText{Text: "Hello World"}}
+//	{"Hello {$user}"} -> AST{NodeText{Text: "Hello "}, NodeExpr{Value: NodeVariable{Name: "user"}}}
+//
+// Complex cases:
+//
+//	{"Hello {:Placeholder format=printf type=string}"} -> AST{NodeText{Text: "Hello "}, NodeExpr{Function: NodeFunction{Name: "Placeholder", Options: []NodeOption{{Name: "format", Value: "printf"}, {Name: "type", Value: "string"}}}}}
+//
+//	"match {$count} when 1 {One egg} when * {Multiple eggs}" -> AST{NodeMatch{Selectors: []NodeExpr{NodeExpr{Value: NodeVariable{Name: "count"}}}, Variants: []NodeVariant{NodeVariant{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "One egg"}}}, NodeVariant{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Multiple eggs"}}}}}}
+//
+//nolint:lll
 func Parse(text string) (AST, error) {
 	var p parser
 	p.text = text
