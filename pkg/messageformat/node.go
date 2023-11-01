@@ -2,8 +2,8 @@ package messageformat
 
 type AST []interface{}
 
-func (n *AST) Append(node ...interface{}) {
-	*n = append(*n, node...)
+func (a *AST) Append(node ...interface{}) {
+	*a = append(*a, node...)
 }
 
 type NodeMatch struct {
