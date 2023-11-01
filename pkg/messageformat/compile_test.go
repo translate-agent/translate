@@ -19,12 +19,6 @@ func Test_Compile(t *testing.T) {
 		input    AST
 	}{
 		{
-			name:        "error, no nodes",
-			input:       AST{},
-			expected:    "",
-			expectedErr: errors.New("AST must contain at least one node"),
-		},
-		{
 			name:        "error, empty node expression",
 			input:       AST{NodeExpr{}},
 			expectedErr: errors.New("expression node must not be empty"),
@@ -55,6 +49,12 @@ func Test_Compile(t *testing.T) {
 				},
 			},
 			expectedErr: errors.New("number of keys '2' for variant #0 don't match number of match selectors '1'"),
+		},
+		{
+			name:        "no nodes",
+			input:       AST{},
+			expected:    "",
+			expectedErr: nil,
 		},
 		{
 			name:     "single text node",

@@ -51,10 +51,6 @@ Output:
 	"match {$count :number} when * {Hello, world\\!}", nil
 */
 func Compile(ast AST) (string, error) {
-	if len(ast) == 0 {
-		return "", errors.New("AST must contain at least one node")
-	}
-
 	var m message
 
 	if err := m.fromAST(ast); err != nil {
