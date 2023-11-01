@@ -1,8 +1,8 @@
 package messageformat
 
 import (
+	"errors"
 	"fmt"
-	"strings"
 )
 
 type parser struct {
@@ -12,56 +12,224 @@ type parser struct {
 	pos    int
 }
 
-// collect collects all tokens from the lexer and stores them in the parser.
-func (p *parser) collect() error {
-	for v := p.lex.nextToken(); ; v = p.lex.nextToken() {
-		if v.typ == tokenTypeError {
-			return fmt.Errorf("lex: %s", v.val)
-		}
+func (p *parser) collect() {
+	for {
+		v := p.lex.nextToken()
 
-		p.tokens = append(p.tokens, v)
-
-		if v.typ == tokenTypeEOF {
-			return nil
+		switch v.typ {
+		case tokenTypeVariable, tokenTypeFunction, tokenTypeSeparatorOpen,
+			tokenTypeSeparatorClose, tokenTypeText, tokenTypeOpeningFunction,
+			tokenTypeClosingFunction, tokenTypeKeyword, tokenTypeLiteral, tokenTypeOption:
+			p.tokens = append(p.tokens, v)
+		case tokenTypeEOF:
+			p.tokens = append(p.tokens, v)
+			return
+		case tokenTypeError:
+			return
 		}
 	}
 }
 
-// Parse parses the given text into an MessageFormat2 AST (abstract syntax tree).
-func Parse(input string) (AST, error) {
-	p := parser{lex: lex(input), text: input}
+func Parse(text string) ([]interface{}, error) {
+	var p parser
+	p.text = text
+	p.lex = lex(text)
+	p.collect()
 
-	if err := p.collect(); err != nil {
-		return nil, fmt.Errorf("collect tokens: %w", err)
+	tree, err := p.parse()
+	if err != nil {
+		return nil, fmt.Errorf("parse MessageFormat: %w", err)
 	}
 
-	return p.parse(), nil
+	return tree, nil
 }
 
-// parse parses the tokens collected by the lexer.
-func (p *parser) parse() AST {
-	var tree AST
+func (p *parser) parse() ([]interface{}, error) {
+	var tree []interface{}
 
-	for token := p.currentToken(); !p.isEOF(); token = p.nextToken() {
-		parseNode := func() interface{} { return nil }
+	for p.pos < len(p.tokens) {
+		token := p.currentToken()
+
+		switch {
+		default:
+			return nil, fmt.Errorf("unknown token: %+v", token)
+		case token.typ == tokenTypeKeyword && token.val == KeywordMatch:
+			match, err := p.parseMatch()
+			if err != nil {
+				return nil, fmt.Errorf("parse match: %w", err)
+			}
+
+			tree = append(tree, match)
+		case token.typ == tokenTypeSeparatorOpen:
+			text, err := p.parseText()
+			if err != nil {
+				return nil, fmt.Errorf("parse text: %w", err)
+			}
+
+			tree = append(tree, text...)
+		case token.typ == tokenTypeEOF:
+			return tree, nil
+		}
+
+		p.pos++
+	}
+
+	return tree, nil
+}
+
+func (p *parser) parseText() ([]interface{}, error) {
+	if p.currentToken().typ != tokenTypeSeparatorOpen {
+		return nil, errors.New(`text does not start with "{"`)
+	}
+
+	var text []interface{}
+
+	for !p.isEOF() {
+		token := p.nextToken()
 
 		switch token.typ {
 		case tokenTypeText:
-			parseNode = func() interface{} { return p.parseText2() }
-		case tokenTypeKeyword:
-			parseNode = func() interface{} { return p.parseMatch2() }
-		case tokenTypeFunction:
-			parseNode = func() interface{} { return p.parseExpression2() }
-		case tokenTypeVariable:
-			parseNode = func() interface{} { return p.parseVariable2() }
-		}
+			text = append(text, NodeText{Text: token.val})
+		case tokenTypeSeparatorOpen:
+			variable, err := p.parseVariable()
+			if err != nil {
+				return nil, fmt.Errorf("parse variable: %w", err)
+			}
 
-		if node := parseNode(); node != nil {
-			tree.Append(node)
+			text = append(text, variable)
+			p.pos++
+		case tokenTypeSeparatorClose:
+			p.pos++
+
+			return text, nil
+		case tokenTypeKeyword, tokenTypeLiteral,
+			tokenTypeFunction, tokenTypeVariable,
+			tokenTypeEOF, tokenTypeError,
+			tokenTypeOpeningFunction, tokenTypeClosingFunction:
 		}
 	}
 
-	return tree
+	return nil, fmt.Errorf("invalid text node")
+}
+
+func (p *parser) parseMatch() (NodeMatch, error) {
+	var match NodeMatch
+
+	if v := p.currentToken(); v.typ != tokenTypeKeyword || v.val != KeywordMatch {
+		return match, errors.New(`match node does not start with "match"`)
+	}
+
+	for !p.isEOF() {
+		token := p.currentToken()
+
+		if token.typ != tokenTypeKeyword {
+			return NodeMatch{}, fmt.Errorf("invalid match")
+		}
+
+		switch token.val {
+		case KeywordMatch:
+			p.pos++
+
+			expr, err := p.parseExpr()
+			if err != nil {
+				return NodeMatch{}, fmt.Errorf("parse expr: %w", err)
+			}
+
+			match.Selectors = append(match.Selectors, expr)
+		case KeywordWhen:
+			variant, err := p.parseVariant()
+			if err != nil {
+				return NodeMatch{}, fmt.Errorf("parse variant: %w", err)
+			}
+
+			match.Variants = append(match.Variants, variant)
+		}
+	}
+
+	return match, nil
+}
+
+func (p *parser) parseExpr() (NodeExpr, error) {
+	if p.currentToken().typ != tokenTypeSeparatorOpen {
+		return NodeExpr{}, errors.New(`expression does not start with "{"`)
+	}
+
+	var expr NodeExpr
+
+	for !p.isEOF() {
+		token := p.nextToken()
+
+		switch token.typ {
+		case tokenTypeVariable:
+			expr.Value = NodeVariable{Name: token.val}
+		case tokenTypeFunction:
+			function, err := p.parseFunction()
+			if err != nil {
+				return NodeExpr{}, fmt.Errorf("parse function: %w", err)
+			}
+
+			expr.Function = function
+		case tokenTypeSeparatorClose:
+			p.pos++
+
+			return expr, nil
+		case tokenTypeKeyword, tokenTypeSeparatorOpen,
+			tokenTypeLiteral, tokenTypeText,
+			tokenTypeEOF, tokenTypeError,
+			tokenTypeOpeningFunction, tokenTypeClosingFunction:
+		}
+	}
+
+	return NodeExpr{}, fmt.Errorf("invalid expression node")
+}
+
+func (p *parser) parseVariant() (NodeVariant, error) {
+	var variant NodeVariant
+
+	literal := p.nextToken()
+
+	if literal.typ != tokenTypeLiteral {
+		return NodeVariant{}, fmt.Errorf(`literal does not follow keyword "when"`)
+	}
+
+	variant.Keys = append(variant.Keys, literal.val)
+
+	p.pos++
+
+	text, err := p.parseText()
+	if err != nil {
+		return NodeVariant{}, fmt.Errorf("parse text: %w", err)
+	}
+
+	variant.Message = append(variant.Message, text...)
+
+	return variant, nil
+}
+
+func (p *parser) parseFunction() (NodeFunction, error) {
+	var function NodeFunction
+
+	if p.tokens[p.pos-1].typ != tokenTypeVariable {
+		return function, errors.New(`function does not follow variable`)
+	}
+
+	function.Name = p.currentToken().val
+
+	return function, nil
+}
+
+func (p *parser) parseVariable() (NodeVariable, error) {
+	p.pos++
+
+	var variable NodeVariable
+
+	if p.tokens[p.pos-1].typ != tokenTypeSeparatorOpen {
+		return variable, errors.New(`function does not follow placeholder open`)
+	}
+
+	variable.Name = p.currentToken().val
+
+	return variable, nil
 }
 
 func (p *parser) currentToken() Token {
@@ -74,119 +242,4 @@ func (p *parser) nextToken() Token {
 	return p.tokens[p.pos]
 }
 
-func (p *parser) peek() Token {
-	return p.tokens[p.pos+1]
-}
-
 func (p *parser) isEOF() bool { return p.tokens[p.pos].typ == tokenTypeEOF }
-
-// parsers
-
-func (p *parser) parseText2() NodeText {
-	return NodeText{p.currentToken().val}
-}
-
-func (p *parser) parseMatch2() NodeMatch {
-	var (
-		match     NodeMatch
-		whenCount int
-	)
-
-	// count when keywords
-	for _, v := range p.tokens {
-		if v.typ == tokenTypeKeyword && v.val == KeywordWhen {
-			whenCount++
-		}
-	}
-
-	var count int
-
-	for token := p.currentToken(); ; token = p.nextToken() {
-		switch token.typ {
-		case tokenTypeVariable, tokenTypeLiteral, tokenTypeFunction:
-			match.Selectors = append(match.Selectors, p.parseExpression2())
-		case tokenTypeKeyword:
-			if token.val != KeywordWhen {
-				continue
-			}
-			count++
-
-			match.Variants = append(match.Variants, p.parseVariant2())
-
-			if count == whenCount {
-				return match
-			}
-		}
-	}
-}
-
-func (p *parser) parseVariant2() NodeVariant {
-	var variant NodeVariant
-
-	for token := p.currentToken(); ; token = p.nextToken() {
-		switch token.typ {
-		case tokenTypeLiteral:
-			variant.Keys = append(variant.Keys, token.val)
-		case tokenTypeText:
-			variant.Message = append(variant.Message, p.parseText2())
-		case tokenTypeVariable:
-			if p.peek().typ == tokenTypeSeparatorClose {
-				variant.Message = append(variant.Message, p.parseVariable2())
-				p.nextToken()
-			} else {
-				variant.Message = append(variant.Message, p.parseExpression2())
-			}
-
-		case tokenTypeSeparatorClose:
-			return variant
-		}
-	}
-}
-
-func (p *parser) parseVariable2() NodeVariable {
-	return NodeVariable{Name: p.currentToken().val}
-}
-
-func (p *parser) parseLiteral2() NodeLiteral {
-	return NodeLiteral{Value: p.currentToken().val}
-}
-
-func (p *parser) parseExpression2() NodeExpr {
-	var expr NodeExpr
-
-	for token := p.currentToken(); ; token = p.nextToken() {
-		switch token.typ {
-		case tokenTypeVariable:
-			expr.Value = p.parseVariable2()
-		case tokenTypeLiteral:
-			expr.Value = p.parseLiteral2()
-		case tokenTypeFunction:
-			expr.Function = p.parseFunction2()
-			return expr
-		case tokenTypeSeparatorClose:
-			return expr
-		}
-	}
-}
-
-func (p *parser) parseOption2() NodeOption {
-	// key=value
-	splitted := strings.Split(p.currentToken().val, "=")
-
-	return NodeOption{Name: splitted[0], Value: splitted[1]}
-}
-
-func (p *parser) parseFunction2() NodeFunction {
-	var function NodeFunction
-
-	for token := p.currentToken(); ; token = p.nextToken() {
-		switch token.typ {
-		case tokenTypeOption:
-			function.Options = append(function.Options, p.parseOption2())
-		case tokenTypeFunction:
-			function.Name = token.val
-		case tokenTypeSeparatorClose:
-			return function
-		}
-	}
-}
