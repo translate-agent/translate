@@ -76,12 +76,14 @@ func FromPot(b []byte, original bool) (model.Translation, error) {
 		getStatus = func(_ pot.MessageNode) model.MessageStatus { return model.MessageStatusTranslated }
 	}
 
-	convert := func(v pot.MessageNode) string { return convertToMessageFormatSingular(singularValue(v)) }
+	convert := func(v pot.MessageNode) string {
+		return messageformat.ToMessageFormat2(singularValue(v))
+	}
 
 	if po.Header.PluralForms.NPlurals == pluralCountLimit {
 		convert = func(v pot.MessageNode) string {
 			if v.MsgIDPlural == "" {
-				return convertToMessageFormatSingular(singularValue(v))
+				return messageformat.ToMessageFormat2(singularValue(v))
 			}
 
 			return convertPluralsToMessageString(pluralValue(v))
@@ -342,8 +344,7 @@ func convertPluralsToMessageString(plurals []string) string {
 	sb.WriteString("match {$count :number}\n")
 
 	for i, plural := range plurals {
-		plural = escapeSpecialChars(plural)
-		line := strings.ReplaceAll(strings.TrimSpace(plural), "%d", "{$count}")
+		plural = messageformat.ToMessageFormat2(plural)
 
 		var count string
 
@@ -353,7 +354,7 @@ func convertPluralsToMessageString(plurals []string) string {
 			count = strconv.Itoa(i + 1)
 		}
 
-		sb.WriteString(fmt.Sprintf("when %s {%s}\n", count, line))
+		sb.WriteString(fmt.Sprintf("when %s %s\n", count, plural))
 	}
 
 	return sb.String()

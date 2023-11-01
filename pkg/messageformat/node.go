@@ -1,5 +1,11 @@
 package messageformat
 
+type AST []interface{}
+
+func (a *AST) Append(node ...interface{}) {
+	*a = append(*a, node...)
+}
+
 type NodeMatch struct {
 	Selectors []NodeExpr
 	Variants  []NodeVariant
@@ -28,5 +34,12 @@ type NodeVariant struct {
 }
 
 type NodeFunction struct {
-	Name string
+	Name    string
+	Options []NodeOption
+}
+
+// https://github.com/unicode-org/message-format-wg/blob/main/spec/syntax.md#options
+type NodeOption struct {
+	Value interface{}
+	Name  string
 }
