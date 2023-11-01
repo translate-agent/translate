@@ -20,18 +20,18 @@ func Test_Compile(t *testing.T) {
 	}{
 		{
 			name:        "error, no nodes",
-			input:       []interface{}{},
+			input:       AST{},
 			expected:    "",
 			expectedErr: errors.New("AST must contain at least one node"),
 		},
 		{
 			name:        "error, empty node expression",
-			input:       []interface{}{NodeExpr{}},
+			input:       AST{NodeExpr{}},
 			expectedErr: errors.New("expression node must not be empty"),
 		},
 		{
 			name: "error, no selectors",
-			input: []interface{}{
+			input: AST{
 				NodeMatch{
 					Variants: []NodeVariant{
 						{
@@ -44,7 +44,7 @@ func Test_Compile(t *testing.T) {
 		},
 		{
 			name: "error, mismatching number of keys and selectors",
-			input: []interface{}{
+			input: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "one"}, Function: NodeFunction{Name: "func"}}},
 					Variants: []NodeVariant{
@@ -58,12 +58,12 @@ func Test_Compile(t *testing.T) {
 		},
 		{
 			name:     "single text node",
-			input:    []interface{}{NodeText{Text: "Hello, World\\!"}},
+			input:    AST{NodeText{Text: "Hello, World\\!"}},
 			expected: "{Hello, World\\!}",
 		},
 		{
 			name: "multiple text nodes",
-			input: []interface{}{
+			input: AST{
 				NodeText{Text: "Hello,"},
 				NodeText{Text: " "},
 				NodeText{Text: "World"},
@@ -73,22 +73,22 @@ func Test_Compile(t *testing.T) {
 		},
 		{
 			name:     "text with special characters",
-			input:    []interface{}{NodeText{Text: "\\{\\}\\|\\!\\@\\#\\%\\*\\<\\>\\/\\?\\~\\\\"}},
+			input:    AST{NodeText{Text: "\\{\\}\\|\\!\\@\\#\\%\\*\\<\\>\\/\\?\\~\\\\"}},
 			expected: "{\\{\\}\\|\\!\\@\\#\\%\\*\\<\\>\\/\\?\\~\\\\}",
 		},
 		{
 			name:     "text contains plus sign",
-			input:    []interface{}{NodeText{Text: "+ vēl \\%s"}},
+			input:    AST{NodeText{Text: "+ vēl \\%s"}},
 			expected: "{+ vēl \\%s}",
 		},
 		{
 			name:     "text contains minus sign",
-			input:    []interface{}{NodeText{Text: "- vēl \\%s"}},
+			input:    AST{NodeText{Text: "- vēl \\%s"}},
 			expected: "{- vēl \\%s}",
 		},
 		{
 			name: "match, single variant",
-			input: []interface{}{
+			input: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}}},
 					Variants: []NodeVariant{
@@ -100,7 +100,7 @@ func Test_Compile(t *testing.T) {
 		},
 		{
 			name: "match, single variant with function",
-			input: []interface{}{
+			input: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
@@ -112,7 +112,7 @@ func Test_Compile(t *testing.T) {
 		},
 		{
 			name: "match, multiple variants",
-			input: []interface{}{
+			input: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
@@ -125,7 +125,7 @@ func Test_Compile(t *testing.T) {
 		},
 		{
 			name: "match, multiple variants 2",
-			input: []interface{}{
+			input: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
@@ -142,7 +142,7 @@ func Test_Compile(t *testing.T) {
 		},
 		{
 			name: "match, variant with two variables",
-			input: []interface{}{
+			input: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
@@ -168,7 +168,7 @@ func Test_Compile(t *testing.T) {
 		},
 		{
 			name: "match, three variants, two selectors",
-			input: []interface{}{
+			input: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{
 						{Value: NodeVariable{Name: "userName"}, Function: NodeFunction{Name: "hasCase"}},
@@ -243,7 +243,7 @@ func Test_Compile(t *testing.T) {
 		},
 		{
 			name: "match, variants with no variables",
-			input: []interface{}{
+			input: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{
 						{

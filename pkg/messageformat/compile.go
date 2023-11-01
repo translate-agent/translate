@@ -21,8 +21,35 @@ type message struct {
 	strings.Builder
 }
 
-// Compile traverses abstract syntax tree
-// constructing message from nodes, returns message string.
+/*
+Compile builds 'Message Format v2' message by traversing provided slice of nodes
+in abstract syntax tree (AST), returns message string and error.
+
+Example:
+
+Input:
+
+	AST{
+			NodeMatch{
+				Selectors: []NodeExpr{
+					{
+						Value:    NodeVariable{Name: "count"},
+						Function: NodeFunction{Name: "number"},
+					},
+				},
+				Variants: []NodeVariant{
+					{
+						Keys:    []string{"*"},
+						Message: []interface{}{NodeText{Text: "Hello, world\\!"}},
+					},
+				},
+			},
+		}
+
+Output:
+
+	"match {$count :number} when * {Hello, world\\!}", nil
+*/
 func Compile(ast AST) (string, error) {
 	if len(ast) == 0 {
 		return "", errors.New("AST must contain at least one node")
