@@ -80,7 +80,7 @@ func FromPot(b []byte, original bool) (model.Translation, error) {
 
 	if po.Header.PluralForms.NPlurals == pluralCountLimit {
 		convert = func(v pot.MessageNode) string {
-			if v.MsgIDPlural == "" {
+			if v.MsgIDPlural == "" || allEmpty(pluralValue(v)) {
 				return convertToMessageFormatSingular(singularValue(v))
 			}
 
@@ -106,6 +106,17 @@ func FromPot(b []byte, original bool) (model.Translation, error) {
 		Messages: messages,
 		Original: original,
 	}, nil
+}
+
+// allEmpty checks if string values in string slice are empty.
+func allEmpty(strings []string) bool {
+	for _, str := range strings {
+		if str != "" {
+			return false
+		}
+	}
+
+	return true
 }
 
 // writeToPoTag function selects the appropriate write function (writeDefault or writePlural)

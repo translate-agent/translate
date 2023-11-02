@@ -1158,6 +1158,41 @@ when * {There are {$count} apples.}
 			},
 		},
 		{
+			name: "msgstr plural without PluralForm header",
+			input: []byte(`msgid ""
+							msgstr ""
+							"Language: en\n"
+							msgid "%s message"
+							msgid_plural "%s messages"
+							msgstr[0] ""
+							msgstr[1] ""
+
+							#: superset/views/core.py:385
+							#, python-format
+							msgid "message2"
+							msgstr ""
+			`),
+			expected: model.Translation{
+				Language: language.English,
+				Original: false,
+				Messages: []model.Message{
+					{
+						ID:          "%s message",
+						PluralID:    "%s messages",
+						Message:     "",
+						Description: "",
+						Status:      model.MessageStatusUntranslated,
+					},
+					{
+						ID:        "message2",
+						Message:   "",
+						Positions: []string{"superset/views/core.py:385"},
+						Status:    model.MessageStatusUntranslated,
+					},
+				},
+			},
+		},
+		{
 			name: "invalid input",
 			input: []byte(`msgid ""
 							msgstr ""

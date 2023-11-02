@@ -39,6 +39,9 @@ type Po struct {
 	Messages []MessageNode
 }
 
+// max value for plural count.
+const pluralCountLimit = 2
+
 // TokensToPo function takes a slice of Token objects and converts them into a Po object representing
 // a PO (Portable Object) file. It returns the generated Po object and an error.
 func TokensToPo(tokens []Token) (Po, error) {
@@ -99,6 +102,8 @@ func TokensToPo(tokens []Token) (Po, error) {
 			currentMessage.MsgID = token.Value
 		case TokenTypePluralMsgID:
 			currentMessage.MsgIDPlural = token.Value
+
+			defaultNPlurals(&header)
 		case TokenTypeMsgStr:
 			currentMessage.MsgStr = []string{token.Value}
 			messages = append(messages, currentMessage)
@@ -171,6 +176,13 @@ func parsePluralForms(s string) (pluralForm, error) {
 	pf.Plural = strings.TrimSpace(parts[1])
 
 	return pf, nil
+}
+
+// if pluralForms header doesn't exist && pluralMsgId was found, set NPlurals to 2.
+func defaultNPlurals(node *HeaderNode) {
+	if node.PluralForms.NPlurals == 0 {
+		node.PluralForms.NPlurals = pluralCountLimit
+	}
 }
 
 // previousToken function takes a slice of Token objects and an index representing the current position in the slice.
