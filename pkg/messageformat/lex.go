@@ -51,8 +51,8 @@ func lex(input string) *lexer {
 
 type lexer struct {
 	input        string
+	prevToken    *Token
 	token        Token
-	prevToken    Token
 	pos          int
 	exprDepth    int
 	textToFollow bool
@@ -98,7 +98,7 @@ func (l *lexer) nextToken() Token {
 		state := state(l)
 
 		if state == nil {
-			l.prevToken = l.token
+			l.prevToken = &Token{typ: l.token.typ, val: l.token.val}
 			return l.token
 		}
 	}
