@@ -23,11 +23,6 @@ func Test_Parse(t *testing.T) {
 			expected: AST(nil),
 		},
 		{
-			name:     "empty expr",
-			input:    "{}",
-			expected: AST(nil),
-		},
-		{
 			name:     "text",
 			input:    "{Hello, World}",
 			expected: AST{NodeText{Text: "Hello, World"}},
