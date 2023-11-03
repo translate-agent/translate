@@ -353,7 +353,11 @@ func convertPluralsToMessageString(plurals []string) string {
 			count = strconv.Itoa(i + 1)
 		}
 
-		sb.WriteString(fmt.Sprintf("when %s {%s}\n", count, line))
+		if line == "" {
+			sb.WriteString(fmt.Sprintf("when %s\n", count))
+		} else {
+			sb.WriteString(fmt.Sprintf("when %s {%s}\n", count, line))
+		}
 	}
 
 	return sb.String()
