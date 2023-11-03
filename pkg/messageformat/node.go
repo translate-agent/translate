@@ -26,6 +26,15 @@ type NodeExpr struct {
 	Function NodeFunction
 }
 
+// isEmpty returns true if NodeExpr has zero-value.
+func (n NodeExpr) isEmpty() bool {
+	if n.Value == nil && n.Function.Options == nil && n.Function.Name == "" {
+		return true
+	}
+
+	return false
+}
+
 type NodeVariant struct {
 	Keys    []string
 	Message []interface{}

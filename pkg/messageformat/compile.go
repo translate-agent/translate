@@ -3,15 +3,8 @@ package messageformat
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"strconv"
 	"strings"
-)
-
-// keywords.
-const (
-	match = "match"
-	when  = "when"
 )
 
 // message stores MF2 message.
@@ -62,7 +55,7 @@ func Compile(ast AST) (string, error) {
 
 // writeExpr writes expression from NodeExpr to the receiving message.
 func (m *message) writeExpr(n NodeExpr) error {
-	if reflect.DeepEqual(n, NodeExpr{}) {
+	if n.isEmpty() {
 		return errors.New("expression node must not be empty")
 	}
 
@@ -74,10 +67,6 @@ func (m *message) writeExpr(n NodeExpr) error {
 	case nil:
 		break
 	case NodeVariable:
-		if strings.HasPrefix(v.Name, ":") {
-			return fmt.Errorf("invalid prefix ':' for variable name '%s'", v.Name)
-		}
-
 		expr.WriteString("$" + v.Name)
 
 		if n.Function.Name != "" {
@@ -100,7 +89,7 @@ func (m *message) writeMatch(n NodeMatch) error {
 		return errors.New("there must be at least one selector")
 	}
 
-	m.WriteString(match + " ")
+	m.WriteString(KeywordMatch + " ")
 
 	for i := range n.Selectors {
 		if i > 0 {
@@ -132,7 +121,7 @@ func (m *message) writeMatch(n NodeMatch) error {
 func (m *message) writeVariant(n NodeVariant) error {
 	for i, v := range n.Keys {
 		if i == 0 {
-			m.WriteString(" " + when + " ")
+			m.WriteString(" " + KeywordWhen + " ")
 		}
 
 		m.WriteString(v + " ")
@@ -149,10 +138,6 @@ func (m *message) writeVariant(n NodeVariant) error {
 // TODO: add ability to process markup-like functions e.g.
 // {+button}Submit{-button} or {+link}cancel{-link}.
 func (m *message) writeFunc(n NodeFunction) error {
-	if strings.HasPrefix(n.Name, ":") {
-		return fmt.Errorf("invalid prefix ':' for function name '%s'", n.Name)
-	}
-
 	if n.Name == "" {
 		return nil
 	}
@@ -160,10 +145,6 @@ func (m *message) writeFunc(n NodeFunction) error {
 	m.WriteString(":" + n.Name)
 
 	for i := range n.Options {
-		if strings.HasPrefix(n.Options[i].Name, ":") {
-			return fmt.Errorf("invalid prefix ':' for option name '%s'", n.Options[i].Name)
-		}
-
 		m.WriteString(" " + n.Options[i].Name + "=")
 
 		switch v := n.Options[i].Value.(type) {
@@ -177,30 +158,6 @@ func (m *message) writeFunc(n NodeFunction) error {
 	}
 
 	return nil
-}
-
-// writeText writes text from NodeText to the receiving message.
-func (m *message) writeText(n NodeText, pos int, ast AST) {
-	switch {
-	default: // nodeText set in middle
-		m.WriteString(n.Text)
-	case len(ast) == 1: // nodeText is only element
-		m.WriteString("{" + n.Text + "}")
-	case pos == 0: // nodeText is first element
-		m.WriteString("{" + n.Text)
-	case pos == len(ast)-1: // nodeText is last element
-		m.WriteString(n.Text + "}")
-	}
-}
-
-// writeVar writes variable from NodeVariable to the receiving message.
-func (m *message) writeVar(n NodeVariable, ast AST) {
-	switch len(ast) {
-	default:
-		m.WriteString("{$" + n.Name + "}")
-	case 1:
-		m.WriteString("$" + n.Name)
-	}
 }
 
 // fromAST traverses MF2 nodes in the abstract syntax tree (AST)
@@ -219,9 +176,23 @@ func (m *message) fromAST(ast AST) error {
 				return fmt.Errorf("write expression: %w", err)
 			}
 		case NodeVariable:
-			m.writeVar(v, ast)
+			switch len(ast) {
+			default:
+				m.WriteString("{$" + v.Name + "}")
+			case 1:
+				m.WriteString("$" + v.Name)
+			}
 		case NodeText:
-			m.writeText(v, i, ast)
+			switch {
+			default: // nodeText set in middle
+				m.WriteString(v.Text)
+			case len(ast) == 1: // nodeText is only element
+				m.WriteString("{" + v.Text + "}")
+			case i == 0: // nodeText is first element
+				m.WriteString("{" + v.Text)
+			case i == len(ast)-1: // nodeText is last element
+				m.WriteString(v.Text + "}")
+			}
 		}
 	}
 
