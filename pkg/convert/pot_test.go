@@ -487,6 +487,7 @@ msgstr "Au revoir!"
 msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. apple counts
 #, fuzzy
 msgid "There is %d apple."
@@ -581,6 +582,7 @@ msgstr "Il y a \"pomme\"."
 msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. apple counts
 #, fuzzy
 msgid "There is %d apple."
@@ -614,6 +616,7 @@ msgstr[1] "Il y a %d pommes."
 msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. apple counts
 #, fuzzy
 msgid "There is %d apple."
@@ -625,6 +628,88 @@ msgstr[0] ""
 msgstr[1] ""
 "Il y a %d\n"
 "pommes.\n"
+`),
+		},
+		{
+			name: "multiple plural messages",
+			input: model.Translation{
+				Language: language.French,
+				Original: false,
+				Messages: []model.Message{
+					{
+						ID:          "There is %d apple.",
+						PluralID:    "There are %d apples.",
+						Message:     "match {$count :number}\nwhen 1 {Il y a {$count} pomme.}\nwhen * {Il y a {$count} pommes.}",
+						Description: "apple counts",
+						Status:      model.MessageStatusFuzzy,
+					},
+					{
+						ID:          "There is %d apple.",
+						PluralID:    "There are %d apples.",
+						Message:     "match {$count :number}\nwhen 1 {Il y a {$count} pomme.}\nwhen * {Il y a {$count} pommes.}",
+						Description: "apple counts",
+						Status:      model.MessageStatusFuzzy,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: fr\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. apple counts
+#, fuzzy
+msgid "There is %d apple."
+msgid_plural "There are %d apples."
+msgstr[0] "Il y a %d pomme."
+msgstr[1] "Il y a %d pommes."
+
+#. apple counts
+#, fuzzy
+msgid "There is %d apple."
+msgid_plural "There are %d apples."
+msgstr[0] "Il y a %d pomme."
+msgstr[1] "Il y a %d pommes."
+`),
+		},
+		{
+			name: "multiple plural messages and original true",
+			input: model.Translation{
+				Language: language.French,
+				Original: true,
+				Messages: []model.Message{
+					{
+						ID:          "There is %d apple.",
+						PluralID:    "There are %d apples.",
+						Message:     "match {$count :number}\nwhen 1 {Il y a {$count} pomme.}\nwhen * {Il y a {$count} pommes.}",
+						Description: "apple counts",
+						Status:      model.MessageStatusFuzzy,
+					},
+					{
+						ID:          "There is %d apple.",
+						PluralID:    "There are %d apples.",
+						Message:     "match {$count :number}\nwhen 1 {Il y a {$count} pomme.}\nwhen * {Il y a {$count} pommes.}",
+						Description: "apple counts",
+						Status:      model.MessageStatusFuzzy,
+					},
+				},
+			},
+			expected: []byte(`msgid ""
+msgstr ""
+"Language: fr\n"
+#. apple counts
+#, fuzzy
+msgid "There is %d apple."
+msgid_plural "There are %d apples."
+msgstr[0] "Il y a %d pomme."
+msgstr[1] "Il y a %d pommes."
+
+#. apple counts
+#, fuzzy
+msgid "There is %d apple."
+msgid_plural "There are %d apples."
+msgstr[0] "Il y a %d pomme."
+msgstr[1] "Il y a %d pommes."
 `),
 		},
 		{
@@ -708,6 +793,8 @@ msgstr "Au revoir!"
 			result, err := ToPot(tt.input)
 			require.NoError(t, err)
 
+			t.Logf("actual: %v", string(result))
+			t.Logf("expect: %v", string(tt.expected))
 			assert.Equal(t, tt.expected, result)
 		})
 	}

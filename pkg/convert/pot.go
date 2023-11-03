@@ -21,6 +21,8 @@ const (
 	MsgStr       poTag = "msgstr"
 )
 
+const pluralCountLimit = 2
+
 // ToPot function takes a model.Translation structure,
 // writes the language information and each message to a buffer in the POT file format,
 // and returns the buffer contents as a byte slice representing the POT file.
@@ -29,6 +31,12 @@ func ToPot(t model.Translation) ([]byte, error) {
 
 	if _, err := fmt.Fprintf(&b, "msgid \"\"\nmsgstr \"\"\n\"Language: %s\\n\"\n", t.Language); err != nil {
 		return nil, fmt.Errorf("write language: %w", err)
+	}
+
+	if !t.Original {
+		if err := writePluralHeader(&b, t); err != nil {
+			return nil, fmt.Errorf("write plural form header: %w", err)
+		}
 	}
 
 	for i, message := range t.Messages {
@@ -40,10 +48,22 @@ func ToPot(t model.Translation) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+func writePluralHeader(b *bytes.Buffer, t model.Translation) error {
+	for _, message := range t.Messages {
+		if message.PluralID != "" {
+			if _, err := fmt.Fprintf(b, "\"Plural-Forms: nplurals=%d; plural=(n != 1);\\n\"\n\n", pluralCountLimit); err != nil { //nolint:lll
+				return fmt.Errorf("write plural forms: %w", err)
+			}
+
+			break
+		}
+	}
+
+	return nil
+}
+
 // FromPot function parses a POT file by tokenizing and converting it into a pot.Po structure.
 func FromPot(b []byte, original bool) (model.Translation, error) {
-	const pluralCountLimit = 2
-
 	tokens, err := pot.Lex(bytes.NewReader(b))
 	if err != nil {
 		return model.Translation{}, fmt.Errorf("divide po file to tokens: %w", err)
@@ -275,13 +295,6 @@ func writeMessage(b *bytes.Buffer, index int, message model.Message) error {
 	if index > 0 {
 		if _, err := fmt.Fprint(b, "\n"); err != nil {
 			return fmt.Errorf("write new line: %w", err)
-		}
-	}
-
-	if message.PluralID != "" {
-		count := strings.Count(message.Message, "when")
-		if _, err := fmt.Fprintf(b, "\"Plural-Forms: nplurals=%d; plural=(n != 1);\\n\"\n", count); err != nil {
-			return fmt.Errorf("write plural forms: %w", err)
 		}
 	}
 
