@@ -48,7 +48,11 @@ func TokensToPo(tokens []Token) (Po, error) {
 	var messages []MessageNode
 
 	currentMessage := MessageNode{}
-	header := HeaderNode{}
+	header := HeaderNode{
+		PluralForms: pluralForm{
+			NPlurals: pluralCountLimit,
+		},
+	}
 
 	for i, token := range tokens {
 		if token.Value == "" && token.Type == TokenTypeMsgStr {
@@ -102,8 +106,6 @@ func TokensToPo(tokens []Token) (Po, error) {
 			currentMessage.MsgID = token.Value
 		case TokenTypePluralMsgID:
 			currentMessage.MsgIDPlural = token.Value
-
-			defaultNPlurals(&header)
 		case TokenTypeMsgStr:
 			currentMessage.MsgStr = []string{token.Value}
 			messages = append(messages, currentMessage)
@@ -176,13 +178,6 @@ func parsePluralForms(s string) (pluralForm, error) {
 	pf.Plural = strings.TrimSpace(parts[1])
 
 	return pf, nil
-}
-
-// if pluralForms header doesn't exist && pluralMsgId was found, set NPlurals to 2.
-func defaultNPlurals(node *HeaderNode) {
-	if node.PluralForms.NPlurals == 0 {
-		node.PluralForms.NPlurals = pluralCountLimit
-	}
 }
 
 // previousToken function takes a slice of Token objects and an index representing the current position in the slice.

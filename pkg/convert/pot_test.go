@@ -1162,8 +1162,8 @@ when * {There are {$count} apples.}
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
-							msgid "%s message"
-							msgid_plural "%s messages"
+							msgid "message"
+							msgid_plural "messages"
 							msgstr[0] ""
 							msgstr[1] ""
 
@@ -1177,9 +1177,12 @@ when * {There are {$count} apples.}
 				Original: false,
 				Messages: []model.Message{
 					{
-						ID:          "%s message",
-						PluralID:    "%s messages",
-						Message:     "",
+						ID:       "message",
+						PluralID: "messages",
+						Message: `match {$count :number}
+when 1
+when *
+`,
 						Description: "",
 						Status:      model.MessageStatusUntranslated,
 					},
