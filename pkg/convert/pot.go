@@ -34,6 +34,8 @@ func ToPot(t model.Translation) ([]byte, error) {
 	}
 
 	if !t.Original {
+		// Temporary we support plural forms (one and other).
+		// https://www.gnu.org/software/gettext/manual/html_node/Plural-forms.html
 		if _, err := fmt.Fprintf(&b, "\"Plural-Forms: nplurals=%d; plural=(n != 1);\\n\"\n\n", pluralCountLimit); err != nil {
 			return nil, fmt.Errorf("write Plural-Forms: %w", err)
 		}
