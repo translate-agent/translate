@@ -34,8 +34,8 @@ func ToPot(t model.Translation) ([]byte, error) {
 	}
 
 	if !t.Original {
-		if err := writePluralHeader(&b, t); err != nil {
-			return nil, fmt.Errorf("write plural form header: %w", err)
+		if _, err := fmt.Fprintf(&b, "\"Plural-Forms: nplurals=%d; plural=(n != 1);\\n\"\n\n", pluralCountLimit); err != nil {
+			return nil, fmt.Errorf("write Plural-Forms: %w", err)
 		}
 	}
 
@@ -46,20 +46,6 @@ func ToPot(t model.Translation) ([]byte, error) {
 	}
 
 	return b.Bytes(), nil
-}
-
-func writePluralHeader(b *bytes.Buffer, t model.Translation) error {
-	for _, message := range t.Messages {
-		if message.PluralID != "" {
-			if _, err := fmt.Fprintf(b, "\"Plural-Forms: nplurals=%d; plural=(n != 1);\\n\"\n\n", pluralCountLimit); err != nil { //nolint:lll
-				return fmt.Errorf("write plural forms: %w", err)
-			}
-
-			break
-		}
-	}
-
-	return nil
 }
 
 // FromPot function parses a POT file by tokenizing and converting it into a pot.Po structure.

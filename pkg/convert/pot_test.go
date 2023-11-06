@@ -41,6 +41,8 @@ func Test_ToPot(t *testing.T) {
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 #: examples/simple/example.clj:10
 #: examples/simple/example.clj:20
@@ -79,6 +81,8 @@ msgstr "Bonjour {user} | \"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 #: examples/simple/example.clj:10
 #: examples/simple/example.clj:20
@@ -110,6 +114,8 @@ msgstr "Au revoir!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 #, fuzzy
 msgid "Hello, world!"
@@ -130,6 +136,8 @@ msgstr "Bonjour le monde!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 msgid "Hello, world!"
 msgstr "Bonjour {} le monde!"
 `),
@@ -148,6 +156,8 @@ msgstr "Bonjour {} le monde!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 msgid "Hello, world!"
 msgstr "Bonjour \ le monde!"
 `),
@@ -166,6 +176,8 @@ msgstr "Bonjour \ le monde!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 msgid "Hello, world!"
 msgstr "Bonjour | le monde!"
 `),
@@ -184,6 +196,8 @@ msgstr "Bonjour | le monde!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 msgid "Hello, world!"
 msgstr "Bonjour || le monde!"
 `),
@@ -210,6 +224,8 @@ msgstr "Bonjour || le monde!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 #. multiline description
 #, fuzzy
@@ -244,6 +260,8 @@ msgstr "Au revoir!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 #, fuzzy
 msgid ""
@@ -279,6 +297,8 @@ msgstr "Au revoir!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 #, fuzzy
 msgid "Hello, world!\n"
@@ -312,6 +332,8 @@ msgstr "Au revoir!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 #, fuzzy
 msgid "Hello, world!"
@@ -341,6 +363,8 @@ msgstr "Au revoir!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 #, fuzzy
 msgid "Hello, world!"
@@ -371,6 +395,8 @@ msgstr ""
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 #, fuzzy
 msgid "Hello, world!"
@@ -398,6 +424,8 @@ msgstr "Au revoir!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 #, fuzzy
 msgid "Hello, world!"
@@ -426,6 +454,8 @@ msgstr "This is a \"quoted\" string"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 #, fuzzy
 msgid "Hello, \"world!\""
@@ -459,6 +489,8 @@ msgstr "Au revoir!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 #, fuzzy
 msgid "Hello, world!"
@@ -512,6 +544,8 @@ msgstr[1] "Il y a %d pommes."
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. apple counts
 #, fuzzy
 msgid "There is apple."
@@ -534,6 +568,8 @@ msgstr "Il y a pomme."
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. apple counts
 #, fuzzy
 msgid "There is apple."
@@ -558,6 +594,8 @@ msgstr ""
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. apple counts
 #, fuzzy
 msgid "There is apple."
@@ -724,6 +762,8 @@ msgstr[1] "Il y a %d pommes."
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #. A simple greeting
 msgid "Hello, world!"
 msgstr "Bonjour le monde!"
@@ -754,6 +794,8 @@ msgstr "Au revoir!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #, fuzzy
 msgid "Hello, world!"
 msgstr "Bonjour le monde!"
@@ -776,6 +818,8 @@ msgstr "Au revoir!"
 			expected: []byte(`msgid ""
 msgstr ""
 "Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 msgid "Hello, world!"
 msgstr "Bonjour le monde!"
 
@@ -793,8 +837,6 @@ msgstr "Au revoir!"
 			result, err := ToPot(tt.input)
 			require.NoError(t, err)
 
-			t.Logf("actual: %v", string(result))
-			t.Logf("expect: %v", string(tt.expected))
 			assert.Equal(t, tt.expected, result)
 		})
 	}
