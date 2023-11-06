@@ -121,10 +121,10 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 	}
 
 	textNodes := mf.GetTextNodes(asts)
-	text := textNodes.GetText()
-	translatedText := make([]string, 0, len(text))
+	texts := textNodes.GetTexts()
+	translatedTexts := make([]string, 0, len(texts))
 
-	for i := range text {
+	for i := range texts {
 		translateOutput, err := a.client.TranslateText(ctx,
 			&translate.TranslateTextInput{
 				// Amazon Translate supports text translation between the languages listed in the following table.
@@ -137,17 +137,17 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 				TargetLanguageCode: awsLanguage(targetLanguage),
 				SourceLanguageCode: awsLanguage(translation.Language),
 				// Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
-				Text: ptr(text[i]),
+				Text: ptr(texts[i]),
 			})
 		if err != nil {
 			return nil, fmt.Errorf("AWS translate: translate text #%d: %w", i, err)
 		}
 
-		translatedText = append(translatedText, *translateOutput.TranslatedText)
+		translatedTexts = append(translatedTexts, *translateOutput.TranslatedText)
 	}
 
 	// Overwrite text nodes in ASTs to include newly translated text.
-	if err := textNodes.OverwriteText(translatedText); err != nil {
+	if err := textNodes.OverwriteTexts(translatedTexts); err != nil {
 		return nil, fmt.Errorf("AWS translate: overwrite text nodes in ASTs: %w", err)
 	}
 

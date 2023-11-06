@@ -126,12 +126,12 @@ func (g *GoogleTranslate) Translate(
 	}
 
 	textNodes := mf.GetTextNodes(asts)
-	text := textNodes.GetText()
+	texts := textNodes.GetTexts()
 
 	// Split text from translation into batches to avoid exceeding
 	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
-	batches := textToBatches(text, googleTranslateRequestLimit)
-	translatedText := make([]string, 0, len(text))
+	batches := textToBatches(texts, googleTranslateRequestLimit)
+	translatedTexts := make([]string, 0, len(texts))
 
 	// Translate text batches using Google Translate client.
 	for i := range batches {
@@ -146,12 +146,12 @@ func (g *GoogleTranslate) Translate(
 		}
 
 		for i := range res.GetTranslations() {
-			translatedText = append(translatedText, res.GetTranslations()[i].GetTranslatedText())
+			translatedTexts = append(translatedTexts, res.GetTranslations()[i].GetTranslatedText())
 		}
 	}
 
 	// Overwrite text nodes in ASTs to include newly translated text.
-	if err := textNodes.OverwriteText(translatedText); err != nil {
+	if err := textNodes.OverwriteTexts(translatedTexts); err != nil {
 		return nil, fmt.Errorf("google translate: overwrite text nodes in ASTs: %w", err)
 	}
 

@@ -76,8 +76,6 @@ func GetTextNodes(asts []AST) TextNodes {
 func (t *TextNodes) fromAST(ast AST) {
 	for i := range ast {
 		switch v := ast[i].(type) {
-		default:
-			continue
 		case NodeText:
 			*t = append(*t, TextNode{
 				NodeText: v,
@@ -93,8 +91,8 @@ func (t *TextNodes) fromAST(ast AST) {
 	}
 }
 
-// GetText returns all text from textNodes.
-func (t TextNodes) GetText() []string {
+// GetTexts returns all texts from textNodes.
+func (t TextNodes) GetTexts() []string {
 	texts := make([]string, len(t))
 
 	for i := range t {
@@ -104,8 +102,8 @@ func (t TextNodes) GetText() []string {
 	return texts
 }
 
-// OverwriteText replaces text stored in textNodes for all ASTs.
-func (t TextNodes) OverwriteText(text []string) error {
+// OverwriteTexts replaces texts stored in textNodes for all ASTs.
+func (t TextNodes) OverwriteTexts(text []string) error {
 	if len(t) != len(text) {
 		return errors.New("text node count does not match number of text elements")
 	}
