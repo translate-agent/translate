@@ -159,14 +159,14 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 	}
 
 	for i := range asts {
-		var err error
-
 		m := translation.Messages[i]
 
-		if m.Message, err = mf.Sprint(asts[i]); err != nil {
-			return nil, fmt.Errorf("AWS translate: sprint MF2 message from AST '#%d': %w", i, err)
+		b, err := asts[i].MarshalText()
+		if err != nil {
+			return nil, fmt.Errorf("AWS translate: marshal text from AST '#%d': %w", i, err)
 		}
 
+		m.Message = string(b)
 		m.Status = model.MessageStatusFuzzy
 		translated.Messages[i] = m
 	}

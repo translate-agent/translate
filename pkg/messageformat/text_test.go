@@ -8,14 +8,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_Sprint(t *testing.T) {
+func Test_MarshalText(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range []struct {
 		expectedErr error
 
 		name     string
-		expected string
+		expected []byte
 		input    AST
 	}{
 		{
@@ -53,13 +53,13 @@ func Test_Sprint(t *testing.T) {
 		{
 			name:        "no nodes",
 			input:       AST{},
-			expected:    "",
+			expected:    nil,
 			expectedErr: nil,
 		},
 		{
 			name:     "single text node",
 			input:    AST{NodeText{Text: "Hello, World\\!"}},
-			expected: "{Hello, World\\!}",
+			expected: []byte("{Hello, World\\!}"),
 		},
 		{
 			name: "multiple text nodes",
@@ -69,22 +69,22 @@ func Test_Sprint(t *testing.T) {
 				NodeText{Text: "World"},
 				NodeText{Text: "\\!"},
 			},
-			expected: "{Hello, World\\!}",
+			expected: []byte("{Hello, World\\!}"),
 		},
 		{
 			name:     "text with special characters",
 			input:    AST{NodeText{Text: "\\{\\}\\|\\!\\@\\#\\%\\*\\<\\>\\/\\?\\~\\\\"}},
-			expected: "{\\{\\}\\|\\!\\@\\#\\%\\*\\<\\>\\/\\?\\~\\\\}",
+			expected: []byte("{\\{\\}\\|\\!\\@\\#\\%\\*\\<\\>\\/\\?\\~\\\\}"),
 		},
 		{
 			name:     "text contains plus sign",
 			input:    AST{NodeText{Text: "+ vēl \\%s"}},
-			expected: "{+ vēl \\%s}",
+			expected: []byte("{+ vēl \\%s}"),
 		},
 		{
 			name:     "text contains minus sign",
 			input:    AST{NodeText{Text: "- vēl \\%s"}},
-			expected: "{- vēl \\%s}",
+			expected: []byte("{- vēl \\%s}"),
 		},
 		{
 			name: "message with placeholder",
@@ -103,7 +103,7 @@ func Test_Sprint(t *testing.T) {
 				},
 				NodeText{Text: "!"},
 			},
-			expected: "{Hello {$name}, your card expires on {$exp :datetime skeleton=yMMMdE}!}",
+			expected: []byte("{Hello {$name}, your card expires on {$exp :datetime skeleton=yMMMdE}!}"),
 		},
 		{
 			name: "match, single variant",
@@ -115,7 +115,7 @@ func Test_Sprint(t *testing.T) {
 					},
 				},
 			},
-			expected: "match {$count} when * {Hello, world\\!}",
+			expected: []byte("match {$count} when * {Hello, world\\!}"),
 		},
 		{
 			name: "match, single variant with function",
@@ -127,7 +127,7 @@ func Test_Sprint(t *testing.T) {
 					},
 				},
 			},
-			expected: "match {$count :number} when * {Hello, world\\!}",
+			expected: []byte("match {$count :number} when * {Hello, world\\!}"),
 		},
 		{
 			name: "match, multiple variants",
@@ -140,7 +140,7 @@ func Test_Sprint(t *testing.T) {
 					},
 				},
 			},
-			expected: "match {$count :number} when 1 {Hello, friend\\!} when * {Hello, friends\\!}",
+			expected: []byte("match {$count :number} when 1 {Hello, friend\\!} when * {Hello, friends\\!}"),
 		},
 		{
 			name: "match, multiple variants 2",
@@ -157,7 +157,7 @@ func Test_Sprint(t *testing.T) {
 					},
 				},
 			},
-			expected: "match {$count :number} when 1 {Buy one \\\\ apple!} when * {Buy {$count} apples\\!}",
+			expected: []byte("match {$count :number} when 1 {Buy one \\\\ apple!} when * {Buy {$count} apples\\!}"),
 		},
 		{
 			name: "match, variant with two variables",
@@ -180,10 +180,10 @@ func Test_Sprint(t *testing.T) {
 					},
 				},
 			},
-			expected: "match {$count :number} " +
+			expected: []byte("match {$count :number} " +
 				"when 0 {No apples\\!} " +
 				"when 1 {Buy {$count}{$counts} apple\\!} " +
-				"when * {Buy {$count} apples 2\\!}",
+				"when * {Buy {$count} apples 2\\!}"),
 		},
 		{
 			name: "match, three variants, two selectors",
@@ -255,10 +255,10 @@ func Test_Sprint(t *testing.T) {
 					},
 				},
 			},
-			expected: "match {$userName :hasCase} {$userLastName :hasCase} " +
+			expected: []byte("match {$userName :hasCase} {$userLastName :hasCase} " +
 				"when 0 vocative {Hello, {$userName :person case=vocative format=printf type=string}\\!} " +
 				"when 1 accusative {Please welcome {$userName :person case=accusative format=printf type=string}\\!} " +
-				"when * neutral {Hello {$userLastName :person case=neutral format=printf type=string}\\.}",
+				"when * neutral {Hello {$userLastName :person case=neutral format=printf type=string}\\.}"),
 		},
 		{
 			name: "match, variants with no variables",
@@ -306,9 +306,9 @@ func Test_Sprint(t *testing.T) {
 					},
 				},
 			},
-			expected: "match {$count :number} " +
+			expected: []byte("match {$count :number} " +
 				"when 1 {Il y a {:Placeholder format=printf type=int} pomme.} " +
-				"when * {Il y a {:Placeholder format=printf type=int} pommes.}",
+				"when * {Il y a {:Placeholder format=printf type=int} pommes.}"),
 		},
 	} {
 		test := test
@@ -316,7 +316,7 @@ func Test_Sprint(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			l, err := Sprint(test.input)
+			l, err := test.input.MarshalText()
 
 			if test.expectedErr != nil {
 				require.ErrorContains(t, err, test.expectedErr.Error())

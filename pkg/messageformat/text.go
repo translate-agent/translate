@@ -1,21 +1,22 @@
 package messageformat
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 )
 
 // message stores MF2 message.
 // Specification draft for MF2 syntax:
 // https://github.com/unicode-org/message-format-wg/blob/main/spec/syntax.md
 type message struct {
-	strings.Builder
+	bytes.Buffer
 }
 
 /*
-Sprint returns 'Message Format v2' string from provided abstract syntax tree.
+MarshalText encodes abstract syntax tree into UTF-8-encoded text and returns the result.
+MarshalText implements the encoding.MarshalText interface for custom AST type.
 
 Example:
 
@@ -40,16 +41,16 @@ Input:
 
 Output:
 
-	"match {$count :number} when * {Hello, world\\!}", nil
+	[]byte("match {$count :number} when * {Hello, world\\!}"), nil
 */
-func Sprint(ast AST) (string, error) {
+func (a AST) MarshalText() (text []byte, err error) {
 	var m message
 
-	if err := m.fromAST(ast); err != nil {
-		return "", fmt.Errorf("message from abstract syntax tree: %w", err)
+	if err := m.fromAST(a); err != nil {
+		return nil, fmt.Errorf("message from abstract syntax tree: %w", err)
 	}
 
-	return m.String(), nil
+	return m.Bytes(), nil
 }
 
 // writeExpr writes expression from NodeExpr to the receiving message.
