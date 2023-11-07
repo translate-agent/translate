@@ -2,6 +2,7 @@ package messageformat
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -324,6 +325,152 @@ func Test_MarshalText(t *testing.T) {
 			}
 
 			assert.Equal(t, test.expected, l)
+		})
+	}
+}
+
+func Test_UnmarshalText(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		name        string
+		input       []byte
+		expectedErr error
+		expected    AST
+	}{
+		{
+			name:     "empty",
+			input:    []byte(""),
+			expected: nil,
+		},
+		{
+			name:     "empty expr",
+			input:    []byte("{}"),
+			expected: nil,
+		},
+		{
+			name:     "expr with text",
+			input:    []byte("{Hello, World!}"),
+			expected: AST{NodeText{Text: "Hello, World!"}},
+		},
+		{
+			name:  "match",
+			input: []byte("match {$count} when * {Hello, world!}"),
+			expected: AST{
+				NodeMatch{
+					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}}},
+					Variants: []NodeVariant{
+						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, world!"}}},
+					},
+				},
+			},
+		},
+		{
+			name:  "match with function",
+			input: []byte("match {$count :number} when * {Hello, world!}"),
+			expected: AST{
+				NodeMatch{
+					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
+					Variants: []NodeVariant{
+						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, world!"}}},
+					},
+				},
+			},
+		},
+		{
+			name:  "match with multiple variants",
+			input: []byte("match {$count :number} when 1 {Hello, friend!} when * {Hello, friends!} "),
+			expected: AST{
+				NodeMatch{
+					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
+					Variants: []NodeVariant{
+						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Hello, friend!"}}},
+						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, friends!"}}},
+					},
+				},
+			},
+		},
+		{
+			name:  "match with plurals",
+			input: []byte("match {$count :number} when 1 {Buy one \\\\ apple!} when * {Buy {$count} apples!} "),
+			expected: AST{
+				NodeMatch{
+					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
+					Variants: []NodeVariant{
+						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Buy one \\ apple!"}}},
+						{Keys: []string{"*"}, Message: []interface{}{
+							NodeText{Text: "Buy "},
+							NodeVariable{Name: "count"},
+							NodeText{Text: " apples!"},
+						}},
+					},
+				},
+			},
+		},
+
+		{
+			name: "match with two variables in variant",
+			input: []byte("match {$count :number} " +
+				"when 0 {No apples!} " +
+				"when 1 {Buy {$count}{$counts} apple!} " +
+				"when * {Buy {$count} apples 2!} "),
+			expected: AST{
+				NodeMatch{
+					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
+					Variants: []NodeVariant{
+						{Keys: []string{"0"}, Message: []interface{}{NodeText{Text: "No apples!"}}},
+						{Keys: []string{"1"}, Message: []interface{}{
+							NodeText{Text: "Buy "},
+							NodeVariable{Name: "count"},
+							NodeVariable{Name: "counts"},
+							NodeText{Text: " apple!"},
+						}},
+						{Keys: []string{"*"}, Message: []interface{}{
+							NodeText{Text: "Buy "},
+							NodeVariable{Name: "count"},
+							NodeText{Text: " apples 2!"},
+						}},
+					},
+				},
+			},
+		},
+		{
+			name:        "invalid expr",
+			input:       []byte("match $count :number} "),
+			expectedErr: fmt.Errorf("expression does not start with \"{\""),
+		},
+		{
+			name:     "input with curly braces in it",
+			input:    []byte(`{Chart [\{\}] was added to dashboard [\{\}]}`),
+			expected: AST{NodeText{Text: "Chart [{}] was added to dashboard [{}]"}},
+		},
+		{
+			name:     "input with plus sign in it ",
+			input:    []byte(`{+ vēl %s}`),
+			expected: AST{NodeText{Text: "+ vēl %s"}},
+		},
+		{
+			name:     "input with minus sign in it ",
+			input:    []byte(`{- vēl %s}`),
+			expected: AST{NodeText{Text: "- vēl %s"}},
+		},
+	} {
+		test := test
+
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			var ast AST
+
+			err := ast.UnmarshalText(test.input)
+
+			if test.expectedErr != nil {
+				require.Errorf(t, err, test.expectedErr.Error())
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, test.expected, ast)
 		})
 	}
 }

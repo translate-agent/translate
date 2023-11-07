@@ -15,7 +15,7 @@ type message struct {
 }
 
 /*
-MarshalText encodes abstract syntax tree into UTF-8-encoded text and returns the result.
+MarshalText encodes abstract syntax tree into UTF-8-encoded 'Message Format v2' text and returns the result.
 MarshalText implements the encoding.MarshalText interface for custom AST type.
 
 Example:
@@ -43,7 +43,7 @@ Output:
 
 	[]byte("match {$count :number} when * {Hello, world\\!}"), nil
 */
-func (a AST) MarshalText() (text []byte, err error) {
+func (a AST) MarshalText() ([]byte, error) {
 	var m message
 
 	if err := m.fromAST(a); err != nil {
@@ -51,6 +51,45 @@ func (a AST) MarshalText() (text []byte, err error) {
 	}
 
 	return m.Bytes(), nil
+}
+
+/*
+UnmarshalText decodes UTF-8-encoded 'Message Format v2' text to receiving AST.
+UnmarshalText implements the encoding.UnmarshalText interface for custom AST type.
+
+Example:
+
+Input:
+
+	[]byte("match {$count :number} when * {Hello, world\\!}"), nil
+
+Output:
+
+	AST{
+			NodeMatch{
+				Selectors: []NodeExpr{
+					{
+						Value:    NodeVariable{Name: "count"},
+						Function: NodeFunction{Name: "number"},
+					},
+				},
+				Variants: []NodeVariant{
+					{
+						Keys:    []string{"*"},
+						Message: []interface{}{NodeText{Text: "Hello, world\\!"}},
+					},
+				},
+			},
+		}
+*/
+func (a *AST) UnmarshalText(text []byte) error {
+	var err error
+
+	if *a, err = Parse(string(text)); err != nil {
+		return fmt.Errorf("parse MF2 message: %w", err)
+	}
+
+	return nil
 }
 
 // writeExpr writes expression from NodeExpr to the receiving message.
