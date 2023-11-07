@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_Compile(t *testing.T) {
+func Test_Sprint(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range []struct {
@@ -316,7 +316,7 @@ func Test_Compile(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			l, err := Compile(test.input)
+			l, err := Sprint(test.input)
 
 			if test.expectedErr != nil {
 				require.ErrorContains(t, err, test.expectedErr.Error())

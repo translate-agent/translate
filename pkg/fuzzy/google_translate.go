@@ -167,8 +167,8 @@ func (g *GoogleTranslate) Translate(
 
 		m := translation.Messages[i]
 
-		if m.Message, err = mf.Compile(asts[i]); err != nil {
-			return nil, fmt.Errorf("google translate: compile AST '#%d': %w", i, err)
+		if m.Message, err = mf.Sprint(asts[i]); err != nil {
+			return nil, fmt.Errorf("google translate: sprint MF2 message from AST '#%d': %w", i, err)
 		}
 
 		m.Status = model.MessageStatusFuzzy

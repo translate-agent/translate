@@ -15,8 +15,7 @@ type message struct {
 }
 
 /*
-Compile builds 'Message Format v2' message by traversing provided slice of nodes
-in abstract syntax tree (AST), returns MF2 string value of message and error.
+Sprint returns 'Message Format v2' string from provided abstract syntax tree.
 
 Example:
 
@@ -43,7 +42,7 @@ Output:
 
 	"match {$count :number} when * {Hello, world\\!}", nil
 */
-func Compile(ast AST) (string, error) {
+func Sprint(ast AST) (string, error) {
 	var m message
 
 	if err := m.fromAST(ast); err != nil {
@@ -160,8 +159,10 @@ func (m *message) writeFunc(n NodeFunction) error {
 	return nil
 }
 
-// fromAST traverses MF2 nodes in the abstract syntax tree (AST)
+// fromAST traverses 'Message Format v2' nodes in the abstract syntax tree (AST)
 // writes constructed message parts to the receiving message.
+// Implementation follows MF2 design draft:
+// https://github.com/unicode-org/message-format-wg/blob/main/spec/syntax.md
 func (m *message) fromAST(ast AST) error {
 	for i := range ast {
 		switch v := ast[i].(type) {
