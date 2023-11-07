@@ -95,12 +95,12 @@ func (p *parser) parse() (AST, error) {
 }
 
 // parseInsideCurly parses texts and expressions inside curly braces.
-func (p *parser) parseInsideCurly() ([]interface{}, error) {
+func (p *parser) parseInsideCurly() ([]Node, error) {
 	if p.currentToken().typ != tokenTypeSeparatorOpen {
 		return nil, errors.New("exp does not start with \"{\"")
 	}
 
-	var nodes []interface{}
+	var nodes []Node
 
 	for !p.isEOF() {
 		token := p.nextToken()

@@ -104,7 +104,7 @@ func Test_Parse(t *testing.T) {
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, world\\!"}}},
+						{Keys: []string{"*"}, Message: []Node{NodeText{Text: "Hello, world\\!"}}},
 					},
 				},
 			},
@@ -116,7 +116,7 @@ func Test_Parse(t *testing.T) {
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, world\\!"}}},
+						{Keys: []string{"*"}, Message: []Node{NodeText{Text: "Hello, world\\!"}}},
 					},
 				},
 			},
@@ -128,8 +128,8 @@ func Test_Parse(t *testing.T) {
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Hello, friend\\!"}}},
-						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, friends\\!"}}},
+						{Keys: []string{"1"}, Message: []Node{NodeText{Text: "Hello, friend\\!"}}},
+						{Keys: []string{"*"}, Message: []Node{NodeText{Text: "Hello, friends\\!"}}},
 					},
 				},
 			},
@@ -141,8 +141,8 @@ func Test_Parse(t *testing.T) {
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Buy one \\\\ apple\\!"}}},
-						{Keys: []string{"*"}, Message: []interface{}{
+						{Keys: []string{"1"}, Message: []Node{NodeText{Text: "Buy one \\\\ apple\\!"}}},
+						{Keys: []string{"*"}, Message: []Node{
 							NodeText{Text: "Buy "},
 							NodeExpr{Value: NodeVariable{Name: "count"}},
 							NodeText{Text: " apples\\!"},
@@ -161,14 +161,14 @@ func Test_Parse(t *testing.T) {
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"0"}, Message: []interface{}{NodeText{Text: "No apples\\!"}}},
-						{Keys: []string{"1"}, Message: []interface{}{
+						{Keys: []string{"0"}, Message: []Node{NodeText{Text: "No apples\\!"}}},
+						{Keys: []string{"1"}, Message: []Node{
 							NodeText{Text: "Buy "},
 							NodeExpr{Value: NodeVariable{Name: "count"}},
 							NodeExpr{Value: NodeVariable{Name: "counts"}},
 							NodeText{Text: " apple\\!"},
 						}},
-						{Keys: []string{"*"}, Message: []interface{}{
+						{Keys: []string{"*"}, Message: []Node{
 							NodeText{Text: "Buy "},
 							NodeExpr{Value: NodeVariable{Name: "count"}},
 							NodeText{Text: " apples 2\\!"},
@@ -188,7 +188,7 @@ func Test_Parse(t *testing.T) {
 					Variants: []NodeVariant{
 						{
 							Keys: []string{"1"},
-							Message: []interface{}{
+							Message: []Node{
 								NodeText{Text: "Were having trouble loading this visualization. Queries are set to timeout after "},
 								NodeExpr{
 									Value: nil,
@@ -205,7 +205,7 @@ func Test_Parse(t *testing.T) {
 						},
 						{
 							Keys: []string{"*"},
-							Message: []interface{}{
+							Message: []Node{
 								NodeText{Text: "Were having trouble loading this visualization. Queries are set to timeout after "},
 								NodeExpr{
 									Value: nil,
