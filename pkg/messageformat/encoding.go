@@ -7,13 +7,6 @@ import (
 	"strconv"
 )
 
-// message stores MF2 message.
-// Specification draft for MF2 syntax:
-// https://github.com/unicode-org/message-format-wg/blob/main/spec/syntax.md
-type message struct {
-	bytes.Buffer
-}
-
 /*
 MarshalText encodes abstract syntax tree into UTF-8-encoded 'Message Format v2' text and returns the result.
 MarshalText implements the encoding.MarshalText interface for custom AST type.
@@ -44,13 +37,13 @@ Output:
 	[]byte("match {$count :number} when * {Hello, world\\!}"), nil
 */
 func (a AST) MarshalText() ([]byte, error) {
-	var m message
+	var buf bytes.Buffer
 
-	if err := m.fromAST(a); err != nil {
-		return nil, fmt.Errorf("message from abstract syntax tree: %w", err)
+	if err := marshal(&buf, a); err != nil {
+		return nil, fmt.Errorf("encode message format v2: %w", err)
 	}
 
-	return m.Bytes(), nil
+	return buf.Bytes(), nil
 }
 
 /*
@@ -92,13 +85,12 @@ func (a *AST) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// writeExpr writes expression from NodeExpr to the receiving message.
-func (m *message) writeExpr(n NodeExpr) error {
+func writeExpr(buf *bytes.Buffer, n NodeExpr) error {
 	if n.isEmpty() {
 		return errors.New("expression node must not be empty")
 	}
 
-	m.WriteByte('{')
+	buf.WriteByte('{')
 
 	switch v := n.Value.(type) {
 	default:
@@ -106,36 +98,35 @@ func (m *message) writeExpr(n NodeExpr) error {
 	case nil:
 		break
 	case NodeVariable:
-		m.WriteString("$" + v.Name)
+		buf.WriteString("$" + v.Name)
 
 		if n.Function.Name != "" {
-			m.WriteByte(' ')
+			buf.WriteByte(' ')
 		}
 	}
 
-	if err := m.writeFunc(n.Function); err != nil {
+	if err := writeFunc(buf, n.Function); err != nil {
 		return fmt.Errorf("write function: %w", err)
 	}
 
-	m.WriteByte('}')
+	buf.WriteByte('}')
 
 	return nil
 }
 
-// writeMatch writes matcher from NodeMatch to the receiving message.
-func (m *message) writeMatch(n NodeMatch) error {
+func writeMatch(buf *bytes.Buffer, n NodeMatch) error {
 	if len(n.Selectors) == 0 {
 		return errors.New("there must be at least one selector")
 	}
 
-	m.WriteString(KeywordMatch + " ")
+	buf.WriteString(KeywordMatch + " ")
 
 	for i := range n.Selectors {
 		if i > 0 {
-			m.WriteByte(' ')
+			buf.WriteByte(' ')
 		}
 
-		if err := m.writeExpr(n.Selectors[i]); err != nil {
+		if err := writeExpr(buf, n.Selectors[i]); err != nil {
 			return fmt.Errorf("write expression: %w", err)
 		}
 	}
@@ -148,7 +139,7 @@ func (m *message) writeMatch(n NodeMatch) error {
 				len(n.Variants[i].Keys), i, numberOfSelectors)
 		}
 
-		if err := m.writeVariant(n.Variants[i]); err != nil {
+		if err := writeVariant(buf, n.Variants[i]); err != nil {
 			return fmt.Errorf("write variant: %w", err)
 		}
 	}
@@ -156,83 +147,80 @@ func (m *message) writeMatch(n NodeMatch) error {
 	return nil
 }
 
-// writeVariant writes match variant from NodeVariant to the receiving message.
-func (m *message) writeVariant(n NodeVariant) error {
+func writeVariant(buf *bytes.Buffer, n NodeVariant) error {
 	for i, v := range n.Keys {
 		if i == 0 {
-			m.WriteString(" " + KeywordWhen + " ")
+			buf.WriteString(" " + KeywordWhen + " ")
 		}
 
-		m.WriteString(v + " ")
+		buf.WriteString(v + " ")
 	}
 
-	if err := m.fromAST(n.Message); err != nil {
-		return fmt.Errorf("from AST: %w", err)
+	if err := marshal(buf, n.Message); err != nil {
+		return fmt.Errorf("encode message format v2: %w", err)
 	}
 
 	return nil
 }
 
-// writeFunc writes function from NodeFunc to the receiving message.
 // TODO: add ability to process markup-like functions e.g.
 // {+button}Submit{-button} or {+link}cancel{-link}.
-func (m *message) writeFunc(n NodeFunction) error {
+func writeFunc(buf *bytes.Buffer, n NodeFunction) error {
 	if n.Name == "" {
 		return nil
 	}
 
-	m.WriteString(":" + n.Name)
+	buf.WriteString(":" + n.Name)
 
 	for i := range n.Options {
-		m.WriteString(" " + n.Options[i].Name + "=")
+		buf.WriteString(" " + n.Options[i].Name + "=")
 
 		switch v := n.Options[i].Value.(type) {
 		default:
 			return fmt.Errorf("unsupported type '%T' for function option '%s':", n.Options[i].Value, n.Options[i].Name)
 		case string:
-			m.WriteString(v)
+			buf.WriteString(v)
 		case int:
-			m.WriteString(strconv.Itoa(v))
+			buf.WriteString(strconv.Itoa(v))
 		}
 	}
 
 	return nil
 }
 
-// fromAST traverses 'Message Format v2' nodes in the abstract syntax tree (AST)
-// writes constructed message parts to the receiving message.
+// marshal serializes AST nodes to text.
 // Implementation follows MF2 design draft:
 // https://github.com/unicode-org/message-format-wg/blob/main/spec/syntax.md
-func (m *message) fromAST(ast AST) error {
+func marshal(buf *bytes.Buffer, ast AST) error {
 	for i := range ast {
 		switch v := ast[i].(type) {
 		default:
 			return fmt.Errorf("unsupported node type '%T'", ast[i])
 		case NodeMatch:
-			if err := m.writeMatch(v); err != nil {
+			if err := writeMatch(buf, v); err != nil {
 				return fmt.Errorf("write match: %w", err)
 			}
 		case NodeExpr:
-			if err := m.writeExpr(v); err != nil {
+			if err := writeExpr(buf, v); err != nil {
 				return fmt.Errorf("write expression: %w", err)
 			}
 		case NodeVariable:
 			switch len(ast) {
 			default:
-				m.WriteString("{$" + v.Name + "}")
+				buf.WriteString("{$" + v.Name + "}")
 			case 1:
-				m.WriteString("$" + v.Name)
+				buf.WriteString("$" + v.Name)
 			}
 		case NodeText:
 			switch {
 			default: // nodeText set in middle
-				m.WriteString(v.Text)
+				buf.WriteString(v.Text)
 			case len(ast) == 1: // nodeText is only element
-				m.WriteString("{" + v.Text + "}")
+				buf.WriteString("{" + v.Text + "}")
 			case i == 0: // nodeText is first element
-				m.WriteString("{" + v.Text)
+				buf.WriteString("{" + v.Text)
 			case i == len(ast)-1: // nodeText is last element
-				m.WriteString(v.Text + "}")
+				buf.WriteString(v.Text + "}")
 			}
 		}
 	}
