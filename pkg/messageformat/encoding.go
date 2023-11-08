@@ -98,7 +98,7 @@ func (m *message) writeExpr(n NodeExpr) error {
 		return errors.New("expression node must not be empty")
 	}
 
-	var expr message
+	m.WriteByte('{')
 
 	switch v := n.Value.(type) {
 	default:
@@ -106,18 +106,18 @@ func (m *message) writeExpr(n NodeExpr) error {
 	case nil:
 		break
 	case NodeVariable:
-		expr.WriteString("$" + v.Name)
+		m.WriteString("$" + v.Name)
 
 		if n.Function.Name != "" {
-			expr.WriteByte(' ')
+			m.WriteByte(' ')
 		}
 	}
 
-	if err := expr.writeFunc(n.Function); err != nil {
+	if err := m.writeFunc(n.Function); err != nil {
 		return fmt.Errorf("write function: %w", err)
 	}
 
-	m.WriteString("{" + expr.String() + "}")
+	m.WriteByte('}')
 
 	return nil
 }

@@ -163,13 +163,13 @@ func (g *GoogleTranslate) Translate(
 	}
 
 	for i := range asts {
-		m := translation.Messages[i]
-
 		b, err := asts[i].MarshalText()
 		if err != nil {
-			return nil, fmt.Errorf("google translate: marshal text for AST '#%d': %w", i, err)
+			return nil,
+				fmt.Errorf("google translate: marshal text from AST for message ID '%s': %w", translation.Messages[i].ID, err)
 		}
 
+		m := translation.Messages[i]
 		m.Message = string(b)
 		m.Status = model.MessageStatusFuzzy
 		translated.Messages[i] = m
