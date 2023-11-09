@@ -874,13 +874,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{Hello, world!}",
+						Message:     "{Hello, world\\!}",
 						Description: "a greeting",
 						Status:      model.MessageStatusUntranslated,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "{Goodbye, world!}",
+						Message:     "{Goodbye, world\\!}",
 						Description: "a farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -907,13 +907,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{Hello, world!}",
+						Message:     "{Hello, world\\!}",
 						Description: "a greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "{Goodbye, world!}",
+						Message:     "{Goodbye, world\\!}",
 						Description: "a farewell",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -938,13 +938,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{Hello, world!}",
+						Message:     "{Hello, world\\!}",
 						Description: "a greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "{Goodbye, world!}",
+						Message:     "{Goodbye, world\\!}",
 						Description: "a farewell",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -969,13 +969,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{Hello, world!}",
+						Message:     "{Hello, world\\!}",
 						Description: "a greeting",
 						Status:      model.MessageStatusUntranslated,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "{Goodbye, world!}",
+						Message:     "{Goodbye, world\\!}",
 						Description: "a farewell",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -1005,13 +1005,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{Hello, world!\nvery long string\n}",
+						Message:     "{Hello, world\\!\nvery long string\n}",
 						Description: "a greeting\n a greeting2",
 						Status:      model.MessageStatusUntranslated,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "{Goodbye, world!}",
+						Message:     "{Goodbye, world\\!}",
 						Description: "a farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -1036,7 +1036,7 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello\nHello2\n",
-						Message:     "{Hello, world!}",
+						Message:     "{Hello, world\\!}",
 						Description: "a greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -1096,7 +1096,7 @@ func TestFromPot(t *testing.T) {
 					},
 					{
 						ID:        "Welcome, %s!",
-						Message:   "{Bienvenue, {:Placeholder format=printf type=string}!}",
+						Message:   "{Bienvenue, {:Placeholder format=printf type=string}\\!}",
 						Positions: []string{"examples/simple/example.clj:30"},
 						Status:    model.MessageStatusUntranslated,
 					},
@@ -1300,7 +1300,7 @@ when * {There are {:Placeholder format=printf type=int} apples.}
 			},
 		},
 		{
-			name: "msgstr plural without PluralForm header",
+			name: "empty msgstr plural",
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: en\n"
@@ -1481,9 +1481,6 @@ when * {Il y a deux pommes \\.}
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
-			// TODO: delete, when we will have mf2 tree nodes to string
-			t.Skip("won't work for now, as we do not have ast tree to string")
 
 			result, err := FromPot(tt.input, tt.expected.Original)
 			if tt.expectedErr != nil {

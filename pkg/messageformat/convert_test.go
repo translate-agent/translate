@@ -105,7 +105,9 @@ func Test_ConvertToMessageFormat2(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual := ToMessageFormat2(tt.input)
+			actual, err := ToMessageFormat2(tt.input)
+			require.NoError(t, err)
+
 			require.Equal(t, tt.expected, actual)
 		})
 	}

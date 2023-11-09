@@ -1,6 +1,7 @@
 package messageformat
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -134,9 +135,9 @@ func escapeSpecialChars(text string) string {
 //	"Hello world!" -> "{Hello world\\!}" // text with special character
 //	"Hello {user}" -> "{Hello {:Placeholder format=bracketVar name=user} world}" // text with bracket placeholder
 //	"Hello %s". -> "{Hello {:Placeholder format=printf type=string}.}" // text with printf placeholder
-func ToMessageFormat2(message string) string {
+func ToMessageFormat2(message string) (string, error) {
 	if message == "" {
-		return ""
+		return "", nil
 	}
 
 	var pf placeholderFormat
@@ -155,10 +156,10 @@ func ToMessageFormat2(message string) string {
 
 		data, err := ast.MarshalText()
 		if err != nil {
-			panic(err) // TODO
+			return "", fmt.Errorf("encode message format v2: %w", err)
 		}
 
-		return string(data)
+		return string(data), nil
 	}
 
 	// Message contains placeholders, so we need to parse it
@@ -187,8 +188,8 @@ func ToMessageFormat2(message string) string {
 
 	data, err := ast.MarshalText()
 	if err != nil {
-		panic(err) // TODO
+		return "", fmt.Errorf("encode message format v2: %w", err)
 	}
 
-	return string(data)
+	return string(data), err
 }
