@@ -39,13 +39,20 @@ type Po struct {
 	Messages []MessageNode
 }
 
+// max value for plural count.
+const pluralCountLimit = 2
+
 // TokensToPo function takes a slice of Token objects and converts them into a Po object representing
 // a PO (Portable Object) file. It returns the generated Po object and an error.
 func TokensToPo(tokens []Token) (Po, error) {
 	var messages []MessageNode
 
 	currentMessage := MessageNode{}
-	header := HeaderNode{}
+	header := HeaderNode{
+		PluralForms: pluralForm{
+			NPlurals: pluralCountLimit,
+		},
+	}
 
 	for i, token := range tokens {
 		if token.Value == "" && token.Type == TokenTypeMsgStr {
