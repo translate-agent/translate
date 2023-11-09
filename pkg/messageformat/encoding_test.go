@@ -328,6 +328,7 @@ func Test_MarshalText(t *testing.T) {
 	}
 }
 
+//nolint:lll
 func Test_UnmarshalText(t *testing.T) {
 	t.Parallel()
 
@@ -552,7 +553,7 @@ func Test_UnmarshalText(t *testing.T) {
 
 			var ast AST
 
-			require.NoError(t, ast.UnmarshalText([]byte(test.input)))
+			require.NoError(t, ast.UnmarshalText(test.input))
 
 			assert.Equal(t, test.expected, ast)
 		})
