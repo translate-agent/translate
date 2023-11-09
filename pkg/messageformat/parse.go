@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"go.expect.digital/translate/pkg/model"
 )
 
 type parser struct {
@@ -236,3 +238,23 @@ func (p *parser) nextToken() Token {
 }
 
 func (p *parser) isEOF() bool { return p.tokens[p.pos].typ == tokenTypeEOF }
+
+// ParseTranslation builds an abstract syntax tree for each translation message.
+func ParseTranslation(translation *model.Translation) ([]AST, error) {
+	if translation == nil {
+		return nil, nil
+	}
+
+	asts := make([]AST, len(translation.Messages))
+
+	for i := range translation.Messages {
+		ast, err := Parse(translation.Messages[i].Message)
+		if err != nil {
+			return nil, fmt.Errorf("parse message #%d: %w", i, err)
+		}
+
+		asts[i] = ast
+	}
+
+	return asts, nil
+}
