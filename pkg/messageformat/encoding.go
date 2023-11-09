@@ -201,6 +201,10 @@ func marshal(buf *bytes.Buffer, ast AST) error {
 				return fmt.Errorf("write match: %w", err)
 			}
 		case NodeExpr:
+			if i == 0 {
+				buf.WriteRune('{')
+			}
+
 			if err := writeExpr(buf, v); err != nil {
 				return fmt.Errorf("write expression: %w", err)
 			}

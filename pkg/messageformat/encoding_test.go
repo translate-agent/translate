@@ -310,6 +310,20 @@ func Test_MarshalText(t *testing.T) {
 				"when 1 {Il y a {:Placeholder format=printf type=int} pomme.} " +
 				"when * {Il y a {:Placeholder format=printf type=int} pommes.}"),
 		},
+		{
+			name: "expression is first followed by text",
+			input: AST{
+				NodeExpr{
+					Function: NodeFunction{
+						Name: "person", Options: []NodeOption{
+							{Name: "gender", Value: "male"},
+						},
+					},
+				},
+				NodeText{Text: " hello "},
+			},
+			expected: []byte("{{:person gender=male} hello }"),
+		},
 	} {
 		test := test
 
@@ -323,7 +337,7 @@ func Test_MarshalText(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, test.expected, l)
+			assert.Equal(t, string(test.expected), string(l))
 		})
 	}
 }
