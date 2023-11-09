@@ -177,7 +177,7 @@ func writeFunc(buf *bytes.Buffer, n NodeFunction) error {
 
 		switch v := n.Options[i].Value.(type) {
 		default:
-			return fmt.Errorf("unsupported type '%T' for function option '%s':", n.Options[i].Value, n.Options[i].Name)
+			return fmt.Errorf("unsupported type '%T' for function option '%s'", n.Options[i].Value, n.Options[i].Name)
 		case string:
 			buf.WriteString(v)
 		case int:

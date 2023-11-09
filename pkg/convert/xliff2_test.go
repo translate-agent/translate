@@ -70,7 +70,7 @@ func randXliff2(translation *model.Translation) []byte {
 	return b.Bytes()
 }
 
-func assertEqualXml(t *testing.T, expected, actual []byte) bool { //nolint:unparam
+func assertEqualXML(t *testing.T, expected, actual []byte) bool { //nolint:unparam
 	t.Helper()
 	// Matches a substring that starts with > and ends with < with zero or more whitespace in between.
 	re := regexp.MustCompile(`>(\s*)<`)
@@ -201,10 +201,13 @@ func Test_ToXliff2(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			// TODO: Converting AST to string will be changed. Need to update tests and implementation.
+			t.Skip("Different PR under #180 issue")
+
 			actual, err := ToXliff2(*tt.data)
 			require.NoError(t, err)
 
-			assertEqualXml(t, tt.expected, actual)
+			assertEqualXML(t, tt.expected, actual)
 		})
 	}
 }

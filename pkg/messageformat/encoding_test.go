@@ -2,7 +2,6 @@ package messageformat
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -112,7 +111,7 @@ func Test_MarshalText(t *testing.T) {
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, world\\!"}}},
+						{Keys: []string{"*"}, Message: []Node{NodeText{Text: "Hello, world\\!"}}},
 					},
 				},
 			},
@@ -124,7 +123,7 @@ func Test_MarshalText(t *testing.T) {
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, world\\!"}}},
+						{Keys: []string{"*"}, Message: []Node{NodeText{Text: "Hello, world\\!"}}},
 					},
 				},
 			},
@@ -136,8 +135,8 @@ func Test_MarshalText(t *testing.T) {
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Hello, friend\\!"}}},
-						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, friends\\!"}}},
+						{Keys: []string{"1"}, Message: []Node{NodeText{Text: "Hello, friend\\!"}}},
+						{Keys: []string{"*"}, Message: []Node{NodeText{Text: "Hello, friends\\!"}}},
 					},
 				},
 			},
@@ -149,8 +148,8 @@ func Test_MarshalText(t *testing.T) {
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Buy one \\\\ apple!"}}},
-						{Keys: []string{"*"}, Message: []interface{}{
+						{Keys: []string{"1"}, Message: []Node{NodeText{Text: "Buy one \\\\ apple!"}}},
+						{Keys: []string{"*"}, Message: []Node{
 							NodeText{Text: "Buy "},
 							NodeVariable{Name: "count"},
 							NodeText{Text: " apples\\!"},
@@ -166,14 +165,14 @@ func Test_MarshalText(t *testing.T) {
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"0"}, Message: []interface{}{NodeText{Text: "No apples\\!"}}},
-						{Keys: []string{"1"}, Message: []interface{}{
+						{Keys: []string{"0"}, Message: []Node{NodeText{Text: "No apples\\!"}}},
+						{Keys: []string{"1"}, Message: []Node{
 							NodeText{Text: "Buy "},
 							NodeVariable{Name: "count"},
 							NodeVariable{Name: "counts"},
 							NodeText{Text: " apple\\!"},
 						}},
-						{Keys: []string{"*"}, Message: []interface{}{
+						{Keys: []string{"*"}, Message: []Node{
 							NodeText{Text: "Buy "},
 							NodeVariable{Name: "count"},
 							NodeText{Text: " apples 2\\!"},
@@ -197,11 +196,11 @@ func Test_MarshalText(t *testing.T) {
 					Variants: []NodeVariant{
 						{
 							Keys: []string{"0", "vocative"},
-							Message: []interface{}{
+							Message: []Node{
 								NodeText{Text: "Hello, "},
 								NodeExpr{
-									NodeVariable{Name: "userName"},
-									NodeFunction{
+									Value: NodeVariable{Name: "userName"},
+									Function: NodeFunction{
 										Name: "person",
 										Options: []NodeOption{
 											{Name: "case", Value: "vocative"},
@@ -215,11 +214,11 @@ func Test_MarshalText(t *testing.T) {
 						},
 						{
 							Keys: []string{"1", "accusative"},
-							Message: []interface{}{
+							Message: []Node{
 								NodeText{Text: "Please welcome "},
 								NodeExpr{
-									NodeVariable{Name: "userName"},
-									NodeFunction{
+									Value: NodeVariable{Name: "userName"},
+									Function: NodeFunction{
 										Name: "person",
 										Options: []NodeOption{
 											{Name: "case", Value: "accusative"},
@@ -233,13 +232,13 @@ func Test_MarshalText(t *testing.T) {
 						},
 						{
 							Keys: []string{"*", "neutral"},
-							Message: []interface{}{
+							Message: []Node{
 								NodeText{
 									Text: "Hello ",
 								},
 								NodeExpr{
-									NodeVariable{Name: "userLastName"},
-									NodeFunction{
+									Value: NodeVariable{Name: "userLastName"},
+									Function: NodeFunction{
 										Name: "person",
 										Options: []NodeOption{
 											{Name: "case", Value: "neutral"},
@@ -274,7 +273,7 @@ func Test_MarshalText(t *testing.T) {
 					Variants: []NodeVariant{
 						{
 							Keys: []string{"1"},
-							Message: []interface{}{
+							Message: []Node{
 								NodeText{Text: "Il y a "},
 								NodeExpr{
 									Function: NodeFunction{
@@ -290,7 +289,7 @@ func Test_MarshalText(t *testing.T) {
 						},
 						{
 							Keys: []string{"*"},
-							Message: []interface{}{
+							Message: []Node{
 								NodeText{Text: "Il y a "},
 								NodeExpr{
 									Function: NodeFunction{
@@ -333,126 +332,217 @@ func Test_UnmarshalText(t *testing.T) {
 	t.Parallel()
 
 	for _, test := range []struct {
-		name        string
-		input       []byte
-		expectedErr error
-		expected    AST
+		name     string
+		input    []byte
+		expected AST
 	}{
+		// singular tests
 		{
 			name:     "empty",
 			input:    []byte(""),
-			expected: nil,
+			expected: AST(nil),
 		},
 		{
-			name:     "empty expr",
-			input:    []byte("{}"),
-			expected: nil,
+			name:     "text",
+			input:    []byte("{Hello, World}"),
+			expected: AST{NodeText{Text: "Hello, World"}},
 		},
 		{
-			name:     "expr with text",
-			input:    []byte("{Hello, World!}"),
-			expected: AST{NodeText{Text: "Hello, World!"}},
+			name:     "text with escaped curly braces",
+			input:    []byte("{Hello, \\{World\\}}"),
+			expected: AST{NodeText{Text: "Hello, \\{World\\}"}},
 		},
 		{
-			name:  "match",
-			input: []byte("match {$count} when * {Hello, world!}"),
+			name:  "text with variable",
+			input: []byte("{Hello {$var} World}"),
+			expected: AST{
+				NodeText{Text: "Hello "},
+				NodeExpr{Value: NodeVariable{Name: "var"}},
+				NodeText{Text: " World"},
+			},
+		},
+		{
+			name:  "text with function",
+			input: []byte("{Hello {:func} World}"),
+			expected: AST{
+				NodeText{Text: "Hello "},
+				NodeExpr{Function: NodeFunction{Name: "func"}},
+				NodeText{Text: " World"},
+			},
+		},
+		{
+			name:  "extracted placeholder pythonVar",
+			input: []byte("{{:Placeholder name=object format=pythonVar type=string} does not exist in this database.}"),
+			expected: AST{
+				NodeExpr{
+					Value: nil,
+					Function: NodeFunction{
+						Name: "Placeholder",
+						Options: []NodeOption{
+							{Name: "name", Value: "object"},
+							{Name: "format", Value: "pythonVar"},
+							{Name: "type", Value: "string"},
+						},
+					},
+				},
+				NodeText{Text: " does not exist in this database."},
+			},
+		},
+		{
+			name:  "extracted placeholders printf style",
+			input: []byte("{{:Placeholder format=printf type=string} does not exist in {:Placeholder format=printf type=int}. database.}}"),
+			expected: AST{
+				NodeExpr{
+					Value: nil,
+					Function: NodeFunction{
+						Name: "Placeholder",
+						Options: []NodeOption{
+							{Name: "format", Value: "printf"},
+							{Name: "type", Value: "string"},
+						},
+					},
+				},
+				NodeText{Text: " does not exist in "},
+				NodeExpr{
+					Value: nil,
+					Function: NodeFunction{
+						Name: "Placeholder",
+						Options: []NodeOption{
+							{Name: "format", Value: "printf"},
+							{Name: "type", Value: "int"},
+						},
+					},
+				},
+				NodeText{Text: ". database."},
+			},
+		},
+		// plural tests
+		{
+			name:  "single match",
+			input: []byte("match {$count} when * {Hello, world\\!}"),
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, world!"}}},
+						{Keys: []string{"*"}, Message: []Node{NodeText{Text: "Hello, world\\!"}}},
 					},
 				},
 			},
 		},
 		{
-			name:  "match with function",
-			input: []byte("match {$count :number} when * {Hello, world!}"),
+			name:  "single match with function",
+			input: []byte("match {$count :number} when * {Hello, world\\!}"),
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, world!"}}},
+						{Keys: []string{"*"}, Message: []Node{NodeText{Text: "Hello, world\\!"}}},
 					},
 				},
 			},
 		},
 		{
 			name:  "match with multiple variants",
-			input: []byte("match {$count :number} when 1 {Hello, friend!} when * {Hello, friends!} "),
+			input: []byte("match {$count :number} when 1 {Hello, friend\\!} when * {Hello, friends\\!} "),
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Hello, friend!"}}},
-						{Keys: []string{"*"}, Message: []interface{}{NodeText{Text: "Hello, friends!"}}},
+						{Keys: []string{"1"}, Message: []Node{NodeText{Text: "Hello, friend\\!"}}},
+						{Keys: []string{"*"}, Message: []Node{NodeText{Text: "Hello, friends\\!"}}},
 					},
 				},
 			},
 		},
 		{
 			name:  "match with plurals",
-			input: []byte("match {$count :number} when 1 {Buy one \\\\ apple!} when * {Buy {$count} apples!} "),
+			input: []byte("match {$count :number} when 1 {Buy one \\\\ apple\\!} when * {Buy {$count} apples\\!} "),
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Buy one \\ apple!"}}},
-						{Keys: []string{"*"}, Message: []interface{}{
+						{Keys: []string{"1"}, Message: []Node{NodeText{Text: "Buy one \\\\ apple\\!"}}},
+						{Keys: []string{"*"}, Message: []Node{
 							NodeText{Text: "Buy "},
-							NodeVariable{Name: "count"},
-							NodeText{Text: " apples!"},
+							NodeExpr{Value: NodeVariable{Name: "count"}},
+							NodeText{Text: " apples\\!"},
 						}},
 					},
 				},
 			},
 		},
-
 		{
 			name: "match with two variables in variant",
 			input: []byte("match {$count :number} " +
-				"when 0 {No apples!} " +
-				"when 1 {Buy {$count}{$counts} apple!} " +
-				"when * {Buy {$count} apples 2!} "),
+				"when 0 {No apples\\!} " +
+				"when 1 {Buy {$count}{$counts} apple\\!} " +
+				"when * {Buy {$count} apples 2\\!} "),
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"0"}, Message: []interface{}{NodeText{Text: "No apples!"}}},
-						{Keys: []string{"1"}, Message: []interface{}{
+						{Keys: []string{"0"}, Message: []Node{NodeText{Text: "No apples\\!"}}},
+						{Keys: []string{"1"}, Message: []Node{
 							NodeText{Text: "Buy "},
-							NodeVariable{Name: "count"},
-							NodeVariable{Name: "counts"},
-							NodeText{Text: " apple!"},
+							NodeExpr{Value: NodeVariable{Name: "count"}},
+							NodeExpr{Value: NodeVariable{Name: "counts"}},
+							NodeText{Text: " apple\\!"},
 						}},
-						{Keys: []string{"*"}, Message: []interface{}{
+						{Keys: []string{"*"}, Message: []Node{
 							NodeText{Text: "Buy "},
-							NodeVariable{Name: "count"},
-							NodeText{Text: " apples 2!"},
+							NodeExpr{Value: NodeVariable{Name: "count"}},
+							NodeText{Text: " apples 2\\!"},
 						}},
 					},
 				},
 			},
 		},
 		{
-			name:        "invalid expr",
-			input:       []byte("match $count :number} "),
-			expectedErr: fmt.Errorf("expression does not start with \"{\""),
-		},
-		{
-			name:     "input with curly braces in it",
-			input:    []byte(`{Chart [\{\}] was added to dashboard [\{\}]}`),
-			expected: AST{NodeText{Text: "Chart [{}] was added to dashboard [{}]"}},
-		},
-		{
-			name:     "input with plus sign in it ",
-			input:    []byte(`{+ vēl %s}`),
-			expected: AST{NodeText{Text: "+ vēl %s"}},
-		},
-		{
-			name:     "input with minus sign in it ",
-			input:    []byte(`{- vēl %s}`),
-			expected: AST{NodeText{Text: "- vēl %s"}},
+			name: "match plural with extracted bracketVar placeholder",
+			input: []byte("match {$count :number} " +
+				"when 1 {Were having trouble loading this visualization. Queries are set to timeout after {:Placeholder name=sec format=bracketVar} second.}" +
+				"when * {Were having trouble loading this visualization. Queries are set to timeout after {:Placeholder name=sec format=bracketVar} seconds.}"),
+			expected: AST{
+				NodeMatch{
+					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
+					Variants: []NodeVariant{
+						{
+							Keys: []string{"1"},
+							Message: []Node{
+								NodeText{Text: "Were having trouble loading this visualization. Queries are set to timeout after "},
+								NodeExpr{
+									Value: nil,
+									Function: NodeFunction{
+										Name: "Placeholder",
+										Options: []NodeOption{
+											{Name: "name", Value: "sec"},
+											{Name: "format", Value: "bracketVar"},
+										},
+									},
+								},
+								NodeText{Text: " second."},
+							},
+						},
+						{
+							Keys: []string{"*"},
+							Message: []Node{
+								NodeText{Text: "Were having trouble loading this visualization. Queries are set to timeout after "},
+								NodeExpr{
+									Value: nil,
+									Function: NodeFunction{
+										Name: "Placeholder",
+										Options: []NodeOption{
+											{Name: "name", Value: "sec"},
+											{Name: "format", Value: "bracketVar"},
+										},
+									},
+								},
+								NodeText{Text: " seconds."},
+							},
+						},
+					},
+				},
+			},
 		},
 	} {
 		test := test
@@ -462,14 +552,8 @@ func Test_UnmarshalText(t *testing.T) {
 
 			var ast AST
 
-			err := ast.UnmarshalText(test.input)
+			require.NoError(t, ast.UnmarshalText([]byte(test.input)))
 
-			if test.expectedErr != nil {
-				require.Errorf(t, err, test.expectedErr.Error())
-				return
-			}
-
-			require.NoError(t, err)
 			assert.Equal(t, test.expected, ast)
 		})
 	}

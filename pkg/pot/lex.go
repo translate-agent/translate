@@ -15,7 +15,7 @@ const (
 	TokenTypeHeaderLanguage TokenType = iota
 	TokenTypeHeaderTranslator
 	TokenTypeHeaderPluralForms
-	TokenTypeHeaderProjectIdVersion
+	TokenTypeHeaderProjectIDVersion
 	TokenTypeHeaderPOTCreationDate
 	TokenTypeHeaderPORevisionDate
 	TokenTypeHeaderLanguageTeam
@@ -26,9 +26,9 @@ const (
 	TokenTypeHeaderContentType
 	TokenTypeHeaderContentTransferEncoding
 	TokenTypeMsgCtxt
-	TokenTypeMsgId
+	TokenTypeMsgID
 	TokenTypeMsgStr
-	TokenTypePluralMsgId
+	TokenTypePluralMsgID
 	TokenTypePluralMsgStr
 	TokenTypeTranslatorComment
 	TokenTypeExtractedComment
@@ -51,8 +51,8 @@ func tokenHeaderPluralForms(value string) Token {
 	return Token{Type: TokenTypeHeaderPluralForms, Value: value}
 }
 
-func tokenHeaderProjectIdVersion(value string) Token {
-	return Token{Type: TokenTypeHeaderProjectIdVersion, Value: value}
+func tokenHeaderProjectIDVersion(value string) Token {
+	return Token{Type: TokenTypeHeaderProjectIDVersion, Value: value}
 }
 
 func tokenHeaderPOTCreationDate(value string) Token {
@@ -95,16 +95,16 @@ func tokenMsgCtxt(value string) Token {
 	return Token{Type: TokenTypeMsgCtxt, Value: value}
 }
 
-func tokenMsgId(value string) Token {
-	return Token{Type: TokenTypeMsgId, Value: value}
+func tokenMsgID(value string) Token {
+	return Token{Type: TokenTypeMsgID, Value: value}
 }
 
 func tokenMsgStr(value string) Token {
 	return Token{Type: TokenTypeMsgStr, Value: value}
 }
 
-func tokenPluralMsgId(value string) Token {
-	return Token{Type: TokenTypePluralMsgId, Value: value}
+func tokenPluralMsgID(value string) Token {
+	return Token{Type: TokenTypePluralMsgID, Value: value}
 }
 
 func tokenPluralMsgStr(value string, index int) Token {
@@ -192,6 +192,11 @@ func Lex(r io.Reader) ([]Token, error) {
 
 		line := scanner.Text()
 
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+
 		token, err := parseLine(line, &tokens)
 		if err != nil {
 			return nil, fmt.Errorf("parse line %d: %w", lineNumber, err)
@@ -210,11 +215,6 @@ func Lex(r io.Reader) ([]Token, error) {
 // parseLine function processes the line based on different prefixes
 // and returns a pointer to a Token object and an error.
 func parseLine(line string, tokens *[]Token) (*Token, error) {
-	line = strings.TrimSpace(line)
-	if len(line) == 0 {
-		return nil, nil
-	}
-
 	switch {
 	case strings.HasPrefix(line, "\"Language:"):
 		return parseToken(line, TokenTypeHeaderLanguage)
@@ -223,7 +223,7 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 	case strings.HasPrefix(line, "\"Translator:"):
 		return parseToken(line, TokenTypeHeaderTranslator)
 	case strings.HasPrefix(line, "\"Project-Id-Version"):
-		return parseToken(line, TokenTypeHeaderProjectIdVersion)
+		return parseToken(line, TokenTypeHeaderProjectIDVersion)
 	case strings.HasPrefix(line, "\"POT-Creation-Date"):
 		return parseToken(line, TokenTypeHeaderPOTCreationDate)
 	case strings.HasPrefix(line, "\"PO-Revision-Date"):
@@ -245,9 +245,9 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 	case strings.HasPrefix(line, "msgctxt"):
 		return parseToken(line, TokenTypeMsgCtxt)
 	case strings.HasPrefix(line, "msgid_plural"):
-		return parseToken(line, TokenTypePluralMsgId)
+		return parseToken(line, TokenTypePluralMsgID)
 	case strings.HasPrefix(line, "msgid"):
-		return parseToken(line, TokenTypeMsgId)
+		return parseToken(line, TokenTypeMsgID)
 	case strings.HasPrefix(line, "msgstr["):
 		return parsePluralMsgToken(line)
 	case strings.HasPrefix(line, "msgstr"):
@@ -356,13 +356,13 @@ func parseMsgString(line string) (string, error) {
 func parseMultilineToken(line string, tokens *[]Token) (*Token, error) {
 	lastToken := (*tokens)[len(*tokens)-1]
 	switch lastToken.Type { //nolint:exhaustive
-	case TokenTypeMsgId, TokenTypePluralMsgId, TokenTypeMsgStr, TokenTypePluralMsgStr:
+	case TokenTypeMsgID, TokenTypePluralMsgID, TokenTypeMsgStr, TokenTypePluralMsgStr:
 		lastToken.Value += " " + parseMultilineString(line)
 		lastToken.Value = strings.TrimSpace(lastToken.Value)
 		(*tokens)[len(*tokens)-1] = lastToken
 	}
 
-	return nil, nil
+	return nil, nil //nolint:nilnil
 }
 
 // parseMultilineString removes all double quote characters from the input line string and returns the modified string.
