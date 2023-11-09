@@ -152,9 +152,13 @@ func ToMessageFormat2(message string) string {
 	// If no matching placeholder format is found, all message is a NodeText
 	if pf.re == nil {
 		ast := AST{NodeText{Text: escapeSpecialChars(message)}}
-		_ = ast
 
-		return "WIP" // TODO: ast.Compile()
+		data, err := ast.MarshalText()
+		if err != nil {
+			panic(err) // TODO
+		}
+
+		return string(data)
 	}
 
 	// Message contains placeholders, so we need to parse it
@@ -181,5 +185,10 @@ func ToMessageFormat2(message string) string {
 		ast.Append(NodeText{Text: escapeSpecialChars(text)})
 	}
 
-	return "WIP" // TODO: ast.Compile()
+	data, err := ast.MarshalText()
+	if err != nil {
+		panic(err) // TODO
+	}
+
+	return string(data)
 }

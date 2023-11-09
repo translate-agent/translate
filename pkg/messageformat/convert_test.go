@@ -105,9 +105,6 @@ func Test_ConvertToMessageFormat2(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			// TODO: Delete skip when we have ast to mf2 string
-			t.Skip("We need ast to mf2 string")
-
 			actual := ToMessageFormat2(tt.input)
 			require.Equal(t, tt.expected, actual)
 		})
