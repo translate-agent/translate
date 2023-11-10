@@ -15,7 +15,7 @@ type parser struct {
 	pos    int
 }
 
-func (p *parser) collect() {
+func (p *parser) collect() error {
 	for {
 		v := p.lex.nextToken()
 
@@ -26,9 +26,9 @@ func (p *parser) collect() {
 			p.tokens = append(p.tokens, v)
 		case tokenTypeEOF:
 			p.tokens = append(p.tokens, v)
-			return
+			return nil
 		case tokenTypeError:
-			return
+			return fmt.Errorf("encountered error token: %s", v.val)
 		}
 	}
 }
@@ -53,7 +53,10 @@ func Parse(text string) (AST, error) {
 	var p parser
 	p.text = text
 	p.lex = lex(text)
-	p.collect()
+
+	if err := p.collect(); err != nil {
+		return nil, fmt.Errorf("collect tokens: %w", err)
+	}
 
 	tree, err := p.parse()
 	if err != nil {
