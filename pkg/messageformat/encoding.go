@@ -208,6 +208,11 @@ func marshal(buf *bytes.Buffer, ast AST) error {
 			if err := writeExpr(buf, v); err != nil {
 				return fmt.Errorf("write expression: %w", err)
 			}
+
+			if i == len(ast)-1 {
+				buf.WriteRune('}')
+			}
+
 		case NodeVariable:
 			switch len(ast) {
 			default:

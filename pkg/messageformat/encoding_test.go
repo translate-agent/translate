@@ -324,6 +324,37 @@ func Test_MarshalText(t *testing.T) {
 			},
 			expected: []byte("{{:person gender=male} hello }"),
 		},
+		{
+			name: "with placeholder at the end",
+			input: AST{
+				NodeExpr{
+					Value: nil,
+					Function: NodeFunction{
+						Name: "Placeholder",
+						Options: []NodeOption{
+							{Name: "format", Value: "pythonVar"},
+							{Name: "name", Value: "message"},
+							{Name: "type", Value: "string"},
+						},
+					},
+				},
+				NodeText{Text: "\nThis may be triggered by: \n"},
+				NodeExpr{
+					Value: nil,
+					Function: NodeFunction{
+						Name: "Placeholder",
+						Options: []NodeOption{
+							{Name: "format", Value: "pythonVar"},
+							{Name: "name", Value: "issues"},
+							{Name: "type", Value: "string"},
+						},
+					},
+				},
+			},
+			expected: []byte(`{{:Placeholder format=pythonVar name=message type=string}
+			This may be triggered by:
+			{:Placeholder format=pythonVar name=issues type=string}}`),
+		},
 	} {
 		test := test
 
