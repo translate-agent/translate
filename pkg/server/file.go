@@ -68,7 +68,7 @@ func (u *uploadParams) validate() error {
 }
 
 // getLanguage returns the language tag for an upload based on the upload parameters and translation.
-// It returns an error if no language is set or if the languages in the upload parameters and translation are mismatched.
+// Returns an error if no language is set or if the languages in the upload parameters and translation are mismatched.
 func getLanguage(reqParams *uploadParams, translation *model.Translation) (language.Tag, error) {
 	und := language.Und
 
@@ -114,39 +114,43 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	// Case for when not original, or uploading original for the first time.
-	updatedTranslations := model.Translations{*translation}
+	var all model.Translations
 
-	// When updating original translation, changes might affect translations - transform and update all translations.
 	if translation.Original {
-		all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
-		if err != nil {
+		if all, err = t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{}); err != nil {
 			return nil, status.Errorf(codes.Internal, "")
-		}
-
-		if origIdx := all.OriginalIndex(); origIdx != -1 {
-			oldOriginal := all[origIdx]
-
-			// Compare repo and request original translation.
-			// Change status for new or altered translation.messages to UNTRANSLATED for all languages
-			all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(translation))
-			// Replace original translation with new one.
-			all.Replace(*translation)
-			// Add missing messages for all translations.
-			if params.populateTranslations {
-				all.PopulateTranslations()
-			}
-
-			if err := t.fuzzyTranslate(ctx, all); err != nil {
-				return nil, status.Errorf(codes.Internal, "")
-			}
-
-			updatedTranslations = all
 		}
 	}
 
-	for i := range updatedTranslations {
-		err = t.repo.SaveTranslation(ctx, params.serviceID, &updatedTranslations[i])
+	origIdx := all.OriginalIndex()
+
+	switch {
+	default:
+		// Original translation is not affected, changes will not affect other translations - update incoming translation.
+		all = model.Translations{*translation}
+	case translation.Original && origIdx != -1:
+		// Original translation is affected, changes might affect other translations - transform and update all translations.
+		oldOriginal := all[origIdx]
+
+		// Compare repo and request original translation.
+		// Change status for new or altered translation.messages to UNTRANSLATED for all languages
+		all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(translation))
+		// Replace original translation with new one.
+		all.Replace(*translation)
+		// Add missing messages for all translations.
+		if params.populateTranslations {
+			all.PopulateTranslations()
+		}
+
+		if err = t.fuzzyTranslate(ctx, all); err != nil {
+			return nil, status.Errorf(codes.Internal, "")
+		}
+	}
+
+	// Update affected translations
+	for i := range all {
+		err = t.repo.SaveTranslation(ctx, params.serviceID, &all[i])
+
 		switch {
 		case errors.Is(err, repo.ErrNotFound):
 			return nil, status.Errorf(codes.NotFound, "service not found")

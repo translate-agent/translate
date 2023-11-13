@@ -201,7 +201,7 @@ func Test_FindChangedMessageIDs(t *testing.T) {
 			{ID: "2", Message: "World"},
 		},
 	}
-	new := Translation{
+	current := Translation{
 		Messages: []Message{
 			{ID: "1", Message: "Hello"},
 			{ID: "2", Message: "Go"},
@@ -209,7 +209,7 @@ func Test_FindChangedMessageIDs(t *testing.T) {
 		},
 	}
 
-	changedIDs := old.FindChangedMessageIDs(&new)
+	changedIDs := old.FindChangedMessageIDs(&current)
 
 	// ID:1 -> Are the same (Should not be included)
 	// ID:2 -> Messages has been changed (Should be included)

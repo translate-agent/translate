@@ -1,7 +1,11 @@
 package convert
 
 import (
+	"errors"
+	"fmt"
 	"strings"
+
+	"go.expect.digital/translate/pkg/messageformat"
 )
 
 // convertToMessageFormatSingular wraps the input string with curly braces and returns the modified string.
@@ -29,8 +33,18 @@ func escapeSpecialChars(message string) string {
 	return message
 }
 
-// removeEnclosingBrackets replaces '{' and '}', temporarily maintain only the singular form.
-func removeEnclosingBrackets(message string) string {
-	replacer := strings.NewReplacer("{", "", "}", "")
-	return replacer.Replace(message)
+func getMsg(message string) (string, error) {
+	nodes, err := messageformat.Parse(message)
+	if err != nil {
+		return "", fmt.Errorf("parse message: %w", err)
+	}
+
+	for _, node := range nodes {
+		nodeTxt, ok := node.(messageformat.NodeText)
+		if ok {
+			return nodeTxt.Text, nil
+		}
+	}
+
+	return "", errors.New("input message is empty")
 }

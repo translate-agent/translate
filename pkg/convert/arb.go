@@ -54,7 +54,7 @@ func FromArb(data []byte, original bool) (model.Translation, error) {
 		}
 
 		var meta struct {
-			Description string `json:"description"`
+			Description string `json:"description" mapstructure:"description"`
 		}
 
 		if err := mapstructure.Decode(subKeyMap, &meta); err != nil {
@@ -131,11 +131,18 @@ func FromArb(data []byte, original bool) (model.Translation, error) {
 func ToArb(translation model.Translation) ([]byte, error) {
 	// dst length = number of messages + number of potential descriptions (same as number of messages) + locale.
 	dst := make(map[string]interface{}, len(translation.Messages)*2+1)
+
 	// "und" (Undetermined) language.Tag is also valid BCP47 tag.
 	dst["@@locale"] = translation.Language
 
 	for _, msg := range translation.Messages {
-		dst[msg.ID] = removeEnclosingBrackets(msg.Message)
+		var err error
+
+		dst[msg.ID], err = getMsg(msg.Message)
+		if err != nil {
+			return nil, fmt.Errorf("get message value: %w", err)
+		}
+
 		if len(msg.Description) > 0 {
 			dst["@"+msg.ID] = map[string]string{"description": msg.Description}
 		}

@@ -3,11 +3,11 @@ PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
 
-ARG --global go_version=1.21.1
-ARG --global golangci_lint_version=1.54.2
-ARG --global bufbuild_version=1.26.1
+ARG --global go_version=1.21.3
+ARG --global golangci_lint_version=1.55.2
+ARG --global bufbuild_version=1.27.2
 ARG --global migrate_version=4.16.2
-ARG --global sqlfluff_version=2.3.2
+ARG --global sqlfluff_version=2.3.5
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
 
@@ -87,7 +87,8 @@ proto:
   WORKDIR proto
   RUN \
     --mount=type=cache,target=$BUF_CACHE_DIR \
-      buf mod update && buf build && buf generate
+    --mount=type=cache,target=$BUF_CACHE_DIR,mode=0700 \
+       buf mod update && buf build && buf generate
 
   RUN sed -i'.bak' '/client.UploadTranslationFile/i \
   \\tfile, _, err := req.FormFile("file")\n\

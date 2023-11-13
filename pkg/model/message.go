@@ -11,9 +11,9 @@ import (
 )
 
 type Translation struct {
-	Language language.Tag
-	Messages []Message
-	Original bool
+	Language language.Tag `json:"language"`
+	Messages []Message    `json:"messages"`
+	Original bool         `json:"original"`
 }
 
 /*
@@ -21,7 +21,7 @@ FindChangedMessageIDs returns a list of message IDs that have been altered in th
  1. The message.message has been changed
  2. The message with new ID has been added.
 */
-func (t *Translation) FindChangedMessageIDs(new *Translation) []string {
+func (t *Translation) FindChangedMessageIDs(current *Translation) []string {
 	lookup := make(map[string]int, len(t.Messages))
 	for i := range t.Messages {
 		lookup[t.Messages[i].ID] = i
@@ -29,7 +29,7 @@ func (t *Translation) FindChangedMessageIDs(new *Translation) []string {
 
 	var ids []string
 
-	for _, msg := range new.Messages {
+	for _, msg := range current.Messages {
 		if idx, ok := lookup[msg.ID]; !ok || t.Messages[idx].Message != msg.Message {
 			ids = append(ids, msg.ID)
 		}
@@ -198,7 +198,7 @@ func (t Translations) PopulateTranslations() {
 type Message struct {
 	ID          string
 	PluralID    string
-	Message     string
+	Message     string // Message contains MessageFormat V2 formatted value
 	Description string
 	Positions   Positions
 	Status      MessageStatus

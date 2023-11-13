@@ -22,15 +22,15 @@ type pluralForm struct {
 
 type MessageNode struct {
 	MsgCtxt               string
-	MsgId                 string
-	MsgIdPlural           string
+	MsgID                 string
+	MsgIDPlural           string
 	TranslatorComment     []string
 	ExtractedComment      []string
 	References            []string
 	Flag                  string
 	MsgCtxtPrevCtxt       string
-	MsgIdPrevUntPluralStr string
-	MsgIdPrevUnt          string
+	MsgIDPrevUntPluralStr string
+	MsgIDPrevUnt          string
 	MsgStr                []string
 }
 
@@ -39,13 +39,20 @@ type Po struct {
 	Messages []MessageNode
 }
 
+// max value for plural count.
+const pluralCountLimit = 2
+
 // TokensToPo function takes a slice of Token objects and converts them into a Po object representing
 // a PO (Portable Object) file. It returns the generated Po object and an error.
 func TokensToPo(tokens []Token) (Po, error) {
 	var messages []MessageNode
 
 	currentMessage := MessageNode{}
-	header := HeaderNode{}
+	header := HeaderNode{
+		PluralForms: pluralForm{
+			NPlurals: pluralCountLimit,
+		},
+	}
 
 	for i, token := range tokens {
 		if token.Value == "" && token.Type == TokenTypeMsgStr {
@@ -54,7 +61,7 @@ func TokensToPo(tokens []Token) (Po, error) {
 				return Po{}, fmt.Errorf("get previous token: %w", err)
 			}
 			// Skip an empty default msgstr in the header if it exists
-			if prevToken.Type == TokenTypeMsgId && prevToken.Value == "" {
+			if prevToken.Type == TokenTypeMsgID && prevToken.Value == "" {
 				continue
 			}
 		}
@@ -92,13 +99,13 @@ func TokensToPo(tokens []Token) (Po, error) {
 		case TokenTypeMsgctxtPreviousContext:
 			currentMessage.MsgCtxtPrevCtxt = token.Value
 		case TokenTypeMsgidPluralPrevUntStrPlural:
-			currentMessage.MsgIdPrevUntPluralStr = token.Value
+			currentMessage.MsgIDPrevUntPluralStr = token.Value
 		case TokenTypeMsgidPrevUntStr:
-			currentMessage.MsgIdPrevUnt = token.Value
-		case TokenTypeMsgId:
-			currentMessage.MsgId = token.Value
-		case TokenTypePluralMsgId:
-			currentMessage.MsgIdPlural = token.Value
+			currentMessage.MsgIDPrevUnt = token.Value
+		case TokenTypeMsgID:
+			currentMessage.MsgID = token.Value
+		case TokenTypePluralMsgID:
+			currentMessage.MsgIDPlural = token.Value
 		case TokenTypeMsgStr:
 			currentMessage.MsgStr = []string{token.Value}
 			messages = append(messages, currentMessage)
@@ -119,7 +126,7 @@ func TokensToPo(tokens []Token) (Po, error) {
 			}
 			// In our model.Translation currently there are no place to store these headers/metadata about translation file.
 		case TokenTypeHeaderReportMsgidBugsTo,
-			TokenTypeHeaderProjectIdVersion,
+			TokenTypeHeaderProjectIDVersion,
 			TokenTypeHeaderPOTCreationDate,
 			TokenTypeHeaderPORevisionDate,
 			TokenTypeHeaderLanguageTeam,

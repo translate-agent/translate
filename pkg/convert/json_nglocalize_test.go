@@ -37,41 +37,40 @@ func Test_FromNgLocalize(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "Hello",
-						Message: "{Bonjour}",
+						Message: `{Bonjour}`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "Welcome",
-						Message: "{Bienvenue}",
+						Message: `{Bienvenue}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
 			},
 		},
 		{
-			name: "Translated",
+			name: "Message with special chars",
 			input: []byte(`
-			{
-				"locale": "fr",
-				"translations": {
-					"Hello": "Bonjour",
-					"Welcome": ""
-				}
-			}
-			`),
+      {
+        "locale": "fr",
+        "translations": {
+          "Hello": "Welcome {user}! | \\",
+          "Welcome": "Bienvenue"
+        }
+      }`),
 			expected: model.Translation{
 				Language: language.French,
-				Original: false,
+				Original: true,
 				Messages: []model.Message{
 					{
 						ID:      "Hello",
-						Message: "{Bonjour}",
-						Status:  model.MessageStatusUntranslated,
+						Message: `{Welcome \{user\}! \| \\}`,
+						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "Welcome",
-						Message: "",
-						Status:  model.MessageStatusUntranslated,
+						Message: `{Bienvenue}`,
+						Status:  model.MessageStatusTranslated,
 					},
 				},
 			},
@@ -98,7 +97,7 @@ func Test_FromNgLocalize(t *testing.T) {
 			actual, err := FromNgLocalize(tt.input, tt.expected.Original)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -134,20 +133,35 @@ func Test_ToNgLocalize(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Welcome",
-						Message:     "{Welcome to our website!}",
+						Message:     `{Welcome to our website!}`,
 						Description: "To welcome a new visitor",
 					},
 					{
 						ID:          "Error",
-						Message:     "{Something went wrong. Please try again later.}",
+						Message:     `{Something went wrong. Please try again later.}`,
 						Description: "To inform the user of an error",
 					},
 					{
 						ID:      "Feedback",
-						Message: "{We appreciate your feedback. Thank you for using our service.}",
+						Message: `{We appreciate your feedback. Thank you for using our service.}`,
 					},
 				},
 			},
+			expectedErr: nil,
+		},
+		{
+			name: "Message with special chars",
+			input: model.Translation{
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:          "Welcome",
+						Message:     `{Welcome to our website \{user\} 99\|100 \\}`,
+						Description: "To welcome a new visitor",
+					},
+				},
+			},
+			expected:    []byte(`{"locale": "en","translations": {"Welcome": "Welcome to our website {user} 99|100 \\"}}`),
 			expectedErr: nil,
 		},
 	}
@@ -159,13 +173,11 @@ func Test_ToNgLocalize(t *testing.T) {
 			actual, err := ToNgLocalize(tt.input)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			if !assert.NoError(t, err) {
-				return
-			}
+			require.NoError(t, err)
 
 			assert.JSONEq(t, string(tt.expected), string(actual))
 		})

@@ -9,11 +9,11 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
 	testutilrand "go.expect.digital/translate/pkg/testutil/rand"
+	"golang.org/x/text/language"
 )
 
 // TODO: XLIFF1.2 and XLIFF2.0 uses same test data and same tests, so we can merge them into one test file
@@ -33,9 +33,9 @@ func randXliff12(translation *model.Translation) []byte {
 
 	b.WriteString("<body>")
 
-	writeMsg := func(s string) { fmt.Fprintf(b, "<target>%s</target>", s) }
+	writeMsg := func(s string) { fmt.Fprintf(b, "<target>%s</target>", s[1:len(s)-1]) }
 	if translation.Original {
-		writeMsg = func(s string) { fmt.Fprintf(b, "<source>%s</source>", s) }
+		writeMsg = func(s string) { fmt.Fprintf(b, "<source>%s</source>", s[1:len(s)-1]) }
 	}
 
 	for _, msg := range translation.Messages {
@@ -101,6 +101,32 @@ func Test_FromXliff12(t *testing.T) {
 			data:     randXliff12(nonOriginalTranslation),
 			expected: nonOriginalTranslation,
 		},
+		{
+			name: "Message with special chars {}",
+			data: randXliff12(
+				&model.Translation{
+					Language: language.English,
+					Original: false,
+					Messages: []model.Message{
+						{
+							ID:      "order canceled",
+							Message: `{Order #{Id} has been canceled for {ClientName} | \}`,
+						},
+					},
+				},
+			),
+			expected: &model.Translation{
+				Original: false,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "order canceled",
+						Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
+						Status:  model.MessageStatusUntranslated,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -110,10 +136,6 @@ func Test_FromXliff12(t *testing.T) {
 
 			actual, err := FromXliff12(tt.data, tt.expected.Original)
 			require.NoError(t, err)
-
-			for i := range actual.Messages {
-				actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
-			}
 
 			testutil.EqualTranslations(t, tt.expected, &actual)
 		})
@@ -129,12 +151,53 @@ func Test_ToXliff12(t *testing.T) {
 	}
 
 	translation := testutilrand.ModelTranslation(4, msgOpts, testutilrand.WithOriginal(true))
-	expected := randXliff12(translation)
 
-	actual, err := ToXliff12(*translation)
-	require.NoError(t, err)
+	tests := []struct {
+		name     string
+		data     *model.Translation
+		expected []byte
+	}{
+		{
+			name:     "valid input",
+			data:     translation,
+			expected: randXliff12(translation),
+		},
+		{
+			name: "message with special chars",
+			data: &model.Translation{
+				Original: true,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "common.welcome",
+						Message: `{User #\{ID\} \| \\}`,
+					},
+				},
+			},
+			expected: []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file source-language="en" target-language="und">
+    <body>
+      <trans-unit id="common.welcome">
+        <source>User #{ID} | \</source>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>`),
+		},
+	}
 
-	assertEqualXml(t, expected, actual)
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual, err := ToXliff12(*tt.data)
+			require.NoError(t, err)
+
+			assertEqualXML(t, tt.expected, actual)
+		})
+	}
 }
 
 func Test_TransformXLIFF12(t *testing.T) {
@@ -142,7 +205,6 @@ func Test_TransformXLIFF12(t *testing.T) {
 
 	msgOpts := []testutilrand.ModelMessageOption{
 		// Enclose message in curly braces, as ToXliff2() removes them, and FromXliff2() adds them again
-		testutilrand.WithMessageFormat(),
 		testutilrand.WithStatus(model.MessageStatusTranslated),
 	}
 
@@ -166,5 +228,5 @@ func Test_TransformXLIFF12(t *testing.T) {
 		return true
 	}
 
-	assert.NoError(t, quick.Check(f, conf))
+	require.NoError(t, quick.Check(f, conf))
 }

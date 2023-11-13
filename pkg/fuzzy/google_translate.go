@@ -111,11 +111,11 @@ func (g *GoogleTranslate) Translate(
 	targetLanguage language.Tag,
 ) (*model.Translation, error) {
 	if translation == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	if len(translation.Messages) == 0 {
-		return &model.Translation{Language: translation.Language, Original: translation.Original}, nil
+		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
 	}
 
 	// Split text from translation into batches to avoid exceeding
@@ -163,9 +163,9 @@ func (g *GoogleTranslate) Translate(
 			return nil, fmt.Errorf("google translate client: translate texts from batch #%d: %w", i, err)
 		}
 
-		for _, t := range res.Translations {
+		for _, t := range res.GetTranslations() {
 			m := translation.Messages[msgIndex]
-			m.Message = t.TranslatedText
+			m.Message = t.GetTranslatedText()
 			m.Status = model.MessageStatusFuzzy
 
 			translated.Messages = append(translated.Messages, m)
@@ -179,8 +179,8 @@ func (g *GoogleTranslate) Translate(
 
 // parent returns path to Google project and location.
 func parent() string {
-	projectId := viper.GetString("other.google.project_id")
+	projectID := viper.GetString("other.google.project_id")
 	location := viper.GetString("other.google.location")
 
-	return fmt.Sprintf("projects/%s/locations/%s", projectId, location)
+	return fmt.Sprintf("projects/%s/locations/%s", projectID, location)
 }

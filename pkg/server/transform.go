@@ -103,15 +103,15 @@ func serviceToProto(s *model.Service) *translatev1.Service {
 // serviceFromProto converts translatev1.Service to model.Service.
 func serviceFromProto(s *translatev1.Service) (*model.Service, error) {
 	if s == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	var (
-		service = &model.Service{Name: s.Name}
+		service = &model.Service{Name: s.GetName()}
 		err     error
 	)
 
-	service.ID, err = uuidFromProto(s.Id)
+	service.ID, err = uuidFromProto(s.GetId())
 	if err != nil {
 		return nil, fmt.Errorf("transform id: %w", err)
 	}
@@ -149,15 +149,15 @@ func messageToProto(m *model.Message) *translatev1.Message {
 // messageFromProto converts *translatev1.Message to *model.Message.
 func messageFromProto(m *translatev1.Message) (*model.Message, error) {
 	if m == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	return &model.Message{
-		ID:          m.Id,
-		Message:     m.Message,
-		Description: m.Description,
-		Status:      model.MessageStatus(m.Status),
-		Positions:   m.Positions,
+		ID:          m.GetId(),
+		Message:     m.GetMessage(),
+		Description: m.GetDescription(),
+		Status:      model.MessageStatus(m.GetStatus()),
+		Positions:   m.GetPositions(),
 	}, nil
 }
 
@@ -189,19 +189,19 @@ func translationToProto(t *model.Translation) *translatev1.Translation {
 // translationFromProto converts *translatev1.Translation to *model.Translation.
 func translationFromProto(t *translatev1.Translation) (*model.Translation, error) {
 	if t == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	var (
 		err         error
-		translation = &model.Translation{Original: t.Original}
+		translation = &model.Translation{Original: t.GetOriginal()}
 	)
 
-	if translation.Language, err = languageFromProto(t.Language); err != nil {
+	if translation.Language, err = languageFromProto(t.GetLanguage()); err != nil {
 		return nil, fmt.Errorf("transform language tag: %w", err)
 	}
 
-	if translation.Messages, err = messagesFromProto(t.Messages); err != nil {
+	if translation.Messages, err = messagesFromProto(t.GetMessages()); err != nil {
 		return nil, fmt.Errorf("transform translation: %w", err)
 	}
 

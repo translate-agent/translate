@@ -15,11 +15,13 @@ import (
 type poTag string
 
 const (
-	MsgId        poTag = "msgid"
-	PluralId     poTag = "msgid_plural"
+	MsgID        poTag = "msgid"
+	PluralID     poTag = "msgid_plural"
 	MsgStrPlural poTag = "msgstr[%d]"
 	MsgStr       poTag = "msgstr"
 )
+
+const pluralCountLimit = 2
 
 // ToPot function takes a model.Translation structure,
 // writes the language information and each message to a buffer in the POT file format,
@@ -29,6 +31,14 @@ func ToPot(t model.Translation) ([]byte, error) {
 
 	if _, err := fmt.Fprintf(&b, "msgid \"\"\nmsgstr \"\"\n\"Language: %s\\n\"\n", t.Language); err != nil {
 		return nil, fmt.Errorf("write language: %w", err)
+	}
+
+	if !t.Original {
+		// Temporary we support plural forms (one and other).
+		// https://www.gnu.org/software/gettext/manual/html_node/Plural-forms.html
+		if _, err := fmt.Fprintf(&b, "\"Plural-Forms: nplurals=%d; plural=(n != 1);\\n\"\n\n", pluralCountLimit); err != nil {
+			return nil, fmt.Errorf("write Plural-Forms: %w", err)
+		}
 	}
 
 	for i, message := range t.Messages {
@@ -42,8 +52,6 @@ func ToPot(t model.Translation) ([]byte, error) {
 
 // FromPot function parses a POT file by tokenizing and converting it into a pot.Po structure.
 func FromPot(b []byte, original bool) (model.Translation, error) {
-	const pluralCountLimit = 2
-
 	tokens, err := pot.Lex(bytes.NewReader(b))
 	if err != nil {
 		return model.Translation{}, fmt.Errorf("divide po file to tokens: %w", err)
@@ -71,8 +79,8 @@ func FromPot(b []byte, original bool) (model.Translation, error) {
 	}
 
 	if original {
-		singularValue = func(v pot.MessageNode) string { return v.MsgId }
-		pluralValue = func(v pot.MessageNode) []string { return []string{v.MsgId, v.MsgIdPlural} }
+		singularValue = func(v pot.MessageNode) string { return v.MsgID }
+		pluralValue = func(v pot.MessageNode) []string { return []string{v.MsgID, v.MsgIDPlural} }
 		getStatus = func(_ pot.MessageNode) model.MessageStatus { return model.MessageStatusTranslated }
 	}
 
@@ -80,7 +88,7 @@ func FromPot(b []byte, original bool) (model.Translation, error) {
 
 	if po.Header.PluralForms.NPlurals == pluralCountLimit {
 		convert = func(v pot.MessageNode) string {
-			if v.MsgIdPlural == "" {
+			if v.MsgIDPlural == "" {
 				return convertToMessageFormatSingular(singularValue(v))
 			}
 
@@ -90,8 +98,8 @@ func FromPot(b []byte, original bool) (model.Translation, error) {
 
 	for _, node := range po.Messages {
 		message := model.Message{
-			ID:          node.MsgId,
-			PluralID:    node.MsgIdPlural,
+			ID:          node.MsgID,
+			PluralID:    node.MsgIDPlural,
 			Description: strings.Join(node.ExtractedComment, "\n "),
 			Positions:   node.References,
 			Message:     convert(node),
@@ -278,13 +286,6 @@ func writeMessage(b *bytes.Buffer, index int, message model.Message) error {
 		}
 	}
 
-	if message.PluralID != "" {
-		count := strings.Count(message.Message, "when")
-		if _, err := fmt.Fprintf(b, "\"Plural-Forms: nplurals=%d; plural=(n != 1);\\n\"\n", count); err != nil {
-			return fmt.Errorf("write plural forms: %w", err)
-		}
-	}
-
 	descriptions := strings.Split(message.Description, "\n")
 
 	for _, description := range descriptions {
@@ -313,7 +314,7 @@ func writeMessage(b *bytes.Buffer, index int, message model.Message) error {
 // writeTags writes specific tags (MsgId, MsgStr, PluralId, MsgStrPlural)
 // along with their corresponding values to a bytes.Buffer.
 func writeTags(b *bytes.Buffer, message model.Message) error {
-	if err := writeToPoTag(b, MsgId, message.ID); err != nil {
+	if err := writeToPoTag(b, MsgID, message.ID); err != nil {
 		return fmt.Errorf("format msgid: %w", err)
 	}
 
@@ -324,7 +325,7 @@ func writeTags(b *bytes.Buffer, message model.Message) error {
 		}
 	} else {
 		// plural
-		if err := writeToPoTag(b, PluralId, message.PluralID); err != nil {
+		if err := writeToPoTag(b, PluralID, message.PluralID); err != nil {
 			return fmt.Errorf("format msgid_plural: %w", err)
 		}
 		if err := writeToPoTag(b, MsgStrPlural, message.Message); err != nil {
@@ -350,10 +351,14 @@ func convertPluralsToMessageString(plurals []string) string {
 		if i == len(plurals)-1 {
 			count = "*"
 		} else {
-			count = fmt.Sprintf("%d", i+1)
+			count = strconv.Itoa(i + 1)
 		}
 
-		sb.WriteString(fmt.Sprintf("when %s {%s}\n", count, line))
+		if line == "" {
+			sb.WriteString(fmt.Sprintf("when %s\n", count))
+		} else {
+			sb.WriteString(fmt.Sprintf("when %s {%s}\n", count, line))
+		}
 	}
 
 	return sb.String()

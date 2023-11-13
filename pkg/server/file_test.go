@@ -68,7 +68,7 @@ func Test_ParseUploadParams(t *testing.T) {
 			params, err := parseUploadTranslationFileRequestParams(tt.request)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -138,11 +138,11 @@ func Test_ValidateUploadParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }
@@ -151,36 +151,36 @@ func Test_GetLanguage(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		params   *uploadParams
+		params      *uploadParams
 		translation *model.Translation
 	}
 
 	// Tests
 
 	translationDefinedParamsUndefined := args{
-		params:   &uploadParams{languageTag: language.Und},
+		params:      &uploadParams{languageTag: language.Und},
 		translation: rand.ModelTranslation(3, nil),
 	}
 
 	translationUndefinedParamsDefined := args{
-		params:   &uploadParams{languageTag: rand.Language()},
+		params:      &uploadParams{languageTag: rand.Language()},
 		translation: rand.ModelTranslation(3, nil, rand.WithLanguage(language.Und)),
 	}
 
 	sameLang := rand.Language()
 	bothDefinedSameLang := args{
-		params:   &uploadParams{languageTag: sameLang},
+		params:      &uploadParams{languageTag: sameLang},
 		translation: rand.ModelTranslation(3, nil, rand.WithLanguage(sameLang)),
 	}
 
 	undefinedBoth := args{
-		params:   &uploadParams{languageTag: language.Und},
+		params:      &uploadParams{languageTag: language.Und},
 		translation: rand.ModelTranslation(3, nil, rand.WithLanguage(language.Und)),
 	}
 
 	langs := rand.Languages(2)
 	langMismatch := args{
-		params:   &uploadParams{languageTag: langs[0]},
+		params:      &uploadParams{languageTag: langs[0]},
 		translation: rand.ModelTranslation(3, nil, rand.WithLanguage(langs[1])),
 	}
 
@@ -227,7 +227,7 @@ func Test_GetLanguage(t *testing.T) {
 			actual, err := getLanguage(tt.args.params, tt.args.translation)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -290,7 +290,7 @@ func Test_ParseDownloadParams(t *testing.T) {
 			params, err := parseDownloadTranslationFileRequestParams(tt.request)
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
@@ -357,11 +357,11 @@ func Test_ValidateDownloadParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.expectedErr != nil {
-				assert.ErrorContains(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }

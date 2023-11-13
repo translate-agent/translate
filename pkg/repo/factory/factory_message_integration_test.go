@@ -63,7 +63,7 @@ func Test_SaveTranslation(t *testing.T) {
 				err := repository.SaveTranslation(ctx, tt.serviceID, tt.translation)
 
 				if tt.expectedErr != nil {
-					assert.ErrorIs(t, err, tt.expectedErr)
+					require.ErrorIs(t, err, tt.expectedErr)
 					return
 				}
 

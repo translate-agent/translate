@@ -70,12 +70,12 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:  "match with plurals",
-			input: "match {$count :number} when 1 {Buy one apple!} when * {Buy {$count} apples!} ",
+			input: "match {$count :number} when 1 {Buy one \\\\ apple!} when * {Buy {$count} apples!} ",
 			expected: []interface{}{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
 					Variants: []NodeVariant{
-						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Buy one apple!"}}},
+						{Keys: []string{"1"}, Message: []interface{}{NodeText{Text: "Buy one \\ apple!"}}},
 						{Keys: []string{"*"}, Message: []interface{}{
 							NodeText{Text: "Buy "},
 							NodeVariable{Name: "count"},
@@ -141,7 +141,7 @@ func Test_Parse(t *testing.T) {
 			l, err := Parse(test.input)
 
 			if test.expectedErr != nil {
-				assert.Errorf(t, err, test.expectedErr.Error())
+				require.Errorf(t, err, test.expectedErr.Error())
 				return
 			}
 

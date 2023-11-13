@@ -7,6 +7,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_TokensToPo(t *testing.T) {
@@ -21,7 +22,7 @@ func Test_TokensToPo(t *testing.T) {
 		{
 			name: "When all possible token values are provided",
 			input: []Token{
-				tokenMsgId(""),
+				tokenMsgID(""),
 				tokenMsgStr(""),
 				tokenHeaderLanguage("en-US"),
 				tokenHeaderTranslator("John Doe"),
@@ -37,12 +38,12 @@ func Test_TokensToPo(t *testing.T) {
 				tokenMsgCtxt("context"),
 				tokenMsgctxtPreviousContext("previous context"),
 				tokenMsgidPrevUntStr("msgid prev untranslated string"),
-				tokenMsgId("There is 1 apple"),
+				tokenMsgID("There is 1 apple"),
 				tokenMsgidPluralPrevUntStrPlural("msgid plural prev untranslated string"),
-				tokenPluralMsgId("There is %d apples"),
+				tokenPluralMsgID("There is %d apples"),
 				tokenPluralMsgStr("Il y a 1 pomme", 0),
 				tokenPluralMsgStr("Il y a %d pommes", 1),
-				tokenMsgId("message id"),
+				tokenMsgID("message id"),
 				tokenMsgStr("message"),
 			},
 			expected: Po{
@@ -59,14 +60,14 @@ func Test_TokensToPo(t *testing.T) {
 						Flag:                  "fuzzy",
 						MsgCtxt:               "context",
 						MsgCtxtPrevCtxt:       "previous context",
-						MsgIdPrevUnt:          "msgid prev untranslated string",
-						MsgId:                 "There is 1 apple",
-						MsgIdPrevUntPluralStr: "msgid plural prev untranslated string",
-						MsgIdPlural:           "There is %d apples",
+						MsgIDPrevUnt:          "msgid prev untranslated string",
+						MsgID:                 "There is 1 apple",
+						MsgIDPrevUntPluralStr: "msgid plural prev untranslated string",
+						MsgIDPlural:           "There is %d apples",
 						MsgStr:                []string{"Il y a 1 pomme", "Il y a %d pommes"},
 					},
 					{
-						MsgId:  "message id",
+						MsgID:  "message id",
 						MsgStr: []string{"message"},
 					},
 				},
@@ -78,7 +79,7 @@ func Test_TokensToPo(t *testing.T) {
 				tokenHeaderLanguage("en-US"),
 				tokenHeaderTranslator("John Doe"),
 				tokenHeaderPluralForms("nplurals=2; plural=(n != 1);"),
-				tokenMsgId("message id"),
+				tokenMsgID("message id"),
 				tokenMsgStr("message"),
 			},
 			expected: Po{
@@ -89,7 +90,7 @@ func Test_TokensToPo(t *testing.T) {
 				},
 				Messages: []MessageNode{
 					{
-						MsgId:  "message id",
+						MsgID:  "message id",
 						MsgStr: []string{"message"},
 					},
 				},
@@ -101,8 +102,8 @@ func Test_TokensToPo(t *testing.T) {
 				tokenHeaderLanguage("en-US"),
 				tokenHeaderTranslator("John Doe"),
 				tokenHeaderPluralForms("nplurals=2; plural=(n != 1);"),
-				tokenMsgId("There is 1 apple"),
-				tokenPluralMsgId("There is %d apples"),
+				tokenMsgID("There is 1 apple"),
+				tokenPluralMsgID("There is %d apples"),
 				tokenPluralMsgStr("Il y a 1 pomme", 0),
 				tokenPluralMsgStr("Il y a %d pommes", 1),
 			},
@@ -114,8 +115,8 @@ func Test_TokensToPo(t *testing.T) {
 				},
 				Messages: []MessageNode{
 					{
-						MsgId:       "There is 1 apple",
-						MsgIdPlural: "There is %d apples",
+						MsgID:       "There is 1 apple",
+						MsgIDPlural: "There is %d apples",
 						MsgStr:      []string{"Il y a 1 pomme", "Il y a %d pommes"},
 					},
 				},
@@ -127,8 +128,8 @@ func Test_TokensToPo(t *testing.T) {
 				tokenHeaderLanguage("en-US"),
 				tokenHeaderTranslator("John Doe"),
 				tokenHeaderPluralForms("nplurals=2"),
-				tokenMsgId("There is 1 apple"),
-				tokenPluralMsgId("There is %d apples"),
+				tokenMsgID("There is 1 apple"),
+				tokenPluralMsgID("There is %d apples"),
 				tokenPluralMsgStr("Il y a 1 pomme", 0),
 				tokenPluralMsgStr("Il y a %d pommes", 1),
 			},
@@ -140,8 +141,8 @@ func Test_TokensToPo(t *testing.T) {
 				tokenHeaderLanguage("en-US"),
 				tokenHeaderTranslator("John Doe"),
 				tokenHeaderPluralForms("nplurals=part; plural=(n != 1);"),
-				tokenMsgId("There is 1 apple"),
-				tokenPluralMsgId("There is %d apples"),
+				tokenMsgID("There is 1 apple"),
+				tokenPluralMsgID("There is %d apples"),
 				tokenPluralMsgStr("Il y a 1 pomme", 0),
 				tokenPluralMsgStr("Il y a %d pommes", 1),
 			},
@@ -153,8 +154,8 @@ func Test_TokensToPo(t *testing.T) {
 				tokenHeaderLanguage("en-US"),
 				tokenHeaderTranslator("John Doe"),
 				tokenHeaderPluralForms("; plural=(n != 1);"),
-				tokenMsgId("There is 1 apple"),
-				tokenPluralMsgId("There is %d apples"),
+				tokenMsgID("There is 1 apple"),
+				tokenPluralMsgID("There is %d apples"),
 				tokenPluralMsgStr("Il y a 1 pomme", 0),
 				tokenPluralMsgStr("Il y a %d pommes", 1),
 			},
@@ -166,8 +167,8 @@ func Test_TokensToPo(t *testing.T) {
 				tokenHeaderLanguage("en-US"),
 				tokenHeaderTranslator("John Doe"),
 				tokenHeaderPluralForms("nplurals=2; plural=(n != 1);"),
-				tokenMsgId("There is 1 apple"),
-				tokenPluralMsgId("There is %d apples"),
+				tokenMsgID("There is 1 apple"),
+				tokenPluralMsgID("There is %d apples"),
 				tokenPluralMsgStr("Il y a 1 pomme", 1),
 				tokenPluralMsgStr("Il y a %d pommes", 0),
 			},
@@ -190,7 +191,7 @@ func Test_TokensToPo(t *testing.T) {
 			t.Parallel()
 			result, err := TokensToPo(tt.input)
 			if tt.expectedErr != nil {
-				assert.Errorf(t, err, tt.expectedErr.Error())
+				require.Errorf(t, err, tt.expectedErr.Error())
 			}
 
 			assert.Equal(t, tt.expected, result)

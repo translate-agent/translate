@@ -6,9 +6,10 @@ import (
 	"math/rand"
 	"reflect"
 	"regexp"
-	"strings"
 	"testing"
 	"testing/quick"
+
+	"golang.org/x/text/language"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,9 +37,9 @@ func randXliff2(translation *model.Translation) []byte {
 
 	b.WriteString("<file>")
 
-	writeMsg := func(s string) { fmt.Fprintf(b, "<segment><target>%s</target></segment>", s) }
+	writeMsg := func(s string) { fmt.Fprintf(b, "<segment><target>%s</target></segment>", s[1:len(s)-1]) }
 	if translation.Original {
-		writeMsg = func(s string) { fmt.Fprintf(b, "<segment><source>%s</source></segment>", s) }
+		writeMsg = func(s string) { fmt.Fprintf(b, "<segment><source>%s</source></segment>", s[1:len(s)-1]) }
 	}
 
 	for _, msg := range translation.Messages {
@@ -69,7 +70,7 @@ func randXliff2(translation *model.Translation) []byte {
 	return b.Bytes()
 }
 
-func assertEqualXml(t *testing.T, expected, actual []byte) bool { //nolint:unparam
+func assertEqualXML(t *testing.T, expected, actual []byte) bool { //nolint:unparam
 	t.Helper()
 	// Matches a substring that starts with > and ends with < with zero or more whitespace in between.
 	re := regexp.MustCompile(`>(\s*)<`)
@@ -109,6 +110,32 @@ func Test_FromXliff2(t *testing.T) {
 			data:     randXliff2(nonOriginalTranslation),
 			expected: nonOriginalTranslation,
 		},
+		{
+			name: "Message with special chars",
+			data: randXliff2(
+				&model.Translation{
+					Language: language.English,
+					Original: false,
+					Messages: []model.Message{
+						{
+							ID:      "order canceled",
+							Message: `{Order #{Id} has been canceled for {ClientName} | \}`,
+						},
+					},
+				},
+			),
+			expected: &model.Translation{
+				Original: false,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "order canceled",
+						Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
+						Status:  model.MessageStatusUntranslated,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -118,10 +145,6 @@ func Test_FromXliff2(t *testing.T) {
 
 			actual, err := FromXliff2(tt.data, tt.expected.Original)
 			require.NoError(t, err)
-
-			for i := range actual.Messages {
-				actual.Messages[i].Message = strings.Trim(actual.Messages[i].Message, "{}") // Remove curly braces for comparison
-			}
 
 			testutil.EqualTranslations(t, tt.expected, &actual)
 		})
@@ -137,12 +160,53 @@ func Test_ToXliff2(t *testing.T) {
 	}
 
 	translation := testutilrand.ModelTranslation(4, msgOpts, testutilrand.WithOriginal(true))
-	expected := randXliff2(translation)
 
-	actual, err := ToXliff2(*translation)
-	require.NoError(t, err)
+	tests := []struct {
+		name     string
+		data     *model.Translation
+		expected []byte
+	}{
+		{
+			name:     "valid input",
+			data:     translation,
+			expected: randXliff2(translation),
+		},
+		{
+			name: "message with special chars",
+			data: &model.Translation{
+				Original: true,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "common.welcome",
+						Message: `{User #\{ID\} \| \\}`,
+					},
+				},
+			},
+			expected: []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en" trgLang="und">
+  <file>
+    <unit id="common.welcome">
+      <segment>
+        <source>User #{ID} | \</source>
+      </segment>
+    </unit>
+  </file>
+</xliff>`),
+		},
+	}
 
-	assertEqualXml(t, expected, actual)
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual, err := ToXliff2(*tt.data)
+			require.NoError(t, err)
+
+			assertEqualXML(t, tt.expected, actual)
+		})
+	}
 }
 
 func Test_TransformXLIFF2(t *testing.T) {
@@ -150,7 +214,6 @@ func Test_TransformXLIFF2(t *testing.T) {
 
 	msgOpts := []testutilrand.ModelMessageOption{
 		// Enclose message in curly braces, as ToXliff2() removes them, and FromXliff2() adds them again
-		testutilrand.WithMessageFormat(),
 		testutilrand.WithStatus(model.MessageStatusTranslated),
 	}
 
@@ -174,5 +237,5 @@ func Test_TransformXLIFF2(t *testing.T) {
 		return true
 	}
 
-	assert.NoError(t, quick.Check(f, conf))
+	require.NoError(t, quick.Check(f, conf))
 }
