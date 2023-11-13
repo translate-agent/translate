@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -8,6 +9,19 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 )
+
+// deepCopy makes a deep copy of src and returns it.
+func deepCopy[T any](t *testing.T, src T) (dst T) { //nolint
+
+	t.Helper()
+
+	data, err := json.Marshal(src)
+	require.NoError(t, err)
+
+	require.NoError(t, json.Unmarshal(data, &dst))
+
+	return dst
+}
 
 func Test_UpdateNestedStructFromMask(t *testing.T) {
 	t.Parallel()
@@ -204,11 +218,12 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			// Save original dst to compare with result
-			original := dst
+			// Make deep copies of structs for deterministic tests
+			original := deepCopy(t, dst)
+			dstCopy, srcCopy := deepCopy(t, dst), deepCopy(t, src)
 
-			updateFromMask(&src, &dst, tt.mask)
-			tt.assertFunc(t, src, dst, original)
+			updateFromMask(&srcCopy, &dstCopy, tt.mask)
+			tt.assertFunc(t, srcCopy, dstCopy, original)
 		})
 	}
 }
@@ -268,11 +283,12 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			// Save original dstService to compare with result
-			original := dstService
+			// Make deep copies of structs for deterministic tests
+			original := deepCopy(t, dstService)
+			dstCopy, srcCopy := deepCopy(t, dstService), deepCopy(t, srcService)
 
-			updateServiceFromMask(&srcService, &dstService, tt.fieldMask)
-			tt.assertFunc(t, srcService, dstService, original)
+			updateServiceFromMask(&srcCopy, &dstCopy, tt.fieldMask)
+			tt.assertFunc(t, srcCopy, dstCopy, original)
 		})
 	}
 }
