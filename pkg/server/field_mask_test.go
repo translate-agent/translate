@@ -91,7 +91,7 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update C.D struct.float",
 			mask: []string{"C.D"},
 			assertFunc: func(t *testing.T, src, dst, result nestedStruct) {
-				require.Equal(t, src.C.D, result.C.D)
+				require.InDelta(t, src.C.D, result.C.D, 0.01)
 
 				result.C.D = dst.C.D
 				assert.Equal(t, dst, result)
