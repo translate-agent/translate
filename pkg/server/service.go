@@ -175,7 +175,7 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	oldService, err := t.repo.LoadService(ctx, params.service.ID)
+	loadedService, err := t.repo.LoadService(ctx, params.service.ID)
 
 	switch {
 	case errors.Is(err, repo.ErrNotFound):
@@ -184,13 +184,13 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	updatedService := updateServiceFromMask(*params.service, *oldService, params.mask)
+	updateServiceFromMask(params.service, loadedService, params.mask)
 
-	if err := t.repo.SaveService(ctx, updatedService); err != nil {
+	if err := t.repo.SaveService(ctx, loadedService); err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	return serviceToProto(updatedService), nil
+	return serviceToProto(loadedService), nil
 }
 
 // ----------------------DeleteService------------------------------
