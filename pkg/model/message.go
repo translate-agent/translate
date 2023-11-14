@@ -13,7 +13,7 @@ import (
 type Translation struct {
 	Language language.Tag `json:"language"`
 	Messages []Message    `json:"messages"`
-	Original bool         `json:"original"`
+	Original bool         `json:"original"` // Original is true if this Translation is the original language
 }
 
 /*
@@ -196,12 +196,12 @@ func (t Translations) PopulateTranslations() {
 }
 
 type Message struct {
-	ID          string
-	PluralID    string
-	Message     string // Message contains MessageFormat V2 formatted value
-	Description string
-	Positions   Positions
-	Status      MessageStatus
+	ID          string        // ID is extracted original language's message
+	PluralID    string        // (Only POT) is extracted original language's plural message
+	Message     string        // Message is translated message in MessageFormat2 format
+	Description string        // Description is message description
+	Positions   Positions     // Positions contains message positions in the source code
+	Status      MessageStatus // Status is message status, e.g. TRANSLATED, FUZZY, UNTRANSLATED
 }
 
 type MessageStatus int32
