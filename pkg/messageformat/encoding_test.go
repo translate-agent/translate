@@ -338,7 +338,7 @@ func Test_MarshalText(t *testing.T) {
 						},
 					},
 				},
-				NodeText{Text: "\nThis may be triggered by: \n"},
+				NodeText{Text: "\nThis may be triggered by:\n"},
 				NodeExpr{
 					Value: nil,
 					Function: NodeFunction{
@@ -352,8 +352,8 @@ func Test_MarshalText(t *testing.T) {
 				},
 			},
 			expected: []byte(`{{:Placeholder format=pythonVar name=message type=string}
-			This may be triggered by:
-			{:Placeholder format=pythonVar name=issues type=string}}`),
+This may be triggered by:
+{:Placeholder format=pythonVar name=issues type=string}}`),
 		},
 	} {
 		test := test
