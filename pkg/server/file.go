@@ -129,6 +129,11 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		// Original translation is not affected, changes will not affect other translations - update incoming translation.
 		all = model.Translations{*translation}
 	case translation.Original && origIdx != -1:
+		if translation.Language != all[origIdx].Language {
+			return nil, status.Errorf(
+				codes.AlreadyExists, "original translation already exists for service: '%s'", params.serviceID)
+		}
+
 		// Original translation is affected, changes might affect other translations - transform and update all translations.
 		oldOriginal := all[origIdx]
 

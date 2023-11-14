@@ -46,7 +46,6 @@ func randUploadTranslationFileReq(t *testing.T, serviceID string) *translatev1.U
 	return &translatev1.UploadTranslationFileRequest{
 		ServiceId: serviceID,
 		Language:  lang.String(),
-		Original:  gofakeit.Bool(),
 		Data:      data,
 		Schema:    schema,
 	}
@@ -107,6 +106,11 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	// Prepare
 	service := createService(ctx, t)
 
+	langs := rand.Languages(2)
+	serviceWithExistingOriginal := createService(ctx, t)
+	createTranslation(ctx, t,
+		serviceWithExistingOriginal.GetId(), &translatev1.Translation{Original: true, Language: langs[0].String()})
+
 	// Requests
 
 	happyRequest := randUploadTranslationFileReq(t, service.GetId())
@@ -122,6 +126,15 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	invalidArgumentMissingServiceRequest.ServiceId = ""
 
 	notFoundServiceIDRequest := randUploadTranslationFileReq(t, gofakeit.UUID())
+
+	originalAlreadyExistsReq := &translatev1.UploadTranslationFileRequest{
+		Original:  true,
+		Language:  langs[1].String(),
+		ServiceId: serviceWithExistingOriginal.GetId(),
+		// NG Localize has language in the file.
+		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, langs[1]),
+		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
+	}
 
 	tests := []struct {
 		request      *translatev1.UploadTranslationFileRequest
@@ -147,6 +160,11 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 			name:         "Not found service ID",
 			request:      notFoundServiceIDRequest,
 			expectedCode: codes.NotFound,
+		},
+		{
+			name:         "Already Exists, service already has original translation",
+			request:      originalAlreadyExistsReq,
+			expectedCode: codes.AlreadyExists,
 		},
 	}
 
