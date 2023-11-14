@@ -61,6 +61,40 @@ var placeholderFormats = map[string]placeholderFormat{
 	},
 }
 
+// messageToAST converts the given message to an MF2 AST.
+func (pf *placeholderFormat) messageToAST(message string) AST {
+	// If pf is nil, all message is a NodeText
+	if pf.re == nil {
+		return AST{NodeText{Text: escapeSpecialChars(message)}}
+	}
+
+	// If pf is not nil then message contains placeholders, so we need to parse it
+	var (
+		currentIdx int
+		ast        AST // Only NodeText and NodeExpr
+	)
+
+	for _, matchIndices := range pf.re.FindAllStringSubmatchIndex(message, -1) {
+		// If there is text before the current match, add it as a NodeText
+		if matchIndices[0] != currentIdx {
+			text := message[currentIdx:matchIndices[0]]
+			ast.Append(NodeText{Text: escapeSpecialChars(text)})
+		}
+
+		// Convert the current match to a NodeExpr and add it to the nodes
+		ast.Append(pf.nodeExprF(message, matchIndices))
+		currentIdx = matchIndices[1]
+	}
+
+	// If there is text after the last match, add it as a NodeText
+	if currentIdx < len(message) {
+		text := message[currentIdx:]
+		ast.Append(NodeText{Text: escapeSpecialChars(text)})
+	}
+
+	return ast
+}
+
 // createNodeExpr creates a NodeExpr factory function for the given format.
 //
 // Example:
@@ -150,43 +184,7 @@ func ToMessageFormat2(message string) (string, error) {
 		}
 	}
 
-	// If no matching placeholder format is found, all message is a NodeText
-	if pf.re == nil {
-		ast := AST{NodeText{Text: escapeSpecialChars(message)}}
-
-		data, err := ast.MarshalText()
-		if err != nil {
-			return "", fmt.Errorf("encode message format v2: %w", err)
-		}
-
-		return string(data), nil
-	}
-
-	// Message contains placeholders, so we need to parse it
-	var (
-		currentIdx int
-		ast        AST // Only NodeText and NodeExpr
-	)
-
-	for _, matchIndices := range pf.re.FindAllStringSubmatchIndex(message, -1) {
-		// If there is text before the current match, add it as a NodeText
-		if matchIndices[0] != currentIdx {
-			text := message[currentIdx:matchIndices[0]]
-			ast.Append(NodeText{Text: escapeSpecialChars(text)})
-		}
-
-		// Convert the current match to a NodeExpr and add it to the nodes
-		ast.Append(pf.nodeExprF(message, matchIndices))
-		currentIdx = matchIndices[1]
-	}
-
-	// If there is text after the last match, add it as a NodeText
-	if currentIdx < len(message) {
-		text := message[currentIdx:]
-		ast.Append(NodeText{Text: escapeSpecialChars(text)})
-	}
-
-	data, err := ast.MarshalText()
+	data, err := pf.messageToAST(message).MarshalText()
 	if err != nil {
 		return "", fmt.Errorf("encode message format v2: %w", err)
 	}
