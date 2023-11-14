@@ -80,7 +80,8 @@ func (t *TranslateServiceServer) CreateTranslation(
 	switch params.translation.Original {
 	case true:
 		if all.OriginalIndex() != -1 {
-			return nil, status.Errorf(codes.AlreadyExists, "original already exists for service: '%s'", params.serviceID)
+			return nil, status.Errorf(
+				codes.AlreadyExists, "original translation already exists for service: '%s'", params.serviceID)
 		}
 	default: // Translate messages when translation is not original and original language is known.
 		if origIdx := all.OriginalIndex(); origIdx != -1 {
@@ -225,7 +226,8 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		all = model.Translations{*params.translation}
 	case params.translation.Original && origIdx != -1:
 		if params.translation.Language != all[origIdx].Language {
-			return nil, status.Errorf(codes.AlreadyExists, "original already exists for service: '%s'", params.serviceID)
+			return nil, status.Errorf(
+				codes.AlreadyExists, "original translation already exists for service: '%s'", params.serviceID)
 		}
 
 		// Original translation is affected, changes might affect other translations - transform and update all translations.
