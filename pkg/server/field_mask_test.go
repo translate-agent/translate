@@ -12,7 +12,6 @@ import (
 
 // deepCopy makes a deep copy of src and returns it.
 func deepCopy[T any](t *testing.T, src T) (dst T) { //nolint
-
 	t.Helper()
 
 	data, err := json.Marshal(src)
@@ -20,7 +19,7 @@ func deepCopy[T any](t *testing.T, src T) (dst T) { //nolint
 
 	require.NoError(t, json.Unmarshal(data, &dst))
 
-	return dst
+	return
 }
 
 func Test_UpdateNestedStructFromMask(t *testing.T) {
