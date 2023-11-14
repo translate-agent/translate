@@ -534,11 +534,11 @@ func Test_CreateTranslation_REST(t *testing.T) {
 	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
-	langs := rand.Languages(3)
+	langs := rand.Languages(4)
 
 	service := createService(ctx, t)
 	createTranslation(ctx, t, service.GetId(),
-		&translatev1.Translation{Original: true, Language: langs[2].String()})
+		&translatev1.Translation{Original: true, Language: langs[0].String()})
 
 	serviceWithTranslations := createService(ctx, t)
 	uploadReq := randUploadTranslationFileReq(t, serviceWithTranslations.GetId())
@@ -554,14 +554,14 @@ func Test_CreateTranslation_REST(t *testing.T) {
 		{
 			name:         "Happy path, create translation",
 			serviceID:    service.GetId(),
-			translation:  randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
+			translation:  randTranslation(t, &translatev1.Translation{Language: langs[1].String()}),
 			expectedCode: http.StatusOK,
 		},
 		{
 			name:      "Happy path, empty translation.messages",
 			serviceID: service.GetId(),
 			translation: &translatev1.Translation{
-				Language: langs[1].String(),
+				Language: langs[2].String(),
 			},
 			expectedCode: http.StatusOK,
 		},
@@ -597,7 +597,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 			serviceID: service.GetId(),
 			translation: &translatev1.Translation{
 				Original: true,
-				Language: uploadReq.GetLanguage(),
+				Language: langs[3].String(),
 			},
 			expectedCode: http.StatusConflict,
 		},

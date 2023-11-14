@@ -502,10 +502,10 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 	ctx, subtest := testutil.Trace(t)
 
 	// Prepare
-	langs := rand.Languages(3)
+	langs := rand.Languages(4)
 	service := createService(ctx, t)
 	createTranslation(ctx, t, service.GetId(),
-		&translatev1.Translation{Original: true, Language: langs[2].String()})
+		&translatev1.Translation{Original: true, Language: langs[0].String()})
 
 	serviceWithTranslations := createService(ctx, t)
 	uploadReq := randUploadTranslationFileReq(t, serviceWithTranslations.GetId())
@@ -522,7 +522,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 			name: "Happy path, create translation",
 			request: &translatev1.CreateTranslationRequest{
 				ServiceId:   service.GetId(),
-				Translation: randTranslation(t, &translatev1.Translation{Language: langs[0].String()}),
+				Translation: randTranslation(t, &translatev1.Translation{Language: langs[1].String()}),
 			},
 			expectedCode: codes.OK,
 		},
@@ -531,7 +531,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 			request: &translatev1.CreateTranslationRequest{
 				ServiceId: service.GetId(),
 				Translation: &translatev1.Translation{
-					Language: langs[1].String(),
+					Language: langs[2].String(),
 				},
 			},
 			expectedCode: codes.OK,
@@ -576,7 +576,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 			request: &translatev1.CreateTranslationRequest{
 				ServiceId: service.GetId(),
 				Translation: &translatev1.Translation{
-					Language: langs[0].String(),
+					Language: langs[3].String(),
 					Original: true,
 				},
 			},
