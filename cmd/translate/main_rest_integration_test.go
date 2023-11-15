@@ -593,13 +593,13 @@ func Test_CreateTranslation_REST(t *testing.T) {
 			expectedCode: http.StatusConflict,
 		},
 		{
-			name:      "Status conflict, service already has original translation",
+			name:      "Bad request, service already has original translation",
 			serviceID: service.GetId(),
 			translation: &translatev1.Translation{
 				Original: true,
 				Language: langs[3].String(),
 			},
-			expectedCode: http.StatusConflict,
+			expectedCode: http.StatusBadRequest,
 		},
 	}
 
@@ -688,9 +688,9 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 			expectedCode: http.StatusBadRequest,
 		},
 		{
-			name:         "Status conflict, service already has original translation",
+			name:         "Bad request, service already has original translation",
 			request:      originalAlreadyExistsReq,
-			expectedCode: http.StatusConflict,
+			expectedCode: http.StatusBadRequest,
 		},
 	}
 
