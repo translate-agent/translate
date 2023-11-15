@@ -51,7 +51,7 @@ func randUploadTranslationFileReq(t *testing.T, serviceID string) *translatev1.U
 	}
 }
 
-func createUpdateTranslationReq(t *testing.T, serviceID string, override *translatev1.Translation,
+func randUpdateTranslationReq(t *testing.T, serviceID string, override *translatev1.Translation,
 ) *translatev1.UpdateTranslationRequest {
 	t.Helper()
 
@@ -683,21 +683,21 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 	createTranslation(ctx, t, service.GetId(), &translatev1.Translation{Original: true, Language: langs[0].String()})
 	createTranslation(ctx, t, service.GetId(), &translatev1.Translation{Original: false, Language: langs[1].String()})
 
-	happyReq := createUpdateTranslationReq(t, service.GetId(), &translatev1.Translation{Language: langs[1].String()})
+	happyReq := randUpdateTranslationReq(t, service.GetId(), &translatev1.Translation{Language: langs[1].String()})
 
 	// different language without translation
-	notFoundTranslationReq := createUpdateTranslationReq(t,
+	notFoundTranslationReq := randUpdateTranslationReq(t,
 		service.GetId(), &translatev1.Translation{Language: langs[2].String()})
 
-	notFoundServiceID := createUpdateTranslationReq(t,
+	notFoundServiceID := randUpdateTranslationReq(t,
 		gofakeit.UUID(), &translatev1.Translation{Language: langs[1].String()})
 
 	invalidArgumentNilTranslationReq := &translatev1.UpdateTranslationRequest{ServiceId: service.GetId()}
 
-	invalidArgumentUndTranslationLanguageReq := createUpdateTranslationReq(t, gofakeit.UUID(), nil)
+	invalidArgumentUndTranslationLanguageReq := randUpdateTranslationReq(t, gofakeit.UUID(), nil)
 	invalidArgumentUndTranslationLanguageReq.Translation.Language = ""
 
-	originalAlreadyExistsReq := createUpdateTranslationReq(t,
+	originalAlreadyExistsReq := randUpdateTranslationReq(t,
 		service.GetId(), &translatev1.Translation{Language: langs[1].String(), Original: true})
 
 	tests := []struct {
