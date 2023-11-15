@@ -114,6 +114,9 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
+	// Original status for translation is taken from request parameters,
+	translation.Original = params.original
+
 	var all model.Translations
 
 	if translation.Original {
