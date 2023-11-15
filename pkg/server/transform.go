@@ -2,11 +2,16 @@ package server
 
 import (
 	"fmt"
+	"reflect"
+	"slices"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"golang.org/x/text/language"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 // ----------------------Common types----------------------
@@ -211,4 +216,71 @@ func translationFromProto(t *translatev1.Translation) (*model.Translation, error
 // translationsToProto converts []model.Translation to []*translatev1.Translation.
 func translationsToProto(m []model.Translation) []*translatev1.Translation {
 	return sliceToProto(m, translationToProto)
+}
+
+// ----------------------Mask----------------------
+
+func maskFromProto(message proto.Message, mask *fieldmaskpb.FieldMask) (model.Mask, error) {
+	if mask == nil {
+		return nil, nil
+	}
+
+	paths := mask.GetPaths()
+
+	if len(paths) == 0 {
+		return model.Mask{}, nil
+	}
+
+	// Find corresponding model type to proto message.
+	var modelType any
+
+	switch message.(type) {
+	case *translatev1.Message:
+		modelType = new(model.Message)
+	case *translatev1.Service:
+		modelType = new(model.Service)
+	case *translatev1.Translation:
+		modelType = new(model.Translation)
+	default:
+		return nil, fmt.Errorf("unknown message type: %T", message)
+	}
+
+	// Get all possible fields from the model.
+	allFields := []string{}
+
+	var findFields func(reflect.Value, []string)
+	findFields = func(v reflect.Value, currentPath []string) {
+		for i := 0; i < v.NumField(); i++ {
+			field := v.Type().Field(i)
+
+			allFields = append(allFields, strings.Join(append(currentPath, field.Name), "."))
+
+			if field.Type.Kind() == reflect.Struct {
+				findFields(v.Field(i), append(currentPath, field.Name))
+			}
+		}
+	}
+
+	findFields(reflect.ValueOf(modelType).Elem(), nil)
+
+	modelMask := make(model.Mask, 0, len(paths))
+
+	// Convert each proto path to a model path. e.g. "message" -> "Message", "plural_id" -> "PluralID"
+	for _, path := range paths {
+		idx := slices.IndexFunc(allFields, func(s string) bool {
+			protoPath := strings.ToLower(strings.ReplaceAll(path, "_", ""))
+			modelPath := strings.ToLower(s)
+
+			return protoPath == modelPath
+		})
+
+		if idx != -1 {
+			modelMask = append(modelMask, allFields[idx])
+		} else {
+			// should not happen, as the proto mask is checked before parsing it to model mask
+			return nil, fmt.Errorf("unknown field: %s", path)
+		}
+	}
+
+	return modelMask, nil
 }

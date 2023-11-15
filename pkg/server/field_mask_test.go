@@ -11,7 +11,7 @@ import (
 )
 
 // deepCopy makes a deep copy of src and returns it.
-func deepCopy[T any](t *testing.T, src T) (dst T) { //nolint
+func deepCopy[T any](t *testing.T, src T) (dst T) { //nolint:ireturn
 	t.Helper()
 
 	data, err := json.Marshal(src)
@@ -27,22 +27,22 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 
 	//nolint: govet
 	type nestedStruct struct {
-		A int    `protoName:"A"`
-		B string `protoName:"B"`
+		A int
+		B string
 		C struct {
-			D float32 `protoName:"D"`
+			D float32
 			E string
 			F struct {
-				G []string `protoName:"G"`
-			} `protoName:"F"`
+				G []string
+			}
 			H []struct {
-				I string `protoName:"I"`
-			} `protoName:"H"`
-		} `protoName:"C"`
+				I string
+			}
+		}
 		J struct {
-			K map[string]string `protoName:"K"`
-		} `protoName:"J"`
-		L *string `protoName:"L"`
+			K map[string]string
+		}
+		L *string
 	}
 
 	// Generate random source and destination structs
@@ -168,14 +168,6 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			},
 		},
 		{
-			// Try to update nested struct field with no protoName. (Nothing updates)
-			name: "Try to Update C.E struct.string no protoName",
-			mask: []string{"C.E"},
-			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
-				assert.Equal(t, original, dst)
-			},
-		},
-		{
 			// Update top level pointer to string
 			name: "Update L *string",
 			mask: []string{"L"},
@@ -243,7 +235,7 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 	}{
 		{
 			name:      "Update Name",
-			fieldMask: model.Mask{"name"},
+			fieldMask: model.Mask{"Name"},
 			assertFunc: func(t *testing.T, srcService, dstService, original model.Service) {
 				// Same ID updated name
 				require.Equal(t, original.ID, dstService.ID)

@@ -10,9 +10,10 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
-// parseFieldMask parses and normalizes a field mask from a proto message and a list of paths.
+// parseFieldMask parses the field mask from the request and
+// returns a model mask with removed duplicates and sorted paths.
 func parseFieldMask(message proto.Message, paths []string) (model.Mask, error) {
-	parsedMask, err := fieldmaskpb.New(message, paths...)
+	protoMask, err := fieldmaskpb.New(message, paths...)
 	if err != nil {
 		return nil, fmt.Errorf("new fieldmaskpb: %w", err)
 	}
@@ -20,9 +21,15 @@ func parseFieldMask(message proto.Message, paths []string) (model.Mask, error) {
 	// Normalize sorts paths, removes duplicates, and removes sub-paths when possible.
 	// e.g. if a field mask contains the paths foo.bar and foo,
 	// the path foo.bar is redundant because it is already covered by the path foo
-	parsedMask.Normalize()
+	protoMask.Normalize()
 
-	return parsedMask.GetPaths(), nil
+	// Convert the proto mask to a model mask
+	parsed, err := maskFromProto(message, protoMask)
+	if err != nil {
+		return nil, fmt.Errorf("transform proto mask to model mask: %w", err)
+	}
+
+	return parsed, nil
 }
 
 // updateFromMask updates the dst with the values from src based on the mask.
@@ -33,18 +40,16 @@ func parseFieldMask(message proto.Message, paths []string) (model.Mask, error) {
 //   - mask contains paths, that does not exist in the model: The paths are ignored.
 //   - mask contains paths, that exist in model: Only those fields are updated.
 //
-// `protoName` tags are used to match fields from the fieldMask to fields in the model.
-//
 // Example:
 //
 //	type Foo struct {
-//		 Bar string `protoName:"bar"`
-//		 Baz string `protoName:"baz"`
+//		 Bar string
+//		 Baz string
 //	}
 //
 //	dst := Foo{Bar: "bar", Baz: "baz"}
 //	src := Foo{Bar: "bar2", Baz: "baz2"}
-//	mask := model.Mask{"bar"}
+//	mask := model.Mask{"Bar"}
 //
 //	updateFromMask(&src, &dst, mask)
 //	fmt.Println(dst) // Foo{Bar: "bar2", Baz: "baz"}.
@@ -71,9 +76,8 @@ func updateField(src, dst reflect.Value, fields []string) {
 	field := fields[0]
 
 	for i := 0; i < dst.NumField(); i++ {
-		tag := dst.Type().Field(i).Tag.Get("protoName")
-
-		if field != tag {
+		// Find corresponding field in dst
+		if field != dst.Type().Field(i).Name {
 			continue
 		}
 
@@ -105,6 +109,8 @@ func updateField(src, dst reflect.Value, fields []string) {
 			// For all other field kinds, set value of field in dst to value of corresponding field in src
 			dstField.Set(srcField)
 		}
+
+		return
 	}
 }
 
@@ -114,7 +120,8 @@ func updateServiceFromMask(
 	dstService *model.Service,
 	mask model.Mask,
 ) {
-	// Set the ID of the srcService to the ID of the dstService, to prevent the ID from being updated, when mask is nil.
+	// Set the ID of the srcService to the ID of the dstService, to prevent the ID
+	// from being updated, when mask is nil or "ID" is in the mask
 	srcService.ID = dstService.ID
 	updateFromMask(srcService, dstService, mask)
 }
