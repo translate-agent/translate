@@ -162,7 +162,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 			expectedCode: codes.NotFound,
 		},
 		{
-			name:         "Already Exists, service already has original translation",
+			name:         "Already exists, service already has original translation",
 			request:      originalAlreadyExistsReq,
 			expectedCode: codes.AlreadyExists,
 		},
@@ -731,7 +731,7 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 			expectedCode: codes.InvalidArgument,
 		},
 		{
-			name:         "Already Exists, service already has original translation",
+			name:         "Already exists, service already has original translation",
 			request:      originalAlreadyExistsReq,
 			expectedCode: codes.AlreadyExists,
 		},
