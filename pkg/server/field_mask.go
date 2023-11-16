@@ -117,11 +117,7 @@ func updateField(src, dst reflect.Value, fields []string) {
 }
 
 // updateServiceFromMask updates the dstService with the values from srcService based on the fieldMask.
-func updateServiceFromMask(
-	srcService *model.Service,
-	dstService *model.Service,
-	mask model.Mask,
-) error {
+func updateServiceFromMask(src, dst *model.Service, mask model.Mask) error {
 	// Prevent updating read-only fields like ID
 	if slices.Contains(mask, "ID") {
 		return errors.New("\"id\" is not allowed in field mask")
@@ -129,8 +125,8 @@ func updateServiceFromMask(
 
 	// When mask is nil dstService is updated with all fields from srcService
 	// So we need to make sure that the ID is not updated
-	srcService.ID = dstService.ID
-	updateFromMask(srcService, dstService, mask)
+	src.ID = dst.ID
+	updateFromMask(src, dst, mask)
 
 	return nil
 }
