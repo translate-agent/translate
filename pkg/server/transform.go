@@ -245,8 +245,8 @@ func maskFromProto(message proto.Message, mask *fieldmaskpb.FieldMask) (model.Ma
 		return nil, fmt.Errorf("unknown message type: %T", message)
 	}
 
-	var findFields func(reflect.Value, []string) []string
-	findFields = func(v reflect.Value, currentPath []string) []string {
+	var getFields func(reflect.Value, []string) []string
+	getFields = func(v reflect.Value, currentPath []string) []string {
 		var allFields []string
 
 		for i := 0; i < v.NumField(); i++ {
@@ -255,14 +255,14 @@ func maskFromProto(message proto.Message, mask *fieldmaskpb.FieldMask) (model.Ma
 			allFields = append(allFields, strings.Join(append(currentPath, field.Name), "."))
 
 			if field.Type.Kind() == reflect.Struct {
-				findFields(v.Field(i), append(currentPath, field.Name))
+				getFields(v.Field(i), append(currentPath, field.Name))
 			}
 		}
 
 		return allFields
 	}
 
-	allFields := findFields(reflect.ValueOf(modelType).Elem(), nil)
+	allFields := getFields(reflect.ValueOf(modelType).Elem(), nil)
 
 	modelMask := make(model.Mask, 0, len(paths))
 
