@@ -39,7 +39,7 @@ type note struct {
 
 // FromXliff2 converts serialized data from the XML data in the XLIFF 2 format into a model.Translation struct.
 // For now original param is ignored.
-func FromXliff2(data []byte, original bool) (model.Translation, error) {
+func FromXliff2(data []byte, original *bool) (model.Translation, error) {
 	var xlf xliff2
 
 	if err := xml.Unmarshal(data, &xlf); err != nil {
@@ -50,6 +50,10 @@ func FromXliff2(data []byte, original bool) (model.Translation, error) {
 		Language: xlf.TrgLang,
 		Original: xlf.TrgLang == language.Und,
 		Messages: make([]model.Message, 0, len(xlf.File.Units)),
+	}
+
+	if original != nil {
+		translation.Original = *original
 	}
 
 	getMessage := func(u unit) string { return u.Target }

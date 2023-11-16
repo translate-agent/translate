@@ -18,11 +18,11 @@ import (
 // ----------------------UploadTranslationFile-------------------------------
 
 type uploadParams struct {
+	original             *bool
 	languageTag          language.Tag
 	data                 []byte
 	schema               translatev1.Schema
 	serviceID            uuid.UUID
-	original             bool
 	populateTranslations bool
 }
 
@@ -31,7 +31,7 @@ func parseUploadTranslationFileRequestParams(req *translatev1.UploadTranslationF
 		params = &uploadParams{
 			data:                 req.GetData(),
 			schema:               req.GetSchema(),
-			original:             req.GetOriginal(),
+			original:             req.Original, //nolint:protogetter
 			populateTranslations: req.GetPopulateTranslations(),
 		}
 		err error
@@ -113,9 +113,6 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
-
-	// Original status for translation is taken from request parameters,
-	translation.Original = params.original
 
 	var all model.Translations
 

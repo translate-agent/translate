@@ -49,7 +49,7 @@ message UploadTranslationFileRequest {
   bytes data = 2;
   Schema schema = 3;
   string service_id = 4;
-  bool original = 5;
+  optional bool original = 5;
   bool populate_translations = 6;
 }
 

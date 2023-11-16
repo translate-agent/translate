@@ -51,7 +51,7 @@ type context struct {
 
 // FromXliff12 converts serialized data from the XML data in the XLIFF 1.2 format into a model.Translation struct.
 // For now original param is ignored.
-func FromXliff12(data []byte, original bool) (model.Translation, error) {
+func FromXliff12(data []byte, original *bool) (model.Translation, error) {
 	var xlf xliff12
 	if err := xml.Unmarshal(data, &xlf); err != nil {
 		return model.Translation{}, fmt.Errorf("unmarshal xliff12: %w", err)
@@ -61,6 +61,10 @@ func FromXliff12(data []byte, original bool) (model.Translation, error) {
 		Language: xlf.File.TargetLanguage,
 		Original: xlf.File.TargetLanguage == language.Und,
 		Messages: make([]model.Message, 0, len(xlf.File.Body.TransUnits)),
+	}
+
+	if original != nil {
+		translation.Original = *original
 	}
 
 	getMessage := func(t transUnit) string { return t.Target }

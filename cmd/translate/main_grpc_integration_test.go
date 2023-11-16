@@ -48,6 +48,7 @@ func randUploadTranslationFileReq(t *testing.T, serviceID string) *translatev1.U
 		Language:  lang.String(),
 		Data:      data,
 		Schema:    schema,
+		Original:  ptr(false),
 	}
 }
 
@@ -128,7 +129,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	notFoundServiceIDRequest := randUploadTranslationFileReq(t, gofakeit.UUID())
 
 	originalAlreadyExistsReq := &translatev1.UploadTranslationFileRequest{
-		Original:  true,
+		Original:  ptr(true),
 		Language:  langs[1].String(),
 		ServiceId: serviceWithExistingOriginal.GetId(),
 		// NG Localize has language in the file.
