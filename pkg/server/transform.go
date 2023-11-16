@@ -245,6 +245,7 @@ func maskFromProto(message proto.Message, mask *fieldmaskpb.FieldMask) (model.Ma
 		return nil, fmt.Errorf("unknown message type: %T", message)
 	}
 
+	// Get all fields of the model type.
 	var getFields func(reflect.Value, []string) []string
 	getFields = func(v reflect.Value, currentPath []string) []string {
 		var allFields []string
