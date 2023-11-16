@@ -197,7 +197,7 @@ func (t Translations) PopulateTranslations() {
 
 type Message struct {
 	ID          string        // ID is extracted original language's message
-	PluralID    string        // (Only POT) is extracted original language's plural message
+	PluralID    string        // (Only POT) PluralID is extracted original language's plural message
 	Message     string        // Message is translated message in MessageFormat2 format
 	Description string        // Description is message description
 	Positions   Positions     // Positions contains message positions in the source code
