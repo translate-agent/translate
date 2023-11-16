@@ -184,7 +184,9 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	updateServiceFromMask(params.service, loadedService, params.mask)
+	if err := updateServiceFromMask(params.service, loadedService, params.mask); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
 
 	if err := t.repo.SaveService(ctx, loadedService); err != nil {
 		return nil, status.Errorf(codes.Internal, "")

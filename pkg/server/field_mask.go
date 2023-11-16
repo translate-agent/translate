@@ -1,8 +1,10 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 
 	"go.expect.digital/translate/pkg/model"
@@ -119,9 +121,16 @@ func updateServiceFromMask(
 	srcService *model.Service,
 	dstService *model.Service,
 	mask model.Mask,
-) {
-	// Set the ID of the srcService to the ID of the dstService, to prevent the ID
-	// from being updated, when mask is nil or "ID" is in the mask
+) error {
+	// Prevent updating read-only fields like ID
+	if slices.Contains(mask, "ID") {
+		return errors.New("\"id\" is not allowed in field mask")
+	}
+
+	// When mask is nil dstService is updated with all fields from srcService
+	// So we need to make sure that the ID is not updated
 	srcService.ID = dstService.ID
 	updateFromMask(srcService, dstService, mask)
+
+	return nil
 }

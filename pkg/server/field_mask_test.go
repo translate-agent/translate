@@ -278,7 +278,9 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			original := deepCopy(t, dstService)
 			dstCopy, srcCopy := deepCopy(t, dstService), deepCopy(t, srcService)
 
-			updateServiceFromMask(&srcCopy, &dstCopy, tt.fieldMask)
+			err := updateServiceFromMask(&srcCopy, &dstCopy, tt.fieldMask)
+			require.NoError(t, err)
+
 			tt.assertFunc(t, srcCopy, dstCopy, original)
 		})
 	}
