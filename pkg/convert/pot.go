@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	mf2 "go.expect.digital/translate/pkg/messageformat"
+	"go.expect.digital/translate/pkg/messageformat"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/pot"
 )
@@ -86,14 +86,14 @@ func FromPot(b []byte, original bool) (model.Translation, error) {
 
 	//nolint:wrapcheck
 	convert := func(v pot.MessageNode) (string, error) {
-		return mf2.ToMessageFormat2(singularValue(v))
+		return messageformat.ToMessageFormat2(singularValue(v))
 	}
 
 	//nolint:wrapcheck
 	if po.Header.PluralForms.NPlurals == pluralCountLimit {
 		convert = func(v pot.MessageNode) (string, error) {
 			if v.MsgIDPlural == "" {
-				return mf2.ToMessageFormat2(singularValue(v))
+				return messageformat.ToMessageFormat2(singularValue(v))
 			}
 
 			return convertPluralsToMessageString(pluralValue(v))
@@ -145,13 +145,13 @@ func writeToPoTag(b *bytes.Buffer, tag poTag, str string) error {
 func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
 	var text strings.Builder
 
-	nodes, err := mf2.Parse(str)
+	nodes, err := messageformat.Parse(str)
 	if err != nil {
 		return fmt.Errorf("parse message: %w", err)
 	}
 
 	for _, node := range nodes {
-		nodeTxt, ok := node.(mf2.NodeText)
+		nodeTxt, ok := node.(messageformat.NodeText)
 		if !ok {
 			return errors.New("convert node to messageformat.NodeText")
 		}
@@ -187,13 +187,13 @@ func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
 // writePlural parses a plural message string into nodes, iterates over the nodes,
 // and writes the variants of the plural message to a bytes.Buffer.
 func writePlural(b *bytes.Buffer, tag poTag, str string) error {
-	nodes, err := mf2.Parse(str)
+	nodes, err := messageformat.Parse(str)
 	if err != nil {
 		return fmt.Errorf("parse message: %w", err)
 	}
 
 	for _, node := range nodes {
-		nodeMatch, ok := node.(mf2.NodeMatch)
+		nodeMatch, ok := node.(messageformat.NodeMatch)
 		if !ok {
 			return errors.New("convert node to messageformat.NodeMatch")
 		}
@@ -207,7 +207,7 @@ func writePlural(b *bytes.Buffer, tag poTag, str string) error {
 }
 
 // writeVariants writes the variants of a plural message to a bytes.Buffer.
-func writeVariants(b *bytes.Buffer, tag poTag, nodeMatch mf2.NodeMatch) error {
+func writeVariants(b *bytes.Buffer, tag poTag, nodeMatch messageformat.NodeMatch) error {
 	for i, variant := range nodeMatch.Variants {
 		if _, err := fmt.Fprintf(b, "msgstr[%d] ", i); err != nil {
 			return fmt.Errorf("write plural msgstr: %w", err)
@@ -217,9 +217,9 @@ func writeVariants(b *bytes.Buffer, tag poTag, nodeMatch mf2.NodeMatch) error {
 
 		for _, msg := range variant.Message {
 			switch node := msg.(type) {
-			case mf2.NodeText:
+			case messageformat.NodeText:
 				txt.WriteString(node.Text)
-			case mf2.NodeVariable:
+			case messageformat.NodeVariable:
 				txt.WriteString("%d")
 			default:
 				return errors.New("unknown node type")
@@ -351,7 +351,7 @@ func convertPluralsToMessageString(plurals []string) (string, error) {
 	sb.WriteString("match {$count :number}\n")
 
 	for i, plural := range plurals {
-		mf2Plural, err := mf2.ToMessageFormat2(plural)
+		mf2Plural, err := messageformat.ToMessageFormat2(plural)
 		if err != nil {
 			return "", fmt.Errorf("convert plural to messageformat: %w", err)
 		}
