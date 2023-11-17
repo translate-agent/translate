@@ -7,22 +7,29 @@ import (
 	"strings"
 )
 
-// Mask is a list of paths that can be used to specify which fields in a resource should be updated or returned.
-// Mask is not case sensitive. Paths are separated by "." and can be nested.
+// Mask is a list of paths that can be used to specify which fields
+// in a resource should be updated (PATCH) or returned (GET).
+//
+// Mask is case insensitive. In case of a struct, the paths are separated by a dot. e.g. "foo.bar.baz".
+//
 // Example:
 //
-//	 type Translation struct {
-//		 Language language.Tag `json:"language"`
-//		 Messages []Message    `json:"messages"`
-//		 Original bool         `json:"original"`
-//	 }
+//	type Example struct {
+//		Field1 string
+//		Field2 SubExample
+//	}
 //
-//	// valid masks
-//	Mask{"language"}
-//	Mask{"Language"}
-//	Mask{"LANGUAGE"}
-//	Mask{"messages"}
-//	Mask{"language", "Original", "MESSAGES"}
+//	type SubExample struct {
+//		SubField1 string
+//		SubField2 int
+//	}
+//
+//	// valid masks for Example struct (in any case)
+//	Mask{"Field1"} // field1, FIELD1, ...
+//	Mask{"Field1", "Field2"}
+//	Mask{"Field1", "Field2.SubField1"}
+//	Mask{"Field1", "Field2.SubField1", "Field2.SubField2"}
+//	Mask{"Field2.SubField1", "Field2.SubField2"}
 //	...
 type Mask []string
 
