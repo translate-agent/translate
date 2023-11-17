@@ -1,4 +1,4 @@
-package server
+package model
 
 import (
 	"encoding/json"
@@ -7,7 +7,6 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.expect.digital/translate/pkg/model"
 )
 
 // deepCopy makes a deep copy of src and returns it.
@@ -54,7 +53,7 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 	tests := []struct {
 		assertFunc func(t *testing.T, src, dst, original nestedStruct)
 		name       string
-		mask       model.Mask
+		mask       Mask
 	}{
 		{
 			// Update one top-level field
@@ -189,7 +188,7 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 		{
 			// No Paths in FieldMask. Updates nothing.
 			name: "Update Nothing Empty Paths",
-			mask: model.Mask{},
+			mask: Mask{},
 			assertFunc: func(t *testing.T, _, dst, original nestedStruct) {
 				assert.Equal(t, original, dst)
 			},
@@ -197,7 +196,7 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 		{
 			// Random path in FieldMask. Updates nothing.
 			name: "Update Nothing Random Path",
-			mask: model.Mask{"random_path"},
+			mask: Mask{"random_path"},
 			assertFunc: func(t *testing.T, _, dst, original nestedStruct) {
 				assert.Equal(t, original, dst)
 			},
@@ -213,7 +212,7 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			original := deepCopy(t, dst)
 			dstCopy, srcCopy := deepCopy(t, dst), deepCopy(t, src)
 
-			updateFromMask(&srcCopy, &dstCopy, tt.mask)
+			update(&srcCopy, &dstCopy, tt.mask)
 			tt.assertFunc(t, srcCopy, dstCopy, original)
 		})
 	}
@@ -223,20 +222,20 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 	t.Parallel()
 
 	// Generate random source and destination structs
-	var srcService, dstService model.Service
+	var srcService, dstService Service
 
 	require.NoError(t, gofakeit.Struct(&srcService))
 	require.NoError(t, gofakeit.Struct(&dstService))
 
 	tests := []struct {
-		assertFunc func(t *testing.T, srcService, dstService, original model.Service)
+		assertFunc func(t *testing.T, srcService, dstService, original Service)
 		name       string
-		fieldMask  model.Mask
+		fieldMask  Mask
 	}{
 		{
 			name:      "Update Name",
-			fieldMask: model.Mask{"Name"},
-			assertFunc: func(t *testing.T, srcService, dstService, original model.Service) {
+			fieldMask: Mask{"Name"},
+			assertFunc: func(t *testing.T, srcService, dstService, original Service) {
 				// Same ID updated name
 				require.Equal(t, original.ID, dstService.ID)
 				assert.Equal(t, srcService.Name, dstService.Name)
@@ -245,7 +244,7 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 		{
 			name:      "Update All",
 			fieldMask: nil,
-			assertFunc: func(t *testing.T, srcService, dstService, original model.Service) {
+			assertFunc: func(t *testing.T, srcService, dstService, original Service) {
 				// Same ID updated name, as ID cannot be updated, and service has only two fields.
 				require.Equal(t, original.ID, dstService.ID)
 				assert.Equal(t, srcService.Name, dstService.Name)
@@ -253,16 +252,16 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 		},
 		{
 			name:      "Nothing to Update Empty Paths",
-			fieldMask: model.Mask{},
-			assertFunc: func(t *testing.T, _, dstService, original model.Service) {
+			fieldMask: Mask{},
+			assertFunc: func(t *testing.T, _, dstService, original Service) {
 				// Same ID and name, as nothing was updated
 				assert.Equal(t, dstService, original)
 			},
 		},
 		{
 			name:      "Nothing to Update Random Path",
-			fieldMask: model.Mask{"random_path"},
-			assertFunc: func(t *testing.T, _, dstService, original model.Service) {
+			fieldMask: Mask{"random_path"},
+			assertFunc: func(t *testing.T, _, dstService, original Service) {
 				// Same ID and name, as nothing was updated
 				assert.Equal(t, dstService, original)
 			},
@@ -278,7 +277,7 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			original := deepCopy(t, dstService)
 			dstCopy, srcCopy := deepCopy(t, dstService), deepCopy(t, srcService)
 
-			err := updateServiceFromMask(&srcCopy, &dstCopy, tt.fieldMask)
+			err := UpdateService(&srcCopy, &dstCopy, tt.fieldMask)
 			require.NoError(t, err)
 
 			tt.assertFunc(t, srcCopy, dstCopy, original)

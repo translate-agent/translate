@@ -181,7 +181,7 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if err := updateServiceFromMask(params.service, loadedService, params.mask); err != nil {
+	if err := model.UpdateService(params.service, loadedService, params.mask); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
