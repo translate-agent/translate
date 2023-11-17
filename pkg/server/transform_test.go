@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -99,39 +100,50 @@ func Test_maskFromProto(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		protoMessage proto.Message          // message to which the mask belongs
+		protoMessage proto.Message          // proto message type
 		protoMask    *fieldmaskpb.FieldMask // mask as received from the request
-		modelMask    model.Mask             // parsed mask with correct model paths
+		expectedErr  error
+		modelMask    model.Mask // parsed mask with correct model paths
 	}{
+		// positive tests
 		{
 			name:         "nil mask",
-			protoMessage: new(translatev1.Message),
+			protoMessage: new(translatev1.Service),
 			protoMask:    nil,
 			modelMask:    nil,
-		},
-		{
-			name:         "empty mask",
-			protoMessage: new(translatev1.Message),
-			protoMask:    &fieldmaskpb.FieldMask{},
-			modelMask:    model.Mask{},
 		},
 		{
 			name:         "service mask",
 			protoMessage: new(translatev1.Service), // corresponds to model.Service
 			protoMask:    &fieldmaskpb.FieldMask{Paths: []string{"name"}},
-			modelMask:    model.Mask{"Name"},
+			modelMask:    model.Mask{"name"},
 		},
 		{
 			name:         "message mask",
 			protoMessage: new(translatev1.Message), // corresponds to model.Message
 			protoMask:    &fieldmaskpb.FieldMask{Paths: []string{"plural_id", "message", "description", "status", "positions"}},
-			modelMask:    model.Mask{"PluralID", "Message", "Description", "Status", "Positions"},
+			modelMask:    model.Mask{"pluralid", "message", "description", "status", "positions"},
 		},
 		{
 			name:         "translation mask",
 			protoMessage: new(translatev1.Translation), // corresponds to model.Translation
 			protoMask:    &fieldmaskpb.FieldMask{Paths: []string{"language", "original", "messages"}},
-			modelMask:    model.Mask{"Language", "Original", "Messages"},
+			modelMask:    model.Mask{"language", "original", "messages"},
+		},
+		// negative tests
+		{
+			name:         "empty mask",
+			protoMessage: new(translatev1.Service),
+			protoMask:    &fieldmaskpb.FieldMask{},
+			modelMask:    model.Mask{},
+			expectedErr:  errors.New("field mask must contain at least 1 path"),
+		},
+		{
+			name:         "mask not nil, message nil",
+			protoMessage: nil,
+			protoMask:    &fieldmaskpb.FieldMask{Paths: []string{"name"}},
+			modelMask:    nil,
+			expectedErr:  errors.New("message cannot be nil"),
 		},
 	}
 	for _, tt := range tests {
@@ -140,8 +152,12 @@ func Test_maskFromProto(t *testing.T) {
 			t.Parallel()
 
 			actual, err := maskFromProto(tt.protoMessage, tt.protoMask)
-			require.NoError(t, err)
+			if tt.expectedErr != nil {
+				require.EqualError(t, err, tt.expectedErr.Error())
+				return
+			}
 
+			require.NoError(t, err)
 			assert.ElementsMatch(t, tt.modelMask, actual)
 		})
 	}

@@ -161,7 +161,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:    "Happy Path",
 			request: happyReq,
 			expected: &updateServiceParams{
-				mask: []string{"Name"},
+				mask: []string{"name"},
 				service: &model.Service{
 					ID:   uuid.MustParse(happyReq.GetService().GetId()),
 					Name: happyReq.GetService().GetName(),
@@ -173,7 +173,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:    "Happy Path Without Service ID",
 			request: happyReqWithoutServiceID,
 			expected: &updateServiceParams{
-				mask: []string{"Name"},
+				mask: []string{"name"},
 				service: &model.Service{
 					ID:   uuid.Nil,
 					Name: happyReqWithoutServiceID.GetService().GetName(),
@@ -186,7 +186,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			name:    "Happy Path Without Service",
 			request: happyReqWithoutService,
 			expected: &updateServiceParams{
-				mask:    []string{"Name"},
+				mask:    []string{"name"},
 				service: nil,
 			},
 		},

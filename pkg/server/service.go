@@ -139,12 +139,9 @@ func parseUpdateServiceParams(req *translatev1.UpdateServiceRequest) (*updateSer
 		return nil, fmt.Errorf("parse service: %w", err)
 	}
 
-	// Parse field mask (if any)
-	if reqUpdateMask != nil {
-		params.mask, err = parseFieldMask(reqService, reqUpdateMask.GetPaths())
-		if err != nil {
-			return nil, fmt.Errorf("parse field mask: %w", err)
-		}
+	params.mask, err = maskFromProto(reqService, reqUpdateMask)
+	if err != nil {
+		return nil, fmt.Errorf("parse field mask: %w", err)
 	}
 
 	return &params, nil

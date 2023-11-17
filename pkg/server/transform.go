@@ -1,14 +1,14 @@
 package server
 
 import (
+	"errors"
 	"fmt"
-	"reflect"
-	"slices"
 	"strings"
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+
 	"golang.org/x/text/language"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -220,69 +220,43 @@ func translationsToProto(m []model.Translation) []*translatev1.Translation {
 
 // ----------------------Mask----------------------
 
+// maskFromProto parses the field mask from the request and
+// returns a model mask with removed duplicates and sorted paths.
+// It fails on following scenarios:
+//   - mask is not nil, but message is not set (nil)
+//   - mask is not nil, but empty (0 paths)
+//   - mask contains paths, that does not exist in the proto.message
 func maskFromProto(message proto.Message, mask *fieldmaskpb.FieldMask) (model.Mask, error) {
 	if mask == nil {
 		return nil, nil
 	}
 
-	paths := mask.GetPaths()
-
-	if len(paths) == 0 {
-		return model.Mask{}, nil
+	if message == nil {
+		return nil, errors.New("message cannot be nil")
 	}
 
-	// Find corresponding model type to proto message.
-	var modelType any
+	protoPaths := mask.GetPaths()
 
-	switch message.(type) {
-	case *translatev1.Message:
-		modelType = new(model.Message)
-	case *translatev1.Service:
-		modelType = new(model.Service)
-	case *translatev1.Translation:
-		modelType = new(model.Translation)
-	default:
-		return nil, fmt.Errorf("unknown message type: %T", message)
+	// If mask is not nil but empty, return an error
+	if len(protoPaths) == 0 {
+		return nil, errors.New("field mask must contain at least 1 path")
 	}
 
-	// Get all fields of the model type.
-	var getFields func(reflect.Value, []string) []string
-	getFields = func(v reflect.Value, currentPath []string) []string {
-		var allFields []string
-
-		for i := 0; i < v.NumField(); i++ {
-			field := v.Type().Field(i)
-
-			allFields = append(allFields, strings.Join(append(currentPath, field.Name), "."))
-
-			if field.Type.Kind() == reflect.Struct {
-				getFields(v.Field(i), append(currentPath, field.Name))
-			}
-		}
-
-		return allFields
+	// Check if the paths in the mask exist in the proto message
+	protoMask, err := fieldmaskpb.New(message, protoPaths...)
+	if err != nil {
+		return nil, fmt.Errorf("new fieldmaskpb: %w", err)
 	}
 
-	allFields := getFields(reflect.ValueOf(modelType).Elem(), nil)
+	// Normalize sorts paths, removes duplicates, and removes sub-paths when possible.
+	// e.g. if a field mask contains the paths foo.bar and foo,
+	// the path foo.bar is redundant because it is already covered by the path foo
+	protoMask.Normalize()
 
-	modelMask := make(model.Mask, 0, len(paths))
-
-	// Convert each proto path to a model path. e.g. "message" -> "Message", "plural_id" -> "PluralID"
-	for _, path := range paths {
-		idx := slices.IndexFunc(allFields, func(s string) bool {
-			protoPath := strings.ToLower(strings.ReplaceAll(path, "_", ""))
-			modelPath := strings.ToLower(s)
-
-			return protoPath == modelPath
-		})
-
-		if idx != -1 {
-			modelMask = append(modelMask, allFields[idx])
-		} else {
-			// should not happen, as the proto mask is checked before parsing it to model mask
-			return nil, fmt.Errorf("unknown field: %s", path)
-		}
+	// Convert the proto mask to a model mask, by removing underscores and converting to lowercase
+	for i := range protoPaths {
+		protoPaths[i] = strings.ToLower(strings.ReplaceAll(protoPaths[i], "_", ""))
 	}
 
-	return modelMask, nil
+	return model.Mask(protoPaths), nil
 }

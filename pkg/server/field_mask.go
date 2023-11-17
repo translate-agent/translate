@@ -2,37 +2,12 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"slices"
 	"strings"
 
 	"go.expect.digital/translate/pkg/model"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
-
-// parseFieldMask parses the field mask from the request and
-// returns a model mask with removed duplicates and sorted paths.
-func parseFieldMask(message proto.Message, paths []string) (model.Mask, error) {
-	protoMask, err := fieldmaskpb.New(message, paths...)
-	if err != nil {
-		return nil, fmt.Errorf("new fieldmaskpb: %w", err)
-	}
-
-	// Normalize sorts paths, removes duplicates, and removes sub-paths when possible.
-	// e.g. if a field mask contains the paths foo.bar and foo,
-	// the path foo.bar is redundant because it is already covered by the path foo
-	protoMask.Normalize()
-
-	// Convert the proto mask to a model mask
-	parsed, err := maskFromProto(message, protoMask)
-	if err != nil {
-		return nil, fmt.Errorf("transform proto mask to model mask: %w", err)
-	}
-
-	return parsed, nil
-}
 
 // updateFromMask updates the dst with the values from src based on the mask.
 //
@@ -79,7 +54,7 @@ func updateField(src, dst reflect.Value, fields []string) {
 
 	for i := 0; i < dst.NumField(); i++ {
 		// Find corresponding field in dst
-		if field != dst.Type().Field(i).Name {
+		if !strings.EqualFold(dst.Type().Field(i).Name, field) {
 			continue
 		}
 
