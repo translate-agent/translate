@@ -2,7 +2,6 @@ package pot
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -145,39 +144,6 @@ type Token struct {
 	Index int // plural index for msgstr with plural forms
 }
 
-var validPrefixes = []string{
-	"msgctxt ",
-	"msgid ",
-	"msgstr ",
-	"msgid_plural ",
-	"msgstr[0] ",
-	"msgstr[1] ",
-	"msgstr[2] ",
-	"msgstr[3] ",
-	"msgstr[4] ",
-	"msgstr[5] ",
-	"#: ",
-	"#",
-	"#. ",
-	"#, ",
-	"#| msgctxt ",
-	"#| msgid_plural ",
-	"#| msgid ",
-	"\"Language",
-	"\"Plural-Forms",
-	"\"Translator",
-	"\"Project-Id-Version",
-	"\"POT-Creation-Date",
-	"\"PO-Revision-Date",
-	"\"Last-Translator",
-	"\"Language-Team",
-	"\"MIME-Version",
-	"\"Content-Type",
-	"\"Content-Transfer-Encoding",
-	"\"X-Generator",
-	"\"Report-Msgid-Bugs-To",
-}
-
 // Lex function performs lexical analysis on the input by reading lines from the reader
 // and parsing each line using the parseLine function.
 func Lex(r io.Reader) ([]Token, error) {
@@ -276,13 +242,8 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 // parseToken function parses the line using the parseMsgString function, which returns a modified string and an error.
 // If there is no error a new Token object is created with the parsed value and the specified tokenType.
 func parseToken(line string, tokenType TokenType) (*Token, error) {
-	val, err := parseMsgString(line)
-	if err != nil {
-		return nil, fmt.Errorf("incorrect format of header token: %w", err)
-	}
-
 	return &Token{
-		Value: val,
+		Value: parseMsgString(line),
 		Type:  tokenType,
 	}, nil
 }
@@ -299,10 +260,7 @@ func parsePluralMsgToken(line string) (*Token, error) {
 		return nil, fmt.Errorf("convert string number to int: %w", err)
 	}
 
-	val, err := parseMsgString(line)
-	if err != nil {
-		return nil, fmt.Errorf("incorrect format of plural msg token: %w", err)
-	}
+	val := parseMsgString(line)
 
 	v := tokenPluralMsgStr(val, index)
 
@@ -311,11 +269,7 @@ func parsePluralMsgToken(line string) (*Token, error) {
 
 // parseMsgString first checks if the line has a valid prefix using the hasValidPrefix function.
 // If the prefix is not valid, it returns an empty string and an error indicating an incorrect format.
-func parseMsgString(line string) (string, error) {
-	if !hasValidPrefix(line) {
-		return "", errors.New("incorrect format of po tags")
-	}
-
+func parseMsgString(line string) string {
 	n := 2
 	fields := strings.SplitN(line, " ", n)
 
@@ -333,7 +287,7 @@ func parseMsgString(line string) (string, error) {
 		tokenValue = strings.TrimSpace(tokenValue)
 	}
 
-	return tokenValue, nil
+	return tokenValue
 }
 
 // parseMultilineToken function modifies the last token in the slice
@@ -354,16 +308,4 @@ func parseMultilineToken(line string, tokens *[]Token) (*Token, error) {
 // parseMultilineString removes all double quote characters from the input line string and returns the modified string.
 func parseMultilineString(line string) string {
 	return strings.ReplaceAll(line, `"`, "")
-}
-
-// hasValidPrefix determines whether the provided line string has a valid prefix
-// by iterating through a collection of valid prefixes.
-func hasValidPrefix(line string) bool {
-	for _, prefix := range validPrefixes {
-		if strings.HasPrefix(line, prefix) {
-			return true
-		}
-	}
-
-	return false
 }
