@@ -38,110 +38,25 @@ const (
 	TokenTypeMsgidPrevUntStr
 )
 
-func tokenHeaderLanguage(value string) Token {
-	return Token{Type: TokenTypeHeaderLanguage, Value: value}
-}
-
-func tokenHeaderTranslator(value string) Token {
-	return Token{Type: TokenTypeHeaderTranslator, Value: value}
-}
-
-func tokenHeaderPluralForms(value string) Token {
-	return Token{Type: TokenTypeHeaderPluralForms, Value: value}
-}
-
-func tokenHeaderProjectIDVersion(value string) Token {
-	return Token{Type: TokenTypeHeaderProjectIDVersion, Value: value}
-}
-
-func tokenHeaderPOTCreationDate(value string) Token {
-	return Token{Type: TokenTypeHeaderPOTCreationDate, Value: value}
-}
-
-func tokenHeaderPORevisionDate(value string) Token {
-	return Token{Type: TokenTypeHeaderPORevisionDate, Value: value}
-}
-
-func tokenHeaderLanguageTeam(value string) Token {
-	return Token{Type: TokenTypeHeaderLanguageTeam, Value: value}
-}
-
-func tokenHeaderLastTranslator(value string) Token {
-	return Token{Type: TokenTypeHeaderLastTranslator, Value: value}
-}
-
-func tokenHeaderXGenerator(value string) Token {
-	return Token{Type: TokenTypeHeaderXGenerator, Value: value}
-}
-
-func tokenHeaderReportMsgidBugsTo(value string) Token {
-	return Token{Type: TokenTypeHeaderReportMsgidBugsTo, Value: value}
-}
-
-func tokenHeaderMIMEVersion(value string) Token {
-	return Token{Type: TokenTypeHeaderMIMEVersion, Value: value}
-}
-
-func tokenHeaderContentType(value string) Token {
-	return Token{Type: TokenTypeHeaderContentType, Value: value}
-}
-
-func tokenHeaderContentTransferEncoding(value string) Token {
-	return Token{Type: TokenTypeHeaderContentTransferEncoding, Value: value}
-}
-
-func tokenMsgCtxt(value string) Token {
-	return Token{Type: TokenTypeMsgCtxt, Value: value}
-}
-
-func tokenMsgID(value string) Token {
-	return Token{Type: TokenTypeMsgID, Value: value}
-}
-
-func tokenMsgStr(value string) Token {
-	return Token{Type: TokenTypeMsgStr, Value: value}
-}
-
-func tokenPluralMsgID(value string) Token {
-	return Token{Type: TokenTypePluralMsgID, Value: value}
-}
-
-func tokenPluralMsgStr(value string, index int) Token {
-	return Token{Type: TokenTypePluralMsgStr, Value: value, Index: index}
-}
-
-func tokenTranslatorComment(value string) Token {
-	return Token{Type: TokenTypeTranslatorComment, Value: value}
-}
-
-func tokenExtractedComment(value string) Token {
-	return Token{Type: TokenTypeExtractedComment, Value: value}
-}
-
-func tokenReference(value string) Token {
-	return Token{Type: TokenTypeReference, Value: value}
-}
-
-func tokenFlag(value string) Token {
-	return Token{Type: TokenTypeFlag, Value: value}
-}
-
-func tokenMsgctxtPreviousContext(value string) Token {
-	return Token{Type: TokenTypeMsgctxtPreviousContext, Value: value}
-}
-
-func tokenMsgidPluralPrevUntStrPlural(value string) Token {
-	return Token{Type: TokenTypeMsgidPluralPrevUntStrPlural, Value: value}
-}
-
-func tokenMsgidPrevUntStr(value string) Token {
-	return Token{Type: TokenTypeMsgidPrevUntStr, Value: value}
-}
-
 type Token struct {
 	Value string
 	Type  TokenType
 	Index int // plural index for msgstr with plural forms
+}
+
+func mkToken(tokenType TokenType, value string, opts ...func(t *Token)) Token {
+	token := Token{Type: tokenType, Value: value}
+	for _, opt := range opts {
+		opt(&token)
+	}
+
+	return token
+}
+
+func withIndex(index int) func(t *Token) {
+	return func(t *Token) {
+		t.Index = index
+	}
 }
 
 // Lex function performs lexical analysis on the input by reading lines from the reader
@@ -262,7 +177,7 @@ func parsePluralMsgToken(line string) (*Token, error) {
 
 	val := parseMsgString(line)
 
-	v := tokenPluralMsgStr(val, index)
+	v := mkToken(TokenTypePluralMsgStr, val, withIndex(index))
 
 	return &v, nil
 }
