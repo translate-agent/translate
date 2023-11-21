@@ -253,19 +253,19 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 	case strings.HasPrefix(line, "msgstr"):
 		return parseToken(line, TokenTypeMsgStr)
 	case strings.HasPrefix(line, "#."):
-		return parseCommentToken(line, TokenTypeExtractedComment)
+		return parseToken(line, TokenTypeExtractedComment)
 	case strings.HasPrefix(line, "#:"):
-		return parseCommentToken(line, TokenTypeReference)
+		return parseToken(line, TokenTypeReference)
 	case strings.HasPrefix(line, "#| msgid_plural"):
-		return parseCommentToken(line, TokenTypeMsgidPluralPrevUntStrPlural)
+		return parseToken(line, TokenTypeMsgidPluralPrevUntStrPlural)
 	case strings.HasPrefix(line, "#| msgid"):
-		return parseCommentToken(line, TokenTypeMsgidPrevUntStr)
+		return parseToken(line, TokenTypeMsgidPrevUntStr)
 	case strings.HasPrefix(line, "#| msgctxt"):
-		return parseCommentToken(line, TokenTypeMsgctxtPreviousContext)
+		return parseToken(line, TokenTypeMsgctxtPreviousContext)
 	case strings.HasPrefix(line, "#,"):
-		return parseCommentToken(line, TokenTypeFlag)
+		return parseToken(line, TokenTypeFlag)
 	case strings.HasPrefix(line, "#"):
-		return parseCommentToken(line, TokenTypeTranslatorComment)
+		return parseToken(line, TokenTypeTranslatorComment)
 	case strings.HasPrefix(line, `"`):
 		return parseMultilineToken(line, tokens)
 	default:
@@ -307,20 +307,6 @@ func parsePluralMsgToken(line string) (*Token, error) {
 	v := tokenPluralMsgStr(val, index)
 
 	return &v, nil
-}
-
-// parseCommentToken function parses the line using the parseMsgString function,
-// which returns a modified string and an error.
-func parseCommentToken(line string, tokenType TokenType) (*Token, error) {
-	val, err := parseMsgString(line)
-	if err != nil {
-		return nil, fmt.Errorf("incorrect format of comment token: %w", err)
-	}
-
-	return &Token{
-		Value: val,
-		Type:  tokenType,
-	}, nil
 }
 
 // parseMsgString first checks if the line has a valid prefix using the hasValidPrefix function.
