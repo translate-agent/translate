@@ -55,8 +55,8 @@ func newUploadCmd() *cobra.Command {
 			var original *bool
 
 			if cmd.Flags().Changed("original") {
-				v, flagErr := cmd.Flags().GetBool("original")
-				if flagErr != nil {
+				v, err := cmd.Flags().GetBool("original") //nolint:govet
+				if err != nil {
 					return fmt.Errorf("upload file: get cli parameter 'original': %w", err)
 				}
 

@@ -26,14 +26,19 @@ func ToGo(t model.Translation) ([]byte, error) {
 
 // FromGo takes a JSON-encoded byte slice, decodes it into a pipeline.Messages structure,
 // and then converts it into a model.Translation structure using the translationFromPipeline function.
-func FromGo(b []byte, original bool) (model.Translation, error) {
+func FromGo(b []byte, original *bool) (model.Translation, error) {
 	var pipelineMsgs pipeline.Messages
 
 	if err := json.Unmarshal(b, &pipelineMsgs); err != nil {
 		return model.Translation{}, fmt.Errorf("decode JSON to pipeline.Messages: %w", err)
 	}
 
-	return translationFromPipeline(pipelineMsgs, original), nil
+	// if original is not provided default to false.
+	if original == nil {
+		original = ptr(false)
+	}
+
+	return translationFromPipeline(pipelineMsgs, *original), nil
 }
 
 // translationToPipeline converts a model.Translation structure into a pipeline.Messages structure.

@@ -10,8 +10,13 @@ import (
 // FromNgxTranslate  parses the JSON-encoded byte slice representing messages in the ngx-translate format,
 // recursively traverses the map, extracts the key-value pairs, converts the message strings,
 // and constructs a model.Translation structure.
-func FromNgxTranslate(b []byte, original bool) (translation model.Translation, err error) {
-	translation.Original = original
+func FromNgxTranslate(b []byte, original *bool) (translation model.Translation, err error) {
+	// if original is not provided default to false.
+	if original == nil {
+		original = ptr(false)
+	}
+
+	translation.Original = *original
 
 	var dst map[string]interface{}
 
@@ -22,7 +27,7 @@ func FromNgxTranslate(b []byte, original bool) (translation model.Translation, e
 	var traverseMap func(key string, value interface{}) error
 
 	status := model.MessageStatusUntranslated
-	if original {
+	if *original {
 		status = model.MessageStatusTranslated
 	}
 

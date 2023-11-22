@@ -232,7 +232,7 @@ func TestFromGo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromGo(tt.input, tt.expected.Original)
+			actual, err := FromGo(tt.input, &tt.expected.Original)
 
 			require.NoError(t, err)
 

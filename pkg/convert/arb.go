@@ -40,10 +40,15 @@ app_fr.arb
 */
 
 // FromArb converts a serialized data in ARB file format into model.Translation.
-func FromArb(data []byte, original bool) (model.Translation, error) {
+func FromArb(data []byte, original *bool) (model.Translation, error) {
 	var dst map[string]interface{}
 	if err := json.Unmarshal(data, &dst); err != nil {
 		return model.Translation{}, fmt.Errorf("unmarshal ARB serialized data: %w", err)
+	}
+
+	// if original is not provided default to false.
+	if original == nil {
+		original = ptr(false)
 	}
 
 	findDescription := func(key string) (string, error) {
@@ -94,11 +99,11 @@ func FromArb(data []byte, original bool) (model.Translation, error) {
 	}
 
 	status := model.MessageStatusUntranslated
-	if original {
+	if *original {
 		status = model.MessageStatusTranslated
 	}
 
-	translation := model.Translation{Language: lang, Original: original}
+	translation := model.Translation{Language: lang, Original: *original}
 
 	for key, value := range dst {
 		// Ignore a key if it begins with '@' as it only supplies metadata for translation not the message itself.

@@ -19,35 +19,28 @@ TranslationFromData converts in specific schema serialized data to model.Transla
 TODO: Add support for converting non original, but already translated messages and mark them as TRANSLATED.
 */
 func TranslationFromData(params *uploadParams) (*model.Translation, error) {
-	var (
-		err         error
-		original    bool
-		translation model.Translation
-	)
-
-	if params.original != nil {
-		original = *params.original
-	}
+	var from func([]byte, *bool) (model.Translation, error)
 
 	switch params.schema {
 	case translatev1.Schema_ARB:
-		translation, err = convert.FromArb(params.data, original)
+		from = convert.FromArb
 	case translatev1.Schema_GO:
-		translation, err = convert.FromGo(params.data, original)
+		from = convert.FromGo
 	case translatev1.Schema_JSON_NG_LOCALIZE:
-		translation, err = convert.FromNgLocalize(params.data, original)
+		from = convert.FromNgLocalize
 	case translatev1.Schema_JSON_NGX_TRANSLATE:
-		translation, err = convert.FromNgxTranslate(params.data, original)
+		from = convert.FromNgxTranslate
 	case translatev1.Schema_POT:
-		translation, err = convert.FromPot(params.data, original)
+		from = convert.FromPot
 	case translatev1.Schema_XLIFF_2:
-		translation, err = convert.FromXliff2(params.data, params.original)
+		from = convert.FromXliff2
 	case translatev1.Schema_XLIFF_12:
-		translation, err = convert.FromXliff12(params.data, params.original)
+		from = convert.FromXliff12
 	case translatev1.Schema_UNSPECIFIED:
 		return nil, errUnspecifiedSchema
 	}
 
+	translation, err := from(params.data, params.original)
 	if err != nil {
 		return nil, fmt.Errorf("convert from %s schema: %w", params.schema, err)
 	}

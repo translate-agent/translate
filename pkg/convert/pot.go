@@ -51,7 +51,12 @@ func ToPot(t model.Translation) ([]byte, error) {
 }
 
 // FromPot function parses a POT file by tokenizing and converting it into a pot.Po structure.
-func FromPot(b []byte, original bool) (model.Translation, error) {
+func FromPot(b []byte, original *bool) (model.Translation, error) {
+	// if original is not provided default to false.
+	if original == nil {
+		original = ptr(false)
+	}
+
 	tokens, err := pot.Lex(bytes.NewReader(b))
 	if err != nil {
 		return model.Translation{}, fmt.Errorf("divide po file to tokens: %w", err)
@@ -78,7 +83,7 @@ func FromPot(b []byte, original bool) (model.Translation, error) {
 		return model.MessageStatusUntranslated
 	}
 
-	if original {
+	if *original {
 		singularValue = func(v pot.MessageNode) string { return v.MsgID }
 		pluralValue = func(v pot.MessageNode) []string { return []string{v.MsgID, v.MsgIDPlural} }
 		getStatus = func(_ pot.MessageNode) model.MessageStatus { return model.MessageStatusTranslated }
@@ -112,7 +117,7 @@ func FromPot(b []byte, original bool) (model.Translation, error) {
 	return model.Translation{
 		Language: po.Header.Language,
 		Messages: messages,
-		Original: original,
+		Original: *original,
 	}, nil
 }
 
