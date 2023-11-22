@@ -172,7 +172,7 @@ func parseToken(line string, tokenType TokenType) (*Token, error) {
 	indexStart := strings.Index(line, "[")
 	indexEnd := strings.Index(line, "]")
 
-	if indexStart <= 0 || indexStart >= indexEnd {
+	if indexStart == -1 || indexEnd == -1 || indexStart >= indexEnd {
 		return nil, errors.New("improperly formatted msgstr[*] or msgstr[*] not found in the string")
 	}
 
