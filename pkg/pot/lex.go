@@ -193,8 +193,8 @@ func parseMsg(line string) string {
 	n := 2
 	fields := strings.SplitN(line, " ", n) // prefix and value, e.g. fields[0] = msgid, fields[1] = "text", etc.
 
-	// No value
-	if len(fields) == 1 {
+	// No value, only prefix
+	if len(fields) != n {
 		return ""
 	}
 
