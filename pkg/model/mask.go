@@ -122,7 +122,9 @@ func updateField(src, dst reflect.Value, fields []string) {
 // If the Mask is nil, all fields are updated, except the ID.
 func UpdateService(src, dst *Service, mask Mask) error {
 	// Prevent updating read-only fields like ID
-	if slices.Contains(mask, "ID") {
+	if slices.ContainsFunc(mask, func(s string) bool {
+		return strings.EqualFold(s, "ID")
+	}) {
 		return errors.New("\"id\" is not allowed in field mask")
 	}
 

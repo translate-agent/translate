@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -228,10 +229,12 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 	require.NoError(t, gofakeit.Struct(&dstService))
 
 	tests := []struct {
-		assertFunc func(t *testing.T, srcService, dstService, original Service)
-		name       string
-		fieldMask  Mask
+		assertFunc  func(t *testing.T, srcService, dstService, original Service)
+		name        string
+		expectedErr error
+		fieldMask   Mask
 	}{
+		// positive tests
 		{
 			name:      "Update Name",
 			fieldMask: Mask{"Name"},
@@ -266,6 +269,12 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 				assert.Equal(t, dstService, original)
 			},
 		},
+		// negative tests
+		{
+			name:        "Try to update ID",
+			fieldMask:   Mask{"ID"},
+			expectedErr: errors.New("\"id\" is not allowed in field mask"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -278,6 +287,12 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			dstCopy, srcCopy := deepCopy(t, dstService), deepCopy(t, srcService)
 
 			err := UpdateService(&srcCopy, &dstCopy, tt.fieldMask)
+
+			if tt.expectedErr != nil {
+				require.EqualError(t, err, tt.expectedErr.Error())
+				return
+			}
+
 			require.NoError(t, err)
 
 			tt.assertFunc(t, srcCopy, dstCopy, original)
