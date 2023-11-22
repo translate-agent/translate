@@ -41,7 +41,7 @@ const (
 type Token struct {
 	Value string
 	Type  TokenType
-	Index int // plural index for msgstr with plural forms
+	Index int // plural index for msgstr with plural forms, e.g. msgstr[0], the index is 0
 }
 
 func mkToken(tokenType TokenType, value string, opts ...func(t *Token)) Token {
