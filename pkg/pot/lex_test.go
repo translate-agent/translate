@@ -18,6 +18,7 @@ func TestLex(t *testing.T) {
 		expectedErr error
 		expected    []Token
 	}{
+		// positive tests
 		// TODO(jhorsts): this is not actually translator comment
 		// but file level comment. Should it be simply TypeComment?
 		// https://raw.githubusercontent.com/apache/superset/master/superset/translations/messages.pot
@@ -114,35 +115,39 @@ msgstr ""
 				mkToken(TokenTypeMsgID, ""),
 				mkToken(TokenTypeMsgStr, ""),
 				mkToken(TokenTypeHeaderLanguage, "en-GB\\n"),
-				mkToken(TokenTypeMsgID, "multiline id multiline id 2"),
-				mkToken(TokenTypeMsgStr, "text line 1 next line 2"),
+				mkToken(TokenTypeMsgID, "\nmultiline id\nmultiline id 2"),
+				mkToken(TokenTypeMsgStr, "\ntext line 1\nnext line 2"),
 			},
 		},
 		{
-			name: "When msgid plural and msgstr plural values are multiline",
+			name: "pot with plural and escaped newline",
 			input: `msgid ""
 msgstr ""
 "Language: en-US\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 msgid ""
-"multiline id"
-"multiline id 2"
-msgid_plural "There are %d oranges"
-"There are 1900000 oranges"
-msgstr[0] "There is %d orange"
-"There is 1 orange"
-msgstr[1] "There are %d oranges"
-"There are 1900000 oranges"
-			`,
+"There is %d orange\n"
+"that is on the tree"
+msgid_plural ""
+"There are %d oranges\n"
+"that are on the tree"
+msgstr[0] ""
+"There is %d orange\n"
+"that is on the tree"
+msgstr[1] ""
+"There are %d oranges\n"
+"that are on the tree"
+`,
 			expected: []Token{
 				mkToken(TokenTypeMsgID, ""),
 				mkToken(TokenTypeMsgStr, ""),
 				mkToken(TokenTypeHeaderLanguage, "en-US\\n"),
 				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);\\n"),
-				mkToken(TokenTypeMsgID, "multiline id multiline id 2"),
-				mkToken(TokenTypePluralMsgID, "There are %d oranges There are 1900000 oranges"),
-				mkToken(TokenTypePluralMsgStr, "There is %d orange There is 1 orange", withIndex(0)),
-				mkToken(TokenTypePluralMsgStr, "There are %d oranges There are 1900000 oranges", withIndex(1)),
+				mkToken(TokenTypeMsgID, "\nThere is %d orange\\n\nthat is on the tree"),
+				mkToken(TokenTypePluralMsgID, "\nThere are %d oranges\\n\nthat are on the tree"),
+				mkToken(TokenTypePluralMsgStr, "\nThere is %d orange\\n\nthat is on the tree", withIndex(0)),
+				mkToken(TokenTypePluralMsgStr, "\nThere are %d oranges\\n\nthat are on the tree", withIndex(1)),
 			},
 		},
 		{
@@ -177,6 +182,33 @@ msgstr "\"quoted\" str"
 				mkToken(TokenTypeMsgStr, "\\\"quoted\\\" str"),
 			},
 		},
+		{
+			name: "Multiline msgid with leading spaces",
+			input: `msgid ""
+"Add filter clauses to control the filter's source query,\n"
+"                    though only in the context of the autocomplete i.e.,"
+"these conditions\n"
+"                    do not impact how the filter is applied to the"
+"dashboard. This is useful\n"
+"                    when you want to improve the query's performance by"
+"only scanning a subset\n"
+"                    of the underlying data or limit the available values"
+"displayed in the filter."
+`,
+			expected: []Token{
+				mkToken(TokenTypeMsgID, `
+Add filter clauses to control the filter's source query,\n
+                    though only in the context of the autocomplete i.e.,
+these conditions\n
+                    do not impact how the filter is applied to the
+dashboard. This is useful\n
+                    when you want to improve the query's performance by
+only scanning a subset\n
+                    of the underlying data or limit the available values
+displayed in the filter.`),
+			},
+		},
+		// negative tests
 		{
 			name: "When msgid value is incorrect",
 			input: "msgid \"\"\n" +
