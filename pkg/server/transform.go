@@ -1,12 +1,17 @@
 package server
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+
 	"golang.org/x/text/language"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 // ----------------------Common types----------------------
@@ -211,4 +216,47 @@ func translationFromProto(t *translatev1.Translation) (*model.Translation, error
 // translationsToProto converts []model.Translation to []*translatev1.Translation.
 func translationsToProto(m []model.Translation) []*translatev1.Translation {
 	return sliceToProto(m, translationToProto)
+}
+
+// ----------------------Mask----------------------
+
+// maskFromProto parses the field mask from the request and
+// returns a model mask with removed duplicates and sorted paths.
+// It fails on following scenarios:
+//   - mask is not nil, but message is not set (nil)
+//   - mask is not nil, but empty (0 paths)
+//   - mask contains paths, that does not exist in the proto.message
+func maskFromProto(message proto.Message, mask *fieldmaskpb.FieldMask) (model.Mask, error) {
+	if mask == nil {
+		return nil, nil
+	}
+
+	if message == nil {
+		return nil, errors.New("message cannot be nil")
+	}
+
+	protoPaths := mask.GetPaths()
+
+	// If mask is not nil but empty, return an error
+	if len(protoPaths) == 0 {
+		return nil, errors.New("field mask must contain at least 1 path")
+	}
+
+	// Check if the paths in the mask exist in the proto message
+	protoMask, err := fieldmaskpb.New(message, protoPaths...)
+	if err != nil {
+		return nil, fmt.Errorf("new fieldmaskpb: %w", err)
+	}
+
+	// Normalize sorts paths, removes duplicates, and removes sub-paths when possible.
+	// e.g. if a field mask contains the paths foo.bar and foo,
+	// the path foo.bar is redundant because it is already covered by the path foo
+	protoMask.Normalize()
+
+	// Convert the proto mask to a model mask, by removing underscores and converting to lowercase
+	for i := range protoPaths {
+		protoPaths[i] = strings.ToLower(strings.ReplaceAll(protoPaths[i], "_", ""))
+	}
+
+	return model.Mask(protoPaths), nil
 }

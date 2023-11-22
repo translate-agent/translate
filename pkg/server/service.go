@@ -139,12 +139,9 @@ func parseUpdateServiceParams(req *translatev1.UpdateServiceRequest) (*updateSer
 		return nil, fmt.Errorf("parse service: %w", err)
 	}
 
-	// Parse field mask (if any)
-	if reqUpdateMask != nil {
-		params.mask, err = parseFieldMask(reqService, reqUpdateMask.GetPaths())
-		if err != nil {
-			return nil, fmt.Errorf("parse field mask: %w", err)
-		}
+	params.mask, err = maskFromProto(reqService, reqUpdateMask)
+	if err != nil {
+		return nil, fmt.Errorf("parse field mask: %w", err)
 	}
 
 	return &params, nil
@@ -162,28 +159,6 @@ func (u *updateServiceParams) validate() error {
 	return nil
 }
 
-// updateServiceFromParams updates the service resource with the new values from the request.
-func updateServiceFromParams(service *model.Service, reqParams *updateServiceParams) *model.Service {
-	// Replace service resource with the new one from params (PUT)
-	if reqParams.mask == nil {
-		return &model.Service{ID: service.ID, Name: reqParams.service.Name}
-	}
-
-	updatedService := *service
-
-	// Replace service resource's fields with the new ones from request (PATCH)
-	for _, path := range reqParams.mask {
-		switch path {
-		default:
-			// noop
-		case "name":
-			updatedService.Name = reqParams.service.Name
-		}
-	}
-
-	return &updatedService
-}
-
 func (t *TranslateServiceServer) UpdateService(
 	ctx context.Context,
 	req *translatev1.UpdateServiceRequest,
@@ -197,7 +172,7 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	oldService, err := t.repo.LoadService(ctx, params.service.ID)
+	loadedService, err := t.repo.LoadService(ctx, params.service.ID)
 
 	switch {
 	case errors.Is(err, repo.ErrNotFound):
@@ -206,13 +181,15 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	updatedService := updateServiceFromParams(oldService, params)
+	if err := model.UpdateService(params.service, loadedService, params.mask); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+	}
 
-	if err := t.repo.SaveService(ctx, updatedService); err != nil {
+	if err := t.repo.SaveService(ctx, loadedService); err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	return serviceToProto(updatedService), nil
+	return serviceToProto(loadedService), nil
 }
 
 // ----------------------DeleteService------------------------------

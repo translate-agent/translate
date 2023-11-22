@@ -19,10 +19,11 @@ enum Schema {
 
 message Message {
   string id = 1;
-  string message = 2;
-  string description = 3;
-  Status status = 4;
-  repeated string positions = 5;
+  string plural_id = 2;
+  string message = 3;
+  string description = 4;
+  Status status = 5;
+  repeated string positions = 6;
 
   enum Status {
     TRANSLATED = 0;

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -11,7 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
+	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"golang.org/x/text/language"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 func Test_TransformUUID(t *testing.T) {
@@ -89,4 +93,72 @@ func Test_TransformService(t *testing.T) {
 
 		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 100}))
 	})
+}
+
+func Test_maskFromProto(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		protoMessage proto.Message          // proto message type
+		protoMask    *fieldmaskpb.FieldMask // mask as received from the request
+		expectedErr  error
+		modelMask    model.Mask // parsed mask with correct model paths
+	}{
+		// positive tests
+		{
+			name:         "nil mask",
+			protoMessage: new(translatev1.Service),
+			protoMask:    nil,
+			modelMask:    nil,
+		},
+		{
+			name:         "service mask",
+			protoMessage: new(translatev1.Service), // corresponds to model.Service
+			protoMask:    &fieldmaskpb.FieldMask{Paths: []string{"name"}},
+			modelMask:    model.Mask{"name"},
+		},
+		{
+			name:         "message mask",
+			protoMessage: new(translatev1.Message), // corresponds to model.Message
+			protoMask:    &fieldmaskpb.FieldMask{Paths: []string{"plural_id", "message", "description", "status", "positions"}},
+			modelMask:    model.Mask{"pluralid", "message", "description", "status", "positions"},
+		},
+		{
+			name:         "translation mask",
+			protoMessage: new(translatev1.Translation), // corresponds to model.Translation
+			protoMask:    &fieldmaskpb.FieldMask{Paths: []string{"language", "original", "messages"}},
+			modelMask:    model.Mask{"language", "original", "messages"},
+		},
+		// negative tests
+		{
+			name:         "empty mask",
+			protoMessage: new(translatev1.Service),
+			protoMask:    &fieldmaskpb.FieldMask{},
+			modelMask:    model.Mask{},
+			expectedErr:  errors.New("field mask must contain at least 1 path"),
+		},
+		{
+			name:         "mask not nil, message nil",
+			protoMessage: nil,
+			protoMask:    &fieldmaskpb.FieldMask{Paths: []string{"name"}},
+			modelMask:    nil,
+			expectedErr:  errors.New("message cannot be nil"),
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual, err := maskFromProto(tt.protoMessage, tt.protoMask)
+			if tt.expectedErr != nil {
+				require.EqualError(t, err, tt.expectedErr.Error())
+				return
+			}
+
+			require.NoError(t, err)
+			assert.ElementsMatch(t, tt.modelMask, actual)
+		})
+	}
 }
