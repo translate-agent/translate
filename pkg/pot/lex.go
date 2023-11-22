@@ -156,6 +156,7 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 
 // parseToken function parses the line using the parseMsgString function, which returns a modified string and an error.
 // If there is no error a new Token object is created with the parsed value and the specified tokenType.
+// TODO: godoc is off, function not needed.
 func parseToken(line string, tokenType TokenType) (*Token, error) {
 	return &Token{
 		Value: parseMsgString(line),
@@ -186,21 +187,18 @@ func parsePluralMsgToken(line string) (*Token, error) {
 // If the prefix is not valid, it returns an empty string and an error indicating an incorrect format.
 func parseMsgString(line string) string {
 	n := 2
-	fields := strings.SplitN(line, " ", n)
+	fields := strings.SplitN(line, " ", n) // prefix and value, e.g. fields[0] = msgid, fields[1] = "text", etc.
 
-	var tokenValue string
-
-	if len(fields) == n {
-		tokenValue = strings.TrimSpace(fields[1])
+	// No value
+	if len(fields) == 1 {
+		return ""
 	}
 
-	if strings.HasPrefix(tokenValue, `"`) && strings.HasSuffix(tokenValue, `"`) {
-		// Remove the quotes and any escaped quotes
-		tokenValue = strings.ReplaceAll(tokenValue[1:len(tokenValue)-1], `\"`, `"`)
-	} else if strings.HasSuffix(tokenValue, "\\n\"") {
-		tokenValue = strings.ReplaceAll(tokenValue[:len(tokenValue)-2], "\\", ``)
-		tokenValue = strings.TrimSpace(tokenValue)
-	}
+	tokenValue := strings.TrimSpace(fields[1])
+
+	// Remove first and last double quotes if they exist
+	tokenValue = strings.TrimPrefix(tokenValue, `"`)
+	tokenValue = strings.TrimSuffix(tokenValue, `"`)
 
 	return tokenValue
 }

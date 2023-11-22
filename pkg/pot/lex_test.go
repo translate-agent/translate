@@ -34,52 +34,53 @@ func TestLex(t *testing.T) {
 		},
 		{
 			name: "When all values are provided",
-			input: "msgid \"\"\n" +
-				"msgstr \"\"\n" +
-				"\"Translator: John Doe <johndoe@example.com>\\n\"\n" +
-				"\"Language: en-US\\n\"\n" +
-				"\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n" +
-				"\"Project-Id-Version: 1.2\\n\"\n" +
-				"\"POT-Creation-Date: 10.02.2022.\\n\"\n" +
-				"\"PO-Revision-Date: 10.02.2022.\\n\"\n" +
-				"\"Last-Translator: John Doe\\n\"\n" +
-				"\"Language-Team: team\\n\"\n" +
-				"\"MIME-Version: 1.0\\n\"\n" +
-				"\"Content-Type: text/plain; charset=UTF-8\\n\"\n" +
-				"\"Content-Transfer-Encoding: 8bit\\n\"\n" +
-				"\"X-Generator: Poedit 2.2\\n\"\n" +
-				"\"Report-Msgid-Bugs-To: support@lingohub.com\\n\"\n" +
-				"msgctxt \"ctxt\"\n" +
-				"msgid \"id\"\n" +
-				"msgstr \"str\"\n" +
-				"msgid_plural \"There are %d oranges\"\n" +
-				"msgstr[0] \"There is %d orange\"\n" +
-				"msgstr[1] \"There are %d oranges\"\n" +
-				"# translator-comment\n" +
-				"#. extracted comment\n" +
-				"#: reference1\n" +
-				"#: reference2\n" +
-				"#: reference3\n" +
-				"#, flag\n" +
-				"#| msgctxt previous context\n" +
-				"#| msgid previous id\n" +
-				"#| msgid_plural previous id plural\n",
+			input: `msgid ""
+msgstr ""
+"Translator: John Doe <johndoe@example.com>\n"
+"Language: en-US\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Project-Id-Version: 1.2\n"
+"POT-Creation-Date: 10.02.2022.\n"
+"PO-Revision-Date: 10.02.2022.\n"
+"Last-Translator: John Doe\n"
+"Language-Team: team\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.2\n"
+"Report-Msgid-Bugs-To: support@lingohub.com\n"
+msgctxt "ctxt"
+msgid "id"
+msgstr "str"
+msgid_plural "There are %d oranges"
+msgstr[0] "There is %d orange"
+msgstr[1] "There are %d oranges"
+# translator-comment
+#. extracted comment
+#: reference1
+#: reference2
+#: reference3
+#, flag
+#| msgctxt previous context
+#| msgid previous id
+#| msgid_plural previous id plural
+`,
 			expected: []Token{
 				mkToken(TokenTypeMsgID, ""),
 				mkToken(TokenTypeMsgStr, ""),
-				mkToken(TokenTypeHeaderTranslator, "John Doe <johndoe@example.com>"),
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
-				mkToken(TokenTypeHeaderProjectIDVersion, "1.2"),
-				mkToken(TokenTypeHeaderPOTCreationDate, "10.02.2022."),
-				mkToken(TokenTypeHeaderPORevisionDate, "10.02.2022."),
-				mkToken(TokenTypeHeaderLastTranslator, "John Doe"),
-				mkToken(TokenTypeHeaderLanguageTeam, "team"),
-				mkToken(TokenTypeHeaderMIMEVersion, "1.0"),
-				mkToken(TokenTypeHeaderContentType, "text/plain; charset=UTF-8"),
-				mkToken(TokenTypeHeaderContentTransferEncoding, "8bit"),
-				mkToken(TokenTypeHeaderXGenerator, "Poedit 2.2"),
-				mkToken(TokenTypeHeaderReportMsgidBugsTo, "support@lingohub.com"),
+				mkToken(TokenTypeHeaderTranslator, "John Doe <johndoe@example.com>\\n"),
+				mkToken(TokenTypeHeaderLanguage, "en-US\\n"),
+				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);\\n"),
+				mkToken(TokenTypeHeaderProjectIDVersion, "1.2\\n"),
+				mkToken(TokenTypeHeaderPOTCreationDate, "10.02.2022.\\n"),
+				mkToken(TokenTypeHeaderPORevisionDate, "10.02.2022.\\n"),
+				mkToken(TokenTypeHeaderLastTranslator, "John Doe\\n"),
+				mkToken(TokenTypeHeaderLanguageTeam, "team\\n"),
+				mkToken(TokenTypeHeaderMIMEVersion, "1.0\\n"),
+				mkToken(TokenTypeHeaderContentType, "text/plain; charset=UTF-8\\n"),
+				mkToken(TokenTypeHeaderContentTransferEncoding, "8bit\\n"),
+				mkToken(TokenTypeHeaderXGenerator, "Poedit 2.2\\n"),
+				mkToken(TokenTypeHeaderReportMsgidBugsTo, "support@lingohub.com\\n"),
 				mkToken(TokenTypeMsgCtxt, "ctxt"),
 				mkToken(TokenTypeMsgID, "id"),
 				mkToken(TokenTypeMsgStr, "str"),
@@ -99,34 +100,45 @@ func TestLex(t *testing.T) {
 		},
 		{
 			name: "When msgid and msgstr values are multiline",
-			input: "msgid \"\"\n" +
-				"msgstr \"\"\n" +
-				"\"Language: en-GB\\n\"\n" +
-				"msgid \"\"\n\"multiline id\"\n\"multiline id 2\"\n" +
-				"msgstr \"\"\n\"text line 1\"\n\"next line 2\"\n",
+			input: `msgid ""
+msgstr ""
+"Language: en-GB\n"
+msgid ""
+"multiline id"
+"multiline id 2"
+msgstr ""
+"text line 1"
+"next line 2"
+`,
 			expected: []Token{
 				mkToken(TokenTypeMsgID, ""),
 				mkToken(TokenTypeMsgStr, ""),
-				mkToken(TokenTypeHeaderLanguage, "en-GB"),
+				mkToken(TokenTypeHeaderLanguage, "en-GB\\n"),
 				mkToken(TokenTypeMsgID, "multiline id multiline id 2"),
 				mkToken(TokenTypeMsgStr, "text line 1 next line 2"),
 			},
 		},
 		{
 			name: "When msgid plural and msgstr plural values are multiline",
-			input: "msgid \"\"\n" +
-				"msgstr \"\"\n" +
-				"\"Language: en-US\\n\"\n" +
-				"\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n" +
-				"msgid \"\"\n\"multiline id\"\n\"multiline id 2\"\n" +
-				"msgid_plural \"There are %d oranges\"\n\"There are 1900000 oranges\"\n" +
-				"msgstr[0] \"There is %d orange\"\n\"There is 1 orange\"\n" +
-				"msgstr[1] \"There are %d oranges\"\n\"There are 1900000 oranges\"\n",
+			input: `msgid ""
+msgstr ""
+"Language: en-US\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+msgid ""
+"multiline id"
+"multiline id 2"
+msgid_plural "There are %d oranges"
+"There are 1900000 oranges"
+msgstr[0] "There is %d orange"
+"There is 1 orange"
+msgstr[1] "There are %d oranges"
+"There are 1900000 oranges"
+			`,
 			expected: []Token{
 				mkToken(TokenTypeMsgID, ""),
 				mkToken(TokenTypeMsgStr, ""),
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
+				mkToken(TokenTypeHeaderLanguage, "en-US\\n"),
+				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);\\n"),
 				mkToken(TokenTypeMsgID, "multiline id multiline id 2"),
 				mkToken(TokenTypePluralMsgID, "There are %d oranges There are 1900000 oranges"),
 				mkToken(TokenTypePluralMsgStr, "There is %d orange There is 1 orange", withIndex(0)),
@@ -135,32 +147,34 @@ func TestLex(t *testing.T) {
 		},
 		{
 			name: "header Test",
-			input: "msgid \"\"\n" +
-				"msgstr \"\"\n" +
-				"\"Language: en-US\\n\"\n" +
-				"\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n",
+			input: `msgid ""
+msgstr ""
+"Language: en-US\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+`,
 			expected: []Token{
 				mkToken(TokenTypeMsgID, ""),
 				mkToken(TokenTypeMsgStr, ""),
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
+				mkToken(TokenTypeHeaderLanguage, "en-US\\n"),
+				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);\\n"),
 			},
 		},
 		{
 			name: "When msgid and msgstr values are quoted",
-			input: "msgid \"\"\n" +
-				"msgstr \"\"\n" +
-				"\"Language: en-US\\n\"\n" +
-				"\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n" +
-				"msgid \"\"quoted\" id\"\n" +
-				"msgstr \"\"quoted\" str\"\n",
+			input: `msgid ""
+msgstr ""
+"Language: en-US\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+msgid "\"quoted\" id"
+msgstr "\"quoted\" str"
+`,
 			expected: []Token{
 				mkToken(TokenTypeMsgID, ""),
 				mkToken(TokenTypeMsgStr, ""),
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
-				mkToken(TokenTypeMsgID, "\"quoted\" id"),
-				mkToken(TokenTypeMsgStr, "\"quoted\" str"),
+				mkToken(TokenTypeHeaderLanguage, "en-US\\n"),
+				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);\\n"),
+				mkToken(TokenTypeMsgID, "\\\"quoted\\\" id"),
+				mkToken(TokenTypeMsgStr, "\\\"quoted\\\" str"),
 			},
 		},
 		{
