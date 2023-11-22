@@ -96,11 +96,16 @@ func ToXliff12(translation model.Translation) ([]byte, error) {
 	xlf := xliff12{
 		Version: "1.2",
 		File: xliff12File{
-			SourceLanguage: translation.Language,
 			Body: bodyElement{
 				TransUnits: make([]transUnit, 0, len(translation.Messages)),
 			},
 		},
+	}
+
+	if translation.Original {
+		xlf.File.SourceLanguage = translation.Language
+	} else {
+		xlf.File.TargetLanguage = translation.Language
 	}
 
 	for _, msg := range translation.Messages {
@@ -109,12 +114,19 @@ func ToXliff12(translation model.Translation) ([]byte, error) {
 			return nil, fmt.Errorf("get message value: %w", err)
 		}
 
-		xlf.File.Body.TransUnits = append(xlf.File.Body.TransUnits, transUnit{
+		u := transUnit{
 			ID:            msg.ID,
-			Source:        message,
 			Note:          msg.Description,
 			ContextGroups: positionsToXliff12(msg.Positions),
-		})
+		}
+
+		if translation.Original {
+			u.Source = message
+		} else {
+			u.Target = message
+		}
+
+		xlf.File.Body.TransUnits = append(xlf.File.Body.TransUnits, u)
 	}
 
 	data, err := xml.Marshal(&xlf)
