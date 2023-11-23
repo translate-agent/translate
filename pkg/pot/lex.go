@@ -12,6 +12,7 @@ import (
 type TokenType int
 
 const (
+	// File header tokens.
 	TokenTypeHeaderLanguage TokenType = iota
 	TokenTypeHeaderTranslator
 	TokenTypeHeaderPluralForms
@@ -25,6 +26,7 @@ const (
 	TokenTypeHeaderMIMEVersion
 	TokenTypeHeaderContentType
 	TokenTypeHeaderContentTransferEncoding
+	// Message tokens.
 	TokenTypeMsgCtxt
 	TokenTypeMsgID
 	TokenTypeMsgStr
@@ -154,7 +156,7 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 		token = TokenTypeTranslatorComment
 	// Special case for multiline strings, i.e. msgid, msgstr, msgid_plural, msgstr[*]
 	case strings.HasPrefix(line, `"`):
-		return parseMultilineMsg(line, tokens)
+		return nil, parseMultilineValue(line, tokens)
 	}
 
 	return parseToken(line, token)
@@ -163,7 +165,13 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 // parseToken function parses the value of the token based on the token type.
 // On PluralMsgStr token type, it also tries parses the plural index.
 func parseToken(line string, tokenType TokenType) (*Token, error) {
-	token := Token{Type: tokenType, Value: parseMsg(line)}
+	token := Token{Type: tokenType, Value: parseValue(line)}
+
+	// We assume that headers token have a newline at the end so we must trim it.
+	if tokenType <= TokenTypeHeaderContentTransferEncoding {
+		token.Value = strings.TrimSuffix(token.Value, "\\n")
+	}
+
 	if tokenType != TokenTypePluralMsgStr {
 		return &token, nil
 	}
@@ -188,8 +196,13 @@ func parseToken(line string, tokenType TokenType) (*Token, error) {
 	return &token, nil
 }
 
-// parseMsg function parses the value of the singular msgid, msgstr, msgid_plural, msgstr[*] tokens.
-func parseMsg(line string) string {
+// parseValue parses the value of the token.
+// e.g.
+//
+//	msgid "some text" -> some text
+//	#, python-format -> python-format
+//	#: superset/key_value/exceptions.py:54 -> superset/key_value/exceptions.py:54
+func parseValue(line string) string {
 	n := 2
 	fields := strings.SplitN(line, " ", n) // prefix and value, e.g. fields[0] = msgid, fields[1] = "text", etc.
 
@@ -201,19 +214,19 @@ func parseMsg(line string) string {
 	return trimQuotes(fields[1])
 }
 
-// parseMultilineMsg function parses the value of the multiline msgid, msgstr, msgid_plural, msgstr[*] tokens.
-// Instead of returning a new Token, it modifies the last token in the tokens slice.
-func parseMultilineMsg(line string, tokens *[]Token) (*Token, error) {
+// parseMultilineValue parses the value of the multiline msgid, msgstr, msgid_plural, msgstr[*] tokens.
+// Instead of returning a parsed value, it appends it to the last token in the tokens slice.
+func parseMultilineValue(line string, tokens *[]Token) error {
 	lastToken := &(*tokens)[len(*tokens)-1]
 
 	switch lastToken.Type { //nolint:exhaustive
 	case TokenTypeMsgID, TokenTypePluralMsgID, TokenTypeMsgStr, TokenTypePluralMsgStr:
 		lastToken.Value += "\n" + trimQuotes(line)
 	default:
-		return nil, fmt.Errorf("unsupported multiline string for token type: '%d'", lastToken.Type)
+		return fmt.Errorf("unsupported multiline string for token type: '%d'", lastToken.Type)
 	}
 
-	return nil, nil //nolint:nilnil
+	return nil
 }
 
 // trimQuotes removes first and last double quotes from the string, if they exist.

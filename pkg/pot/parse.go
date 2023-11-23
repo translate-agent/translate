@@ -66,9 +66,6 @@ func TokensToPo(tokens []Token) (Po, error) {
 			}
 		}
 
-		replacer := strings.NewReplacer("\\n ", "\n", "\\n", "\n")
-		token.Value = replacer.Replace(token.Value)
-
 		switch token.Type {
 		case TokenTypeHeaderLanguage:
 			headerLang, err := language.Parse(token.Value)

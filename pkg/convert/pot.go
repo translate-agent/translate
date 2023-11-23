@@ -344,7 +344,7 @@ func convertPluralsToMessageString(plurals []string) string {
 
 	for i, plural := range plurals {
 		plural = escapeSpecialChars(plural)
-		line := strings.ReplaceAll(strings.TrimSpace(plural), "%d", "{$count}")
+		line := strings.ReplaceAll(plural, "%d", "{$count}")
 
 		var count string
 

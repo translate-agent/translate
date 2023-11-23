@@ -2,6 +2,7 @@ package convert
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -1002,7 +1003,7 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{Hello, world!\nvery long string\n}",
+						Message:     "{\nHello, world!\\\\n\nvery long string\\\\n}",
 						Description: "a greeting\n a greeting2",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -1032,7 +1033,7 @@ func TestFromPot(t *testing.T) {
 				Original: false,
 				Messages: []model.Message{
 					{
-						ID:          "Hello\nHello2\n",
+						ID:          "\nHello\\n\nHello2\\n",
 						Message:     "{Hello, world!}",
 						Description: "a greeting",
 						Status:      model.MessageStatusFuzzy,
@@ -1176,21 +1177,24 @@ when * {Il y a {$count} pommes.}
 				},
 			},
 		},
+
 		{
-			name: "plural msgstr with new line",
+			name: "multiline plural",
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: fr\n"
 							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 							#. apple counts
 							msgid "There is %d apple."
-							msgid_plural "There are %d apples."
+							msgid_plural ""
+							"There are %d "
+							"apples."
 							msgstr[0] ""
-							"Il y a %d\n"
-							"pomme.\n"
+							"Il y a %d "
+							"pomme."
 							msgstr[1] ""
-							"Il y a %d\n"
-							"pommes.\n"
+							"Il y a %d "
+							"pommes."
 			`),
 			expected: model.Translation{
 				Language: language.French,
@@ -1198,8 +1202,8 @@ when * {Il y a {$count} pommes.}
 				Messages: []model.Message{
 					{
 						ID:          "There is %d apple.",
-						PluralID:    "There are %d apples.",
-						Message:     "match {$count :number}\nwhen 1 {Il y a {$count}\npomme.}\nwhen * {Il y a {$count}\npommes.}\n",
+						PluralID:    "\nThere are %d \napples.",
+						Message:     "match {$count :number}\nwhen 1 {\nIl y a {$count} \npomme.}\nwhen * {\nIl y a {$count} \npommes.}\n", //nolint:lll
 						Description: "apple counts",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -1207,7 +1211,7 @@ when * {Il y a {$count} pommes.}
 			},
 		},
 		{
-			name: "multiline msgid_plural and msgid",
+			name: "mix of multiline and single line plural",
 			input: []byte(`msgid ""
 							msgstr ""
 							"Language: fr\n"
@@ -1227,8 +1231,8 @@ when * {Il y a {$count} pommes.}
 				Messages: []model.Message{
 					{
 						ID:          "There is %d apple.",
-						PluralID:    "There are %d apples.\n",
-						Message:     "match {$count :number}\nwhen 1 {Il y a {$count}\npomme.}\nwhen * {Il y a {$count} pommes.}\n",
+						PluralID:    "\nThere are %d apples.\\n",
+						Message:     "match {$count :number}\nwhen 1 {\nIl y a {$count}\\\\n\npomme.\\\\n}\nwhen * {Il y a {$count} pommes.}\n", //nolint:lll
 						Description: "apple counts",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -1520,6 +1524,10 @@ when * {Il y a {$count} pommes \\.}
 			if tt.expectedErr != nil {
 				require.Errorf(t, err, tt.expectedErr.Error())
 				return
+			}
+
+			if tt.name == "multiline msgid" {
+				fmt.Printf("result.Messages[0]: %v\n", result.Messages[0].ID)
 			}
 
 			require.NoError(t, err)
