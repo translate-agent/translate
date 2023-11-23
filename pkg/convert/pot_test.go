@@ -2,7 +2,6 @@ package convert
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -1527,10 +1526,6 @@ when * {Il y a {$count} pommes \\.}
 			if tt.expectedErr != nil {
 				require.Errorf(t, err, tt.expectedErr.Error())
 				return
-			}
-
-			if tt.name == "multiline msgid" {
-				fmt.Printf("result.Messages[0]: %v\n", result.Messages[0].ID)
 			}
 
 			require.NoError(t, err)
