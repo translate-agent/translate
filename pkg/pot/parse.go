@@ -131,7 +131,8 @@ func TokensToPo(tokens []Token) (Po, error) {
 			TokenTypeHeaderXGenerator,
 			TokenTypeHeaderMIMEVersion,
 			TokenTypeHeaderContentType,
-			TokenTypeHeaderContentTransferEncoding:
+			TokenTypeHeaderContentTransferEncoding,
+			TokenTypeGeneratedBy:
 			continue
 		}
 	}
