@@ -83,7 +83,7 @@ func Lex(r io.Reader) ([]Token, error) {
 
 		token, err := parseLine(line, &tokens)
 		if err != nil {
-			return nil, fmt.Errorf("parse line %d: %w", lineNumber, err)
+			return nil, fmt.Errorf("parse line \"%s\": %w", line, err)
 		}
 
 		if token == nil {
@@ -165,7 +165,12 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 // parseToken function parses the value of the token based on the token type.
 // On PluralMsgStr token type, it also tries parses the plural index.
 func parseToken(line string, tokenType TokenType) (*Token, error) {
-	token := Token{Type: tokenType, Value: parseValue(line)}
+	value, err := parseValue(tokenType, line)
+	if err != nil {
+		return nil, fmt.Errorf("trim quotes: %w", err)
+	}
+
+	token := Token{Type: tokenType, Value: value}
 
 	// We assume that headers token have a newline at the end so we must trim it.
 	if tokenType <= TokenTypeHeaderContentTransferEncoding {
@@ -203,16 +208,16 @@ func parseToken(line string, tokenType TokenType) (*Token, error) {
 //	msgid "some text" -> some text
 //	#, python-format -> python-format
 //	#: superset/key_value/exceptions.py:54 -> superset/key_value/exceptions.py:54
-func parseValue(line string) string {
+func parseValue(tokenType TokenType, line string) (string, error) {
 	n := 2
 	fields := strings.SplitN(line, " ", n) // prefix and value, e.g. fields[0] = msgid, fields[1] = "text", etc.
 
 	// No value, only prefix
 	if len(fields) != n {
-		return ""
+		return "", nil
 	}
 
-	return strings.Trim(fields[1], `"`)
+	return trimQuotes(tokenType, fields[1])
 }
 
 // parseMultilineValue parses the value of the multiline msgid, msgstr, msgid_plural, msgstr[*] tokens.
@@ -222,10 +227,59 @@ func parseMultilineValue(line string, tokens *[]Token) error {
 
 	switch lastToken.Type { //nolint:exhaustive
 	case TokenTypeMsgID, TokenTypePluralMsgID, TokenTypeMsgStr, TokenTypePluralMsgStr:
-		lastToken.Value += "\n" + strings.Trim(line, `"`)
+		value, err := trimQuotes(lastToken.Type, line)
+		if err != nil {
+			return fmt.Errorf("trim quotes: %w", err)
+		}
+
+		lastToken.Value += "\n" + value
 	default:
 		return fmt.Errorf("unsupported multiline string for token type: '%d'", lastToken.Type)
 	}
 
 	return nil
+}
+
+// trimQuotes tries to trim the quotes from the token value based on the token type.
+// It returns an error if the token value is not properly formatted.
+// e.g.
+//
+// values for msgid, msgstr, msgid_plural, msgstr[*]
+//
+//	"text1" -> text1
+//	text2 -> error
+//
+// values for headers
+//
+//	en-US\n" -> en-US\n
+//	lv-LV\n -> error
+func trimQuotes(tokenType TokenType, value string) (string, error) {
+	switch tokenType {
+	// Quotes at the beginning and end of the string.
+	case TokenTypeMsgID, TokenTypePluralMsgID, TokenTypeMsgStr, TokenTypePluralMsgStr, TokenTypeMsgCtxt:
+		if value[0] != '"' || value[len(value)-1] != '"' {
+			return "", fmt.Errorf("token value %d must start and end with quote", tokenType)
+		}
+
+		value = strings.Trim(value, `"`)
+
+	// Quotes at the end of the string.
+	case TokenTypeHeaderLanguage, TokenTypeHeaderTranslator, TokenTypeHeaderPluralForms,
+		TokenTypeHeaderProjectIDVersion, TokenTypeHeaderPOTCreationDate, TokenTypeHeaderPORevisionDate,
+		TokenTypeHeaderLanguageTeam, TokenTypeHeaderLastTranslator, TokenTypeHeaderXGenerator,
+		TokenTypeHeaderReportMsgidBugsTo, TokenTypeHeaderMIMEVersion, TokenTypeHeaderContentType,
+		TokenTypeHeaderContentTransferEncoding:
+		if value[len(value)-1] != '"' {
+			return "", fmt.Errorf("token value %d must end with quote", tokenType)
+		}
+
+		value = strings.TrimSuffix(value, `"`)
+
+	// No quotes. noop
+	case TokenTypeTranslatorComment, TokenTypeExtractedComment,
+		TokenTypeReference, TokenTypeFlag, TokenTypeMsgctxtPreviousContext,
+		TokenTypeMsgidPluralPrevUntStrPlural, TokenTypeMsgidPrevUntStr:
+	}
+
+	return value, nil
 }
