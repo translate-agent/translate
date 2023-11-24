@@ -199,6 +199,7 @@ func parseToken(line string, tokenType TokenType) (*Token, error) {
 // parseValue parses the value of the token.
 // e.g.
 //
+//	"Language: en-US\n" -> en-US\n
 //	msgid "some text" -> some text
 //	#, python-format -> python-format
 //	#: superset/key_value/exceptions.py:54 -> superset/key_value/exceptions.py:54
@@ -211,7 +212,7 @@ func parseValue(line string) string {
 		return ""
 	}
 
-	return trimQuotes(fields[1])
+	return strings.Trim(fields[1], `"`)
 }
 
 // parseMultilineValue parses the value of the multiline msgid, msgstr, msgid_plural, msgstr[*] tokens.
@@ -221,18 +222,10 @@ func parseMultilineValue(line string, tokens *[]Token) error {
 
 	switch lastToken.Type { //nolint:exhaustive
 	case TokenTypeMsgID, TokenTypePluralMsgID, TokenTypeMsgStr, TokenTypePluralMsgStr:
-		lastToken.Value += "\n" + trimQuotes(line)
+		lastToken.Value += "\n" + strings.Trim(line, `"`)
 	default:
 		return fmt.Errorf("unsupported multiline string for token type: '%d'", lastToken.Type)
 	}
 
 	return nil
-}
-
-// trimQuotes removes first and last double quotes from the string, if they exist.
-func trimQuotes(s string) string {
-	s = strings.TrimPrefix(s, `"`)
-	s = strings.TrimSuffix(s, `"`)
-
-	return s
 }
