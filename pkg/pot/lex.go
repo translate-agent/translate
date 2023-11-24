@@ -158,8 +158,9 @@ func parseLine(line string, tokens []Token) (*Token, error) {
 	case strings.HasPrefix(line, "#"):
 		token = TokenTypeTranslatorComment
 	// Special case for multiline strings, i.e. msgid, msgstr, msgid_plural, msgstr[*]
-	// TODO: when we encounter header token which is not defined in the TokenType enum, it tries parse the header as a multiline string.
-	case strings.HasPrefix(line, `"`):
+	// When we encounter header token which is not defined in the TokenType enum, it tries parse the header
+	// as a multiline string. As workaround, we allow parsing it as multiline string if last token was not header token.
+	case strings.HasPrefix(line, `"`) && tokens[len(tokens)-1].Type >= TokenTypeMsgCtxt:
 		return nil, parseMultilineValue(line, tokens)
 	}
 
