@@ -19,20 +19,25 @@ type ngJSON struct {
 
 // FromNgLocalize converts serialized data from the ng extract-i18n tool ("ng extract-i18n --format json")
 // into a model.Translation struct.
-func FromNgLocalize(data []byte, original bool) (model.Translation, error) {
+func FromNgLocalize(data []byte, original *bool) (model.Translation, error) {
 	var ng ngJSON
 	if err := json.Unmarshal(data, &ng); err != nil {
 		return model.Translation{}, fmt.Errorf("unmarshal @angular/localize JSON into ngJSON struct: %w", err)
 	}
 
+	// if original is not provided default to false.
+	if original == nil {
+		original = ptr(false)
+	}
+
 	translation := model.Translation{
 		Language: ng.Language,
 		Messages: make([]model.Message, 0, len(ng.Translations)),
-		Original: original,
+		Original: *original,
 	}
 
 	status := model.MessageStatusUntranslated
-	if original {
+	if *original {
 		status = model.MessageStatusTranslated
 	}
 

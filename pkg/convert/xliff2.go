@@ -38,8 +38,7 @@ type note struct {
 }
 
 // FromXliff2 converts serialized data from the XML data in the XLIFF 2 format into a model.Translation struct.
-// For now original param is ignored.
-func FromXliff2(data []byte, original bool) (model.Translation, error) {
+func FromXliff2(data []byte, original *bool) (model.Translation, error) {
 	var xlf xliff2
 
 	if err := xml.Unmarshal(data, &xlf); err != nil {
@@ -50,6 +49,11 @@ func FromXliff2(data []byte, original bool) (model.Translation, error) {
 		Language: xlf.TrgLang,
 		Original: xlf.TrgLang == language.Und,
 		Messages: make([]model.Message, 0, len(xlf.File.Units)),
+	}
+
+	// if original is provided override original status in the translation.
+	if original != nil {
+		translation.Original = *original
 	}
 
 	getMessage := func(u unit) string { return u.Target }
@@ -100,6 +104,12 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 		},
 	}
 
+	if translation.Original {
+		xlf.SrcLang = translation.Language
+	} else {
+		xlf.TrgLang = translation.Language
+	}
+
 	for _, msg := range translation.Messages {
 		message, err := getMsg(msg.Message)
 		if err != nil {
@@ -107,9 +117,14 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 		}
 
 		u := unit{
-			ID:     msg.ID,
-			Source: message,
-			Notes:  positionsToXliff2(msg.Positions),
+			ID:    msg.ID,
+			Notes: positionsToXliff2(msg.Positions),
+		}
+
+		if translation.Original {
+			u.Source = message
+		} else {
+			u.Target = message
 		}
 
 		if msg.Description != "" {

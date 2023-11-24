@@ -1519,7 +1519,7 @@ when * {Il y a {$count} pommes \\.}
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			result, err := FromPot(tt.input, tt.expected.Original)
+			result, err := FromPot(tt.input, &tt.expected.Original)
 			if tt.expectedErr != nil {
 				require.Errorf(t, err, tt.expectedErr.Error())
 				return
@@ -1556,7 +1556,7 @@ func Test_TransformMessage(t *testing.T) {
 	msgPot, err := ToPot(translation)
 	require.NoError(t, err)
 
-	restoredTranslation, err := FromPot(msgPot, translation.Original)
+	restoredTranslation, err := FromPot(msgPot, &translation.Original)
 	require.NoError(t, err)
 
 	assert.Equal(t, translation, restoredTranslation)

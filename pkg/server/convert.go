@@ -19,7 +19,7 @@ TranslationFromData converts in specific schema serialized data to model.Transla
 TODO: Add support for converting non original, but already translated messages and mark them as TRANSLATED.
 */
 func TranslationFromData(params *uploadParams) (*model.Translation, error) {
-	var from func([]byte, bool) (model.Translation, error)
+	var from func([]byte, *bool) (model.Translation, error)
 
 	switch params.schema {
 	case translatev1.Schema_ARB:

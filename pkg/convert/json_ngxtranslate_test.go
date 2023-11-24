@@ -113,7 +113,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromNgxTranslate(tt.input, tt.expected.Original)
+			actual, err := FromNgxTranslate(tt.input, &tt.expected.Original)
 			if tt.expectedErr != nil {
 				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return

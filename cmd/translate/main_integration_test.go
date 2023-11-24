@@ -99,3 +99,8 @@ func mustGetFreePort() string {
 
 	return strconv.Itoa(addr.Port)
 }
+
+// ptr returns pointer to the passed in value.
+func ptr[T any](v T) *T {
+	return &v
+}

@@ -67,34 +67,30 @@ func (t *TranslateServiceServer) CreateTranslation(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	translations, err := t.repo.LoadTranslations(ctx, params.serviceID,
-		repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{params.translation.Language}})
+	all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 
-	if len(translations) > 0 {
-		return nil, status.Errorf(codes.AlreadyExists,
-			"translation already exist for language: '%s'", params.translation.Language)
+	if all.HasLanguage(params.translation.Language) {
+		return nil,
+			status.Errorf(codes.AlreadyExists, "translation already exists for language: '%s'", params.translation.Language)
 	}
 
 	switch params.translation.Original {
-	default:
-	// noop
-	case false: // Translate messages when translation is not original and original language is known.
-		// TODO: to improve performance should be replaced with CheckTranslationExist db function.
-		loadTranslations, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "")
+	case true:
+		if all.OriginalIndex() != -1 {
+			return nil, status.Errorf(
+				codes.InvalidArgument, "original translation already exists for service: '%s'", params.serviceID)
 		}
-
-		if origIdx := loadTranslations.OriginalIndex(); origIdx != -1 {
+	default: // Translate messages when translation is not original and original language is known.
+		if origIdx := all.OriginalIndex(); origIdx != -1 {
 			targetLanguage := params.translation.Language
-			params.translation.Language = loadTranslations[origIdx].Language
+			params.translation.Language = all[origIdx].Language
 
 			// if incoming translation is empty populate with original translation.
 			if params.translation.Messages == nil {
-				params.translation.Messages = loadTranslations[origIdx].Messages
+				params.translation.Messages = all[origIdx].Messages
 			}
 
 			// Translate messages -
@@ -229,6 +225,11 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		// Original translation is not affected, changes will not affect other translations - update incoming translation.
 		all = model.Translations{*params.translation}
 	case params.translation.Original && origIdx != -1:
+		if params.translation.Language != all[origIdx].Language {
+			return nil, status.Errorf(
+				codes.InvalidArgument, "original translation already exists for service: '%s'", params.serviceID)
+		}
+
 		// Original translation is affected, changes might affect other translations - transform and update all translations.
 		oldOriginal := all[origIdx]
 

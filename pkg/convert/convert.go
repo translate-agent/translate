@@ -48,3 +48,7 @@ func getMsg(message string) (string, error) {
 
 	return "", errors.New("input message is empty")
 }
+
+func ptr[T any](v T) *T {
+	return &v
+}

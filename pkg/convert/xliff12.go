@@ -50,8 +50,7 @@ type context struct {
 }
 
 // FromXliff12 converts serialized data from the XML data in the XLIFF 1.2 format into a model.Translation struct.
-// For now original param is ignored.
-func FromXliff12(data []byte, original bool) (model.Translation, error) {
+func FromXliff12(data []byte, original *bool) (model.Translation, error) {
 	var xlf xliff12
 	if err := xml.Unmarshal(data, &xlf); err != nil {
 		return model.Translation{}, fmt.Errorf("unmarshal xliff12: %w", err)
@@ -61,6 +60,11 @@ func FromXliff12(data []byte, original bool) (model.Translation, error) {
 		Language: xlf.File.TargetLanguage,
 		Original: xlf.File.TargetLanguage == language.Und,
 		Messages: make([]model.Message, 0, len(xlf.File.Body.TransUnits)),
+	}
+
+	// if original is provided override original status in the translation.
+	if original != nil {
+		translation.Original = *original
 	}
 
 	getMessage := func(t transUnit) string { return t.Target }
@@ -92,11 +96,16 @@ func ToXliff12(translation model.Translation) ([]byte, error) {
 	xlf := xliff12{
 		Version: "1.2",
 		File: xliff12File{
-			SourceLanguage: translation.Language,
 			Body: bodyElement{
 				TransUnits: make([]transUnit, 0, len(translation.Messages)),
 			},
 		},
+	}
+
+	if translation.Original {
+		xlf.File.SourceLanguage = translation.Language
+	} else {
+		xlf.File.TargetLanguage = translation.Language
 	}
 
 	for _, msg := range translation.Messages {
@@ -105,12 +114,19 @@ func ToXliff12(translation model.Translation) ([]byte, error) {
 			return nil, fmt.Errorf("get message value: %w", err)
 		}
 
-		xlf.File.Body.TransUnits = append(xlf.File.Body.TransUnits, transUnit{
+		u := transUnit{
 			ID:            msg.ID,
-			Source:        message,
 			Note:          msg.Description,
 			ContextGroups: positionsToXliff12(msg.Positions),
-		})
+		}
+
+		if translation.Original {
+			u.Source = message
+		} else {
+			u.Target = message
+		}
+
+		xlf.File.Body.TransUnits = append(xlf.File.Body.TransUnits, u)
 	}
 
 	data, err := xml.Marshal(&xlf)

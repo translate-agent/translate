@@ -136,7 +136,6 @@ func WithMessageFormat() ModelMessageOption {
 func modelTranslation(msgCount uint, msgOpts ...ModelMessageOption) *model.Translation {
 	translation := &model.Translation{
 		Language: Language(),
-		Original: gofakeit.Bool(),
 		Messages: make([]model.Message, msgCount),
 	}
 

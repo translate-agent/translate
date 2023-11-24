@@ -143,7 +143,7 @@ func Test_FromXliff2(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromXliff2(tt.data, tt.expected.Original)
+			actual, err := FromXliff2(tt.data, &tt.expected.Original)
 			require.NoError(t, err)
 
 			testutil.EqualTranslations(t, tt.expected, &actual)
@@ -232,7 +232,7 @@ func Test_TransformXLIFF2(t *testing.T) {
 		serialized, err := ToXliff2(*expected)
 		require.NoError(t, err)
 
-		parsed, err := FromXliff2(serialized, expected.Original)
+		parsed, err := FromXliff2(serialized, &expected.Original)
 		require.NoError(t, err)
 
 		testutil.EqualTranslations(t, expected, &parsed)
