@@ -26,6 +26,7 @@ const (
 	TokenTypeHeaderMIMEVersion
 	TokenTypeHeaderContentType
 	TokenTypeHeaderContentTransferEncoding
+	TokenTypeGeneratedBy
 	// Message tokens.
 	TokenTypeMsgCtxt
 	TokenTypeMsgID
@@ -130,6 +131,8 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 		token = TokenTypeHeaderReportMsgidBugsTo
 	case strings.HasPrefix(line, "\"X-Generator"):
 		token = TokenTypeHeaderXGenerator
+	case strings.HasPrefix(line, "\"Generated-By"):
+		token = TokenTypeGeneratedBy
 	case strings.HasPrefix(line, "msgctxt"):
 		token = TokenTypeMsgCtxt
 	case strings.HasPrefix(line, "msgid_plural"):
@@ -173,7 +176,7 @@ func parseToken(line string, tokenType TokenType) (*Token, error) {
 	token := Token{Type: tokenType, Value: value}
 
 	// We assume that headers token have a newline at the end so we must trim it.
-	if tokenType <= TokenTypeHeaderContentTransferEncoding {
+	if tokenType <= TokenTypeGeneratedBy {
 		token.Value = strings.TrimSuffix(token.Value, "\\n")
 	}
 
@@ -268,7 +271,7 @@ func trimQuotes(tokenType TokenType, value string) (string, error) {
 		TokenTypeHeaderProjectIDVersion, TokenTypeHeaderPOTCreationDate, TokenTypeHeaderPORevisionDate,
 		TokenTypeHeaderLanguageTeam, TokenTypeHeaderLastTranslator, TokenTypeHeaderXGenerator,
 		TokenTypeHeaderReportMsgidBugsTo, TokenTypeHeaderMIMEVersion, TokenTypeHeaderContentType,
-		TokenTypeHeaderContentTransferEncoding:
+		TokenTypeHeaderContentTransferEncoding, TokenTypeGeneratedBy:
 		if value[len(value)-1] != '"' {
 			return "", fmt.Errorf("token value %d must end with quote", tokenType)
 		}

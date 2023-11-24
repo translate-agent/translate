@@ -49,6 +49,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.2\n"
+"Generated-By: Babel 2.9.1\n"
 "Report-Msgid-Bugs-To: support@lingohub.com\n"
 msgctxt "ctxt"
 msgid "id"
@@ -81,6 +82,7 @@ msgstr[1] "There are %d oranges"
 				mkToken(TokenTypeHeaderContentType, "text/plain; charset=UTF-8"),
 				mkToken(TokenTypeHeaderContentTransferEncoding, "8bit"),
 				mkToken(TokenTypeHeaderXGenerator, "Poedit 2.2"),
+				mkToken(TokenTypeGeneratedBy, "Babel 2.9.1"),
 				mkToken(TokenTypeHeaderReportMsgidBugsTo, "support@lingohub.com"),
 				mkToken(TokenTypeMsgCtxt, "ctxt"),
 				mkToken(TokenTypeMsgID, "id"),
