@@ -104,6 +104,12 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 		},
 	}
 
+	if translation.Original {
+		xlf.SrcLang = translation.Language
+	} else {
+		xlf.TrgLang = translation.Language
+	}
+
 	for _, msg := range translation.Messages {
 		message, err := getMsg(msg.Message)
 		if err != nil {
@@ -111,9 +117,14 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 		}
 
 		u := unit{
-			ID:     msg.ID,
-			Source: message,
-			Notes:  positionsToXliff2(msg.Positions),
+			ID:    msg.ID,
+			Notes: positionsToXliff2(msg.Positions),
+		}
+
+		if translation.Original {
+			u.Source = message
+		} else {
+			u.Target = message
 		}
 
 		if msg.Description != "" {
