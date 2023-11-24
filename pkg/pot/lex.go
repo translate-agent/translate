@@ -82,7 +82,7 @@ func Lex(r io.Reader) ([]Token, error) {
 			continue
 		}
 
-		token, err := parseLine(line, &tokens)
+		token, err := parseLine(line, tokens)
 		if err != nil {
 			return nil, fmt.Errorf("parse line \"%s\": %w", line, err)
 		}
@@ -99,7 +99,7 @@ func Lex(r io.Reader) ([]Token, error) {
 
 // parseLine function processes the line based on different prefixes
 // and returns a pointer to a Token object and an error.
-func parseLine(line string, tokens *[]Token) (*Token, error) {
+func parseLine(line string, tokens []Token) (*Token, error) {
 	var token TokenType
 
 	switch {
@@ -158,6 +158,7 @@ func parseLine(line string, tokens *[]Token) (*Token, error) {
 	case strings.HasPrefix(line, "#"):
 		token = TokenTypeTranslatorComment
 	// Special case for multiline strings, i.e. msgid, msgstr, msgid_plural, msgstr[*]
+	// TODO: when we encounter header token which is not defined in the TokenType enum, it tries parse the header as a multiline string.
 	case strings.HasPrefix(line, `"`):
 		return nil, parseMultilineValue(line, tokens)
 	}
@@ -225,8 +226,8 @@ func parseValue(tokenType TokenType, line string) (string, error) {
 
 // parseMultilineValue parses the value of the multiline msgid, msgstr, msgid_plural, msgstr[*] tokens.
 // Instead of returning a parsed value, it appends it to the last token in the tokens slice.
-func parseMultilineValue(line string, tokens *[]Token) error {
-	lastToken := &(*tokens)[len(*tokens)-1]
+func parseMultilineValue(line string, tokens []Token) error {
+	lastToken := &tokens[len(tokens)-1]
 
 	switch lastToken.Type { //nolint:exhaustive
 	case TokenTypeMsgID, TokenTypePluralMsgID, TokenTypeMsgStr, TokenTypePluralMsgStr:
