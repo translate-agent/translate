@@ -16,8 +16,9 @@ func Test_lex(t *testing.T) {
 	)
 
 	for _, test := range []struct {
-		name, input string
-		expected    []Token
+		name     string
+		input    string // MessageFormat2 formatted string
+		expected []Token
 	}{
 		{
 			name:     "empty",
@@ -211,7 +212,7 @@ func Test_lex(t *testing.T) {
 			input: `{Chart [\{\}] was added to dashboard [\{\}]}`,
 			expected: []Token{
 				tokenSeparatorOpen,
-				mkToken(tokenTypeText, "Chart [{}] was added to dashboard [{}]"),
+				mkToken(tokenTypeText, "Chart [\\{\\}] was added to dashboard [\\{\\}]"),
 				tokenSeparatorClose,
 				tokenEOF,
 			},
@@ -221,7 +222,7 @@ func Test_lex(t *testing.T) {
 			input: `{Chart [\|] was added to dashboard [\|]}`,
 			expected: []Token{
 				tokenSeparatorOpen,
-				mkToken(tokenTypeText, "Chart [|] was added to dashboard [|]"),
+				mkToken(tokenTypeText, "Chart [\\|] was added to dashboard [\\|]"),
 				tokenSeparatorClose,
 				tokenEOF,
 			},
@@ -231,47 +232,86 @@ func Test_lex(t *testing.T) {
 			input: `{Chart [\\] was added to dashboard [\\]}`,
 			expected: []Token{
 				tokenSeparatorOpen,
-				mkToken(tokenTypeText, "Chart [\\] was added to dashboard [\\]"),
+				mkToken(tokenTypeText, "Chart [\\\\] was added to dashboard [\\\\]"),
 				tokenSeparatorClose,
 				tokenEOF,
 			},
 		},
 		{
 			name:  "input with plus sign",
-			input: `{+ vēl %s}`,
+			input: `{+ vēl \%s}`,
 			expected: []Token{
 				tokenSeparatorOpen,
-				mkToken(tokenTypeText, "+ vēl %s"),
+				mkToken(tokenTypeText, "+ vēl \\%s"),
 				tokenSeparatorClose,
 				tokenEOF,
 			},
 		},
 		{
 			name:  "input with minus sign",
-			input: `{- vēl %s}`,
+			input: `{- vēl \%s}`,
 			expected: []Token{
 				tokenSeparatorOpen,
-				mkToken(tokenTypeText, "- vēl %s"),
+				mkToken(tokenTypeText, "- vēl \\%s"),
 				tokenSeparatorClose,
 				tokenEOF,
 			},
 		},
 		{
 			name:  "input with dollar sign",
-			input: `{$ vēl %s}`,
+			input: `{$ vēl \%s}`,
 			expected: []Token{
 				tokenSeparatorOpen,
-				mkToken(tokenTypeText, "$ vēl %s"),
+				mkToken(tokenTypeText, "$ vēl \\%s"),
 				tokenSeparatorClose,
 				tokenEOF,
 			},
 		},
 		{
 			name:  "input with colon sign",
-			input: `{: vēl %s}`,
+			input: `{: vēl \%s}`,
 			expected: []Token{
 				tokenSeparatorOpen,
-				mkToken(tokenTypeText, ": vēl %s"),
+				mkToken(tokenTypeText, ": vēl \\%s"),
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name: "python old format placeholder",
+			// %(object)s does not exist in this database.
+			input: "{{:Placeholder name=object format=pythonVar type=string} does not exist in this database.}",
+			expected: []Token{
+				tokenSeparatorOpen,
+
+				tokenSeparatorOpen,
+				mkToken(tokenTypeFunction, "Placeholder"),
+				mkToken(tokenTypeOption, "name=object"),
+				mkToken(tokenTypeOption, "format=pythonVar"),
+				mkToken(tokenTypeOption, "type=string"),
+				tokenSeparatorClose,
+
+				mkToken(tokenTypeText, " does not exist in this database."),
+
+				tokenSeparatorClose,
+				tokenEOF,
+			},
+		},
+		{
+			name: "empty brackets placeholder with escape chars",
+			// <{}|Explore in Superset>\n
+			input: "{\\<{:Placeholder format=emptyBracket}\\|Explore in Superset\\>\n}",
+			expected: []Token{
+				tokenSeparatorOpen,
+				mkToken(tokenTypeText, "\\<"),
+
+				tokenSeparatorOpen,
+				mkToken(tokenTypeFunction, "Placeholder"),
+				mkToken(tokenTypeOption, "format=emptyBracket"),
+				tokenSeparatorClose,
+
+				mkToken(tokenTypeText, "\\|Explore in Superset\\>\n"),
+
 				tokenSeparatorClose,
 				tokenEOF,
 			},

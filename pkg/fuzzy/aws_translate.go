@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/translate"
 	"github.com/spf13/viper"
+	mf "go.expect.digital/translate/pkg/messageformat"
 	"go.expect.digital/translate/pkg/model"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/text/language"
@@ -113,13 +114,17 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
 	}
 
-	translated := model.Translation{
-		Language: targetLanguage,
-		Original: translation.Original,
-		Messages: make([]model.Message, 0, len(translation.Messages)),
+	// Extract translatable text from translation.
+	asts, err := mf.ParseTranslation(translation)
+	if err != nil {
+		return nil, fmt.Errorf("AWS translate: parse translation messages: %w", err)
 	}
 
-	for _, m := range translation.Messages {
+	textNodes := mf.GetTextNodes(asts)
+	texts := textNodes.GetTexts()
+	translatedTexts := make([]string, 0, len(texts))
+
+	for i := range texts {
 		translateOutput, err := a.client.TranslateText(ctx,
 			&translate.TranslateTextInput{
 				// Amazon Translate supports text translation between the languages listed in the following table.
@@ -132,21 +137,38 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 				TargetLanguageCode: awsLanguage(targetLanguage),
 				SourceLanguageCode: awsLanguage(translation.Language),
 				// Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
-				Text: ptr(m.Message),
+				Text: ptr(texts[i]),
 			})
 		if err != nil {
-			return nil, fmt.Errorf("AWS translate text, message id '%s': %w", m.ID, err)
+			return nil, fmt.Errorf("AWS translate: translate text #%d: %w", i, err)
 		}
 
-		translated.Messages = append(translated.Messages, model.Message{
-			ID:          m.ID,
-			PluralID:    m.PluralID,
-			Description: m.Description,
-			Message:     *translateOutput.TranslatedText,
-			Status:      model.MessageStatusFuzzy,
-			Positions:   m.Positions,
-		},
-		)
+		translatedTexts = append(translatedTexts, *translateOutput.TranslatedText)
+	}
+
+	// Overwrite text nodes in ASTs to include newly translated text.
+	if err := textNodes.OverwriteTexts(translatedTexts); err != nil {
+		return nil, fmt.Errorf("AWS translate: overwrite text nodes in ASTs: %w", err)
+	}
+
+	// create translation with newly translated messages.
+	translated := model.Translation{
+		Language: targetLanguage,
+		Original: translation.Original,
+		Messages: make([]model.Message, len(translation.Messages)),
+	}
+
+	for i := range asts {
+		b, err := asts[i].MarshalText()
+		if err != nil {
+			return nil, fmt.Errorf(
+				"AWS translate: marshal text from AST for message ID '%s': %w", translation.Messages[i].ID, err)
+		}
+
+		m := translation.Messages[i]
+		m.Message = string(b)
+		m.Status = model.MessageStatusFuzzy
+		translated.Messages[i] = m
 	}
 
 	return &translated, nil
