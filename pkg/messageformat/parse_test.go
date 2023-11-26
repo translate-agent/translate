@@ -23,17 +23,17 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:     "empty expr",
-			input:    "{}",
+			input:    "{{}}",
 			expected: []interface{}(nil),
 		},
 		{
 			name:     "expr with text",
-			input:    "{Hello, World!}",
+			input:    "{{{{Hello, World!}}}}",
 			expected: []interface{}{NodeText{Text: "Hello, World!"}},
 		},
 		{
 			name:  "match",
-			input: "match {$count} when * {Hello, world!}",
+			input: "{{match {$count} when * {{Hello, world!}}}}",
 			expected: []interface{}{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}}},
@@ -45,7 +45,7 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:  "match with function",
-			input: "match {$count :number} when * {Hello, world!}",
+			input: "{{match {$count :number} when * {{Hello, world!}}}}",
 			expected: []interface{}{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
@@ -57,7 +57,7 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:  "match with multiple variants",
-			input: "match {$count :number} when 1 {Hello, friend!} when * {Hello, friends!} ",
+			input: "{{match {$count :number} when 1 {{Hello, friend!}} when * {{Hello, friends!}}}}",
 			expected: []interface{}{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
@@ -70,7 +70,7 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:  "match with plurals",
-			input: "match {$count :number} when 1 {Buy one \\\\ apple!} when * {Buy {$count} apples!} ",
+			input: "{{match {$count :number} when 1 {{Buy one \\\\ apple!}} when * {{Buy {$count} apples!}}}} ",
 			expected: []interface{}{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
@@ -88,10 +88,10 @@ func Test_Parse(t *testing.T) {
 
 		{
 			name: "match with two variables in variant",
-			input: "match {$count :number} " +
-				"when 0 {No apples!} " +
-				"when 1 {Buy {$count}{$counts} apple!} " +
-				"when * {Buy {$count} apples 2!} ",
+			input: "{{match {$count :number} " +
+				"when 0 {{No apples!}} " +
+				"when 1 {{Buy {$count}{$counts} apple!}} " +
+				"when * {{Buy {$count} apples 2!}}}} ",
 			expected: []interface{}{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
@@ -114,22 +114,22 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:        "invalid expr",
-			input:       "match $count :number} ",
+			input:       "{{match $count :number}}} ",
 			expectedErr: fmt.Errorf("expression does not start with \"{\""),
 		},
 		{
 			name:     "input with curly braces in it",
-			input:    `{Chart [\{\}] was added to dashboard [\{\}]}`,
+			input:    `{{{{Chart [\{\}] was added to dashboard [\{\}]}}}}`,
 			expected: []interface{}{NodeText{Text: "Chart [{}] was added to dashboard [{}]"}},
 		},
 		{
 			name:     "input with plus sign in it ",
-			input:    `{+ vēl %s}`,
+			input:    `{{{{+ vēl %s}}}}`,
 			expected: []interface{}{NodeText{Text: "+ vēl %s"}},
 		},
 		{
 			name:     "input with minus sign in it ",
-			input:    `{- vēl %s}`,
+			input:    `{{{{- vēl %s}}}}`,
 			expected: []interface{}{NodeText{Text: "- vēl %s"}},
 		},
 	} {

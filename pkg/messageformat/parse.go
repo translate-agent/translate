@@ -17,9 +17,10 @@ func (p *parser) collect() {
 		v := p.lex.nextToken()
 
 		switch v.typ {
-		case tokenTypeVariable, tokenTypeFunction, tokenTypeSeparatorOpen,
-			tokenTypeSeparatorClose, tokenTypeText, tokenTypeOpeningFunction,
-			tokenTypeClosingFunction, tokenTypeKeyword, tokenTypeLiteral:
+		case tokenTypeVariable, tokenTypeFunction, tokenTypeExpressionOpen,
+			tokenTypeExpressionClose, tokenTypeText, tokenTypeOpeningFunction,
+			tokenTypeClosingFunction, tokenTypeKeyword, tokenTypeLiteral,
+			tokenTypeComplexMessageClose, tokenTypeComplexMessageOpen:
 			p.tokens = append(p.tokens, v)
 		case tokenTypeEOF:
 			p.tokens = append(p.tokens, v)
@@ -50,6 +51,18 @@ func (p *parser) parse() ([]interface{}, error) {
 	for p.pos < len(p.tokens) {
 		token := p.currentToken()
 
+		// default complex msg open
+		if p.pos == 0 && p.tokens[0].typ == tokenTypeComplexMessageOpen {
+			p.pos++
+			continue
+		}
+
+		// default complex msg close
+		if p.pos == len(p.tokens)-2 && p.tokens[len(p.tokens)-2].typ == tokenTypeComplexMessageClose {
+			p.pos++
+			continue
+		}
+
 		switch {
 		default:
 			return nil, fmt.Errorf("unknown token: %+v", token)
@@ -60,7 +73,7 @@ func (p *parser) parse() ([]interface{}, error) {
 			}
 
 			tree = append(tree, match)
-		case token.typ == tokenTypeSeparatorOpen:
+		case token.typ == tokenTypeComplexMessageOpen:
 			text, err := p.parseText()
 			if err != nil {
 				return nil, fmt.Errorf("parse text: %w", err)
@@ -78,7 +91,7 @@ func (p *parser) parse() ([]interface{}, error) {
 }
 
 func (p *parser) parseText() ([]interface{}, error) {
-	if p.currentToken().typ != tokenTypeSeparatorOpen {
+	if p.currentToken().typ != tokenTypeComplexMessageOpen {
 		return nil, errors.New(`text does not start with "{"`)
 	}
 
@@ -90,7 +103,7 @@ func (p *parser) parseText() ([]interface{}, error) {
 		switch token.typ {
 		case tokenTypeText:
 			text = append(text, NodeText{Text: token.val})
-		case tokenTypeSeparatorOpen:
+		case tokenTypeExpressionOpen:
 			variable, err := p.parseVariable()
 			if err != nil {
 				return nil, fmt.Errorf("parse variable: %w", err)
@@ -98,14 +111,13 @@ func (p *parser) parseText() ([]interface{}, error) {
 
 			text = append(text, variable)
 			p.pos++
-		case tokenTypeSeparatorClose:
-			p.pos++
-
+		case tokenTypeComplexMessageClose:
 			return text, nil
 		case tokenTypeKeyword, tokenTypeLiteral,
 			tokenTypeFunction, tokenTypeVariable,
 			tokenTypeEOF, tokenTypeError,
-			tokenTypeOpeningFunction, tokenTypeClosingFunction:
+			tokenTypeOpeningFunction, tokenTypeClosingFunction,
+			tokenTypeComplexMessageOpen, tokenTypeExpressionClose:
 		}
 	}
 
@@ -150,7 +162,7 @@ func (p *parser) parseMatch() (NodeMatch, error) {
 }
 
 func (p *parser) parseExpr() (NodeExpr, error) {
-	if p.currentToken().typ != tokenTypeSeparatorOpen {
+	if p.currentToken().typ != tokenTypeExpressionOpen {
 		return NodeExpr{}, errors.New(`expression does not start with "{"`)
 	}
 
@@ -169,14 +181,15 @@ func (p *parser) parseExpr() (NodeExpr, error) {
 			}
 
 			expr.Function = function
-		case tokenTypeSeparatorClose:
+		case tokenTypeExpressionClose:
 			p.pos++
 
 			return expr, nil
-		case tokenTypeKeyword, tokenTypeSeparatorOpen,
+		case tokenTypeKeyword, tokenTypeExpressionOpen,
 			tokenTypeLiteral, tokenTypeText,
 			tokenTypeEOF, tokenTypeError,
-			tokenTypeOpeningFunction, tokenTypeClosingFunction:
+			tokenTypeOpeningFunction, tokenTypeClosingFunction,
+			tokenTypeComplexMessageClose, tokenTypeComplexMessageOpen:
 		}
 	}
 
@@ -203,6 +216,11 @@ func (p *parser) parseVariant() (NodeVariant, error) {
 
 	variant.Message = append(variant.Message, text...)
 
+	// shift pos
+	if p.nextToken().typ == tokenTypeComplexMessageClose && p.pos == len(p.tokens)-2 {
+		p.pos++
+	}
+
 	return variant, nil
 }
 
@@ -223,7 +241,7 @@ func (p *parser) parseVariable() (NodeVariable, error) {
 
 	var variable NodeVariable
 
-	if p.tokens[p.pos-1].typ != tokenTypeSeparatorOpen {
+	if p.tokens[p.pos-1].typ != tokenTypeExpressionOpen {
 		return variable, errors.New(`function does not follow placeholder open`)
 	}
 

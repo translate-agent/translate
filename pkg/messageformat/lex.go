@@ -17,8 +17,10 @@ const (
 	tokenTypeEOF
 	tokenTypeVariable
 	tokenTypeFunction
-	tokenTypeSeparatorOpen
-	tokenTypeSeparatorClose
+	tokenTypeExpressionOpen
+	tokenTypeExpressionClose
+	tokenTypeComplexMessageOpen
+	tokenTypeComplexMessageClose
 	tokenTypeText
 	tokenTypeOpeningFunction
 	tokenTypeClosingFunction
@@ -45,12 +47,16 @@ func mkTokenErrorf(s string, args ...interface{}) Token {
 }
 
 func lex(input string) *lexer {
-	return &lexer{input: input}
+	return &lexer{
+		// to remove spaces outside messageFormat v2
+		input: strings.TrimSpace(input),
+	}
 }
 
 type lexer struct {
 	input        string
 	token        Token
+	prevToken    Token
 	pos          int
 	exprDepth    int
 	insideExpr   bool
@@ -85,7 +91,7 @@ func (l *lexer) peek() rune {
 }
 
 func (l *lexer) nextToken() Token {
-	l.token = mkToken(tokenTypeEOF, "")
+	l.emitToken(mkToken(tokenTypeEOF, ""))
 
 	state := lexOutsideExpr
 
@@ -103,6 +109,10 @@ func (l *lexer) nextToken() Token {
 }
 
 func (l *lexer) emitToken(t Token) stateFn {
+	if t.typ == tokenTypeEOF {
+		l.prevToken = l.token
+	}
+
 	l.token = t
 
 	return nil
@@ -111,20 +121,49 @@ func (l *lexer) emitToken(t Token) stateFn {
 type stateFn func(*lexer) stateFn
 
 func lexOutsideExpr(l *lexer) stateFn {
+	minLength := 4
+
+	// optional check for the input length
+	if len(l.input) < minLength {
+		return l.emitToken(mkToken(tokenTypeError, "input can't be shorter then 4 chars '{{}}'"))
+	}
+
 	var expr string
+
+	// check start of the input is {{ and shift pos to skip these chars,
+	// else create error token
+	// usage: default case to check start of input
+	if l.pos == 0 {
+		if strings.HasPrefix(l.input, "{{") {
+			l.next()
+			l.next()
+
+			return l.emitToken(mkToken(tokenTypeComplexMessageOpen, "{{"))
+		}
+
+		return l.emitToken(mkToken(tokenTypeError, "syntax error on opening complex message"))
+	}
 
 	for {
 		v := l.next()
 
 		if v == eof {
-			return nil
+			return l.emitToken(mkToken(tokenTypeEOF, ""))
 		}
 
 		if v == '{' {
 			l.exprDepth++
 			l.insideExpr = true
 
-			return l.emitToken(mkToken(tokenTypeSeparatorOpen, "{"))
+			// if current and next "v" equals to {{ shift pos
+			// usage: wrap TokenTypeText
+			if l.peek() == '{' {
+				l.next()
+
+				return l.emitToken(mkToken(tokenTypeComplexMessageOpen, "{{"))
+			}
+
+			return l.emitToken(mkToken(tokenTypeExpressionOpen, "{"))
 		}
 
 		expr += string(v)
@@ -141,6 +180,15 @@ func lexOutsideExpr(l *lexer) stateFn {
 		if l.whenFound {
 			l.whenFound = false
 			return lexLiteral(l)
+		}
+
+		// check for closing of complex message outside expression
+		if v == '}' && l.peek() == '}' {
+			l.next()
+
+			if l.peek() == eof {
+				return l.emitToken(mkToken(tokenTypeComplexMessageClose, "}}"))
+			}
 		}
 	}
 }
@@ -220,7 +268,17 @@ func lexExpr(l *lexer) stateFn {
 	case '{':
 		l.exprDepth++
 		l.insideExpr = true
-		l.token = mkToken(tokenTypeSeparatorOpen, "{")
+
+		// sets {{ before text token
+		if isAlpha(l.peek()) || isSpace(l.peek()) || l.peek() == '{' {
+			if l.peek() == '{' {
+				l.next()
+			}
+
+			l.emitToken(mkToken(tokenTypeComplexMessageOpen, "{{"))
+		} else {
+			l.emitToken(mkToken(tokenTypeExpressionOpen, "{"))
+		}
 
 		return nil
 	case '}':
@@ -231,7 +289,18 @@ func lexExpr(l *lexer) stateFn {
 			l.insideExpr = false
 		}
 
-		l.token = mkToken(tokenTypeSeparatorClose, "}")
+		// closes text block with }} or closes function,variable with }
+		if l.prevToken.typ == tokenTypeText || l.prevToken.typ == tokenTypeExpressionClose ||
+			(l.prevToken.typ == tokenTypeComplexMessageClose && !l.insideExpr) {
+			if l.insideExpr {
+				l.emitToken(mkToken(tokenTypeError, "missing closing separator"))
+			} else {
+				l.next()
+				l.emitToken(mkToken(tokenTypeComplexMessageClose, "}}"))
+			}
+		} else {
+			l.emitToken(mkToken(tokenTypeExpressionClose, "}"))
+		}
 
 		return nil
 	}
