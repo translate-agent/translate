@@ -82,7 +82,7 @@ msgstr[1] "There are %d oranges"
 				mkToken(TokenTypeHeaderContentType, "text/plain; charset=UTF-8"),
 				mkToken(TokenTypeHeaderContentTransferEncoding, "8bit"),
 				mkToken(TokenTypeHeaderXGenerator, "Poedit 2.2"),
-				mkToken(TokenTypeGeneratedBy, "Babel 2.9.1"),
+				mkToken(TokenTypeHeaderGeneratedBy, "Babel 2.9.1"),
 				mkToken(TokenTypeHeaderReportMsgidBugsTo, "support@lingohub.com"),
 				mkToken(TokenTypeMsgCtxt, "ctxt"),
 				mkToken(TokenTypeMsgID, "id"),
