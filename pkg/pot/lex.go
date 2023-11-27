@@ -158,8 +158,8 @@ func parseLine(line string, tokens []Token) (*Token, error) {
 	case strings.HasPrefix(line, "#"):
 		token = TokenTypeTranslatorComment
 	// Special case for multiline strings, i.e. msgid, msgstr, msgid_plural, msgstr[*]
-	// When we encounter header token which is not defined in the TokenType enum, it tries parse the header
-	// as a multiline string. As workaround, we allow parsing it as multiline string if last token was not header token.
+	// When we encounter header token which is not defined in the TokenType enum, it tries parse the header as
+	// a multiline string. As workaround, we allow parsing it as multiline string if only last token was not header token.
 	case strings.HasPrefix(line, `"`) && tokens[len(tokens)-1].Type >= TokenTypeMsgCtxt:
 		return nil, parseMultilineValue(line, tokens)
 	}
@@ -178,7 +178,7 @@ func parseToken(line string, tokenType TokenType) (*Token, error) {
 	token := Token{Type: tokenType, Value: value}
 
 	// We assume that headers token have a newline at the end so we must trim it.
-	if tokenType <= TokenTypeGeneratedBy {
+	if tokenType < TokenTypeMsgCtxt {
 		token.Value = strings.TrimSuffix(token.Value, "\\n")
 	}
 
@@ -198,7 +198,7 @@ func parseToken(line string, tokenType TokenType) (*Token, error) {
 
 	index, err := strconv.Atoi(indexStr)
 	if err != nil {
-		return nil, fmt.Errorf("convert string '%s' to int: %w", indexStr, err)
+		return nil, fmt.Errorf("convert '%s' to int: %w", indexStr, err)
 	}
 
 	token.Index = index
