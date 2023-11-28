@@ -345,7 +345,7 @@ func writeTags(b *bytes.Buffer, message model.Message) error {
 func convertPluralsToMessageString(plurals []string) string {
 	var sb strings.Builder
 
-	sb.WriteString("match {$count :number}\n")
+	sb.WriteString("{{\nmatch {$count :number}\n")
 
 	for i, plural := range plurals {
 		plural = escapeSpecialChars(plural)
@@ -362,9 +362,11 @@ func convertPluralsToMessageString(plurals []string) string {
 		if line == "" {
 			sb.WriteString(fmt.Sprintf("when %s\n", count))
 		} else {
-			sb.WriteString(fmt.Sprintf("when %s {%s}\n", count, line))
+			sb.WriteString(fmt.Sprintf("when %s {{%s}}\n", count, line))
 		}
 	}
+
+	sb.WriteString("}}\n")
 
 	return sb.String()
 }

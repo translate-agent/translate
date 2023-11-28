@@ -6,8 +6,6 @@ import (
 	"unicode/utf8"
 )
 
-// TODO(jhorsts): use cursor position by line number and position in a line
-
 const eof = -1
 
 type tokenType int
@@ -17,8 +15,10 @@ const (
 	tokenTypeEOF
 	tokenTypeVariable
 	tokenTypeFunction
-	tokenTypeSeparatorOpen
-	tokenTypeSeparatorClose
+	tokenTypeExpressionOpen
+	tokenTypeExpressionClose
+	tokenTypeComplexMessageOpen
+	tokenTypeComplexMessageClose
 	tokenTypeText
 	tokenTypeOpeningFunction
 	tokenTypeClosingFunction
@@ -46,7 +46,10 @@ func mkTokenErrorf(s string, args ...interface{}) Token {
 }
 
 func lex(input string) *lexer {
-	return &lexer{input: input}
+	return &lexer{
+		// remove spaces outside messageFormat v2
+		input: strings.TrimSpace(input),
+	}
 }
 
 type lexer struct {
@@ -86,7 +89,7 @@ func (l *lexer) peek() rune {
 }
 
 func (l *lexer) nextToken() Token {
-	l.token = mkToken(tokenTypeEOF, "")
+	l.emitToken(mkToken(tokenTypeEOF, ""))
 
 	state := lexOutsideExpr
 
@@ -113,19 +116,48 @@ func (l *lexer) emitToken(t Token) stateFn {
 type stateFn func(*lexer) stateFn
 
 func lexOutsideExpr(l *lexer) stateFn {
+	minLength := 4
+
+	// optional check for the input length
+	if len(l.input) < minLength {
+		return l.emitToken(mkToken(tokenTypeError, "input can't be shorter then 4 chars '{{}}'"))
+	}
+
 	var expr string
+
+	// check start of the input is {{ and shift pos to skip these chars,
+	// else create error token
+	// usage: default case to check start of input
+	if l.pos == 0 {
+		if strings.HasPrefix(l.input, "{{") {
+			l.next() // skip "{" rune
+			l.next() // skip "{" rune
+
+			return l.emitToken(mkToken(tokenTypeComplexMessageOpen, "{{"))
+		}
+
+		return l.emitToken(mkToken(tokenTypeError, "syntax error on opening complex message"))
+	}
 
 	for {
 		v := l.next()
 
 		if v == eof {
-			return nil
+			return l.emitToken(mkToken(tokenTypeEOF, ""))
 		}
 
 		if v == '{' {
 			l.exprDepth++
 
-			return l.emitToken(mkToken(tokenTypeSeparatorOpen, "{"))
+			// if current and next "v" equals to {{ shift pos
+			// usage: wrap TokenTypeText
+			if l.peek() == '{' {
+				l.next()
+
+				return l.emitToken(mkToken(tokenTypeComplexMessageOpen, "{{"))
+			}
+
+			return l.emitToken(mkToken(tokenTypeExpressionOpen, "{"))
 		}
 
 		expr += string(v)
@@ -142,6 +174,15 @@ func lexOutsideExpr(l *lexer) stateFn {
 		if l.whenFound {
 			l.whenFound = false
 			return lexLiteral(l)
+		}
+
+		// check for closing of complex message outside expression
+		if v == '}' && l.peek() == '}' {
+			l.next()
+
+			if l.peek() == eof {
+				return l.emitToken(mkToken(tokenTypeComplexMessageClose, "}}"))
+			}
 		}
 	}
 }
@@ -165,8 +206,7 @@ func lexText(l *lexer) stateFn {
 
 	var sb strings.Builder
 
-	// Loop until we encounter a curly brace.
-	for l.peek() != '}' && l.peek() != '{' {
+	for {
 		v := l.next()
 
 		// EOF is not supposed to be in the text.
@@ -181,9 +221,11 @@ func lexText(l *lexer) stateFn {
 		if v == '\\' {
 			sb.WriteRune(l.next())
 		}
-	}
 
-	return l.emitToken(mkToken(tokenTypeText, sb.String()))
+		if l.peek() == '}' || l.peek() == '{' {
+			return l.emitToken(mkToken(tokenTypeText, sb.String()))
+		}
+	}
 }
 
 func lexExpr(l *lexer) stateFn {
@@ -221,14 +263,32 @@ func lexExpr(l *lexer) stateFn {
 		return processFunction(l, lexClosingFunction)
 	case '{':
 		l.exprDepth++
-		l.token = mkToken(tokenTypeSeparatorOpen, "{")
+
+		// set "{{" before text token
+		if isAlpha(l.peek()) || isSpace(l.peek()) || l.peek() == '{' {
+			l.next() // skip "{" rune
+			l.emitToken(mkToken(tokenTypeComplexMessageOpen, "{{"))
+		} else {
+			l.emitToken(mkToken(tokenTypeExpressionOpen, "{"))
+		}
 
 		return nil
 	case '}':
 		l.exprDepth--
 		l.textToFollow = true
 
-		l.token = mkToken(tokenTypeSeparatorClose, "}")
+		// close text token with "}}" or exp with "}"
+		if l.prevToken.typ == tokenTypeText || l.prevToken.typ == tokenTypeExpressionClose ||
+			(l.prevToken.typ == tokenTypeComplexMessageClose && l.exprDepth == 0) {
+			if l.exprDepth > 0 {
+				l.emitToken(mkToken(tokenTypeError, "missing closing separator"))
+			} else {
+				l.next() // skip "}" rune
+				l.emitToken(mkToken(tokenTypeComplexMessageClose, "}}"))
+			}
+		} else {
+			l.emitToken(mkToken(tokenTypeExpressionClose, "}"))
+		}
 
 		return nil
 	}

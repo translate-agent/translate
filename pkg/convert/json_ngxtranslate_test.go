@@ -28,7 +28,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: `{example}`,
+						Message: `{{{{example}}}}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -42,7 +42,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
+						Message: `{{{{Order #\{Id\} has been canceled for \{ClientName\} \| \\}}}}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -56,7 +56,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
-						Message: `{message1}`,
+						Message: `{{{{message1}}}}`,
 						Status:  model.MessageStatusUntranslated,
 					},
 				},
@@ -84,12 +84,12 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
-						Message: `{message1}`,
+						Message: `{{{{message1}}}}`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "msg.example",
-						Message: `{message2}`,
+						Message: `{{{{message2}}}}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -139,11 +139,11 @@ func Test_ToNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: `{example}`,
+						Message: `{{{{example}}}}`,
 					},
 					{
 						ID:      "message.example",
-						Message: `{message1}`,
+						Message: `{{{{message1}}}}`,
 					},
 				},
 			},
@@ -155,7 +155,7 @@ func Test_ToNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: `{Welcome \{user\} \| \\ !}`,
+						Message: `{{{{Welcome \{user\} \| \\ !}}}}`,
 					},
 				},
 			},
@@ -175,8 +175,6 @@ func Test_ToNgxTranslate(t *testing.T) {
 
 			require.NoError(t, err)
 
-			t.Logf("actual: %v", string(actual))
-			t.Logf("expect: %v", string(tt.expected))
 			assert.Equal(t, tt.expected, actual)
 		})
 	}

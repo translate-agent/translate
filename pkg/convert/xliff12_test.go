@@ -33,9 +33,9 @@ func randXliff12(translation *model.Translation) []byte {
 
 	b.WriteString("<body>")
 
-	writeMsg := func(s string) { fmt.Fprintf(b, "<target>%s</target>", s[1:len(s)-1]) }
+	writeMsg := func(s string) { fmt.Fprintf(b, "<target>%s</target>", s[4:len(s)-4]) }
 	if translation.Original {
-		writeMsg = func(s string) { fmt.Fprintf(b, "<source>%s</source>", s[1:len(s)-1]) }
+		writeMsg = func(s string) { fmt.Fprintf(b, "<source>%s</source>", s[4:len(s)-4]) }
 	}
 
 	for _, msg := range translation.Messages {
@@ -110,7 +110,7 @@ func Test_FromXliff12(t *testing.T) {
 					Messages: []model.Message{
 						{
 							ID:      "order canceled",
-							Message: `{Order #{Id} has been canceled for {ClientName} | \}`,
+							Message: `{{{{Order #{Id} has been canceled for {ClientName} | \}}}}`,
 						},
 					},
 				},
@@ -121,7 +121,7 @@ func Test_FromXliff12(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "order canceled",
-						Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
+						Message: `{{{{Order #\{Id\} has been canceled for \{ClientName\} \| \\}}}}`,
 						Status:  model.MessageStatusUntranslated,
 					},
 				},
@@ -170,7 +170,7 @@ func Test_ToXliff12(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "common.welcome",
-						Message: `{User #\{ID\} \| \\}`,
+						Message: `{{{{User #\{ID\} \| \\}}}}`,
 					},
 				},
 			},

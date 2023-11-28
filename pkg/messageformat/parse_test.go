@@ -24,17 +24,17 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:     "text",
-			input:    "{Hello, World}",
+			input:    "{{{{Hello, World}}}}",
 			expected: AST{NodeText{Text: "Hello, World"}},
 		},
 		{
 			name:     "text with escaped curly braces",
-			input:    "{Hello, \\{World\\}}",
+			input:    "{{{{Hello, \\{World\\}}}}",
 			expected: AST{NodeText{Text: "Hello, \\{World\\}"}},
 		},
 		{
 			name:  "text with variable",
-			input: "{Hello {$var} World}",
+			input: "{{{{Hello {$var} World}}}}",
 			expected: AST{
 				NodeText{Text: "Hello "},
 				NodeExpr{Value: NodeVariable{Name: "var"}},
@@ -43,7 +43,7 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:  "text with function",
-			input: "{Hello {:func} World}",
+			input: "{{{{Hello {:func} World}}}}",
 			expected: AST{
 				NodeText{Text: "Hello "},
 				NodeExpr{Function: NodeFunction{Name: "func"}},
@@ -52,7 +52,7 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:  "extracted placeholder pythonVar",
-			input: "{{:Placeholder name=object format=pythonVar type=string} does not exist in this database.}",
+			input: "{{{{{:Placeholder name=object format=pythonVar type=string} does not exist in this database.}}}}}",
 			expected: AST{
 				NodeExpr{
 					Value: nil,
@@ -70,7 +70,7 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:  "extracted placeholders printf style",
-			input: "{{:Placeholder format=printf type=string} does not exist in {:Placeholder format=printf type=int}. database.}}",
+			input: "{{{{{:Placeholder format=printf type=string} does not exist in {:Placeholder format=printf type=int}. database.}}}}}",
 			expected: AST{
 				NodeExpr{
 					Value: nil,
@@ -99,7 +99,7 @@ func Test_Parse(t *testing.T) {
 		// plural tests
 		{
 			name:  "single match",
-			input: "match {$count} when * {Hello, world\\!}",
+			input: "{{match {$count} when * {{Hello, world\\!}}}}",
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}}},
@@ -111,7 +111,7 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:  "single match with function",
-			input: "match {$count :number} when * {Hello, world\\!}",
+			input: "{{match {$count :number} when * {{Hello, world\\!}}}}",
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
@@ -123,7 +123,7 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:  "match with multiple variants",
-			input: "match {$count :number} when 1 {Hello, friend\\!} when * {Hello, friends\\!} ",
+			input: "{{match {$count :number} when 1 {{Hello, friend\\!}} when * {{Hello, friends\\!}}}} ",
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
@@ -136,7 +136,7 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name:  "match with plurals",
-			input: "match {$count :number} when 1 {Buy one \\\\ apple\\!} when * {Buy {$count} apples\\!} ",
+			input: "{{match {$count :number} when 1 {{Buy one \\\\ apple\\!} when * {{Buy {$count} apples\\!}}}}",
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
@@ -153,10 +153,10 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name: "match with two variables in variant",
-			input: "match {$count :number} " +
-				"when 0 {No apples\\!} " +
-				"when 1 {Buy {$count}{$counts} apple\\!} " +
-				"when * {Buy {$count} apples 2\\!} ",
+			input: "{{match {$count :number} " +
+				"when 0 {{No apples\\!}} " +
+				"when 1 {{Buy {$count}{$counts} apple\\!}} " +
+				"when * {{Buy {$count} apples 2\\!}}}} ",
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
@@ -179,9 +179,9 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			name: "match plural with extracted bracketVar placeholder",
-			input: "match {$count :number} " +
-				"when 1 {Were having trouble loading this visualization. Queries are set to timeout after {:Placeholder name=sec format=bracketVar} second.}" +
-				"when * {Were having trouble loading this visualization. Queries are set to timeout after {:Placeholder name=sec format=bracketVar} seconds.}",
+			input: "{{match {$count :number} " +
+				"when 1 {{Were having trouble loading this visualization. Queries are set to timeout after {:Placeholder name=sec format=bracketVar} second.}}" +
+				"when * {{Were having trouble loading this visualization. Queries are set to timeout after {:Placeholder name=sec format=bracketVar} seconds.}}}}",
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},

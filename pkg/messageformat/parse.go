@@ -20,9 +20,10 @@ func (p *parser) collect() {
 		v := p.lex.nextToken()
 
 		switch v.typ {
-		case tokenTypeVariable, tokenTypeFunction, tokenTypeSeparatorOpen,
-			tokenTypeSeparatorClose, tokenTypeText, tokenTypeOpeningFunction,
-			tokenTypeClosingFunction, tokenTypeKeyword, tokenTypeLiteral, tokenTypeOption:
+		case tokenTypeVariable, tokenTypeFunction, tokenTypeExpressionOpen,
+			tokenTypeExpressionClose, tokenTypeText, tokenTypeOpeningFunction,
+			tokenTypeClosingFunction, tokenTypeKeyword, tokenTypeLiteral, tokenTypeOption,
+			tokenTypeComplexMessageClose, tokenTypeComplexMessageOpen:
 			p.tokens = append(p.tokens, v)
 		case tokenTypeEOF:
 			p.tokens = append(p.tokens, v)
@@ -69,6 +70,18 @@ func (p *parser) parse() (AST, error) {
 	for p.pos < len(p.tokens) {
 		token := p.currentToken()
 
+		// default complex msg open
+		if p.pos == 0 && p.tokens[0].typ == tokenTypeComplexMessageOpen {
+			p.pos++ // skip "{{" token
+			continue
+		}
+
+		// default complex msg close
+		if p.pos == len(p.tokens)-2 && p.tokens[len(p.tokens)-2].typ == tokenTypeComplexMessageClose {
+			p.pos++ // skip "}}" token
+			continue
+		}
+
 		switch {
 		default:
 			return nil, fmt.Errorf("unknown token: %+v", token)
@@ -79,7 +92,7 @@ func (p *parser) parse() (AST, error) {
 			}
 
 			tree = append(tree, match)
-		case token.typ == tokenTypeSeparatorOpen:
+		case token.typ == tokenTypeComplexMessageOpen:
 			nodes, err := p.parseInsideCurly()
 			if err != nil {
 				return nil, fmt.Errorf("parse text: %w", err)
@@ -98,7 +111,7 @@ func (p *parser) parse() (AST, error) {
 
 // parseInsideCurly parses texts and expressions inside curly braces.
 func (p *parser) parseInsideCurly() ([]Node, error) {
-	if p.currentToken().typ != tokenTypeSeparatorOpen {
+	if p.currentToken().typ != tokenTypeComplexMessageOpen {
 		return nil, errors.New("exp does not start with \"{\"")
 	}
 
@@ -110,19 +123,22 @@ func (p *parser) parseInsideCurly() ([]Node, error) {
 		switch token.typ {
 		case tokenTypeText:
 			nodes = append(nodes, NodeText{Text: token.val})
-		case tokenTypeSeparatorOpen:
+		case tokenTypeExpressionOpen:
 			expr, err := p.parseExpr()
 			if err != nil {
 				return nil, fmt.Errorf("parse variable: %w", err)
 			}
 
 			nodes = append(nodes, expr)
-		case tokenTypeSeparatorClose:
+		case tokenTypeComplexMessageClose:
+			p.pos++ // skip }}
 			return nodes, nil
 		case tokenTypeKeyword, tokenTypeLiteral,
 			tokenTypeFunction, tokenTypeVariable,
 			tokenTypeEOF, tokenTypeError,
-			tokenTypeOpeningFunction, tokenTypeClosingFunction, tokenTypeOption:
+			tokenTypeOption,
+			tokenTypeOpeningFunction, tokenTypeClosingFunction,
+			tokenTypeComplexMessageOpen, tokenTypeExpressionClose:
 		}
 	}
 
@@ -160,7 +176,6 @@ func (p *parser) parseMatch() (NodeMatch, error) {
 			if err != nil {
 				return NodeMatch{}, fmt.Errorf("parse variant: %w", err)
 			}
-			p.pos++ // skip "}" token
 
 			match.Variants = append(match.Variants, variant)
 		}
@@ -170,7 +185,7 @@ func (p *parser) parseMatch() (NodeMatch, error) {
 }
 
 func (p *parser) parseExpr() (NodeExpr, error) {
-	if p.currentToken().typ != tokenTypeSeparatorOpen {
+	if p.currentToken().typ != tokenTypeExpressionOpen {
 		return NodeExpr{}, errors.New(`expression does not start with "{"`)
 	}
 
@@ -186,12 +201,13 @@ func (p *parser) parseExpr() (NodeExpr, error) {
 			expr.Function.Name = token.val
 		case tokenTypeOption:
 			expr.Function.Options = append(expr.Function.Options, p.parseOption())
-		case tokenTypeSeparatorClose:
+		case tokenTypeExpressionClose:
 			return expr, nil
-		case tokenTypeKeyword, tokenTypeSeparatorOpen,
+		case tokenTypeKeyword, tokenTypeExpressionOpen,
 			tokenTypeLiteral, tokenTypeText,
 			tokenTypeEOF, tokenTypeError,
-			tokenTypeOpeningFunction, tokenTypeClosingFunction:
+			tokenTypeOpeningFunction, tokenTypeClosingFunction,
+			tokenTypeComplexMessageClose, tokenTypeComplexMessageOpen:
 		}
 	}
 
@@ -217,6 +233,10 @@ func (p *parser) parseVariant() (NodeVariant, error) {
 	}
 
 	variant.Message = append(variant.Message, nodes...)
+
+	if p.pos == len(p.tokens)-2 && p.nextToken().typ == tokenTypeComplexMessageClose {
+		p.pos++ // skip "}}" token
+	}
 
 	return variant, nil
 }
