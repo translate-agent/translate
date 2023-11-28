@@ -18,6 +18,7 @@ func TestLex(t *testing.T) {
 		expectedErr error
 		expected    []Token
 	}{
+		// positive tests
 		// TODO(jhorsts): this is not actually translator comment
 		// but file level comment. Should it be simply TypeComment?
 		// https://raw.githubusercontent.com/apache/superset/master/superset/translations/messages.pot
@@ -27,142 +28,189 @@ func TestLex(t *testing.T) {
 				"#\n" +
 				"# http://www.apache.org/licenses/LICENSE-2.0",
 			expected: []Token{
-				tokenTranslatorComment("Licensed to..."),
-				tokenTranslatorComment(""),
-				tokenTranslatorComment("http://www.apache.org/licenses/LICENSE-2.0"),
+				mkToken(TokenTypeTranslatorComment, "Licensed to..."),
+				mkToken(TokenTypeTranslatorComment, ""),
+				mkToken(TokenTypeTranslatorComment, "http://www.apache.org/licenses/LICENSE-2.0"),
 			},
 		},
 		{
 			name: "When all values are provided",
-			input: "msgid \"\"\n" +
-				"msgstr \"\"\n" +
-				"\"Translator: John Doe <johndoe@example.com>\\n\"\n" +
-				"\"Language: en-US\\n\"\n" +
-				"\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n" +
-				"\"Project-Id-Version: 1.2\\n\"\n" +
-				"\"POT-Creation-Date: 10.02.2022.\\n\"\n" +
-				"\"PO-Revision-Date: 10.02.2022.\\n\"\n" +
-				"\"Last-Translator: John Doe\\n\"\n" +
-				"\"Language-Team: team\\n\"\n" +
-				"\"MIME-Version: 1.0\\n\"\n" +
-				"\"Content-Type: text/plain; charset=UTF-8\\n\"\n" +
-				"\"Content-Transfer-Encoding: 8bit\\n\"\n" +
-				"\"X-Generator: Poedit 2.2\\n\"\n" +
-				"\"Report-Msgid-Bugs-To: support@lingohub.com\\n\"\n" +
-				"msgctxt \"ctxt\"\n" +
-				"msgid \"id\"\n" +
-				"msgstr \"str\"\n" +
-				"msgid_plural \"There are %d oranges\"\n" +
-				"msgstr[0] \"There is %d orange\"\n" +
-				"msgstr[1] \"There are %d oranges\"\n" +
-				"# translator-comment\n" +
-				"#. extracted comment\n" +
-				"#: reference1\n" +
-				"#: reference2\n" +
-				"#: reference3\n" +
-				"#, flag\n" +
-				"#| msgctxt previous context\n" +
-				"#| msgid previous id\n" +
-				"#| msgid_plural previous id plural\n",
+			input: `msgid ""
+msgstr ""
+"Translator: John Doe <johndoe@example.com>\n"
+"Language: en-US\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Project-Id-Version: 1.2\n"
+"POT-Creation-Date: 10.02.2022.\n"
+"PO-Revision-Date: 10.02.2022.\n"
+"Last-Translator: John Doe\n"
+"Language-Team: team\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.2\n"
+"Generated-By: Babel 2.9.1\n"
+"Report-Msgid-Bugs-To: support@lingohub.com\n"
+msgctxt "ctxt"
+msgid "id"
+msgstr "str"
+msgid_plural "There are %d oranges"
+msgstr[0] "There is %d orange"
+msgstr[1] "There are %d oranges"
+# translator-comment
+#. extracted comment
+#: reference1
+#: reference2
+#: reference3
+#, flag
+#| msgctxt previous context
+#| msgid previous id
+#| msgid_plural previous id plural
+`,
 			expected: []Token{
-				tokenMsgID(""),
-				tokenMsgStr(""),
-				tokenHeaderTranslator("John Doe <johndoe@example.com>"),
-				tokenHeaderLanguage("en-US"),
-				tokenHeaderPluralForms("nplurals=2; plural=(n != 1);"),
-				tokenHeaderProjectIDVersion("1.2"),
-				tokenHeaderPOTCreationDate("10.02.2022."),
-				tokenHeaderPORevisionDate("10.02.2022."),
-				tokenHeaderLastTranslator("John Doe"),
-				tokenHeaderLanguageTeam("team"),
-				tokenHeaderMIMEVersion("1.0"),
-				tokenHeaderContentType("text/plain; charset=UTF-8"),
-				tokenHeaderContentTransferEncoding("8bit"),
-				tokenHeaderXGenerator("Poedit 2.2"),
-				tokenHeaderReportMsgidBugsTo("support@lingohub.com"),
-				tokenMsgCtxt("ctxt"),
-				tokenMsgID("id"),
-				tokenMsgStr("str"),
-				tokenPluralMsgID("There are %d oranges"),
-				tokenPluralMsgStr("There is %d orange", 0),
-				tokenPluralMsgStr("There are %d oranges", 1),
-				tokenTranslatorComment("translator-comment"),
-				tokenExtractedComment("extracted comment"),
-				tokenReference("reference1"),
-				tokenReference("reference2"),
-				tokenReference("reference3"),
-				tokenFlag("flag"),
-				tokenMsgctxtPreviousContext("msgctxt previous context"),
-				tokenMsgidPrevUntStr("msgid previous id"),
-				tokenMsgidPluralPrevUntStrPlural("msgid_plural previous id plural"),
+				mkToken(TokenTypeMsgID, ""),
+				mkToken(TokenTypeMsgStr, ""),
+				mkToken(TokenTypeHeaderTranslator, "John Doe <johndoe@example.com>"),
+				mkToken(TokenTypeHeaderLanguage, "en-US"),
+				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
+				mkToken(TokenTypeHeaderProjectIDVersion, "1.2"),
+				mkToken(TokenTypeHeaderPOTCreationDate, "10.02.2022."),
+				mkToken(TokenTypeHeaderPORevisionDate, "10.02.2022."),
+				mkToken(TokenTypeHeaderLastTranslator, "John Doe"),
+				mkToken(TokenTypeHeaderLanguageTeam, "team"),
+				mkToken(TokenTypeHeaderMIMEVersion, "1.0"),
+				mkToken(TokenTypeHeaderContentType, "text/plain; charset=UTF-8"),
+				mkToken(TokenTypeHeaderContentTransferEncoding, "8bit"),
+				mkToken(TokenTypeHeaderXGenerator, "Poedit 2.2"),
+				mkToken(TokenTypeHeaderGeneratedBy, "Babel 2.9.1"),
+				mkToken(TokenTypeHeaderReportMsgidBugsTo, "support@lingohub.com"),
+				mkToken(TokenTypeMsgCtxt, "ctxt"),
+				mkToken(TokenTypeMsgID, "id"),
+				mkToken(TokenTypeMsgStr, "str"),
+				mkToken(TokenTypePluralMsgID, "There are %d oranges"),
+				mkToken(TokenTypePluralMsgStr, "There is %d orange", withIndex(0)),
+				mkToken(TokenTypePluralMsgStr, "There are %d oranges", withIndex(1)),
+				mkToken(TokenTypeTranslatorComment, "translator-comment"),
+				mkToken(TokenTypeExtractedComment, "extracted comment"),
+				mkToken(TokenTypeReference, "reference1"),
+				mkToken(TokenTypeReference, "reference2"),
+				mkToken(TokenTypeReference, "reference3"),
+				mkToken(TokenTypeFlag, "flag"),
+				mkToken(TokenTypeMsgctxtPreviousContext, "msgctxt previous context"),
+				mkToken(TokenTypeMsgidPrevUntStr, "msgid previous id"),
+				mkToken(TokenTypeMsgidPluralPrevUntStrPlural, "msgid_plural previous id plural"),
 			},
 		},
 		{
 			name: "When msgid and msgstr values are multiline",
-			input: "msgid \"\"\n" +
-				"msgstr \"\"\n" +
-				"\"Language: en-GB\\n\"\n" +
-				"msgid \"\"\n\"multiline id\"\n\"multiline id 2\"\n" +
-				"msgstr \"\"\n\"text line 1\"\n\"next line 2\"\n",
+			input: `msgid ""
+msgstr ""
+"Language: en-GB\n"
+msgid ""
+"multiline id"
+"multiline id 2"
+msgstr ""
+"text line 1"
+"next line 2"
+`,
 			expected: []Token{
-				tokenMsgID(""),
-				tokenMsgStr(""),
-				tokenHeaderLanguage("en-GB"),
-				tokenMsgID("multiline id multiline id 2"),
-				tokenMsgStr("text line 1 next line 2"),
+				mkToken(TokenTypeMsgID, ""),
+				mkToken(TokenTypeMsgStr, ""),
+				mkToken(TokenTypeHeaderLanguage, "en-GB"),
+				mkToken(TokenTypeMsgID, "\nmultiline id\nmultiline id 2"),
+				mkToken(TokenTypeMsgStr, "\ntext line 1\nnext line 2"),
 			},
 		},
 		{
-			name: "When msgid plural and msgstr plural values are multiline",
-			input: "msgid \"\"\n" +
-				"msgstr \"\"\n" +
-				"\"Language: en-US\\n\"\n" +
-				"\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n" +
-				"msgid \"\"\n\"multiline id\"\n\"multiline id 2\"\n" +
-				"msgid_plural \"There are %d oranges\"\n\"There are 1900000 oranges\"\n" +
-				"msgstr[0] \"There is %d orange\"\n\"There is 1 orange\"\n" +
-				"msgstr[1] \"There are %d oranges\"\n\"There are 1900000 oranges\"\n",
+			name: "pot with plural and escaped newline",
+			input: `msgid ""
+msgstr ""
+"Language: en-US\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid ""
+"There is %d orange\n"
+"that is on the tree"
+msgid_plural ""
+"There are %d oranges\n"
+"that are on the tree"
+msgstr[0] ""
+"There is %d orange\n"
+"that is on the tree"
+msgstr[1] ""
+"There are %d oranges\n"
+"that are on the tree"
+`,
 			expected: []Token{
-				tokenMsgID(""),
-				tokenMsgStr(""),
-				tokenHeaderLanguage("en-US"),
-				tokenHeaderPluralForms("nplurals=2; plural=(n != 1);"),
-				tokenMsgID("multiline id multiline id 2"),
-				tokenPluralMsgID("There are %d oranges There are 1900000 oranges"),
-				tokenPluralMsgStr("There is %d orange There is 1 orange", 0),
-				tokenPluralMsgStr("There are %d oranges There are 1900000 oranges", 1),
+				mkToken(TokenTypeMsgID, ""),
+				mkToken(TokenTypeMsgStr, ""),
+				mkToken(TokenTypeHeaderLanguage, "en-US"),
+				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
+				mkToken(TokenTypeMsgID, "\nThere is %d orange\\n\nthat is on the tree"),
+				mkToken(TokenTypePluralMsgID, "\nThere are %d oranges\\n\nthat are on the tree"),
+				mkToken(TokenTypePluralMsgStr, "\nThere is %d orange\\n\nthat is on the tree", withIndex(0)),
+				mkToken(TokenTypePluralMsgStr, "\nThere are %d oranges\\n\nthat are on the tree", withIndex(1)),
 			},
 		},
 		{
 			name: "header Test",
-			input: "msgid \"\"\n" +
-				"msgstr \"\"\n" +
-				"\"Language: en-US\\n\"\n" +
-				"\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n",
+			input: `msgid ""
+msgstr ""
+"Language: en-US\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+`,
 			expected: []Token{
-				tokenMsgID(""),
-				tokenMsgStr(""),
-				tokenHeaderLanguage("en-US"),
-				tokenHeaderPluralForms("nplurals=2; plural=(n != 1);"),
+				mkToken(TokenTypeMsgID, ""),
+				mkToken(TokenTypeMsgStr, ""),
+				mkToken(TokenTypeHeaderLanguage, "en-US"),
+				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
 			},
 		},
 		{
 			name: "When msgid and msgstr values are quoted",
-			input: "msgid \"\"\n" +
-				"msgstr \"\"\n" +
-				"\"Language: en-US\\n\"\n" +
-				"\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n" +
-				"msgid \"\"quoted\" id\"\n" +
-				"msgstr \"\"quoted\" str\"\n",
+			input: `msgid ""
+msgstr ""
+"Language: en-US\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+msgid "\"quoted\" id"
+msgstr "\"quoted\" str"
+`,
 			expected: []Token{
-				tokenMsgID(""),
-				tokenMsgStr(""),
-				tokenHeaderLanguage("en-US"),
-				tokenHeaderPluralForms("nplurals=2; plural=(n != 1);"),
-				tokenMsgID("\"quoted\" id"),
-				tokenMsgStr("\"quoted\" str"),
+				mkToken(TokenTypeMsgID, ""),
+				mkToken(TokenTypeMsgStr, ""),
+				mkToken(TokenTypeHeaderLanguage, "en-US"),
+				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
+				mkToken(TokenTypeMsgID, "\\\"quoted\\\" id"),
+				mkToken(TokenTypeMsgStr, "\\\"quoted\\\" str"),
 			},
 		},
+		{
+			name: "Multiline msgid with leading spaces",
+			input: `msgid ""
+"Add filter clauses to control the filter's source query,\n"
+"                    though only in the context of the autocomplete i.e.,"
+"these conditions\n"
+"                    do not impact how the filter is applied to the"
+"dashboard. This is useful\n"
+"                    when you want to improve the query's performance by"
+"only scanning a subset\n"
+"                    of the underlying data or limit the available values"
+"displayed in the filter."
+`,
+			expected: []Token{
+				mkToken(TokenTypeMsgID, `
+Add filter clauses to control the filter's source query,\n
+                    though only in the context of the autocomplete i.e.,
+these conditions\n
+                    do not impact how the filter is applied to the
+dashboard. This is useful\n
+                    when you want to improve the query's performance by
+only scanning a subset\n
+                    of the underlying data or limit the available values
+displayed in the filter.`),
+			},
+		},
+		// negative tests
 		{
 			name: "When msgid value is incorrect",
 			input: "msgid \"\"\n" +

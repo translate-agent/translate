@@ -12,6 +12,7 @@ import (
 type TokenType int
 
 const (
+	// File header tokens.
 	TokenTypeHeaderLanguage TokenType = iota
 	TokenTypeHeaderTranslator
 	TokenTypeHeaderPluralForms
@@ -25,6 +26,8 @@ const (
 	TokenTypeHeaderMIMEVersion
 	TokenTypeHeaderContentType
 	TokenTypeHeaderContentTransferEncoding
+	TokenTypeHeaderGeneratedBy
+	// Message tokens.
 	TokenTypeMsgCtxt
 	TokenTypeMsgID
 	TokenTypeMsgStr
@@ -39,174 +42,47 @@ const (
 	TokenTypeMsgidPrevUntStr
 )
 
-func tokenHeaderLanguage(value string) Token {
-	return Token{Type: TokenTypeHeaderLanguage, Value: value}
-}
-
-func tokenHeaderTranslator(value string) Token {
-	return Token{Type: TokenTypeHeaderTranslator, Value: value}
-}
-
-func tokenHeaderPluralForms(value string) Token {
-	return Token{Type: TokenTypeHeaderPluralForms, Value: value}
-}
-
-func tokenHeaderProjectIDVersion(value string) Token {
-	return Token{Type: TokenTypeHeaderProjectIDVersion, Value: value}
-}
-
-func tokenHeaderPOTCreationDate(value string) Token {
-	return Token{Type: TokenTypeHeaderPOTCreationDate, Value: value}
-}
-
-func tokenHeaderPORevisionDate(value string) Token {
-	return Token{Type: TokenTypeHeaderPORevisionDate, Value: value}
-}
-
-func tokenHeaderLanguageTeam(value string) Token {
-	return Token{Type: TokenTypeHeaderLanguageTeam, Value: value}
-}
-
-func tokenHeaderLastTranslator(value string) Token {
-	return Token{Type: TokenTypeHeaderLastTranslator, Value: value}
-}
-
-func tokenHeaderXGenerator(value string) Token {
-	return Token{Type: TokenTypeHeaderXGenerator, Value: value}
-}
-
-func tokenHeaderReportMsgidBugsTo(value string) Token {
-	return Token{Type: TokenTypeHeaderReportMsgidBugsTo, Value: value}
-}
-
-func tokenHeaderMIMEVersion(value string) Token {
-	return Token{Type: TokenTypeHeaderMIMEVersion, Value: value}
-}
-
-func tokenHeaderContentType(value string) Token {
-	return Token{Type: TokenTypeHeaderContentType, Value: value}
-}
-
-func tokenHeaderContentTransferEncoding(value string) Token {
-	return Token{Type: TokenTypeHeaderContentTransferEncoding, Value: value}
-}
-
-func tokenMsgCtxt(value string) Token {
-	return Token{Type: TokenTypeMsgCtxt, Value: value}
-}
-
-func tokenMsgID(value string) Token {
-	return Token{Type: TokenTypeMsgID, Value: value}
-}
-
-func tokenMsgStr(value string) Token {
-	return Token{Type: TokenTypeMsgStr, Value: value}
-}
-
-func tokenPluralMsgID(value string) Token {
-	return Token{Type: TokenTypePluralMsgID, Value: value}
-}
-
-func tokenPluralMsgStr(value string, index int) Token {
-	return Token{Type: TokenTypePluralMsgStr, Value: value, Index: index}
-}
-
-func tokenTranslatorComment(value string) Token {
-	return Token{Type: TokenTypeTranslatorComment, Value: value}
-}
-
-func tokenExtractedComment(value string) Token {
-	return Token{Type: TokenTypeExtractedComment, Value: value}
-}
-
-func tokenReference(value string) Token {
-	return Token{Type: TokenTypeReference, Value: value}
-}
-
-func tokenFlag(value string) Token {
-	return Token{Type: TokenTypeFlag, Value: value}
-}
-
-func tokenMsgctxtPreviousContext(value string) Token {
-	return Token{Type: TokenTypeMsgctxtPreviousContext, Value: value}
-}
-
-func tokenMsgidPluralPrevUntStrPlural(value string) Token {
-	return Token{Type: TokenTypeMsgidPluralPrevUntStrPlural, Value: value}
-}
-
-func tokenMsgidPrevUntStr(value string) Token {
-	return Token{Type: TokenTypeMsgidPrevUntStr, Value: value}
-}
-
 type Token struct {
 	Value string
 	Type  TokenType
-	Index int // plural index for msgstr with plural forms
+	Index int // plural index for msgstr with plural forms, e.g. msgstr[0], the index is 0
 }
 
-var validPrefixes = []string{
-	"msgctxt ",
-	"msgid ",
-	"msgstr ",
-	"msgid_plural ",
-	"msgstr[0] ",
-	"msgstr[1] ",
-	"msgstr[2] ",
-	"msgstr[3] ",
-	"msgstr[4] ",
-	"msgstr[5] ",
-	"#: ",
-	"#",
-	"#. ",
-	"#, ",
-	"#| msgctxt ",
-	"#| msgid_plural ",
-	"#| msgid ",
-	"\"Language",
-	"\"Plural-Forms",
-	"\"Translator",
-	"\"Project-Id-Version",
-	"\"POT-Creation-Date",
-	"\"PO-Revision-Date",
-	"\"Last-Translator",
-	"\"Language-Team",
-	"\"MIME-Version",
-	"\"Content-Type",
-	"\"Content-Transfer-Encoding",
-	"\"X-Generator",
-	"\"Report-Msgid-Bugs-To",
+func mkToken(tokenType TokenType, value string, opts ...func(t *Token)) Token {
+	token := Token{Type: tokenType, Value: value}
+	for _, opt := range opts {
+		opt(&token)
+	}
+
+	return token
+}
+
+func withIndex(index int) func(t *Token) {
+	return func(t *Token) {
+		t.Index = index
+	}
 }
 
 // Lex function performs lexical analysis on the input by reading lines from the reader
 // and parsing each line using the parseLine function.
 func Lex(r io.Reader) ([]Token, error) {
-	var (
-		tokens     []Token
-		lineNumber int
-	)
+	var tokens []Token
 
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
-		lineNumber++
-
-		line := scanner.Text()
-
-		line = strings.TrimSpace(line)
+		line := strings.TrimSpace(scanner.Text())
 		if len(line) == 0 {
 			continue
 		}
 
-		token, err := parseLine(line, &tokens)
+		token, err := parseLine(line, tokens)
 		if err != nil {
-			return nil, fmt.Errorf("parse line %d: %w", lineNumber, err)
+			return nil, fmt.Errorf(`parse line "%s": %w`, line, err)
 		}
 
-		if token == nil {
-			continue
+		if token != nil {
+			tokens = append(tokens, *token)
 		}
-
-		tokens = append(tokens, *token)
 	}
 
 	return tokens, nil
@@ -214,170 +90,145 @@ func Lex(r io.Reader) ([]Token, error) {
 
 // parseLine function processes the line based on different prefixes
 // and returns a pointer to a Token object and an error.
-func parseLine(line string, tokens *[]Token) (*Token, error) {
+func parseLine(line string, tokens []Token) (*Token, error) {
+	var token TokenType
+
 	switch {
-	case strings.HasPrefix(line, "\"Language:"):
-		return parseToken(line, TokenTypeHeaderLanguage)
-	case strings.HasPrefix(line, "\"Plural-Forms:"):
-		return parseToken(line, TokenTypeHeaderPluralForms)
-	case strings.HasPrefix(line, "\"Translator:"):
-		return parseToken(line, TokenTypeHeaderTranslator)
-	case strings.HasPrefix(line, "\"Project-Id-Version"):
-		return parseToken(line, TokenTypeHeaderProjectIDVersion)
-	case strings.HasPrefix(line, "\"POT-Creation-Date"):
-		return parseToken(line, TokenTypeHeaderPOTCreationDate)
-	case strings.HasPrefix(line, "\"PO-Revision-Date"):
-		return parseToken(line, TokenTypeHeaderPORevisionDate)
-	case strings.HasPrefix(line, "\"Last-Translator"):
-		return parseToken(line, TokenTypeHeaderLastTranslator)
-	case strings.HasPrefix(line, "\"Language-Team"):
-		return parseToken(line, TokenTypeHeaderLanguageTeam)
-	case strings.HasPrefix(line, "\"MIME-Version"):
-		return parseToken(line, TokenTypeHeaderMIMEVersion)
-	case strings.HasPrefix(line, "\"Content-Type"):
-		return parseToken(line, TokenTypeHeaderContentType)
-	case strings.HasPrefix(line, "\"Content-Transfer-Encoding"):
-		return parseToken(line, TokenTypeHeaderContentTransferEncoding)
-	case strings.HasPrefix(line, "\"Report-Msgid-Bugs-To"):
-		return parseToken(line, TokenTypeHeaderReportMsgidBugsTo)
-	case strings.HasPrefix(line, "\"X-Generator"):
-		return parseToken(line, TokenTypeHeaderXGenerator)
-	case strings.HasPrefix(line, "msgctxt"):
-		return parseToken(line, TokenTypeMsgCtxt)
-	case strings.HasPrefix(line, "msgid_plural"):
-		return parseToken(line, TokenTypePluralMsgID)
-	case strings.HasPrefix(line, "msgid"):
-		return parseToken(line, TokenTypeMsgID)
-	case strings.HasPrefix(line, "msgstr["):
-		return parsePluralMsgToken(line)
-	case strings.HasPrefix(line, "msgstr"):
-		return parseToken(line, TokenTypeMsgStr)
-	case strings.HasPrefix(line, "#."):
-		return parseCommentToken(line, TokenTypeExtractedComment)
-	case strings.HasPrefix(line, "#:"):
-		return parseCommentToken(line, TokenTypeReference)
-	case strings.HasPrefix(line, "#| msgid_plural"):
-		return parseCommentToken(line, TokenTypeMsgidPluralPrevUntStrPlural)
-	case strings.HasPrefix(line, "#| msgid"):
-		return parseCommentToken(line, TokenTypeMsgidPrevUntStr)
-	case strings.HasPrefix(line, "#| msgctxt"):
-		return parseCommentToken(line, TokenTypeMsgctxtPreviousContext)
-	case strings.HasPrefix(line, "#,"):
-		return parseCommentToken(line, TokenTypeFlag)
-	case strings.HasPrefix(line, "#"):
-		return parseCommentToken(line, TokenTypeTranslatorComment)
-	case strings.HasPrefix(line, `"`):
-		return parseMultilineToken(line, tokens)
 	default:
 		return nil, fmt.Errorf("unknown prefix in '%s'", line)
+	case strings.HasPrefix(line, "\"Language:"):
+		token = TokenTypeHeaderLanguage
+	case strings.HasPrefix(line, "\"Plural-Forms:"):
+		token = TokenTypeHeaderPluralForms
+	case strings.HasPrefix(line, "\"Translator:"):
+		token = TokenTypeHeaderTranslator
+	case strings.HasPrefix(line, "\"Project-Id-Version"):
+		token = TokenTypeHeaderProjectIDVersion
+	case strings.HasPrefix(line, "\"POT-Creation-Date"):
+		token = TokenTypeHeaderPOTCreationDate
+	case strings.HasPrefix(line, "\"PO-Revision-Date"):
+		token = TokenTypeHeaderPORevisionDate
+	case strings.HasPrefix(line, "\"Last-Translator"):
+		token = TokenTypeHeaderLastTranslator
+	case strings.HasPrefix(line, "\"Language-Team"):
+		token = TokenTypeHeaderLanguageTeam
+	case strings.HasPrefix(line, "\"MIME-Version"):
+		token = TokenTypeHeaderMIMEVersion
+	case strings.HasPrefix(line, "\"Content-Type"):
+		token = TokenTypeHeaderContentType
+	case strings.HasPrefix(line, "\"Content-Transfer-Encoding"):
+		token = TokenTypeHeaderContentTransferEncoding
+	case strings.HasPrefix(line, "\"Report-Msgid-Bugs-To"):
+		token = TokenTypeHeaderReportMsgidBugsTo
+	case strings.HasPrefix(line, "\"X-Generator"):
+		token = TokenTypeHeaderXGenerator
+	case strings.HasPrefix(line, "\"Generated-By"):
+		token = TokenTypeHeaderGeneratedBy
+	case strings.HasPrefix(line, "msgctxt"):
+		token = TokenTypeMsgCtxt
+	case strings.HasPrefix(line, "msgid_plural"):
+		token = TokenTypePluralMsgID
+	case strings.HasPrefix(line, "msgid"):
+		token = TokenTypeMsgID
+	case strings.HasPrefix(line, "msgstr["):
+		token = TokenTypePluralMsgStr
+	case strings.HasPrefix(line, "msgstr"):
+		token = TokenTypeMsgStr
+	case strings.HasPrefix(line, "#."):
+		token = TokenTypeExtractedComment
+	case strings.HasPrefix(line, "#:"):
+		token = TokenTypeReference
+	case strings.HasPrefix(line, "#| msgid_plural"):
+		token = TokenTypeMsgidPluralPrevUntStrPlural
+	case strings.HasPrefix(line, "#| msgid"):
+		token = TokenTypeMsgidPrevUntStr
+	case strings.HasPrefix(line, "#| msgctxt"):
+		token = TokenTypeMsgctxtPreviousContext
+	case strings.HasPrefix(line, "#,"):
+		token = TokenTypeFlag
+	case strings.HasPrefix(line, "#"):
+		token = TokenTypeTranslatorComment
+	// Special case for multiline strings, i.e. msgid, msgstr, msgid_plural, msgstr[*] and headers
+	case strings.HasPrefix(line, `"`):
+		return nil, parseMultilineValue(line, tokens)
 	}
+
+	return parseToken(line, token)
 }
 
-// parseToken function parses the line using the parseMsgString function, which returns a modified string and an error.
-// If there is no error a new Token object is created with the parsed value and the specified tokenType.
+// parseToken function parses the value of the token based on the token type.
+// On PluralMsgStr token type, it also tries parses the plural index.
 func parseToken(line string, tokenType TokenType) (*Token, error) {
-	val, err := parseMsgString(line)
-	if err != nil {
-		return nil, fmt.Errorf("incorrect format of header token: %w", err)
+	token := Token{Type: tokenType, Value: parseValue(line)}
+
+	// We assume that headers token have a newline at the end so we must trim it.
+	if tokenType < TokenTypeMsgCtxt {
+		token.Value = strings.TrimSuffix(token.Value, "\\n")
 	}
 
-	return &Token{
-		Value: val,
-		Type:  tokenType,
-	}, nil
-}
+	if tokenType != TokenTypePluralMsgStr {
+		return &token, nil
+	}
 
-// parsePluralMsgToken function first parses the plural index from the line string by finding the start and end indices
-// of the index value within square brackets. Then converts the extracted substring to an integer.
-func parsePluralMsgToken(line string) (*Token, error) {
 	// Parse the plural index from the line
-	indexStart := strings.Index(line, "[") + 1
+	indexStart := strings.Index(line, "[")
 	indexEnd := strings.Index(line, "]")
 
-	index, err := strconv.Atoi(line[indexStart:indexEnd])
-	if err != nil {
-		return nil, fmt.Errorf("convert string number to int: %w", err)
+	if indexStart == -1 || indexEnd == -1 || indexStart >= indexEnd {
+		return nil, errors.New("improperly formatted msgstr[*] or msgstr[*] not found in the string")
 	}
 
-	val, err := parseMsgString(line)
+	indexStr := line[indexStart+1 : indexEnd]
+
+	index, err := strconv.Atoi(indexStr)
 	if err != nil {
-		return nil, fmt.Errorf("incorrect format of plural msg token: %w", err)
+		return nil, fmt.Errorf("convert '%s' to int: %w", indexStr, err)
 	}
 
-	v := tokenPluralMsgStr(val, index)
+	token.Index = index
 
-	return &v, nil
+	return &token, nil
 }
 
-// parseCommentToken function parses the line using the parseMsgString function,
-// which returns a modified string and an error.
-func parseCommentToken(line string, tokenType TokenType) (*Token, error) {
-	val, err := parseMsgString(line)
-	if err != nil {
-		return nil, fmt.Errorf("incorrect format of comment token: %w", err)
-	}
-
-	return &Token{
-		Value: val,
-		Type:  tokenType,
-	}, nil
-}
-
-// parseMsgString first checks if the line has a valid prefix using the hasValidPrefix function.
-// If the prefix is not valid, it returns an empty string and an error indicating an incorrect format.
-func parseMsgString(line string) (string, error) {
-	if !hasValidPrefix(line) {
-		return "", errors.New("incorrect format of po tags")
-	}
-
+// parseValue parses the value of the token.
+// e.g.
+//
+//	"Language: en-US\n" -> en-US\n
+//	msgid "some text" -> some text
+//	#, python-format -> python-format
+//	#: superset/key_value/exceptions.py:54 -> superset/key_value/exceptions.py:54
+func parseValue(line string) string {
 	n := 2
-	fields := strings.SplitN(line, " ", n)
+	fields := strings.SplitN(line, " ", n) // prefix and value, e.g. fields[0] = msgid, fields[1] = "text", etc.
 
-	var tokenValue string
-
-	if len(fields) == n {
-		tokenValue = strings.TrimSpace(fields[1])
+	// No value, only prefix
+	if len(fields) != n {
+		return ""
 	}
 
-	if strings.HasPrefix(tokenValue, `"`) && strings.HasSuffix(tokenValue, `"`) {
-		// Remove the quotes and any escaped quotes
-		tokenValue = strings.ReplaceAll(tokenValue[1:len(tokenValue)-1], `\"`, `"`)
-	} else if strings.HasSuffix(tokenValue, "\\n\"") {
-		tokenValue = strings.ReplaceAll(tokenValue[:len(tokenValue)-2], "\\", ``)
-		tokenValue = strings.TrimSpace(tokenValue)
-	}
-
-	return tokenValue, nil
+	return strings.Trim(fields[1], `"`)
 }
 
-// parseMultilineToken function modifies the last token in the slice
-// by appending a parsed multiline string from the line. The modified token's value is trimmed of whitespace,
-// and the function returns nil for both the token pointer and the error.
-func parseMultilineToken(line string, tokens *[]Token) (*Token, error) {
-	lastToken := (*tokens)[len(*tokens)-1]
-	switch lastToken.Type { //nolint:exhaustive
-	case TokenTypeMsgID, TokenTypePluralMsgID, TokenTypeMsgStr, TokenTypePluralMsgStr:
-		lastToken.Value += " " + parseMultilineString(line)
-		lastToken.Value = strings.TrimSpace(lastToken.Value)
-		(*tokens)[len(*tokens)-1] = lastToken
+// parseMultilineValue parses the value of the multiline msgid, msgstr, msgid_plural, msgstr[*]
+// and headers tokens.
+// Instead of returning a parsed value, it appends it to the last token in the tokens slice.
+func parseMultilineValue(line string, tokens []Token) error {
+	lastToken := &tokens[len(tokens)-1]
+
+	switch lastToken.Type {
+	case TokenTypeMsgID, TokenTypePluralMsgID, TokenTypeMsgStr, TokenTypePluralMsgStr,
+		TokenTypeHeaderLanguage, TokenTypeHeaderTranslator, TokenTypeHeaderPluralForms,
+		TokenTypeHeaderProjectIDVersion, TokenTypeHeaderPOTCreationDate, TokenTypeHeaderPORevisionDate,
+		TokenTypeHeaderLanguageTeam, TokenTypeHeaderLastTranslator, TokenTypeHeaderXGenerator,
+		TokenTypeHeaderReportMsgidBugsTo, TokenTypeHeaderMIMEVersion, TokenTypeHeaderContentType,
+		TokenTypeHeaderContentTransferEncoding, TokenTypeHeaderGeneratedBy:
+		lastToken.Value += "\n" + strings.Trim(line, `"`)
+
+	case TokenTypeMsgCtxt, TokenTypeTranslatorComment, TokenTypeExtractedComment,
+		TokenTypeReference, TokenTypeFlag, TokenTypeMsgctxtPreviousContext,
+		TokenTypeMsgidPluralPrevUntStrPlural, TokenTypeMsgidPrevUntStr:
+		return fmt.Errorf("unsupported multiline string for token type: '%d'", lastToken.Type)
 	}
 
-	return nil, nil //nolint:nilnil
-}
-
-// parseMultilineString removes all double quote characters from the input line string and returns the modified string.
-func parseMultilineString(line string) string {
-	return strings.ReplaceAll(line, `"`, "")
-}
-
-// hasValidPrefix determines whether the provided line string has a valid prefix
-// by iterating through a collection of valid prefixes.
-func hasValidPrefix(line string) bool {
-	for _, prefix := range validPrefixes {
-		if strings.HasPrefix(line, prefix) {
-			return true
-		}
-	}
-
-	return false
+	return nil
 }
