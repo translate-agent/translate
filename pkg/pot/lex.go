@@ -66,32 +66,23 @@ func withIndex(index int) func(t *Token) {
 // Lex function performs lexical analysis on the input by reading lines from the reader
 // and parsing each line using the parseLine function.
 func Lex(r io.Reader) ([]Token, error) {
-	var (
-		tokens     []Token
-		lineNumber int
-	)
+	var tokens []Token
 
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
-		lineNumber++
-
-		line := scanner.Text()
-
-		line = strings.TrimSpace(line)
+		line := strings.TrimSpace(scanner.Text())
 		if len(line) == 0 {
 			continue
 		}
 
 		token, err := parseLine(line, tokens)
 		if err != nil {
-			return nil, fmt.Errorf("parse line \"%s\": %w", line, err)
+			return nil, fmt.Errorf(`parse line "%s": %w`, line, err)
 		}
 
-		if token == nil {
-			continue
+		if token != nil {
+			tokens = append(tokens, *token)
 		}
-
-		tokens = append(tokens, *token)
 	}
 
 	return tokens, nil
