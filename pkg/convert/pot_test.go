@@ -58,7 +58,7 @@ msgstr "Bonjour {user} | \"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "Bonjour le monde!",
+						Message:     "{{{{Bonjour le monde!}}}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 						Positions: []string{
@@ -68,7 +68,7 @@ msgstr "Bonjour {user} | \"
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "Au revoir!",
+						Message:     "{{{{Au revoir!}}}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 						Positions: []string{
@@ -245,13 +245,13 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!\nvery long string\n",
-						Message:     "Bonjour le monde!",
+						Message:     "{{{{Bonjour le monde!}}}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "Au revoir!",
+						Message:     "{{{{Au revoir!}}}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -282,13 +282,13 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!\n",
-						Message:     "Bonjour le monde!",
+						Message:     "{{{{Bonjour le monde!}}}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "Au revoir!",
+						Message:     "{{{{Au revoir!}}}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -317,13 +317,13 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "Bonjour le monde!\nvery long string\n",
+						Message:     "{{{{Bonjour le monde!\nvery long string\n}}}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "Au revoir!",
+						Message:     "{{{{Au revoir!}}}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -386,7 +386,7 @@ msgstr ""
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "Au revoir!",
+						Message:     "{{{{Au revoir!}}}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -445,7 +445,7 @@ msgstr "This is a \"quoted\" string"
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "Au revoir!",
+						Message:     "{{{{Au revoir!}}}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -755,8 +755,8 @@ msgstr[1] "Il y a %d pommes."
 			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
-					{ID: "Hello, world!", Message: "Bonjour le monde!", Description: "A simple greeting"},
-					{ID: "Goodbye!", Message: "Au revoir!", Description: "A farewell"},
+					{ID: "Hello, world!", Message: "{{{{Bonjour le monde!}}}}", Description: "A simple greeting"},
+					{ID: "Goodbye!", Message: "{{{{Au revoir!}}}}", Description: "A farewell"},
 				},
 			},
 			expected: []byte(`msgid ""
@@ -780,12 +780,12 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:      "Hello, world!",
-						Message: "Bonjour le monde!",
+						Message: "{{{{Bonjour le monde!}}}}",
 						Status:  model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "Au revoir!",
+						Message:     "{{{{Au revoir!}}}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -811,8 +811,8 @@ msgstr "Au revoir!"
 			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
-					{ID: "Hello, world!", Message: "Bonjour le monde!"},
-					{ID: "Goodbye!", Message: "Au revoir!"},
+					{ID: "Hello, world!", Message: "{{{{Bonjour le monde!}}}}"},
+					{ID: "Goodbye!", Message: "{{{{Au revoir!}}}}"},
 				},
 			},
 			expected: []byte(`msgid ""

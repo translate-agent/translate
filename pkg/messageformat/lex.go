@@ -6,6 +6,8 @@ import (
 	"unicode/utf8"
 )
 
+// TODO(jhorsts): use cursor position by line number and position in a line
+
 const eof = -1
 
 type tokenType int
