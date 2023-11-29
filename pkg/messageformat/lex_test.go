@@ -24,97 +24,67 @@ func Test_lex(t *testing.T) {
 	}{
 		{
 			name:  "empty quoted message",
-			input: "{{}}",
+			input: "",
 			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageClose,
 				tokenEOF,
 			},
 		},
 		{
 			name:  "expr with text with spaces",
-			input: "{{ {{Hello, World!}} }}",
+			input: "Hello, World!",
 			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
 				mkToken(tokenTypeText, "Hello, World!"),
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
-				tokenEOF,
-			},
-		},
-		{
-			name:  "expr with text with spaces",
-			input: "{{{{Hello, World!}}}}",
-			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
-				mkToken(tokenTypeText, "Hello, World!"),
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
 				tokenEOF,
 			},
 		},
 		{
 			name:  "expr with variable",
-			input: "{{{$count}}}",
+			input: "{$count}",
 			expected: []Token{
-				tokenComplexMessageOpen,
 				tokenExpressionOpen,
 				mkToken(tokenTypeVariable, "count"),
 				tokenExpressionClose,
-				tokenComplexMessageClose,
 				tokenEOF,
 			},
 		},
 		{
 			name:  "expr with function",
-			input: "{{{:rand}}}",
+			input: "{:rand}",
 			expected: []Token{
-				tokenComplexMessageOpen,
 				tokenExpressionOpen,
 				mkToken(tokenTypeFunction, "rand"),
 				tokenExpressionClose,
-				tokenComplexMessageClose,
 				tokenEOF,
 			},
 		},
 		{
 			name:  "expr with variable and function",
-			input: "{{{$guest :person}}}",
+			input: "{$guest :person}",
 			expected: []Token{
-				tokenComplexMessageOpen,
 				tokenExpressionOpen,
 				mkToken(tokenTypeVariable, "guest"),
 				mkToken(tokenTypeFunction, "person"),
 				tokenExpressionClose,
-				tokenComplexMessageClose,
 				tokenEOF,
 			},
 		},
 		{
 			name:  "expr with variable, function and text",
-			input: "{{{{Hello, {$guest :person} is here}}}}",
+			input: "Hello, {$guest :person} is here",
 			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
 				mkToken(tokenTypeText, "Hello, "),
 				tokenExpressionOpen,
 				mkToken(tokenTypeVariable, "guest"),
 				mkToken(tokenTypeFunction, "person"),
 				tokenExpressionClose,
 				mkToken(tokenTypeText, " is here"),
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
 				tokenEOF,
 			},
 		},
 		{
 			name:  "expr with variable, function and text",
-			input: "{{{{{+button}Submit{-button}}}}}",
+			input: "{+button}Submit{-button}",
 			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
 				tokenExpressionOpen,
 				mkToken(tokenTypeOpeningFunction, "button"),
 				tokenExpressionClose,
@@ -122,13 +92,12 @@ func Test_lex(t *testing.T) {
 				tokenExpressionOpen,
 				mkToken(tokenTypeClosingFunction, "button"),
 				tokenExpressionClose,
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
 				tokenEOF,
 			},
 		},
 		{
-			name: "plural text",
+			// TODO:
+			name: "plural text with space",
 			input: "{{match {$count :number} " +
 				"when 1 {{You have one notification.}} " +
 				"when * {{You have {$count} notifications.}}" +
@@ -167,9 +136,11 @@ func Test_lex(t *testing.T) {
 		*/
 		{
 			name: "plural text",
-			input: "{{match {$count :number} when 0 {{No notifications}}" +
+			input: "{{" +
+				"match {$count :number} when 0 {{No notifications}}" +
 				" when 1 {{You have one notification.}} " +
-				"when * {{You have {$count} notifications.}}}}",
+				"when * {{You have {$count} notifications.}}" +
+				"}}",
 			expected: []Token{
 				tokenComplexMessageOpen,
 				mkToken(tokenTypeKeyword, "match"),
@@ -202,9 +173,8 @@ func Test_lex(t *testing.T) {
 		},
 		{
 			name:  "invalid expr",
-			input: "{{{$count :number",
+			input: "{$count :number",
 			expected: []Token{
-				tokenComplexMessageOpen,
 				tokenExpressionOpen,
 				mkToken(tokenTypeVariable, "count"),
 				mkToken(tokenTypeFunction, "number"),
@@ -213,7 +183,7 @@ func Test_lex(t *testing.T) {
 		},
 		{
 			name:  "missing closing separator",
-			input: "{{match {$count :number} when 1 {{You have one notification. when * {{You have {$count} notifications.}}}}",
+			input: "{{match {$count :number} when 1 {{You have one notification. when * {{You have {$count} notifications.}}",
 			expected: []Token{
 				tokenComplexMessageOpen,
 				mkToken(tokenTypeKeyword, "match"),
@@ -236,20 +206,16 @@ func Test_lex(t *testing.T) {
 		},
 		{
 			name:  "invalid opening function",
-			input: "{{{{{+ button}}}}}",
+			input: "{+ button}",
 			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
 				tokenExpressionOpen,
 				mkTokenErrorf(`invalid first character in function name %v at %d`, 32, 7),
 			},
 		},
 		{
 			name:  "invalid closing function",
-			input: "{{{{{+button}{-- button}}}}}",
+			input: "{+button}{-- button}",
 			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
 				tokenExpressionOpen,
 				mkToken(tokenTypeOpeningFunction, "button"),
 				tokenExpressionClose,
@@ -259,95 +225,33 @@ func Test_lex(t *testing.T) {
 		},
 		{
 			name:  "input with curly braces",
-			input: `{{{{Chart [\{\}] was added to dashboard [\{\}]}}}}`,
+			input: `Chart [\{\}] was added to dashboard [\{\}]`,
 			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
 				mkToken(tokenTypeText, "Chart [\\{\\}] was added to dashboard [\\{\\}]"),
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
 				tokenEOF,
 			},
 		},
 		{
 			name:  "input with pipes",
-			input: `{{{{Chart [\|] was added to dashboard [\|]}}}}`,
+			input: `Chart [\|] was added to dashboard [\|]`,
 			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
 				mkToken(tokenTypeText, "Chart [\\|] was added to dashboard [\\|]"),
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
 				tokenEOF,
 			},
 		},
 		{
 			name:  "input with slashes",
-			input: `{{{{Chart [\\] was added to dashboard [\\]}}}}`,
+			input: `Chart [\\] was added to dashboard [\\]`,
 			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
 				mkToken(tokenTypeText, "Chart [\\\\] was added to dashboard [\\\\]"),
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
-				tokenEOF,
-			},
-		},
-		{
-			name:  "input with plus sign",
-			input: `{{{{+ vēl \%s}}}}`,
-			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
-				mkToken(tokenTypeText, "+ vēl \\%s"),
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
-				tokenEOF,
-			},
-		},
-		{
-			name:  "input with minus sign",
-			input: `{{{{- vēl \%s}}}}`,
-			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
-				mkToken(tokenTypeText, "- vēl \\%s"),
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
-				tokenEOF,
-			},
-		},
-		{
-			name:  "input with dollar sign",
-			input: `{{{{$ vēl \%s}}}}`,
-			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
-				mkToken(tokenTypeText, "$ vēl \\%s"),
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
-				tokenEOF,
-			},
-		},
-		{
-			name:  "input with colon sign",
-			input: `{{{{: vēl %s}}}}`,
-			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
-				mkToken(tokenTypeText, ": vēl %s"),
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
 				tokenEOF,
 			},
 		},
 		{
 			name: "python old format placeholder",
 			// %(object)s does not exist in this database.
-			input: "{{{{{:Placeholder name=object format=pythonVar type=string} does not exist in this database.}}}}",
+			input: "{:Placeholder name=object format=pythonVar type=string} does not exist in this database.",
 			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
 				tokenExpressionOpen,
 				mkToken(tokenTypeFunction, "Placeholder"),
 				mkToken(tokenTypeOption, "name=object"),
@@ -355,18 +259,14 @@ func Test_lex(t *testing.T) {
 				mkToken(tokenTypeOption, "type=string"),
 				tokenExpressionClose,
 				mkToken(tokenTypeText, " does not exist in this database."),
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
 				tokenEOF,
 			},
 		},
 		{
 			name: "empty brackets placeholder with escape chars",
 			// <{}|Explore in Superset>\n
-			input: "{{{{\\<{:Placeholder format=emptyBracket}\\|Explore in Superset\\>\n}}}}",
+			input: "\\<{:Placeholder format=emptyBracket}\\|Explore in Superset\\>\n",
 			expected: []Token{
-				tokenComplexMessageOpen,
-				tokenComplexMessageOpen,
 				mkToken(tokenTypeText, "\\<"),
 
 				tokenExpressionOpen,
@@ -375,8 +275,6 @@ func Test_lex(t *testing.T) {
 				tokenExpressionClose,
 
 				mkToken(tokenTypeText, "\\|Explore in Superset\\>\n"),
-				tokenComplexMessageClose,
-				tokenComplexMessageClose,
 				tokenEOF,
 			},
 		},

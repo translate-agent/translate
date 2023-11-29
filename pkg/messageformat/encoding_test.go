@@ -345,17 +345,17 @@ func Test_UnmarshalText(t *testing.T) {
 		},
 		{
 			name:     "text",
-			input:    []byte("{{{{Hello, World}}}}"),
+			input:    []byte("{{Hello, World}}"),
 			expected: AST{NodeText{Text: "Hello, World"}},
 		},
 		{
 			name:     "text with escaped curly braces",
-			input:    []byte("{{{{Hello, \\{World\\}}}}}"),
+			input:    []byte("{{Hello, \\{World\\}}}"),
 			expected: AST{NodeText{Text: "Hello, \\{World\\}"}},
 		},
 		{
 			name:  "text with variable",
-			input: []byte("{{{{Hello {$var} World}}}}"),
+			input: []byte("{{Hello {$var} World}}"),
 			expected: AST{
 				NodeText{Text: "Hello "},
 				NodeExpr{Value: NodeVariable{Name: "var"}},
@@ -364,7 +364,7 @@ func Test_UnmarshalText(t *testing.T) {
 		},
 		{
 			name:  "text with function",
-			input: []byte("{{{{Hello {:func} World}}}}"),
+			input: []byte("{{Hello {:func} World}}"),
 			expected: AST{
 				NodeText{Text: "Hello "},
 				NodeExpr{Function: NodeFunction{Name: "func"}},
@@ -373,7 +373,7 @@ func Test_UnmarshalText(t *testing.T) {
 		},
 		{
 			name:  "extracted placeholder pythonVar",
-			input: []byte("{{{{{:Placeholder name=object format=pythonVar type=string} does not exist in this database.}}}}"),
+			input: []byte("{{{:Placeholder name=object format=pythonVar type=string} does not exist in this database.}}"),
 			expected: AST{
 				NodeExpr{
 					Value: nil,
@@ -391,7 +391,7 @@ func Test_UnmarshalText(t *testing.T) {
 		},
 		{
 			name:  "extracted placeholders printf style",
-			input: []byte("{{{{{:Placeholder format=printf type=string} does not exist in {:Placeholder format=printf type=int}. database.}}}}"),
+			input: []byte("{{{:Placeholder format=printf type=string} does not exist in {:Placeholder format=printf type=int}. database.}}"),
 			expected: AST{
 				NodeExpr{
 					Value: nil,
@@ -420,7 +420,7 @@ func Test_UnmarshalText(t *testing.T) {
 		// plural tests
 		{
 			name:  "single match",
-			input: []byte("{{match {$count} when * {{Hello, world\\!}}}}"),
+			input: []byte("{{match {$count} when * {{Hello, world\\!}}"),
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}}},
@@ -432,7 +432,7 @@ func Test_UnmarshalText(t *testing.T) {
 		},
 		{
 			name:  "single match with function",
-			input: []byte("{{match {$count :number} when * {{Hello, world\\!}}}}"),
+			input: []byte("{{match {$count :number} when * {{Hello, world\\!}}"),
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
@@ -444,7 +444,7 @@ func Test_UnmarshalText(t *testing.T) {
 		},
 		{
 			name:  "match with multiple variants",
-			input: []byte("{{match {$count :number} when 1 {{Hello, friend\\!}} when * {{Hello, friends\\!}}}} "),
+			input: []byte("{{match {$count :number} when 1 {{Hello, friend\\!}} when * {{Hello, friends\\!}} "),
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},
@@ -477,7 +477,7 @@ func Test_UnmarshalText(t *testing.T) {
 			input: []byte("{{  match {$count :number} " +
 				"when 0 {{No apples\\!}} " +
 				"when 1 {{Buy {$count}{$counts} apple\\!}} " +
-				"when * {{Buy {$count} apples 2\\!}}}} "),
+				"when * {{Buy {$count} apples 2\\!}} "),
 			expected: AST{
 				NodeMatch{
 					Selectors: []NodeExpr{{Value: NodeVariable{Name: "count"}, Function: NodeFunction{Name: "number"}}},

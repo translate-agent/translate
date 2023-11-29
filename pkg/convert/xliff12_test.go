@@ -110,7 +110,7 @@ func Test_FromXliff12(t *testing.T) {
 					Messages: []model.Message{
 						{
 							ID:      "order canceled",
-							Message: `{{{{Order #{Id} has been canceled for {ClientName} | \}}}}`,
+							Message: `{{Order #{Id} has been canceled for {ClientName} | \}}`,
 						},
 					},
 				},
@@ -121,7 +121,7 @@ func Test_FromXliff12(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "order canceled",
-						Message: `{{{{Order #\{Id\} has been canceled for \{ClientName\} \| \\}}}}`,
+						Message: `{{Order #\{Id\} has been canceled for \{ClientName\} \| \\}}`,
 						Status:  model.MessageStatusUntranslated,
 					},
 				},
@@ -170,7 +170,7 @@ func Test_ToXliff12(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "common.welcome",
-						Message: `{{{{User #\{ID\} \| \\}}}}`,
+						Message: `{{User #\{ID\} \| \\}}`,
 					},
 				},
 			},

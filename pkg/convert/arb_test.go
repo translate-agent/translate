@@ -45,18 +45,18 @@ func Test_FromArb(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "title",
-						Message:     "{{{{Hello World!}}}}",
+						Message:     "{{Hello World!}}",
 						Description: `Message to greet the World`,
 						Status:      model.MessageStatusTranslated,
 					},
 					{
 						ID:      "greeting",
-						Message: `{{{{Welcome \{user\} \| \\ !}}}}`,
+						Message: `{{Welcome \{user\} \| \\ !}}`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "farewell",
-						Message: `{{{{Goodbye friend}}}}`,
+						Message: `{{Goodbye friend}}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -179,12 +179,12 @@ func Test_ToArb(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "title",
-						Message:     `{{{{Hello World!}}}}`,
+						Message:     `{{Hello World!}}`,
 						Description: "Message to greet the World",
 					},
 					{
 						ID:      "greeting",
-						Message: `{{{{Welcome Sion}}}}`,
+						Message: `{{Welcome Sion}}`,
 					},
 				},
 			},
@@ -205,15 +205,15 @@ func Test_ToArb(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "title",
-						Message: `{{{{Hello World!}}}}`,
+						Message: `{{Hello World!}}`,
 					},
 					{
 						ID:      "greeting",
-						Message: `{{{{Welcome \{user\} \| \\ !}}}}`,
+						Message: `{{Welcome \{user\} \| \\ !}}`,
 					},
 					{
 						ID:      "farewell",
-						Message: `{{{{Goodbye friend}}}}`,
+						Message: `{{Goodbye friend}}`,
 					},
 				},
 			},

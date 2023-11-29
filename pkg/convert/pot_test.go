@@ -28,7 +28,7 @@ func Test_ToPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     `{{{{Bonjour \{user\} \| \\}}}}`,
+						Message:     `{{Bonjour \{user\} \| \\}}`,
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 						Positions: []string{
@@ -58,7 +58,7 @@ msgstr "Bonjour {user} | \"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "{{{{Bonjour le monde!}}}}",
+						Message:     "{{Bonjour le monde!}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 						Positions: []string{
@@ -68,7 +68,7 @@ msgstr "Bonjour {user} | \"
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "{{{{Au revoir!}}}}",
+						Message:     "{{Au revoir!}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 						Positions: []string{
@@ -105,7 +105,7 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "{{{{Bonjour le monde!}}}}",
+						Message:     "{{Bonjour le monde!}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -129,7 +129,7 @@ msgstr "Bonjour le monde!"
 				Messages: []model.Message{
 					{
 						ID:      "Hello, world!",
-						Message: `{{{{Bonjour \{\} le monde!}}}}`,
+						Message: `{{Bonjour \{\} le monde!}}`,
 					},
 				},
 			},
@@ -149,7 +149,7 @@ msgstr "Bonjour {} le monde!"
 				Messages: []model.Message{
 					{
 						ID:      "Hello, world!",
-						Message: `{{{{Bonjour \\ le monde!}}}}`,
+						Message: `{{Bonjour \\ le monde!}}`,
 					},
 				},
 			},
@@ -169,7 +169,7 @@ msgstr "Bonjour \ le monde!"
 				Messages: []model.Message{
 					{
 						ID:      "Hello, world!",
-						Message: `{{{{Bonjour \| le monde!}}}}`,
+						Message: `{{Bonjour \| le monde!}}`,
 					},
 				},
 			},
@@ -189,7 +189,7 @@ msgstr "Bonjour | le monde!"
 				Messages: []model.Message{
 					{
 						ID:      "Hello, world!",
-						Message: `{{{{Bonjour \|\| le monde!}}}}`,
+						Message: `{{Bonjour \|\| le monde!}}`,
 					},
 				},
 			},
@@ -209,13 +209,13 @@ msgstr "Bonjour || le monde!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "{{{{Bonjour le monde!}}}}",
+						Message:     "{{Bonjour le monde!}}",
 						Description: "A simple greeting\nmultiline description",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "{{{{Au revoir!}}}}",
+						Message:     "{{Au revoir!}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -245,13 +245,13 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!\nvery long string\n",
-						Message:     "{{{{Bonjour le monde!}}}}",
+						Message:     "{{Bonjour le monde!}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "{{{{Au revoir!}}}}",
+						Message:     "{{Au revoir!}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -282,13 +282,13 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!\n",
-						Message:     "{{{{Bonjour le monde!}}}}",
+						Message:     "{{Bonjour le monde!}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "{{{{Au revoir!}}}}",
+						Message:     "{{Au revoir!}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -317,13 +317,13 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "{{{{Bonjour le monde!\nvery long string\n}}}}",
+						Message:     "{{Bonjour le monde!\nvery long string\n}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "{{{{Au revoir!}}}}",
+						Message:     "{{Au revoir!}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -354,7 +354,7 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "{{{{Bonjour le monde!\nvery long string}}}}\n",
+						Message:     "{{Bonjour le monde!\nvery long string}}\n",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -380,13 +380,13 @@ msgstr ""
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "{{{{This is a \"quoted\" string}}}}",
+						Message:     "{{This is a \"quoted\" string}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "{{{{Au revoir!}}}}",
+						Message:     "{{Au revoir!}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -415,7 +415,7 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "{{{{This is a \"quoted\" string}}}}",
+						Message:     "{{This is a \"quoted\" string}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -439,13 +439,13 @@ msgstr "This is a \"quoted\" string"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, \"world!\"",
-						Message:     "{{{{Bonjour le monde!}}}}",
+						Message:     "{{Bonjour le monde!}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "{{{{Au revoir!}}}}",
+						Message:     "{{Au revoir!}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -474,13 +474,13 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:          "Hello, world!",
-						Message:     "{{{{Bonjour le monde!}}}}",
+						Message:     "{{Bonjour le monde!}}",
 						Description: "A simple greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "{{{{Au revoir!}}}}",
+						Message:     "{{Au revoir!}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -509,7 +509,7 @@ msgstr "Au revoir!"
 					{
 						ID:          "There is %d apple.",
 						PluralID:    "There are %d apples.",
-						Message:     "{{match {$count :number}\nwhen 1 {{Il y a {$count} pomme.}}\nwhen * {{Il y a {$count} pommes.}}}}",
+						Message:     "{{match {$count :number}\nwhen 1 {{Il y a {$count} pomme.}}\nwhen * {{Il y a {$count} pommes.}}",
 						Description: "apple counts",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -535,7 +535,7 @@ msgstr[1] "Il y a %d pommes."
 				Messages: []model.Message{
 					{
 						ID:          "There is apple.",
-						Message:     "{{{{Il y a pomme.}}}}",
+						Message:     "{{Il y a pomme.}}",
 						Description: "apple counts",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -559,7 +559,7 @@ msgstr "Il y a pomme."
 				Messages: []model.Message{
 					{
 						ID:          "There is apple.",
-						Message:     "{{{{Il y \na pomme.}}}}",
+						Message:     "{{Il y \na pomme.}}",
 						Description: "apple counts",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -585,7 +585,7 @@ msgstr ""
 				Messages: []model.Message{
 					{
 						ID:          "There is apple.",
-						Message:     "{{{{Il y a \"pomme\".}}}}",
+						Message:     "{{Il y a \"pomme\".}}",
 						Description: "apple counts",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -610,7 +610,7 @@ msgstr "Il y a \"pomme\"."
 					{
 						ID:          "There is %d apple.",
 						PluralID:    "There are %d apples.",
-						Message:     "{{match {$count :number}\nwhen 1 {{Il y a {$count}\npomme.}}\nwhen * {{Il y a {$count} pommes.}}}}",
+						Message:     "{{match {$count :number}\nwhen 1 {{Il y a {$count}\npomme.}}\nwhen * {{Il y a {$count} pommes.}}",
 						Description: "apple counts",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -644,7 +644,7 @@ msgstr[1] "Il y a %d pommes."
 							"pomme.\n" +
 							"one more line.}}\n" +
 							"when * {{Il y a {$count}\n" +
-							"pommes.}}}}",
+							"pommes.}}",
 						Description: "apple counts",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -677,14 +677,14 @@ msgstr[1] ""
 					{
 						ID:          "There is %d apple.",
 						PluralID:    "There are %d apples.",
-						Message:     "{{match {$count :number}\nwhen 1 {{Il y a {$count} pomme.}}\nwhen * {{Il y a {$count} pommes.}}}}",
+						Message:     "{{match {$count :number}\nwhen 1 {{Il y a {$count} pomme.}}\nwhen * {{Il y a {$count} pommes.}}",
 						Description: "apple counts",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "There is %d apple.",
 						PluralID:    "There are %d apples.",
-						Message:     "{{match {$count :number}\nwhen 1 {{Il y a {$count} pomme.}}\nwhen * {{Il y a {$count} pommes.}}}}",
+						Message:     "{{match {$count :number}\nwhen 1 {{Il y a {$count} pomme.}}\nwhen * {{Il y a {$count} pommes.}}",
 						Description: "apple counts",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -719,14 +719,14 @@ msgstr[1] "Il y a %d pommes."
 					{
 						ID:          "There is %d apple.",
 						PluralID:    "There are %d apples.",
-						Message:     "{{match {$count :number}\nwhen 1 {{Il y a {$count} pomme.}}\nwhen * {{Il y a {$count} pommes.}}}}",
+						Message:     "{{match {$count :number}\nwhen 1 {{Il y a {$count} pomme.}}\nwhen * {{Il y a {$count} pommes.}}",
 						Description: "apple counts",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "There is %d apple.",
 						PluralID:    "There are %d apples.",
-						Message:     "{{match {$count :number}\nwhen 1 {{Il y a {$count} pomme.}}\nwhen * {{Il y a {$count} pommes.}}}}",
+						Message:     "{{match {$count :number}\nwhen 1 {{Il y a {$count} pomme.}}\nwhen * {{Il y a {$count} pommes.}}",
 						Description: "apple counts",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -755,8 +755,8 @@ msgstr[1] "Il y a %d pommes."
 			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
-					{ID: "Hello, world!", Message: "{{{{Bonjour le monde!}}}}", Description: "A simple greeting"},
-					{ID: "Goodbye!", Message: "{{{{Au revoir!}}}}", Description: "A farewell"},
+					{ID: "Hello, world!", Message: "{{Bonjour le monde!}}", Description: "A simple greeting"},
+					{ID: "Goodbye!", Message: "{{Au revoir!}}", Description: "A farewell"},
 				},
 			},
 			expected: []byte(`msgid ""
@@ -780,12 +780,12 @@ msgstr "Au revoir!"
 				Messages: []model.Message{
 					{
 						ID:      "Hello, world!",
-						Message: "{{{{Bonjour le monde!}}}}",
+						Message: "{{Bonjour le monde!}}",
 						Status:  model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye!",
-						Message:     "{{{{Au revoir!}}}}",
+						Message:     "{{Au revoir!}}",
 						Description: "A farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -811,8 +811,8 @@ msgstr "Au revoir!"
 			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
-					{ID: "Hello, world!", Message: "{{{{Bonjour le monde!}}}}"},
-					{ID: "Goodbye!", Message: "{{{{Au revoir!}}}}"},
+					{ID: "Hello, world!", Message: "{{Bonjour le monde!}}"},
+					{ID: "Goodbye!", Message: "{{Au revoir!}}"},
 				},
 			},
 			expected: []byte(`msgid ""
@@ -874,13 +874,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{{{{Hello, world!}}}}",
+						Message:     "{{Hello, world!}}",
 						Description: "a greeting",
 						Status:      model.MessageStatusUntranslated,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "{{{{Goodbye, world!}}}}",
+						Message:     "{{Goodbye, world!}}",
 						Description: "a farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -907,13 +907,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{{{{Hello, world!}}}}",
+						Message:     "{{Hello, world!}}",
 						Description: "a greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "{{{{Goodbye, world!}}}}",
+						Message:     "{{Goodbye, world!}}",
 						Description: "a farewell",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -938,13 +938,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{{{{Hello, world!}}}}",
+						Message:     "{{Hello, world!}}",
 						Description: "a greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "{{{{Goodbye, world!}}}}",
+						Message:     "{{Goodbye, world!}}",
 						Description: "a farewell",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -969,13 +969,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{{{{Hello, world!}}}}",
+						Message:     "{{Hello, world!}}",
 						Description: "a greeting",
 						Status:      model.MessageStatusUntranslated,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "{{{{Goodbye, world!}}}}",
+						Message:     "{{Goodbye, world!}}",
 						Description: "a farewell",
 						Status:      model.MessageStatusUntranslated,
 					},
@@ -1005,13 +1005,13 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{{{{\nHello, world!\\\\n\nvery long string\\\\n}}}}",
+						Message:     "{{\nHello, world!\\\\n\nvery long string\\\\n}}",
 						Description: "a greeting\n a greeting2",
 						Status:      model.MessageStatusUntranslated,
 					},
 					{
 						ID:          "Goodbye",
-						Message:     "{{{{Goodbye, world!}}}}",
+						Message:     "{{Goodbye, world!}}",
 						Description: "a farewell",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -1036,7 +1036,7 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "\nHello\\n\nHello2\\n",
-						Message:     "{{{{Hello, world!}}}}",
+						Message:     "{{Hello, world!}}",
 						Description: "a greeting",
 						Status:      model.MessageStatusFuzzy,
 					},
@@ -1084,19 +1084,19 @@ func TestFromPot(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:        "Greetings",
-						Message:   "{{{{Bonjour}}}}",
+						Message:   "{{Bonjour}}",
 						Positions: []string{"examples/simple/example.clj:10"},
 						Status:    model.MessageStatusUntranslated,
 					},
 					{
 						ID:        "Please confirm your email",
-						Message:   "{{{{Veuillez confirmer votre email}}}}",
+						Message:   "{{Veuillez confirmer votre email}}",
 						Positions: []string{"examples/simple/example.clj:20"},
 						Status:    model.MessageStatusUntranslated,
 					},
 					{
 						ID:        "Welcome, %s!",
-						Message:   "{{{{Bienvenue, %s!}}}}",
+						Message:   "{{Bienvenue, %s!}}",
 						Positions: []string{"examples/simple/example.clj:30"},
 						Status:    model.MessageStatusUntranslated,
 					},
@@ -1148,7 +1148,7 @@ when * {{Il y a {$count} pommes.}}
 					},
 					{
 						ID:      "hi",
-						Message: "{{{{ciao}}}}",
+						Message: "{{ciao}}",
 						Status:  model.MessageStatusUntranslated,
 					},
 				},
@@ -1262,7 +1262,7 @@ when * {{Il y a {$count} pommes.}}
 				Messages: []model.Message{
 					{
 						ID:          "Hello",
-						Message:     "{{{{Hello}}}}",
+						Message:     "{{Hello}}",
 						Description: "a greeting",
 						Status:      model.MessageStatusTranslated,
 					},
@@ -1378,7 +1378,7 @@ when *
 				Messages: []model.Message{
 					{
 						ID:      "+ {%s} hello",
-						Message: `{{{{+ \{%s\} hello}}}}`,
+						Message: `{{+ \{%s\} hello}}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -1398,7 +1398,7 @@ when *
 				Messages: []model.Message{
 					{
 						ID:      "+ | hello",
-						Message: `{{{{+ \| hello}}}}`,
+						Message: `{{+ \| hello}}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -1418,7 +1418,7 @@ when *
 				Messages: []model.Message{
 					{
 						ID:      "+ || hello",
-						Message: `{{{{+ \|\| hello}}}}`,
+						Message: `{{+ \|\| hello}}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -1438,7 +1438,7 @@ when *
 				Messages: []model.Message{
 					{
 						ID:      "+ \\ hello",
-						Message: `{{{{+ \\ hello}}}}`,
+						Message: `{{+ \\ hello}}`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},

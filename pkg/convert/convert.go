@@ -16,7 +16,7 @@ func convertToMessageFormatSingular(message string) string {
 
 	message = escapeSpecialChars(message)
 
-	return "{{{{" + message + "}}}}"
+	return "{{" + message + "}}"
 }
 
 // escapeSpecialChars escapes special characters in a string.
