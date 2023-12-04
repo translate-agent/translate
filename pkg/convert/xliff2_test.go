@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 	"testing/quick"
 
@@ -37,9 +38,9 @@ func randXliff2(translation *model.Translation) []byte {
 
 	b.WriteString("<file>")
 
-	writeMsg := func(s string) { fmt.Fprintf(b, "<segment><target>%s</target></segment>", s[1:len(s)-1]) }
+	writeMsg := func(s string) { fmt.Fprintf(b, "<segment><target>%s</target></segment>", s) }
 	if translation.Original {
-		writeMsg = func(s string) { fmt.Fprintf(b, "<segment><source>%s</source></segment>", s[1:len(s)-1]) }
+		writeMsg = func(s string) { fmt.Fprintf(b, "<segment><source>%s</source></segment>", s) }
 	}
 
 	for _, msg := range translation.Messages {
@@ -58,6 +59,10 @@ func randXliff2(translation *model.Translation) []byte {
 
 			fmt.Fprintf(b, "</notes>")
 		}
+
+		// TODO: temporary fix, remove after #205-MF2-Complex-Messages-Support is resolved.
+		msg.Message = strings.TrimPrefix(msg.Message, "{")
+		msg.Message = strings.TrimSuffix(msg.Message, "}")
 
 		writeMsg(msg.Message)
 
@@ -80,7 +85,7 @@ func assertEqualXML(t *testing.T, expected, actual []byte) bool { //nolint:unpar
 	return assert.Equal(t, expectedTrimmed, actualTrimmed)
 }
 
-func Test_FromXliff2(t *testing.T) {
+func Test_FromXliff2_Random(t *testing.T) {
 	t.Parallel()
 
 	originalTranslation := testutilrand.ModelTranslation(
@@ -88,12 +93,22 @@ func Test_FromXliff2(t *testing.T) {
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
 		testutilrand.WithOriginal(true),
 	)
-
 	nonOriginalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusUntranslated)},
 		testutilrand.WithOriginal(false),
 	)
+
+	// TODO: temporary fix, remove after #205-MF2-Complex-Messages-Support is resolved.
+	for i := range originalTranslation.Messages {
+		originalTranslation.Messages[i].Message = strings.TrimPrefix(originalTranslation.Messages[i].Message, "{")
+		originalTranslation.Messages[i].Message = strings.TrimSuffix(originalTranslation.Messages[i].Message, "}")
+	}
+
+	for i := range nonOriginalTranslation.Messages {
+		nonOriginalTranslation.Messages[i].Message = strings.TrimPrefix(nonOriginalTranslation.Messages[i].Message, "{")
+		nonOriginalTranslation.Messages[i].Message = strings.TrimSuffix(nonOriginalTranslation.Messages[i].Message, "}")
+	}
 
 	tests := []struct {
 		name     string
@@ -119,7 +134,7 @@ func Test_FromXliff2(t *testing.T) {
 					Messages: []model.Message{
 						{
 							ID:      "order canceled",
-							Message: `{Order #{Id} has been canceled for {ClientName} | \}`,
+							Message: `Order #{Id} has been canceled for {ClientName} | \`,
 						},
 					},
 				},
@@ -130,8 +145,66 @@ func Test_FromXliff2(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "order canceled",
-						Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
+						Message: `Order \#\{Id\} has been canceled for \{ClientName\} \| \\`,
 						Status:  model.MessageStatusUntranslated,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual, err := FromXliff2(tt.data, &tt.expected.Original)
+			require.NoError(t, err)
+
+			testutil.EqualTranslations(t, tt.expected, &actual)
+		})
+	}
+}
+
+// Test_FromXliff2_Default tests Xliff 2.0 default 'acc. to specification' format.
+// TODO: add support for custom Xliff 2.0 implementations - apple (plurals), angular, etc..
+func Test_FromXliff2_Default(t *testing.T) {
+	t.Parallel()
+
+	//nolint:lll
+	tests := []struct {
+		expected    *model.Translation
+		expectedErr error
+		name        string
+		data        []byte
+	}{
+		{
+			name: "original, message with placeholders",
+			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
+			<xliff version="2.0"
+				xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang="en">
+				<file>
+					<unit id="1">
+						<originalData>
+							<data id="d1">%d</data>
+							<data id="d2">&lt;br/></data>
+						</originalData>
+						<segment>
+							<source>Entries: <ph id="1" dataRef="d1" canCopy="no" canDelete="no" canOverlap="yes"/>!` +
+				`<ph id="2" dataRef="d2" canCopy="no" canDelete="no" canOverlap="yes"/>(Filtered)</source>
+					</segment>
+				</unit>
+			</file>
+			</xliff>`),
+			expected: &model.Translation{
+				Original: true,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID: "1",
+						Message: "Entries: {:Placeholder format=printf type=int value=%d id=1 dataRef=d1 canCopy=no canDelete=no canOverlap=yes}\\!" +
+							"{:Placeholder format=misc value=<br/> id=2 dataRef=d2 canCopy=no canDelete=no canOverlap=yes}(Filtered)",
+						Status: model.MessageStatusTranslated,
 					},
 				},
 			},
@@ -216,7 +289,6 @@ func Test_TransformXLIFF2(t *testing.T) {
 	t.Parallel()
 
 	msgOpts := []testutilrand.ModelMessageOption{
-		// Enclose message in curly braces, as ToXliff2() removes them, and FromXliff2() adds them again
 		testutilrand.WithStatus(model.MessageStatusTranslated),
 	}
 
@@ -234,6 +306,12 @@ func Test_TransformXLIFF2(t *testing.T) {
 
 		parsed, err := FromXliff2(serialized, &expected.Original)
 		require.NoError(t, err)
+
+		// TODO: temporary fix, remove after #205-MF2-Complex-Messages-Support is resolved.
+		for i := range expected.Messages {
+			expected.Messages[i].Message = strings.TrimPrefix(expected.Messages[i].Message, "{")
+			expected.Messages[i].Message = strings.TrimSuffix(expected.Messages[i].Message, "}")
+		}
 
 		testutil.EqualTranslations(t, expected, &parsed)
 
