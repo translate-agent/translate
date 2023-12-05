@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"regexp"
 
 	mf2 "go.expect.digital/translate/pkg/messageformat"
 	"go.expect.digital/translate/pkg/model"
@@ -159,6 +158,7 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 		xlf.TrgLang = translation.Language
 	}
 
+	// TODO: implement MF2 to Xliff 2.0 conversion.
 	for _, msg := range translation.Messages {
 		message, err := getMsg(msg.Message)
 		if err != nil {
@@ -284,29 +284,15 @@ func messageFromContent(content string, originalData *[]data) (string, error) {
 
 // writePlaceholder writes MF2 compliant placeholder expression to bytes.Buffer.
 func writePlaceholder(buf *bytes.Buffer, ph placeholder, originalData *[]data) error {
-	phExpr := mf2.NodeExpr{
-		Function: mf2.NodeFunction{
-			Name:    "Placeholder",
-			Options: make([]mf2.NodeOption, 0, len(*ph.Attributes)+2), //nolint:gomnd
-		},
-	}
+	pf := mf2.GetPlaceholderFormat("")
+	phExpr := pf.NodeExprF("", pf.Re.FindStringSubmatchIndex(""))
 
-	// include details about format specifier if referenced in the original data.
 	if ph.DataRef != "" && originalData != nil {
+		// include details about format specifier if referenced in the original data.
 		for _, data := range *originalData {
 			if ph.DataRef == data.ID {
-				pf := mf2.GetPlaceholderFormat(data.Content)
-
-				// If placeholder format is not recognized, default to miscellaneous format.
-				if pf == nil {
-					pf = &mf2.PlaceholderFormat{
-						Re:        regexp.MustCompile(`^`),
-						NodeExprF: mf2.CreateNodeExpr("misc"),
-					}
-				}
-
-				expr := pf.NodeExprF(data.Content, pf.Re.FindStringSubmatchIndex(data.Content))
-				phExpr.Function.Options = append(phExpr.Function.Options, expr.Function.Options...)
+				pf = mf2.GetPlaceholderFormat(data.Content)
+				phExpr = pf.NodeExprF(data.Content, pf.Re.FindStringSubmatchIndex(data.Content))
 				// include format specifier
 				phExpr.Function.Options = append(phExpr.Function.Options, mf2.NodeOption{Name: "value", Value: data.Content})
 
@@ -316,7 +302,7 @@ func writePlaceholder(buf *bytes.Buffer, ph placeholder, originalData *[]data) e
 	}
 
 	// add placeholder attributes to function options
-	if ph.DataRef != "" {
+	if ph.ID != "" {
 		phExpr.Function.Options = append(phExpr.Function.Options, mf2.NodeOption{Name: "id", Value: ph.ID})
 	}
 

@@ -178,7 +178,7 @@ func Test_FromXliff2_Default(t *testing.T) {
 		data        []byte
 	}{
 		{
-			name: "original, message with placeholders",
+			name: "original, source content with placeholders",
 			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
 			<xliff version="2.0"
 				xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang="en">
@@ -204,6 +204,33 @@ func Test_FromXliff2_Default(t *testing.T) {
 						Message: "Entries: {:Placeholder format=printf type=int value=%d id=1 dataRef=d1 canCopy=no canDelete=no canOverlap=yes}\\!" +
 							"{:Placeholder format=misc value=<br/> id=2 dataRef=d2 canCopy=no canDelete=no canOverlap=yes}(Filtered)",
 						Status: model.MessageStatusTranslated,
+					},
+				},
+			},
+		},
+		{
+			name: "translation, target content with placeholders, placeholder specifiers not provided",
+			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
+			<xliff version="2.0"
+				xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang ="en" trgLang="en">
+				<file>
+					<unit id="1">
+						<segment>
+							<target>Entries: <ph id="1" canCopy="no" canDelete="no" canOverlap="yes"/>!` +
+				`<ph id="2" canCopy="no" canDelete="no" canOverlap="yes"/>(Filtered)</target>
+					</segment>
+				</unit>
+			</file>
+			</xliff>`),
+			expected: &model.Translation{
+				Original: false,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID: "1",
+						Message: "Entries: {:Placeholder format=misc id=1 canCopy=no canDelete=no canOverlap=yes}\\!" +
+							"{:Placeholder format=misc id=2 canCopy=no canDelete=no canOverlap=yes}(Filtered)",
+						Status: model.MessageStatusUntranslated,
 					},
 				},
 			},

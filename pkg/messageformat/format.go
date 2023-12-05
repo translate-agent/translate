@@ -55,5 +55,9 @@ func GetPlaceholderFormat(formatSpecifier string) *PlaceholderFormat {
 		}
 	}
 
-	return nil
+	// If placeholder format is not recognized, default to miscellaneous format.
+	return &PlaceholderFormat{
+		Re:        regexp.MustCompile(`^`),
+		NodeExprF: CreateNodeExpr("misc"),
+	}
 }
