@@ -16,8 +16,9 @@ import (
 // TODO: For now we can only import XLIFF 2.0 files, export is not working correctly yet.
 
 // XLIFF was standardized by OASIS in 2002.
-// It's latest specification is v2.1, released on 2018-02-13.
-// This implementation follows v2.0 specification, 2014-08-05.
+// Currently latest version is v2.1 (released on 2018-02-13).
+
+// This implementation follows v2.0 specification (last updated 2014-08-05).
 // XLIFF 2.0 Specification: https://docs.oasis-open.org/xliff/xliff-core/v2.0/os/xliff-core-v2.0-os.html
 // XLIFF 2.0 Example: https://localizely.com/xliff-file/?tab=xliff-20
 
@@ -228,7 +229,20 @@ func positionsToXliff2(positions model.Positions) *[]note {
 	return &notes
 }
 
-// messageFromContent extracts 'Message Format v2' compliant message from unit source/target.
+/*
+	messageFromContent extracts 'Message Format v2' compliant message from unit source/target content.
+
+Examples:
+input:
+
+	"Entries: <ph id="1" dataRef="d1" canCopy="no" canDelete="no" canOverlap="yes"/>!",
+	&[]data{{ID: "d1", Content: "%d"}}
+
+output:
+
+	"Entries: {:Placeholder format=printf type=int value=%d id=1 dataRef=d1 canCopy=no canDelete=no canOverlap=yes}\\!",
+	nil
+*/
 func messageFromContent(content string, originalData *[]data) (string, error) {
 	var buf bytes.Buffer
 
