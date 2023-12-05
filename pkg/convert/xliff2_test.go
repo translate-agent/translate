@@ -167,7 +167,6 @@ func Test_FromXliff2_Random(t *testing.T) {
 }
 
 // Test_FromXliff2_Default tests Xliff 2.0 default 'acc. to specification' format.
-// TODO: add support for custom Xliff 2.0 implementations - apple (plurals), angular, etc..
 func Test_FromXliff2_Default(t *testing.T) {
 	t.Parallel()
 

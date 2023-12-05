@@ -258,3 +258,39 @@ func ParseTranslation(translation *model.Translation) ([]AST, error) {
 
 	return asts, nil
 }
+
+// specialChars is a list of characters that need to be escaped in the node.Text,
+// because they are either syntax characters or reserved keywords.
+var specialChars = map[rune]struct{}{
+	// Syntax characters
+	'{':  {},
+	'}':  {},
+	'\\': {},
+	'|':  {},
+	// Reserved keywords (Future syntax characters)
+	'!': {},
+	'@': {},
+	'#': {},
+	'%': {},
+	'*': {},
+	'<': {},
+	'>': {},
+	'/': {},
+	'?': {},
+	'~': {},
+}
+
+// EscapeSpecialChars escapes special characters in the given text.
+func EscapeSpecialChars(text string) string {
+	var sb strings.Builder
+
+	for _, c := range text {
+		if _, ok := specialChars[c]; ok {
+			sb.WriteRune('\\')
+		}
+
+		sb.WriteRune(c)
+	}
+
+	return sb.String()
+}

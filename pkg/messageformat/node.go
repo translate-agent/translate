@@ -132,3 +132,56 @@ func (t TextNodes) OverwriteTexts(text []string) error {
 
 	return nil
 }
+
+// CreateNodeExpr creates a NodeExpr factory function for the given format.
+//
+// Example:
+//
+//	CreateNodeExpr("pythonVar")("hello %(var)s", re.FindStringSubmatchIndex("hello %(var)s", -1))
+//
+// Result:
+//
+//	NodeExpr{
+//		Function: NodeFunction{
+//				Name: "Placeholder",
+//				Options: []NodeOption{
+//					{Name: "format", Value: "pythonVar"},
+//					{Name: "name", Value: "var"},
+//					{Name: "type", Value: "string"},
+//					},
+//				},
+//			}
+func CreateNodeExpr(format string, opts ...NodeOption) func(string, []int) NodeExpr {
+	return func(text string, indices []int) NodeExpr {
+		var varName, varType string
+
+		switch format {
+		case "pythonVar":
+			varName, varType = text[indices[2]:indices[3]], printfVerbs[text[indices[4]:indices[5]]]
+		case "printf":
+			varType = printfVerbs[text[indices[2]:indices[3]]]
+		case "bracketVar":
+			varName = text[indices[2]:indices[3]]
+		case "emptyBracket":
+		}
+
+		var options []NodeOption
+
+		// Add placeholder format
+		options = append(options, NodeOption{Name: "format", Value: format})
+
+		// Add variable name
+		if varName != "" {
+			options = append(options, NodeOption{Name: "name", Value: varName})
+		}
+
+		// Add variable type
+		if varType != "" {
+			options = append(options, NodeOption{Name: "type", Value: varType})
+		}
+
+		options = append(options, opts...)
+
+		return NodeExpr{Function: NodeFunction{Name: "Placeholder", Options: options}}
+	}
+}

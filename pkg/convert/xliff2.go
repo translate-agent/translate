@@ -15,8 +15,11 @@ import (
 
 // TODO: For now we can only import XLIFF 2.0 files, export is not working correctly yet.
 
-// XLIFF 2 Specification: https://docs.oasis-open.org/xliff/xliff-core/v2.0/os/xliff-core-v2.0-os.html
-// XLIFF 2 Example: https://localizely.com/xliff-file/?tab=xliff-20
+// XLIFF was standardized by OASIS in 2002.
+// It's latest specification is v2.1, released on 2018-02-13.
+// This implementation follows v2.0 specification, 2014-08-05.
+// XLIFF 2.0 Specification: https://docs.oasis-open.org/xliff/xliff-core/v2.0/os/xliff-core-v2.0-os.html
+// XLIFF 2.0 Example: https://localizely.com/xliff-file/?tab=xliff-20
 
 type xliff2 struct {
 	XMLName xml.Name     `xml:"urn:oasis:names:tc:xliff:document:2.0 xliff"`
@@ -31,13 +34,13 @@ type xliff2File struct {
 }
 
 type unit struct {
-	ID           string  `xml:"id,attr"`                  // translation.messages[n].ID
-	Notes        *[]note `xml:"notes>note"`               // set as pointer to avoid empty <notes></notes> when marshalling
-	OriginalData *[]data `xml:"originalData>data"`        // contains the original data for given inline code
-	Source       message `xml:"segment>source"`           // translation.messages[n].Message (if no target language is set)
-	Target       message `xml:"segment>target,omitempty"` // translation.messages[n].Message (if target language is set)
+	ID           string  `xml:"id,attr"`           // translation.messages[n].ID
+	Notes        *[]note `xml:"notes>note"`        // set as pointer to avoid empty <notes></notes> when marshalling
+	OriginalData *[]data `xml:"originalData>data"` // contains the original data for given inline code
+	Source       message `xml:"segment>source"`    // translation.messages[n].Message (if no target language is set)
+	Target       message `xml:"segment>target"`    // translation.messages[n].Message (if target language is set)
 
-	// NOTE: Xliff 2.0 has no unified standard for storing fuzzy values, plurals, gender.
+	// NOTE: Xliff 2.0 has no unified standard for storing fuzzy values, plurals, gender specific text.
 }
 
 type data struct {
@@ -57,9 +60,10 @@ type message struct {
 // Xliff 2.0 placeholder element specification:
 // https://docs.oasis-open.org/xliff/xliff-core/v2.0/xliff-core-v2.0.html#ph
 type placeholder struct {
-	ID         string      `xml:"id,attr"`      // required attribute, currently not enforced
-	DataRef    string      `xml:"dataRef,attr"` // optional attribute, holds the identifier of the <data> element
-	Attributes *[]xml.Attr `xml:",any,attr"`    // other attributes, please refer to URL above for more details
+	Attributes *[]xml.Attr `xml:",any,attr"` // other attributes, refer to URL above for more details
+
+	ID      string `xml:"id,attr"`      // required attribute, currently not enforced
+	DataRef string `xml:"dataRef,attr"` // optional attribute, holds the identifier of the <data> element
 }
 
 // FromXliff2 converts serialized data from the XML data in the XLIFF 2 format into a model.Translation struct.
@@ -273,6 +277,7 @@ func writePlaceholder(buf *bytes.Buffer, ph placeholder, originalData *[]data) e
 		},
 	}
 
+	// include details about format specifier if referenced in the original data.
 	if ph.DataRef != "" && originalData != nil {
 		for _, data := range *originalData {
 			if ph.DataRef == data.ID {
