@@ -64,10 +64,7 @@ var rootCmd = &cobra.Command{
 			}
 		}()
 
-		grpcServer := grpc.NewServer(
-			grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
-			grpc.StreamInterceptor(otelgrpc.StreamServerInterceptor()),
-		)
+		grpcServer := grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
 		// Gracefully stops GRPC server.
 		defer grpcServer.GracefulStop()
 
@@ -122,8 +119,7 @@ var rootCmd = &cobra.Command{
 			addr,
 			[]grpc.DialOption{
 				grpc.WithTransportCredentials(insecure.NewCredentials()),
-				grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
-				grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor()),
+				grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 			})
 		if err != nil {
 			log.Panicf("register translate service: %v", err)
