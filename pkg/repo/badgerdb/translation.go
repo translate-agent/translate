@@ -20,27 +20,54 @@ func translationKey(serviceID uuid.UUID, language language.Tag) []byte {
 	return []byte(fmt.Sprintf("%s%s:%s", translationPrefix, serviceID, language))
 }
 
+func (r *Repo) Tx(ctx context.Context, fn func(repo.TranslationsRepo) error) error {
+	// start transaction
+	tx := r.db.NewTransaction(true)
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Discard()
+		}
+	}()
+
+	if err := fn(&Repo{db: r.db, tx: tx}); err != nil {
+		tx.Discard()
+
+		return fmt.Errorf("repo: execute tx: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("repo: commit tx: %w", err)
+	}
+
+	return nil
+}
+
 // SaveTranslation handles both Create and Update.
 func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
+	if r.tx != nil { // use existing tx
+		return r.saveTranslation(ctx, serviceID, translation)
+	}
+
+	// create new tx
+	return r.Tx(ctx, func(tr repo.TranslationsRepo) error {
+		return tr.SaveTranslation(ctx, serviceID, translation) //nolint:wrapcheck
+	})
+}
+
+func (r *Repo) saveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
 	_, err := r.LoadService(ctx, serviceID)
 	if err != nil {
 		return fmt.Errorf("repo: load service: %w", err)
 	}
 
-	err = r.db.Update(func(txn *badger.Txn) error {
-		val, marshalErr := json.Marshal(translation)
-		if marshalErr != nil {
-			return fmt.Errorf("marshal translation: %w", err)
-		}
-
-		if setErr := txn.Set(translationKey(serviceID, translation.Language), val); setErr != nil {
-			return fmt.Errorf("transaction: set translation: %w", err)
-		}
-
-		return nil
-	})
+	b, err := json.Marshal(translation)
 	if err != nil {
-		return fmt.Errorf("repo: db update: %w", err)
+		return fmt.Errorf("marshal translation: %w", err)
+	}
+
+	if err := r.tx.Set(translationKey(serviceID, translation.Language), b); err != nil {
+		return fmt.Errorf("repo: set translation: %w", err)
 	}
 
 	return nil

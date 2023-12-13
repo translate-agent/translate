@@ -11,6 +11,7 @@ import (
 // Repo implements the repo interface.
 type Repo struct {
 	db *badger.DB
+	tx *badger.Txn
 }
 
 func (r *Repo) Close() error {

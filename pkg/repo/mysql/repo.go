@@ -10,6 +10,7 @@ import (
 
 type Repo struct {
 	db *sql.DB
+	tx *sql.Tx
 }
 
 func (r *Repo) Close() error {

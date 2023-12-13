@@ -153,18 +153,24 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	}
 
 	// Update affected translations
-	for i := range all {
-		err = t.repo.SaveTranslation(ctx, params.serviceID, &all[i])
-
-		switch {
-		case errors.Is(err, repo.ErrNotFound):
-			return nil, status.Errorf(codes.NotFound, "service not found")
-		case err != nil:
-			return nil, status.Errorf(codes.Internal, "")
+	txErr := t.repo.Tx(ctx, func(tr repo.TranslationsRepo) error {
+		for i := range all {
+			if err := t.repo.SaveTranslation(ctx, params.serviceID, &all[i]); err != nil {
+				return fmt.Errorf("save translation: %w", err)
+			}
 		}
-	}
 
-	return &emptypb.Empty{}, nil
+		return nil
+	})
+
+	switch {
+	default:
+		return &emptypb.Empty{}, nil
+	case errors.Is(txErr, repo.ErrNotFound):
+		return nil, status.Errorf(codes.NotFound, "service not found")
+	case txErr != nil:
+		return nil, status.Errorf(codes.Internal, "")
+	}
 }
 
 // ----------------------DownloadTranslationFile-------------------------------

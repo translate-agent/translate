@@ -13,23 +13,53 @@ import (
 	"golang.org/x/text/language"
 )
 
+func (r *Repo) Tx(ctx context.Context, fn func(repo.TranslationsRepo) error) error {
+	// start transaction
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("repo: begin tx: %w", err)
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback() //nolint:errcheck
+		}
+	}()
+
+	if err = fn(&Repo{db: r.db, tx: tx}); err != nil {
+		tx.Rollback() //nolint:errcheck
+
+		return fmt.Errorf("repo: execute tx: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("repo: commit tx: %w", err)
+	}
+
+	return nil
+}
+
 func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
+	if r.tx != nil { // use existing tx
+		return r.saveTranslation(ctx, serviceID, translation)
+	}
+
+	// create new tx
+	return r.Tx(ctx, func(tr repo.TranslationsRepo) error {
+		return tr.SaveTranslation(ctx, serviceID, translation) //nolint:wrapcheck
+	})
+}
+
+func (r *Repo) saveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
 	_, err := r.LoadService(ctx, serviceID)
 	if err != nil {
 		return fmt.Errorf("repo: load service: %w", err)
 	}
 
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("repo: begin tx to save translation: %w", err)
-	}
-
-	defer tx.Rollback() //nolint:errcheck
-
 	// Check if translation already exist
 	var translationID uuid.UUID
 
-	row := tx.QueryRowContext(
+	row := r.tx.QueryRowContext(
 		ctx,
 		`SELECT id FROM translation WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
 		serviceID,
@@ -46,7 +76,7 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 	case errors.Is(err, sql.ErrNoRows):
 		translationID = uuid.New()
 
-		if _, err = tx.ExecContext(
+		if _, err = r.tx.ExecContext(
 			ctx,
 			`INSERT INTO translation (id, service_id, language, original) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
 			translationID,
@@ -65,7 +95,7 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 	// Insert into message table,
 	// on duplicate message.id and message.translation_id,
 	// update message's message, description and status values.
-	stmt, err := tx.PrepareContext(
+	stmt, err := r.tx.PrepareContext(
 		ctx,
 		`INSERT INTO message
 	(translation_id, id, message, description, positions, status)
@@ -95,10 +125,6 @@ ON DUPLICATE KEY UPDATE
 		if err != nil {
 			return fmt.Errorf("repo: insert message: %w", err)
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("repo: commit tx to save translation: %w", err)
 	}
 
 	return nil
