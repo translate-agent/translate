@@ -62,3 +62,5 @@ linters-settings:
     alias:
       - pkg: go.expect.digital/translate/pkg/pb/translate/v1
         alias: translatev1
+  predeclared:
+    ignore: ""
