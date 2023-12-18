@@ -8,15 +8,26 @@ import (
 	"github.com/Masterminds/squirrel"
 )
 
+type DB interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+}
+
 type Repo struct {
-	db *sql.DB
-	tx *sql.Tx
+	db DB
 }
 
 func (r *Repo) Close() error {
-	err := r.db.Close()
-	if err != nil {
-		return fmt.Errorf("close mysql db: %w", err)
+	if db, ok := r.db.(*sql.DB); ok {
+		err := db.Close()
+		if err != nil {
+			return fmt.Errorf("close mysql db: %w", err)
+		}
 	}
 
 	return nil

@@ -13,11 +13,22 @@ import (
 	"golang.org/x/text/language"
 )
 
+// Tx executes a transaction on the repository.
+// Returns an error if there was an error starting the transaction,
+// executing the callback function, or committing the transaction.
 func (r *Repo) Tx(ctx context.Context, fn func(repo.TranslationsRepo) error) error {
-	// start transaction
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("repo: begin tx: %w", err)
+	var (
+		tx  *sql.Tx
+		err error
+	)
+
+	switch db := r.db.(type) {
+	case *sql.DB: // start transaction
+		if tx, err = db.BeginTx(ctx, nil); err != nil {
+			return fmt.Errorf("repo: begin tx: %w", err)
+		}
+	case *sql.Tx: // use existing transaction
+		tx = db
 	}
 
 	defer func() {
@@ -26,7 +37,7 @@ func (r *Repo) Tx(ctx context.Context, fn func(repo.TranslationsRepo) error) err
 		}
 	}()
 
-	if err = fn(&Repo{db: r.db, tx: tx}); err != nil {
+	if err = fn(&Repo{db: tx}); err != nil {
 		tx.Rollback() //nolint:errcheck
 
 		return fmt.Errorf("repo: execute tx: %w", err)
@@ -40,7 +51,7 @@ func (r *Repo) Tx(ctx context.Context, fn func(repo.TranslationsRepo) error) err
 }
 
 func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
-	if r.tx != nil { // use existing tx
+	if _, ok := r.db.(*sql.Tx); ok { // use existing tx
 		return r.saveTranslation(ctx, serviceID, translation)
 	}
 
@@ -59,7 +70,7 @@ func (r *Repo) saveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 	// Check if translation already exist
 	var translationID uuid.UUID
 
-	row := r.tx.QueryRowContext(
+	row := r.db.QueryRowContext(
 		ctx,
 		`SELECT id FROM translation WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
 		serviceID,
@@ -76,7 +87,7 @@ func (r *Repo) saveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 	case errors.Is(err, sql.ErrNoRows):
 		translationID = uuid.New()
 
-		if _, err = r.tx.ExecContext(
+		if _, err = r.db.ExecContext(
 			ctx,
 			`INSERT INTO translation (id, service_id, language, original) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
 			translationID,
@@ -95,7 +106,7 @@ func (r *Repo) saveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 	// Insert into message table,
 	// on duplicate message.id and message.translation_id,
 	// update message's message, description and status values.
-	stmt, err := r.tx.PrepareContext(
+	stmt, err := r.db.PrepareContext(
 		ctx,
 		`INSERT INTO message
 	(translation_id, id, message, description, positions, status)
