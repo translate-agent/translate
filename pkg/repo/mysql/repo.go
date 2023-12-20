@@ -8,6 +8,7 @@ import (
 	"github.com/Masterminds/squirrel"
 )
 
+// DB interface defines method signatures found both in sql.DB and sql.Tx.
 type DB interface {
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	Query(query string, args ...interface{}) (*sql.Rows, error)
@@ -24,8 +25,7 @@ type Repo struct {
 
 func (r *Repo) Close() error {
 	if db, ok := r.db.(*sql.DB); ok {
-		err := db.Close()
-		if err != nil {
+		if err := db.Close(); err != nil {
 			return fmt.Errorf("close mysql db: %w", err)
 		}
 	}
