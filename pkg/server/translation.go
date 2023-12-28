@@ -159,8 +159,9 @@ func (t *TranslateServiceServer) ListTranslations(
 
 type updateTranslationParams struct {
 	translation          *model.Translation
-	serviceID            uuid.UUID
+	mask                 model.Mask
 	populateTranslations bool
+	serviceID            uuid.UUID
 }
 
 func parseUpdateTranslationRequestParams(req *translatev1.UpdateTranslationRequest) (*updateTranslationParams, error) {
@@ -175,6 +176,10 @@ func parseUpdateTranslationRequestParams(req *translatev1.UpdateTranslationReque
 
 	if params.translation, err = translationFromProto(req.GetTranslation()); err != nil {
 		return nil, fmt.Errorf("parse translation: %w", err)
+	}
+
+	if params.mask, err = maskFromProto(req.GetTranslation(), req.GetUpdateMask()); err != nil {
+		return nil, fmt.Errorf("parse mask: %w", err)
 	}
 
 	return &params, nil
@@ -245,6 +250,12 @@ func (t *TranslateServiceServer) UpdateTranslation(
 
 		if err = t.fuzzyTranslate(ctx, all); err != nil {
 			return nil, status.Errorf(codes.Internal, "")
+		}
+	}
+
+	for i := range all {
+		if err = model.UpdateTranslation(params.translation, &all[i], params.mask); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, err.Error())
 		}
 	}
 

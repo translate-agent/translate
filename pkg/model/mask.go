@@ -93,13 +93,8 @@ func updateField(src, dst reflect.Value, fields []string) {
 			} else {
 				dstField.Set(srcField)
 			}
-
 		case reflect.Slice:
-			//nolint:lll
-			// If the field is a slice, append new values from src to existing slice in dst
-			// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
-			dstField.Set(reflect.AppendSlice(dstField, srcField))
-
+			updateSliceField(srcField, dstField)
 		case reflect.Map:
 			// Same rule for maps as for slices
 			for _, key := range srcField.MapKeys() {
@@ -113,6 +108,33 @@ func updateField(src, dst reflect.Value, fields []string) {
 
 		return
 	}
+}
+
+// updateSliceField this function updates a destination slice by either replacing a struct with a matching ID
+// or appending new values if no matching ID is found.
+func updateSliceField(srcField, dstField reflect.Value) {
+	// Check if the elements of the source slice are of kind struct
+	if srcField.Type().Elem().Kind() == reflect.Struct &&
+		srcField.Len() > 0 && srcField.Index(0).Kind() == reflect.Struct {
+		// Check if the structure has an ID field
+		if _, ok := srcField.Index(0).Type().FieldByName("ID"); ok {
+			// Iterate through the destination slice to find a structure with a matching ID
+			for j := 0; j < dstField.Len(); j++ {
+				// Check if the "ID" field of the first element in the source slice
+				// matches the "ID" field of the current element in the destination slice.
+				if srcField.Index(0).FieldByName("ID").Interface() == dstField.Index(j).FieldByName("ID").Interface() {
+					// If found, update the corresponding structure in the destination slice
+					dstField.Index(j).Set(srcField.Index(0))
+					return
+				}
+			}
+		}
+	}
+
+	// If the field is a slice, append new values from src to existing slice in dst
+	//nolint:lll
+	// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
+	dstField.Set(reflect.AppendSlice(dstField, srcField))
 }
 
 // ---------------------Model Implementations---------------------
@@ -131,6 +153,20 @@ func UpdateService(src, dst *Service, mask Mask) error {
 	// When mask is nil dstService is updated with all fields from srcService
 	// So we need to make sure that the ID is not updated
 	src.ID = dst.ID
+	update(src, dst, mask)
+
+	return nil
+}
+
+// UpdateTranslation updates the destination translation based on the source translation and field mask.
+func UpdateTranslation(src, dst *Translation, mask Mask) error {
+	// Prevent updating read-only fields like ID
+	if slices.ContainsFunc(mask, func(s string) bool {
+		return strings.EqualFold(s, "ID")
+	}) {
+		return errors.New("\"id\" is not allowed in field mask")
+	}
+
 	update(src, dst, mask)
 
 	return nil

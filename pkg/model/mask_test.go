@@ -8,6 +8,8 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"golang.org/x/text/language"
 )
 
 // deepCopy makes a deep copy of src and returns it.
@@ -296,6 +298,95 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			require.NoError(t, err)
 
 			tt.assertFunc(t, srcCopy, dstCopy, original)
+		})
+	}
+}
+
+func Test_UpdateTranslationFromMask(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		assertFunc     func(t *testing.T, srcTranslation, dstTranslation, original Translation)
+		name           string
+		expectedErr    error
+		fieldMask      Mask
+		srcTranslation Translation
+		dstTranslation Translation
+		expected       Translation
+	}{
+		{
+			name:           "Update Original",
+			fieldMask:      Mask{"Original"},
+			dstTranslation: Translation{Original: true, Language: language.English},
+			srcTranslation: Translation{Original: false, Language: language.Latvian},
+			expected:       Translation{Original: false, Language: language.English},
+			assertFunc: func(t *testing.T, srcTranslation, dstTranslation, original Translation) {
+				require.Equal(t, srcTranslation.Original, dstTranslation.Original)
+				require.Equal(t, original.Language, dstTranslation.Language)
+				require.Equal(t, original.Messages, dstTranslation.Messages)
+			},
+		},
+		{
+			name:           "Update Language",
+			fieldMask:      Mask{"Language"},
+			dstTranslation: Translation{Original: true, Language: language.English},
+			srcTranslation: Translation{Original: false, Language: language.Latvian},
+			expected:       Translation{Original: true, Language: language.Latvian},
+			assertFunc: func(t *testing.T, srcTranslation, dstTranslation, original Translation) {
+				require.Equal(t, srcTranslation.Language, dstTranslation.Language)
+				require.Equal(t, original.Original, dstTranslation.Original)
+				require.Equal(t, original.Messages, dstTranslation.Messages)
+			},
+		},
+		{
+			name:           "Update Messages",
+			fieldMask:      Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{{ID: "1", Message: "Hello"}}},
+			srcTranslation: Translation{Messages: []Message{{ID: "1", Message: "World", Status: MessageStatusTranslated}}},
+			expected:       Translation{Messages: []Message{{ID: "1", Message: "World", Status: MessageStatusTranslated}}},
+			assertFunc: func(t *testing.T, srcTranslation, dstTranslation, original Translation) {
+				require.Equal(t, srcTranslation.Messages, dstTranslation.Messages)
+				require.Equal(t, original.Language, dstTranslation.Language)
+				require.Equal(t, original.Original, dstTranslation.Original)
+			},
+		},
+		{
+			name:           "Update Messages add newMsg",
+			fieldMask:      Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{{ID: "1", Message: "Hello"}}},
+			srcTranslation: Translation{Messages: []Message{{ID: "2", Message: "World"}}},
+			expected:       Translation{Messages: []Message{{ID: "1", Message: "Hello"}, {ID: "2", Message: "World"}}},
+			assertFunc: func(t *testing.T, srcTranslation, dstTranslation, original Translation) {
+				require.Len(t, dstTranslation.Messages, len(srcTranslation.Messages)+len(original.Messages))
+				require.Subset(t, dstTranslation.Messages, srcTranslation.Messages)
+				require.Subset(t, dstTranslation.Messages, original.Messages)
+				require.Equal(t, original.Language, dstTranslation.Language)
+				require.Equal(t, original.Original, dstTranslation.Original)
+			},
+		},
+		{
+			name:        "Try to update ID",
+			fieldMask:   Mask{"ID"},
+			expectedErr: errors.New("\"id\" is not allowed in field mask"),
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			original := deepCopy(t, tt.dstTranslation)
+
+			err := UpdateTranslation(&tt.srcTranslation, &tt.dstTranslation, tt.fieldMask)
+
+			if tt.expectedErr != nil {
+				require.EqualError(t, err, tt.expectedErr.Error())
+				return
+			}
+
+			require.NoError(t, err)
+			tt.assertFunc(t, tt.srcTranslation, tt.dstTranslation, original)
 		})
 	}
 }
