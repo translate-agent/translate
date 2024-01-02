@@ -94,10 +94,7 @@ func updateField(src, dst reflect.Value, fields []string) {
 				dstField.Set(srcField)
 			}
 		case reflect.Slice:
-			// If the field is a slice, append new values from src to existing slice in dst
-			//nolint:lll
-			// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
-			dstField.Set(reflect.AppendSlice(dstField, srcField))
+			updateSliceField(srcField, dstField)
 		case reflect.Map:
 			// Same rule for maps as for slices
 			for _, key := range srcField.MapKeys() {
@@ -116,28 +113,45 @@ func updateField(src, dst reflect.Value, fields []string) {
 // updateSliceField this function updates a destination slice by either replacing a struct with a matching ID
 // or appending new values if no matching ID is found.
 func updateSliceField(srcField, dstField reflect.Value) {
-	// Check if the elements of the source slice are of kind struct
-	if srcField.Type().Elem().Kind() == reflect.Struct &&
-		srcField.Len() > 0 && srcField.Index(0).Kind() == reflect.Struct {
-		// Check if the structure has an ID field
-		if _, ok := srcField.Index(0).Type().FieldByName("ID"); ok {
-			// Iterate through the destination slice to find a structure with a matching ID
-			for j := 0; j < dstField.Len(); j++ {
-				// Check if the "ID" field of the first element in the source slice
-				// matches the "ID" field of the current element in the destination slice.
-				if srcField.Index(0).FieldByName("ID").Interface() == dstField.Index(j).FieldByName("ID").Interface() {
-					// If found, update the corresponding structure in the destination slice
-					dstField.Index(j).Set(srcField.Index(0))
-					return
-				}
-			}
+	appendOnly := func() bool {
+		el := srcField.Type().Elem()
+
+		if el.Kind() != reflect.Struct {
+			return true
 		}
+
+		_, ok := el.FieldByName("ID")
+
+		return !ok
 	}
 
-	// If the field is a slice, append new values from src to existing slice in dst
-	//nolint:lll
-	// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
-	dstField.Set(reflect.AppendSlice(dstField, srcField))
+	if appendOnly() {
+		// If the field is a slice, append new values from src to existing slice in dst
+		//nolint:lll
+		// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
+		dstField.Set(reflect.AppendSlice(dstField, srcField))
+		return
+	}
+
+	for i := 0; i < srcField.Len(); i++ {
+		found := false
+
+		for j := 0; j < dstField.Len(); j++ {
+			// Check if the "ID" field of the first element in the source slice
+			// matches the "ID" field of the current element in the destination slice.
+			if srcField.Index(i).FieldByName("ID").Interface() == dstField.Index(j).FieldByName("ID").Interface() {
+				// If found, update the corresponding structure in the destination slice
+				dstField.Index(j).Set(srcField.Index(i))
+
+				found = true
+			}
+		}
+
+		if !found {
+			dstField.Set(reflect.Append(dstField, srcField.Index(i)))
+			continue
+		}
+	}
 }
 
 // ---------------------Model Implementations---------------------
@@ -163,40 +177,7 @@ func UpdateService(src, dst *Service, mask Mask) error {
 
 // UpdateTranslation updates the destination translation based on the source translation and field mask.
 func UpdateTranslation(src, dst *Translation, mask Mask) error {
-	// nonMsgField will store the field paths that are not related to "Messages."
-	nonMsgField := []string{}
-
-	for _, path := range mask {
-		switch path {
-		case "Messages":
-			// If the path is "Messages," extract the subfields and access the corresponding fields in src and dst.
-			fields := strings.Split(path, ".")
-			srcField, dstField := reflect.ValueOf(src).Elem(), reflect.ValueOf(dst).Elem()
-
-			// Iterate through the fields of dst to find the matching field for "Messages."
-			for i := 0; i < dstField.NumField(); i++ {
-				// Check if the field name matches the first part of the path ("Messages").
-				if !strings.EqualFold(dstField.Type().Field(i).Name, fields[0]) {
-					continue
-				}
-
-				// If the field is a slice, update the slice field.
-				if dstField.Field(i).Kind() == reflect.Slice {
-					updateSliceField(srcField.Field(i), dstField.Field(i))
-				}
-			}
-
-			continue
-		default:
-			// If the path is not related to "Messages," add it to the nonMsgField slice.
-			nonMsgField = append(nonMsgField, path)
-		}
-	}
-
-	// If there are non-"Messages" fields, call the update function.
-	if len(nonMsgField) > 0 {
-		update(src, dst, nonMsgField)
-	}
+	update(src, dst, mask)
 
 	return nil
 }

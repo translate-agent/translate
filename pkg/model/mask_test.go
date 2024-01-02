@@ -306,7 +306,6 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		assertFunc     func(t *testing.T, srcTranslation, dstTranslation, original Translation)
 		name           string
 		expectedErr    error
 		fieldMask      Mask
@@ -320,11 +319,6 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 			dstTranslation: Translation{Original: true, Language: language.English},
 			srcTranslation: Translation{Original: false, Language: language.Latvian},
 			expected:       Translation{Original: false, Language: language.English},
-			assertFunc: func(t *testing.T, srcTranslation, dstTranslation, original Translation) {
-				require.Equal(t, srcTranslation.Original, dstTranslation.Original)
-				require.Equal(t, original.Language, dstTranslation.Language)
-				require.Equal(t, original.Messages, dstTranslation.Messages)
-			},
 		},
 		{
 			name:           "Update Original and Messages",
@@ -332,37 +326,125 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 			dstTranslation: Translation{Original: true, Language: language.English, Messages: []Message{{ID: "1", Message: "Hello"}}},  //nolint:lll
 			srcTranslation: Translation{Original: false, Language: language.Latvian, Messages: []Message{{ID: "1", Message: "World"}}}, //nolint:lll
 			expected:       Translation{Original: false, Language: language.English, Messages: []Message{{ID: "1", Message: "World"}}}, //nolint:lll
-			assertFunc: func(t *testing.T, srcTranslation, dstTranslation, original Translation) {
-				require.Equal(t, srcTranslation.Original, dstTranslation.Original)
-				require.Equal(t, srcTranslation.Messages, dstTranslation.Messages)
-				require.Equal(t, original.Language, dstTranslation.Language)
-			},
 		},
 		{
 			name:           "Update Messages",
 			fieldMask:      Mask{"Messages"},
-			dstTranslation: Translation{Messages: []Message{{ID: "1", Message: "Hello"}}},
+			dstTranslation: Translation{Messages: []Message{{ID: "1", Message: "Hello", Status: MessageStatusUntranslated}}},
 			srcTranslation: Translation{Messages: []Message{{ID: "1", Message: "World", Status: MessageStatusTranslated}}},
 			expected:       Translation{Messages: []Message{{ID: "1", Message: "World", Status: MessageStatusTranslated}}},
-			assertFunc: func(t *testing.T, srcTranslation, dstTranslation, original Translation) {
-				require.Equal(t, srcTranslation.Messages, dstTranslation.Messages)
-				require.Equal(t, original.Language, dstTranslation.Language)
-				require.Equal(t, original.Original, dstTranslation.Original)
-			},
 		},
 		{
-			name:           "Update Messages add newMsg",
+			name:      "Update multiple Messages",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
+				{ID: "2", Message: "Bonjour", Status: MessageStatusTranslated},
+			}},
+			srcTranslation: Translation{Messages: []Message{
+				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
+				{ID: "1", Message: "World", Status: MessageStatusTranslated},
+			}},
+			expected: Translation{Messages: []Message{
+				{ID: "1", Message: "World", Status: MessageStatusTranslated},
+				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
+			}},
+		},
+		{
+			name:           "Update Messages add new Message",
 			fieldMask:      Mask{"Messages"},
 			dstTranslation: Translation{Messages: []Message{{ID: "1", Message: "Hello"}}},
 			srcTranslation: Translation{Messages: []Message{{ID: "2", Message: "World"}}},
 			expected:       Translation{Messages: []Message{{ID: "1", Message: "Hello"}, {ID: "2", Message: "World"}}},
-			assertFunc: func(t *testing.T, srcTranslation, dstTranslation, original Translation) {
-				require.Len(t, dstTranslation.Messages, len(srcTranslation.Messages)+len(original.Messages))
-				require.Subset(t, dstTranslation.Messages, srcTranslation.Messages)
-				require.Subset(t, dstTranslation.Messages, original.Messages)
-				require.Equal(t, original.Language, dstTranslation.Language)
-				require.Equal(t, original.Original, dstTranslation.Original)
-			},
+		},
+		{
+			name:      "Update Messages add multiple Messages",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello"},
+			}},
+			srcTranslation: Translation{Messages: []Message{
+				{ID: "2", Message: "World"},
+				{ID: "3", Message: "Sun"},
+				{ID: "4", Message: "Bye"},
+			}},
+			expected: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello"},
+				{ID: "2", Message: "World"},
+				{ID: "3", Message: "Sun"},
+				{ID: "4", Message: "Bye"},
+			}},
+		},
+		{
+			name:      "add Messages add update existing Messages in random order",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello"},
+			}},
+			srcTranslation: Translation{Messages: []Message{
+				{ID: "2", Message: "World"},
+				{ID: "3", Message: "Sun"},
+				{ID: "4", Message: "Bye"},
+				{ID: "1", Message: "World"},
+			}},
+			expected: Translation{Messages: []Message{
+				{ID: "1", Message: "World"},
+				{ID: "2", Message: "World"},
+				{ID: "3", Message: "Sun"},
+				{ID: "4", Message: "Bye"},
+			}},
+		},
+		{
+			name:      "Update multiple Messages and add new Message",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
+				{ID: "2", Message: "Bonjour", Status: MessageStatusTranslated},
+			}},
+			srcTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "World", Status: MessageStatusTranslated},
+				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
+				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
+			}},
+			expected: Translation{Messages: []Message{
+				{ID: "1", Message: "World", Status: MessageStatusTranslated},
+				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
+				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
+			}},
+		},
+		{
+			name:      "Update multiple Messages and add new Message",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
+				{ID: "2", Message: "Bonjour", Status: MessageStatusTranslated},
+			}},
+			srcTranslation: Translation{Messages: []Message{
+				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
+				{ID: "1", Message: "World", Status: MessageStatusTranslated},
+				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
+			}},
+			expected: Translation{Messages: []Message{
+				{ID: "1", Message: "World", Status: MessageStatusTranslated},
+				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
+				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
+			}},
+		},
+		{
+			name:      "Add one Message to multiples",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
+				{ID: "2", Message: "Bonjour", Status: MessageStatusTranslated},
+			}},
+			srcTranslation: Translation{Messages: []Message{
+				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
+			}},
+			expected: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
+				{ID: "2", Message: "Bonjour", Status: MessageStatusTranslated},
+				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
+			}},
 		},
 	}
 
@@ -370,8 +452,6 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
-			original := deepCopy(t, tt.dstTranslation)
 
 			err := UpdateTranslation(&tt.srcTranslation, &tt.dstTranslation, tt.fieldMask)
 
@@ -381,7 +461,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			tt.assertFunc(t, tt.srcTranslation, tt.dstTranslation, original)
+			assert.Equal(t, tt.expected, tt.dstTranslation)
 		})
 	}
 }
