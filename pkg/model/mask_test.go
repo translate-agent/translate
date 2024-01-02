@@ -327,15 +327,15 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 			},
 		},
 		{
-			name:           "Update Language",
-			fieldMask:      Mask{"Language"},
-			dstTranslation: Translation{Original: true, Language: language.English},
-			srcTranslation: Translation{Original: false, Language: language.Latvian},
-			expected:       Translation{Original: true, Language: language.Latvian},
+			name:           "Update Original and Messages",
+			fieldMask:      Mask{"Original", "Messages"},
+			dstTranslation: Translation{Original: true, Language: language.English, Messages: []Message{{ID: "1", Message: "Hello"}}},  //nolint:lll
+			srcTranslation: Translation{Original: false, Language: language.Latvian, Messages: []Message{{ID: "1", Message: "World"}}}, //nolint:lll
+			expected:       Translation{Original: false, Language: language.English, Messages: []Message{{ID: "1", Message: "World"}}}, //nolint:lll
 			assertFunc: func(t *testing.T, srcTranslation, dstTranslation, original Translation) {
-				require.Equal(t, srcTranslation.Language, dstTranslation.Language)
-				require.Equal(t, original.Original, dstTranslation.Original)
-				require.Equal(t, original.Messages, dstTranslation.Messages)
+				require.Equal(t, srcTranslation.Original, dstTranslation.Original)
+				require.Equal(t, srcTranslation.Messages, dstTranslation.Messages)
+				require.Equal(t, original.Language, dstTranslation.Language)
 			},
 		},
 		{
@@ -363,11 +363,6 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 				require.Equal(t, original.Language, dstTranslation.Language)
 				require.Equal(t, original.Original, dstTranslation.Original)
 			},
-		},
-		{
-			name:        "Try to update ID",
-			fieldMask:   Mask{"ID"},
-			expectedErr: errors.New("\"id\" is not allowed in field mask"),
 		},
 	}
 

@@ -253,10 +253,11 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		}
 	}
 
-	for i := range all {
-		if err = model.UpdateTranslation(params.translation, &all[i], params.mask); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, err.Error())
-		}
+	if err = model.UpdateTranslation(
+		params.translation,
+		&all[all.LanguageIndex(params.translation.Language)],
+		params.mask); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	// Update affected translations

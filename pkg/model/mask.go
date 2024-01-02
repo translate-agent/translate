@@ -94,7 +94,10 @@ func updateField(src, dst reflect.Value, fields []string) {
 				dstField.Set(srcField)
 			}
 		case reflect.Slice:
-			updateSliceField(srcField, dstField)
+			// If the field is a slice, append new values from src to existing slice in dst
+			//nolint:lll
+			// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
+			dstField.Set(reflect.AppendSlice(dstField, srcField))
 		case reflect.Map:
 			// Same rule for maps as for slices
 			for _, key := range srcField.MapKeys() {
@@ -160,14 +163,40 @@ func UpdateService(src, dst *Service, mask Mask) error {
 
 // UpdateTranslation updates the destination translation based on the source translation and field mask.
 func UpdateTranslation(src, dst *Translation, mask Mask) error {
-	// Prevent updating read-only fields like ID
-	if slices.ContainsFunc(mask, func(s string) bool {
-		return strings.EqualFold(s, "ID")
-	}) {
-		return errors.New("\"id\" is not allowed in field mask")
+	// nonMsgField will store the field paths that are not related to "Messages."
+	nonMsgField := []string{}
+
+	for _, path := range mask {
+		switch path {
+		case "Messages":
+			// If the path is "Messages," extract the subfields and access the corresponding fields in src and dst.
+			fields := strings.Split(path, ".")
+			srcField, dstField := reflect.ValueOf(src).Elem(), reflect.ValueOf(dst).Elem()
+
+			// Iterate through the fields of dst to find the matching field for "Messages."
+			for i := 0; i < dstField.NumField(); i++ {
+				// Check if the field name matches the first part of the path ("Messages").
+				if !strings.EqualFold(dstField.Type().Field(i).Name, fields[0]) {
+					continue
+				}
+
+				// If the field is a slice, update the slice field.
+				if dstField.Field(i).Kind() == reflect.Slice {
+					updateSliceField(srcField.Field(i), dstField.Field(i))
+				}
+			}
+
+			continue
+		default:
+			// If the path is not related to "Messages," add it to the nonMsgField slice.
+			nonMsgField = append(nonMsgField, path)
+		}
 	}
 
-	update(src, dst, mask)
+	// If there are non-"Messages" fields, call the update function.
+	if len(nonMsgField) > 0 {
+		update(src, dst, nonMsgField)
+	}
 
 	return nil
 }

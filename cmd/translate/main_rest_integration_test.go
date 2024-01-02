@@ -21,6 +21,7 @@ import (
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/text/language"
+	"google.golang.org/genproto/protobuf/field_mask"
 )
 
 // TODO Currently, we manually create requests for the REST API.
@@ -642,6 +643,16 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 
 	happyReq := randUpdateTranslationReq(t, service.GetId(), &translatev1.Translation{Language: langs[1].String()}, nil)
 
+	req := randUpdateTranslationReq(t, service.GetId(), &translatev1.Translation{
+		Language: langs[1].String(),
+		Messages: []*translatev1.Message{
+			{
+				Id: "Hello", Message: "World",
+			},
+		},
+	},
+		&field_mask.FieldMask{Paths: []string{"messages"}})
+
 	// different language without translation
 	notFoundTranslationReq := randUpdateTranslationReq(t,
 		service.GetId(), &translatev1.Translation{Language: langs[2].String()}, nil)
@@ -665,6 +676,11 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 		{
 			name:         "Happy Path",
 			request:      happyReq,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Happy path update messages field",
+			request:      req,
 			expectedCode: http.StatusOK,
 		},
 		{
