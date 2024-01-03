@@ -693,6 +693,16 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 	},
 		&field_mask.FieldMask{Paths: []string{"original"}})
 
+	request := randUpdateTranslationReq(t, service.GetId(), &translatev1.Translation{
+		Language: langs[1].String(),
+		Messages: []*translatev1.Message{
+			{
+				Id: "Hello", Message: "World",
+			},
+		},
+	},
+		&field_mask.FieldMask{Paths: []string{"messages"}})
+
 	// different language without translation
 	notFoundTranslationReq := randUpdateTranslationReq(t,
 		service.GetId(), &translatev1.Translation{Language: langs[2].String()}, nil)
@@ -722,6 +732,11 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 			name:         "Happy path update original field",
 			expectedCode: codes.OK,
 			request:      req,
+		},
+		{
+			name:         "Happy path update messages field",
+			expectedCode: codes.OK,
+			request:      request,
 		},
 		{
 			name:         "Translation does not exists",

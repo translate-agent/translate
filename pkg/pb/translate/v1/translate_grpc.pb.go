@@ -42,6 +42,9 @@ type TranslateServiceClient interface {
 	UpdateService(ctx context.Context, in *UpdateServiceRequest, opts ...grpc.CallOption) (*Service, error)
 	DeleteService(ctx context.Context, in *DeleteServiceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CreateTranslation(ctx context.Context, in *CreateTranslationRequest, opts ...grpc.CallOption) (*Translation, error)
+	// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
+	//
+	//nolint:lll
 	UpdateTranslation(ctx context.Context, in *UpdateTranslationRequest, opts ...grpc.CallOption) (*Translation, error)
 	ListTranslations(ctx context.Context, in *ListTranslationsRequest, opts ...grpc.CallOption) (*ListTranslationsResponse, error)
 	UploadTranslationFile(ctx context.Context, in *UploadTranslationFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -156,6 +159,9 @@ type TranslateServiceServer interface {
 	UpdateService(context.Context, *UpdateServiceRequest) (*Service, error)
 	DeleteService(context.Context, *DeleteServiceRequest) (*emptypb.Empty, error)
 	CreateTranslation(context.Context, *CreateTranslationRequest) (*Translation, error)
+	// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
+	//
+	//nolint:lll
 	UpdateTranslation(context.Context, *UpdateTranslationRequest) (*Translation, error)
 	ListTranslations(context.Context, *ListTranslationsRequest) (*ListTranslationsResponse, error)
 	UploadTranslationFile(context.Context, *UploadTranslationFileRequest) (*emptypb.Empty, error)

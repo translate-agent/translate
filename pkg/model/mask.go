@@ -126,32 +126,35 @@ func updateSliceField(srcField, dstField reflect.Value) {
 	}
 
 	if appendOnly() {
-		// If the field is a slice, append new values from src to existing slice in dst
-		//nolint:lll
-		// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
 		dstField.Set(reflect.AppendSlice(dstField, srcField))
 		return
 	}
 
+	// If found by id, replace the corresponding structure in the destination slice. Otherwise, append.
 	for i := 0; i < srcField.Len(); i++ {
-		found := false
+		srcID := srcField.Index(i).FieldByName("ID").Interface()
+		idx := findInDstField(srcID, dstField)
 
-		for j := 0; j < dstField.Len(); j++ {
-			// Check if the "ID" field of the first element in the source slice
-			// matches the "ID" field of the current element in the destination slice.
-			if srcField.Index(i).FieldByName("ID").Interface() == dstField.Index(j).FieldByName("ID").Interface() {
-				// If found, update the corresponding structure in the destination slice
-				dstField.Index(j).Set(srcField.Index(i))
-
-				found = true
-			}
-		}
-
-		if !found {
-			dstField.Set(reflect.Append(dstField, srcField.Index(i)))
+		// Check if the "ID" field of the first element in the source slice
+		// matches the "ID" field of the current element in the destination slice.
+		if idx != -1 {
+			// If found, update the corresponding structure in the destination slice
+			dstField.Index(idx).Set(srcField.Index(i))
 			continue
 		}
+
+		dstField.Set(reflect.Append(dstField, srcField.Index(i)))
 	}
+}
+
+func findInDstField(srcID interface{}, dstField reflect.Value) int {
+	for i := 0; i < dstField.Len(); i++ {
+		if dstField.Index(i).FieldByName("ID").Interface() == srcID {
+			return i
+		}
+	}
+
+	return -1
 }
 
 // ---------------------Model Implementations---------------------

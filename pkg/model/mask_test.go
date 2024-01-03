@@ -446,6 +446,19 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
 			}},
 		},
+		{
+			name:      "Update Message Description",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Original: true, Messages: []Message{
+				{ID: "1", Message: "Hello", Description: "welcome"},
+			}},
+			srcTranslation: Translation{Original: true, Messages: []Message{
+				{ID: "1", Message: "Hello", Description: "hi"},
+			}},
+			expected: Translation{Original: true, Messages: []Message{
+				{ID: "1", Message: "Hello", Description: "hi"},
+			}},
+		},
 	}
 
 	for _, tt := range tests {
