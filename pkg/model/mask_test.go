@@ -351,14 +351,14 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 			}},
 		},
 		{
-			name:           "Update Messages add new Message",
+			name:           "Update Messages, add new Message",
 			fieldMask:      Mask{"Messages"},
 			dstTranslation: Translation{Messages: []Message{{ID: "1", Message: "Hello"}}},
 			srcTranslation: Translation{Messages: []Message{{ID: "2", Message: "World"}}},
 			expected:       Translation{Messages: []Message{{ID: "1", Message: "Hello"}, {ID: "2", Message: "World"}}},
 		},
 		{
-			name:      "Update Messages add multiple Messages",
+			name:      "Update Messages, add multiple Messages",
 			fieldMask: Mask{"Messages"},
 			dstTranslation: Translation{Messages: []Message{
 				{ID: "1", Message: "Hello"},
@@ -376,7 +376,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 			}},
 		},
 		{
-			name:      "add Messages add update existing Messages in random order",
+			name:      "add Messages, update existing Messages in random order",
 			fieldMask: Mask{"Messages"},
 			dstTranslation: Translation{Messages: []Message{
 				{ID: "1", Message: "Hello"},
@@ -395,7 +395,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 			}},
 		},
 		{
-			name:      "Update multiple Messages and add new Message",
+			name:      "Update multiple Messages, add new Message",
 			fieldMask: Mask{"Messages"},
 			dstTranslation: Translation{Messages: []Message{
 				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
@@ -413,7 +413,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 			}},
 		},
 		{
-			name:      "Update multiple Messages and add new Message",
+			name:      "Update multiple Messages, add new Message in random order",
 			fieldMask: Mask{"Messages"},
 			dstTranslation: Translation{Messages: []Message{
 				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
