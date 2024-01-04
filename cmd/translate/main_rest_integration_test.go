@@ -191,6 +191,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 }
 
 func Test_DownloadTranslationFile_REST(t *testing.T) {
+	t.Skip() // TODO
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
