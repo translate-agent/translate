@@ -50,7 +50,7 @@ func Test_TokensToPo(t *testing.T) {
 				Header: HeaderNode{
 					Language:    language.Make("en-US"),
 					Translator:  "John Doe",
-					PluralForms: pluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
+					PluralForms: PluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
 				},
 				Messages: []MessageNode{
 					{
@@ -86,7 +86,7 @@ func Test_TokensToPo(t *testing.T) {
 				Header: HeaderNode{
 					Language:    language.Make("en-US"),
 					Translator:  "John Doe",
-					PluralForms: pluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
+					PluralForms: PluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
 				},
 				Messages: []MessageNode{
 					{
@@ -111,7 +111,7 @@ func Test_TokensToPo(t *testing.T) {
 				Header: HeaderNode{
 					Language:    language.Make("en-US"),
 					Translator:  "John Doe",
-					PluralForms: pluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
+					PluralForms: PluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
 				},
 				Messages: []MessageNode{
 					{
@@ -189,7 +189,7 @@ func Test_TokensToPo(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			result, err := TokensToPo(tt.input)
+			result, err := tokensToPo(tt.input)
 			if tt.expectedErr != nil {
 				require.Errorf(t, err, tt.expectedErr.Error())
 			}
