@@ -119,7 +119,7 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 			return model.Translation{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
 		}
 
-		msg.Message = convertToMessageFormatSingular(msg.Message)
+		msg.Message = "" // TODO: convert to MF2 format.
 
 		var err error
 		if msg.Description, err = findDescription(key); err != nil {
@@ -141,12 +141,7 @@ func ToArb(translation model.Translation) ([]byte, error) {
 	dst["@@locale"] = translation.Language
 
 	for _, msg := range translation.Messages {
-		var err error
-
-		dst[msg.ID], err = getMsg(msg.Message)
-		if err != nil {
-			return nil, fmt.Errorf("get message value: %w", err)
-		}
+		dst[msg.ID] = "" // TODO: convert from MF2 format.
 
 		if len(msg.Description) > 0 {
 			dst["@"+msg.ID] = map[string]string{"description": msg.Description}
@@ -159,4 +154,8 @@ func ToArb(translation model.Translation) ([]byte, error) {
 	}
 
 	return result, nil
+}
+
+func ptr[T any](v T) *T {
+	return &v
 }

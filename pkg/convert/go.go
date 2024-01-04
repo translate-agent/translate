@@ -42,17 +42,14 @@ func FromGo(b []byte, original *bool) (model.Translation, error) {
 }
 
 // translationToPipeline converts a model.Translation structure into a pipeline.Messages structure.
-func translationToPipeline(t model.Translation) (pipeline.Messages, error) {
+func translationToPipeline(t model.Translation) (pipeline.Messages, error) { //nolint:unparam
 	pipelineMsg := pipeline.Messages{
 		Language: t.Language,
 		Messages: make([]pipeline.Message, 0, len(t.Messages)),
 	}
 
 	for _, value := range t.Messages {
-		message, err := getMsg(value.Message)
-		if err != nil {
-			return pipeline.Messages{}, fmt.Errorf("get message value: %w", err)
-		}
+		message := "" // TODO: convert value from MF2 format.
 
 		msg := pipeline.Message{
 			ID:          pipeline.IDList{value.ID},
@@ -101,7 +98,7 @@ func translationFromPipeline(m pipeline.Messages, original bool) model.Translati
 		msg := model.Message{
 			ID:          value.ID[0],
 			Description: value.Meaning,
-			Message:     convertToMessageFormatSingular(getMessage(value)),
+			Message:     getMessage(value), // TODO: convert value to MF2 format
 			Status:      getStatus(value),
 		}
 

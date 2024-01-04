@@ -16,6 +16,8 @@ import (
 func Test_ToPot(t *testing.T) {
 	t.Parallel()
 
+	t.Skip() // TODO
+
 	tests := []struct {
 		name     string
 		expected []byte
@@ -833,9 +835,6 @@ msgstr "Au revoir!"
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-
-			// TODO: Converting AST to string will be changed. Need to update tests and implementation.
-			t.Skip("Different PR under #180 issue")
 
 			result, err := ToPot(tt.input)
 			require.NoError(t, err)

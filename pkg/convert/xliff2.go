@@ -84,7 +84,7 @@ func FromXliff2(data []byte, original *bool) (model.Translation, error) {
 
 		translation.Messages = append(translation.Messages, model.Message{
 			ID:          unit.ID,
-			Message:     convertToMessageFormatSingular(message),
+			Message:     message, // TODO: convert message to MF2 format.
 			Description: findDescription(unit),
 			Positions:   positionsFromXliff2(unit.Notes),
 			Status:      status,
@@ -111,10 +111,7 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 	}
 
 	for _, msg := range translation.Messages {
-		message, err := getMsg(msg.Message)
-		if err != nil {
-			return nil, fmt.Errorf("get message value: %w", err)
-		}
+		message := "" // TODO: convert msg.Message from MF2 format.
 
 		u := unit{
 			ID:    msg.ID,
