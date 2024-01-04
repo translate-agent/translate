@@ -131,8 +131,6 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 		translated.Messages[i].Status = model.MessageStatusFuzzy
 	}
 
-	return translated, nil
-
 	// INFO: Previous implementation of the translation of message texts, for reference!
 
 	// // Extract translatable text from translation.
@@ -193,6 +191,8 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 	// }
 
 	// return &translated, nil
+
+	return translated, nil
 }
 
 // helpers
@@ -206,7 +206,7 @@ func ptr[T any](v T) *T {
 // skips locale part if region is not a country,
 // AWS only supports ISO 3166 2-digit country codes.
 // https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
-func awsLanguage(language language.Tag) *string {
+func awsLanguage(language language.Tag) *string { //nolint:unused
 	lang := language.String()
 
 	if region, _ := language.Region(); !region.IsCountry() {

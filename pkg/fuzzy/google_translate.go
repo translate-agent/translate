@@ -21,10 +21,10 @@ import (
 // https://github.com/googleapis/googleapis/blob/master/google/cloud/translate/v3/translation_service.proto
 const (
 	// googleTranslateRequestLimit limits the number of strings per translation request.
-	googleTranslateRequestLimit = 1024
+	googleTranslateRequestLimit = 1024 //nolint:unused
 
 	// googleTranslateCodePointsLimit limits the number of Unicode codepoints per single translation request.
-	googleTranslateCodePointsLimit = 30_000
+	googleTranslateCodePointsLimit = 30_000 //nolint:unused
 )
 
 // --------------------Definitions--------------------
@@ -131,8 +131,6 @@ func (g *GoogleTranslate) Translate(
 		translated.Messages[i].Status = model.MessageStatusFuzzy
 	}
 
-	return translated, nil
-
 	// NOTE: Previous implementation of the translation of message texts, for reference!
 
 	// // Extract translatable text from translation.
@@ -192,6 +190,8 @@ func (g *GoogleTranslate) Translate(
 	// }
 
 	// return &translated, nil
+
+	return translated, nil
 }
 
 // helpers
@@ -204,8 +204,9 @@ func parent() string {
 	return fmt.Sprintf("projects/%s/locations/%s", projectID, location)
 }
 
+// TODO: Remove if not used.
 // textToBatches splits text into batches with predefined maximum amount of elements.
-func textToBatches(text []string, batchLimit int) [][]string {
+func textToBatches(text []string, batchLimit int) [][]string { //nolint:unused
 	var codePointsInBatch int
 
 	batch := make([]string, 0, batchLimit)
