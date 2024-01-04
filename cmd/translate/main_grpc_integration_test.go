@@ -84,7 +84,7 @@ func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 // createTranslation creates a random translation, and calls the CreateTranslation RPC.
 func createTranslation(ctx context.Context, t *testing.T, serviceID string,
 	override *translatev1.Translation,
-) *translatev1.Translation { //nolintlint:unparam
+) *translatev1.Translation {
 	t.Helper()
 
 	require.NotEmpty(t, serviceID)
