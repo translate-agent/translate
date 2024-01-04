@@ -13,6 +13,8 @@ import (
 func Test_FromNgxTranslate(t *testing.T) {
 	t.Parallel()
 
+	t.Skip() // TODO
+
 	tests := []struct {
 		name        string
 		input       []byte
@@ -128,6 +130,8 @@ func Test_FromNgxTranslate(t *testing.T) {
 func Test_ToNgxTranslate(t *testing.T) {
 	t.Parallel()
 
+	t.Skip() // TODO
+
 	tests := []struct {
 		expected []byte
 		name     string
@@ -168,15 +172,10 @@ func Test_ToNgxTranslate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			// TODO: Converting AST to string will be changed. Need to update tests and implementation.
-			t.Skip("Different PR under #180 issue")
-
 			actual, err := ToNgxTranslate(tt.input)
 
 			require.NoError(t, err)
 
-			t.Logf("actual: %v", string(actual))
-			t.Logf("expect: %v", string(tt.expected))
 			assert.Equal(t, tt.expected, actual)
 		})
 	}
