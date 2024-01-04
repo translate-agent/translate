@@ -54,7 +54,7 @@ type Mask []string
 //
 //	update(&src, &dst, mask)
 //	fmt.Println(dst) // Foo{Bar: "bar2", Baz: "baz"}.
-func update[T any](src, dst *T, mask Mask) {
+func Update[T any](src, dst *T, mask Mask) {
 	// If mask is nil, update all fields
 	if mask == nil {
 		*dst = *src
@@ -133,28 +133,26 @@ func updateSliceField(srcField, dstField reflect.Value) {
 	// If found by id, replace the corresponding structure in the destination slice. Otherwise, append.
 	for i := 0; i < srcField.Len(); i++ {
 		srcID := srcField.Index(i).FieldByName("ID").Interface()
-		idx := findInDstField(srcID, dstField)
 
-		// Check if the "ID" field of the first element in the source slice
-		// matches the "ID" field of the current element in the destination slice.
-		if idx != -1 {
-			// If found, update the corresponding structure in the destination slice
-			dstField.Index(idx).Set(srcField.Index(i))
+		idx := func(id interface{}) int {
+			for j := 0; j < dstField.Len(); j++ {
+				if dstField.Index(j).FieldByName("ID").Interface() == id {
+					return j
+				}
+			}
+
+			return -1
+		}
+
+		index := idx(srcID)
+
+		if index >= 0 {
+			dstField.Index(index).Set(srcField.Index(i))
 			continue
 		}
 
 		dstField.Set(reflect.Append(dstField, srcField.Index(i)))
 	}
-}
-
-func findInDstField(srcID interface{}, dstField reflect.Value) int {
-	for i := 0; i < dstField.Len(); i++ {
-		if dstField.Index(i).FieldByName("ID").Interface() == srcID {
-			return i
-		}
-	}
-
-	return -1
 }
 
 // ---------------------Model Implementations---------------------
@@ -173,14 +171,7 @@ func UpdateService(src, dst *Service, mask Mask) error {
 	// When mask is nil dstService is updated with all fields from srcService
 	// So we need to make sure that the ID is not updated
 	src.ID = dst.ID
-	update(src, dst, mask)
-
-	return nil
-}
-
-// UpdateTranslation updates the destination translation based on the source translation and field mask.
-func UpdateTranslation(src, dst *Translation, mask Mask) error {
-	update(src, dst, mask)
+	Update(src, dst, mask)
 
 	return nil
 }

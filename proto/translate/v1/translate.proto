@@ -151,8 +151,6 @@ service TranslateService {
     };
   }
 
-  //nolint:lll
-  // https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
   rpc UpdateTranslation(UpdateTranslationRequest) returns (Translation) {
     option (google.api.http) = {
       put: "/v1/services/{service_id}/translations/{translation.language}"

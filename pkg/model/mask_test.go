@@ -215,7 +215,7 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			original := deepCopy(t, dst)
 			dstCopy, srcCopy := deepCopy(t, dst), deepCopy(t, src)
 
-			update(&srcCopy, &dstCopy, tt.mask)
+			Update(&srcCopy, &dstCopy, tt.mask)
 			tt.assertFunc(t, srcCopy, dstCopy, original)
 		})
 	}
@@ -307,7 +307,6 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		expectedErr    error
 		fieldMask      Mask
 		srcTranslation Translation
 		dstTranslation Translation
@@ -466,14 +465,8 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := UpdateTranslation(&tt.srcTranslation, &tt.dstTranslation, tt.fieldMask)
+			Update(&tt.srcTranslation, &tt.dstTranslation, tt.fieldMask)
 
-			if tt.expectedErr != nil {
-				require.EqualError(t, err, tt.expectedErr.Error())
-				return
-			}
-
-			require.NoError(t, err)
 			assert.Equal(t, tt.expected, tt.dstTranslation)
 		})
 	}

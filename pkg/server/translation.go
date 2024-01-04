@@ -201,6 +201,9 @@ func (u *updateTranslationParams) validate() error {
 	return nil
 }
 
+// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
+//
+//nolint:lll
 func (t *TranslateServiceServer) UpdateTranslation(
 	ctx context.Context,
 	req *translatev1.UpdateTranslationRequest,
@@ -228,7 +231,10 @@ func (t *TranslateServiceServer) UpdateTranslation(
 	switch {
 	default:
 		// Original translation is not affected, changes will not affect other translations - update incoming translation.
-		all = model.Translations{*params.translation}
+		model.Update(params.translation,
+			&all[all.LanguageIndex(params.translation.Language)],
+			params.mask,
+		)
 	case params.translation.Original && origIdx != -1:
 		if params.translation.Language != all[origIdx].Language {
 			return nil, status.Errorf(
@@ -241,8 +247,13 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		// Compare repo and request original translation.
 		// Change status for new or altered translation.messages to UNTRANSLATED for all languages
 		all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(params.translation))
-		// Replace original translation with new one.
-		all.Replace(*params.translation)
+
+		// Update original translation with new one.
+		model.Update(params.translation,
+			&all[all.LanguageIndex(params.translation.Language)],
+			params.mask,
+		)
+
 		// Add missing messages for all translations.
 		if params.populateTranslations {
 			all.PopulateTranslations()
@@ -253,13 +264,6 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		}
 	}
 
-	if err = model.UpdateTranslation(
-		params.translation,
-		&all[all.LanguageIndex(params.translation.Language)],
-		params.mask); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
-	}
-
 	// Update affected translations
 	for i := range all {
 		err = t.repo.SaveTranslation(ctx, params.serviceID, &all[i])
@@ -268,7 +272,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		}
 	}
 
-	return translationToProto(params.translation), nil
+	return translationToProto(&all[all.LanguageIndex(params.translation.Language)]), nil
 }
 
 // helpers
