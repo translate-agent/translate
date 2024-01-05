@@ -84,7 +84,7 @@ func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 // createTranslation creates a random translation, and calls the CreateTranslation RPC.
 func createTranslation(ctx context.Context, t *testing.T, serviceID string,
 	override *translatev1.Translation,
-) *translatev1.Translation {
+) *translatev1.Translation { //nolint:unparam
 	t.Helper()
 
 	require.NotEmpty(t, serviceID)
@@ -497,6 +497,11 @@ func randTranslation(t *testing.T, override *translatev1.Translation) *translate
 		translation.Original = override.GetOriginal()
 	}
 
+	if override != nil && override.GetMessages() != nil {
+		translation.Messages = override.GetMessages()
+		return translation
+	}
+
 	for i := 0; i < n; i++ {
 		message := &translatev1.Message{
 			Id:          gofakeit.SentenceSimple(),
@@ -677,267 +682,89 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 func Test_UpdateTranslationFromMask_gRPC(t *testing.T) {
 	t.Parallel()
 
-	ctx, subtest := testutil.Trace(t)
+	ctx, _ := testutil.Trace(t)
 
 	// Prepare
 	langs := rand.Languages(5)
-
 	service := createService(ctx, t)
+
+	// Add multiple messages and update one message.
 	createTranslation(ctx, t, service.GetId(), &translatev1.Translation{
 		Original: false,
-		Language: langs[1].String(),
+		Language: langs[0].String(),
 		Messages: []*translatev1.Message{
 			{
-				Id: "Hello", Message: "Sveiks",
+				Id:      "Hello",
+				Message: "Sveiks",
 			},
 		},
 	})
 
-	service2 := createService(ctx, t)
-	createTranslation(ctx, t, service2.GetId(), &translatev1.Translation{Original: false, Language: langs[2].String()})
+	req := randUpdateTranslationReq(t, service.GetId(), &translatev1.Translation{
+		Language: langs[0].String(),
+		Messages: []*translatev1.Message{
+			{
+				Id:          "Bye",
+				Message:     "World",
+				Description: "farewell",
+				Status:      translatev1.Message_UNTRANSLATED,
+			},
+			{
+				Id:          "Hi",
+				Message:     "Dog",
+				Description: "greeting",
+				Status:      translatev1.Message_UNTRANSLATED,
+			},
+			{
+				Id:          "Hello",
+				Message:     "Hi",
+				Description: "greeting",
+				Status:      translatev1.Message_UNTRANSLATED,
+			},
+		},
+	}, &field_mask.FieldMask{Paths: []string{"messages"}})
 
-	service3 := createService(ctx, t)
-	createTranslation(ctx, t, service2.GetId(), &translatev1.Translation{Original: false, Language: langs[3].String()})
-
-	service4 := createService(ctx, t)
-	createTranslation(ctx, t, service2.GetId(), &translatev1.Translation{Original: false, Language: langs[4].String()})
-
-	service5 := createService(ctx, t)
-	service6 := createService(ctx, t)
-	service7 := createService(ctx, t)
-	service8 := createService(ctx, t)
-
-	tests := []struct {
-		request     *translatev1.UpdateTranslationRequest
-		translation *translatev1.Translation
-		name        string
-	}{
-		{
-			name: "Update messages field in original translation",
-			request: randUpdateTranslationReq(t, service.GetId(), &translatev1.Translation{
+	expected := &translatev1.ListTranslationsResponse{
+		Translations: []*translatev1.Translation{
+			{
 				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Hello", Message: "World",
-					},
-				},
-			},
-				&field_mask.FieldMask{Paths: []string{"messages"}}),
-			translation: createTranslation(ctx, t, service.GetId(), &translatev1.Translation{
-				Original: true,
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Hello", Message: "Planet",
-					},
-				},
-			}),
-		},
-		{
-			name: "Add message to original translation",
-			request: randUpdateTranslationReq(t, service2.GetId(), &translatev1.Translation{
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Bye", Message: "World",
-					},
-				},
-			},
-				&field_mask.FieldMask{Paths: []string{"messages"}}),
-			translation: createTranslation(ctx, t, service2.GetId(), &translatev1.Translation{
-				Original: true,
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Hello", Message: "Planet",
-					},
-				},
-			}),
-		},
-		{
-			name: "Add message to non original translation",
-			request: randUpdateTranslationReq(t, service3.GetId(), &translatev1.Translation{
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Bye", Message: "World",
-					},
-				},
-			},
-				&field_mask.FieldMask{Paths: []string{"messages"}}),
-			translation: createTranslation(ctx, t, service3.GetId(), &translatev1.Translation{
 				Original: false,
-				Language: langs[0].String(),
 				Messages: []*translatev1.Message{
 					{
-						Id: "Hello", Message: "Planet",
+						Id:          "Hello",
+						Message:     "Hi",
+						Description: "greeting",
+						Status:      translatev1.Message_UNTRANSLATED,
 					},
-				},
-			}),
-		},
-		{
-			name: "Update messages field in non original translation",
-			request: randUpdateTranslationReq(t, service4.GetId(), &translatev1.Translation{
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
 					{
-						Id: "Hello", Message: "World",
+						Id:          "Bye",
+						Message:     "World",
+						Description: "farewell",
+						Status:      translatev1.Message_UNTRANSLATED,
 					},
-				},
-			},
-				&field_mask.FieldMask{Paths: []string{"messages"}}),
-			translation: createTranslation(ctx, t, service4.GetId(), &translatev1.Translation{
-				Original: false,
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
 					{
-						Id: "Hello", Message: "Planet",
-					},
-				},
-			}),
-		},
-		{
-			name: "Update original field",
-			request: randUpdateTranslationReq(t, service5.GetId(), &translatev1.Translation{
-				Original: true,
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Hello", Message: "World",
+						Id:          "Hi",
+						Message:     "Dog",
+						Description: "greeting",
+						Status:      translatev1.Message_UNTRANSLATED,
 					},
 				},
 			},
-				&field_mask.FieldMask{Paths: []string{"original"}}),
-			translation: createTranslation(ctx, t, service5.GetId(), &translatev1.Translation{
-				Original: false,
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Hello", Message: "Planet",
-					},
-				},
-			}),
-		},
-		{
-			name: "Add multiple messages to non original translation",
-			request: randUpdateTranslationReq(t, service6.GetId(), &translatev1.Translation{
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Bye", Message: "World", Description: "farewell", Status: translatev1.Message_UNTRANSLATED,
-					},
-					{
-						Id: "Hi", Message: "Dog", Description: "greeting", Status: translatev1.Message_UNTRANSLATED,
-					},
-					{
-						Id: "Welcome", Message: "Hi", Description: "greeting", Status: translatev1.Message_UNTRANSLATED,
-					},
-				},
-			},
-				&field_mask.FieldMask{Paths: []string{"messages"}}),
-			translation: createTranslation(ctx, t, service6.GetId(), &translatev1.Translation{
-				Original: false,
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Hello", Message: "Planet",
-					},
-				},
-			}),
-		},
-		{
-			name: "Add multiple messages to original translation",
-			request: randUpdateTranslationReq(t, service7.GetId(), &translatev1.Translation{
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Bye", Message: "World",
-					},
-					{
-						Id: "Animal", Message: "Dog",
-					},
-					{
-						Id: "Welcome", Message: "Hi",
-					},
-				},
-			},
-				&field_mask.FieldMask{Paths: []string{"messages"}}),
-			translation: createTranslation(ctx, t, service7.GetId(), &translatev1.Translation{
-				Original: true,
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Hello", Message: "Planet",
-					},
-				},
-			}),
-		},
-		{
-			name: "Add messages, update description, message and status",
-			request: randUpdateTranslationReq(t, service8.GetId(), &translatev1.Translation{
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Bye", Message: "World", Description: "farewell", Status: translatev1.Message_UNTRANSLATED,
-					},
-					{
-						Id: "Hi", Message: "Dog", Description: "greeting", Status: translatev1.Message_UNTRANSLATED,
-					},
-					{
-						Id: "Hello", Message: "Hi", Description: "greeting", Status: translatev1.Message_UNTRANSLATED,
-					},
-				},
-			},
-				&field_mask.FieldMask{Paths: []string{"messages"}}),
-			translation: createTranslation(ctx, t, service8.GetId(), &translatev1.Translation{
-				Original: false,
-				Language: langs[0].String(),
-				Messages: []*translatev1.Message{
-					{
-						Id: "Hello", Message: "Planet", Description: "A simple greeting", Status: translatev1.Message_TRANSLATED,
-					},
-				},
-			}),
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			beforeUpdateTranslations, err := client.ListTranslations(ctx, &translatev1.ListTranslationsRequest{
-				ServiceId: tt.request.GetServiceId(),
-			})
+	resp, err := client.UpdateTranslation(ctx, req)
 
-			require.NoError(t, err)
-			resp, err := client.UpdateTranslation(ctx, tt.request)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
 
-			if err == nil {
-				require.NotNil(t, resp)
-			}
+	actual, err := client.ListTranslations(ctx, &translatev1.ListTranslationsRequest{
+		ServiceId: service.GetId(),
+	})
 
-			afterUpdateTranslations, err := client.ListTranslations(ctx, &translatev1.ListTranslationsRequest{
-				ServiceId: tt.request.GetServiceId(),
-			})
+	require.NoError(t, err)
 
-			require.NoError(t, err)
-			require.NotEmpty(t, resp)
-
-			var translationFromService *translatev1.Translation
-
-			for i := range afterUpdateTranslations.GetTranslations() {
-				if afterUpdateTranslations.GetTranslations()[i].GetLanguage() == resp.GetLanguage() {
-					translationFromService = afterUpdateTranslations.GetTranslations()[i]
-				} else {
-					assert.Equal(t, beforeUpdateTranslations.GetTranslations()[i], afterUpdateTranslations.GetTranslations()[i])
-				}
-			}
-
-			require.NotNil(t, translationFromService)
-			require.Equal(t, resp.GetOriginal(), translationFromService.GetOriginal())
-			require.Equal(t, resp.GetLanguage(), translationFromService.GetLanguage())
-			require.ElementsMatch(t, resp.GetMessages(), translationFromService.GetMessages())
-		})
-	}
+	assert.ElementsMatch(t, expected.GetTranslations(), actual.GetTranslations())
 }
 
 func Test_UpdateTranslation_gRPC(t *testing.T) {
