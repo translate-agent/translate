@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 
-	mf2 "go.expect.digital/translate/pkg/messageformat"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -132,7 +131,7 @@ func FromXliff2(data []byte, original *bool) (model.Translation, error) {
 
 		translation.Messages = append(translation.Messages, model.Message{
 			ID:          unit.ID,
-			Message:     message,
+			Message:     message, // TODO: convert message to MF2 format.
 			Description: findDescription(unit),
 			Positions:   positionsFromXliff2(unit.Notes),
 			Status:      status,
@@ -160,10 +159,7 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 
 	// TODO: implement MF2 to Xliff 2.0 conversion.
 	for _, msg := range translation.Messages {
-		message, err := getMsg(msg.Message)
-		if err != nil {
-			return nil, fmt.Errorf("get message value: %w", err)
-		}
+		message := "" // TODO: convert msg.Message from MF2 format.
 
 		u := unit{
 			ID:    msg.ID,
@@ -261,7 +257,7 @@ func messageFromContent(content string, originalData *[]data) (string, error) {
 		default:
 			continue
 		case xml.CharData:
-			buf.WriteString(mf2.EscapeSpecialChars(string(t)))
+			buf.WriteString("") // TODO
 		case xml.StartElement:
 			// NOTE: currently only placeholder elements are supported.
 			// TODO: handle other types of elements.
@@ -275,55 +271,55 @@ func messageFromContent(content string, originalData *[]data) (string, error) {
 				return "", fmt.Errorf("decode placeholder: %w", err)
 			}
 
-			if err := writePlaceholder(&buf, ph, originalData); err != nil {
-				return "", fmt.Errorf("write placeholder: %w", err)
-			}
+			// if err := writePlaceholder(&buf, ph, originalData); err != nil {
+			// 	return "", fmt.Errorf("write placeholder: %w", err)
+			// }
 		}
 	}
 }
 
-// writePlaceholder writes MF2 compliant placeholder expression to bytes.Buffer.
-func writePlaceholder(buf *bytes.Buffer, ph placeholder, originalData *[]data) error {
-	pf := mf2.GetPlaceholderFormat("")
-	phExpr := pf.NodeExprF("", pf.Re.FindStringSubmatchIndex(""))
+// // writePlaceholder writes MF2 compliant placeholder expression to bytes.Buffer.
+// func writePlaceholder(buf *bytes.Buffer, ph placeholder, originalData *[]data) error {
+// 	pf := mf2.GetPlaceholderFormat("")
+// 	phExpr := pf.NodeExprF("", pf.Re.FindStringSubmatchIndex(""))
 
-	if ph.DataRef != "" && originalData != nil {
-		// include details about format specifier if referenced in the original data.
-		for _, data := range *originalData {
-			if ph.DataRef == data.ID {
-				pf = mf2.GetPlaceholderFormat(data.Content)
-				phExpr = pf.NodeExprF(data.Content, pf.Re.FindStringSubmatchIndex(data.Content))
-				// include format specifier
-				phExpr.Function.Options = append(phExpr.Function.Options, mf2.NodeOption{Name: "value", Value: data.Content})
+// 	if ph.DataRef != "" && originalData != nil {
+// 		// include details about format specifier if referenced in the original data.
+// 		for _, data := range *originalData {
+// 			if ph.DataRef == data.ID {
+// 				pf = mf2.GetPlaceholderFormat(data.Content)
+// 				phExpr = pf.NodeExprF(data.Content, pf.Re.FindStringSubmatchIndex(data.Content))
+// 				// include format specifier
+// 				phExpr.Function.Options = append(phExpr.Function.Options, mf2.NodeOption{Name: "value", Value: data.Content})
 
-				break
-			}
-		}
-	}
+// 				break
+// 			}
+// 		}
+// 	}
 
-	// add placeholder attributes to function options
-	if ph.ID != "" {
-		phExpr.Function.Options = append(phExpr.Function.Options, mf2.NodeOption{Name: "id", Value: ph.ID})
-	}
+// 	// add placeholder attributes to function options
+// 	if ph.ID != "" {
+// 		phExpr.Function.Options = append(phExpr.Function.Options, mf2.NodeOption{Name: "id", Value: ph.ID})
+// 	}
 
-	if ph.DataRef != "" {
-		phExpr.Function.Options = append(phExpr.Function.Options, mf2.NodeOption{Name: "dataRef", Value: ph.DataRef})
-	}
+// 	if ph.DataRef != "" {
+// 		phExpr.Function.Options = append(phExpr.Function.Options, mf2.NodeOption{Name: "dataRef", Value: ph.DataRef})
+// 	}
 
-	if ph.Attributes != nil {
-		for _, v := range *ph.Attributes {
-			phExpr.Function.Options = append(phExpr.Function.Options,
-				mf2.NodeOption{Name: v.Name.Local, Value: v.Value})
-		}
-	}
+// 	if ph.Attributes != nil {
+// 		for _, v := range *ph.Attributes {
+// 			phExpr.Function.Options = append(phExpr.Function.Options,
+// 				mf2.NodeOption{Name: v.Name.Local, Value: v.Value})
+// 		}
+// 	}
 
-	b, err := mf2.AST{phExpr}.MarshalText()
-	if err != nil {
-		return fmt.Errorf("marshal placeholder text: %w", err)
-	}
+// 	b, err := mf2.AST{phExpr}.MarshalText()
+// 	if err != nil {
+// 		return fmt.Errorf("marshal placeholder text: %w", err)
+// 	}
 
-	// write MF2 compliant placeholder expression to bytes.Buffer.
-	buf.Write(b)
+// 	// write MF2 compliant placeholder expression to bytes.Buffer.
+// 	buf.Write(b)
 
-	return nil
-}
+// 	return nil
+// }
