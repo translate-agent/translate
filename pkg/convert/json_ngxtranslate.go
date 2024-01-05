@@ -38,7 +38,7 @@ func FromNgxTranslate(b []byte, original *bool) (translation model.Translation, 
 		case string:
 			translation.Messages = append(translation.Messages, model.Message{
 				ID:      key,
-				Message: convertToMessageFormatSingular(v),
+				Message: v, // TODO: convert v to MF2 format.
 				Status:  status,
 			})
 		case map[string]interface{}:
@@ -68,10 +68,7 @@ func ToNgxTranslate(translation model.Translation) (b []byte, err error) {
 	dst := make(map[string]string, len(translation.Messages))
 
 	for _, msg := range translation.Messages {
-		dst[msg.ID], err = getMsg(msg.Message)
-		if err != nil {
-			return nil, fmt.Errorf("get message value: %w", err)
-		}
+		dst[msg.ID] = "" // TODO: convert msg.Message from MF2 format.
 	}
 
 	b, err = json.Marshal(dst)

@@ -44,7 +44,7 @@ func FromNgLocalize(data []byte, original *bool) (model.Translation, error) {
 	for k, v := range ng.Translations {
 		translation.Messages = append(translation.Messages, model.Message{
 			ID:      k,
-			Message: convertToMessageFormatSingular(v),
+			Message: v, // TODO: convert v to MF2 format.
 			Status:  status,
 		})
 	}
@@ -60,12 +60,7 @@ func ToNgLocalize(translation model.Translation) ([]byte, error) {
 	}
 
 	for _, msg := range translation.Messages {
-		var err error
-
-		ng.Translations[msg.ID], err = getMsg(msg.Message)
-		if err != nil {
-			return nil, fmt.Errorf("get message value: %w", err)
-		}
+		ng.Translations[msg.ID] = "" // TODO: convert msg.Message from MF2 format.
 	}
 
 	data, err := json.Marshal(ng)
