@@ -21,6 +21,7 @@ import (
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/text/language"
+	"google.golang.org/genproto/protobuf/field_mask"
 )
 
 // TODO Currently, we manually create requests for the REST API.
@@ -643,22 +644,32 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 	createTranslation(ctx, t, service.GetId(), &translatev1.Translation{Original: true, Language: langs[0].String()})
 	createTranslation(ctx, t, service.GetId(), &translatev1.Translation{Original: false, Language: langs[1].String()})
 
-	happyReq := randUpdateTranslationReq(t, service.GetId(), &translatev1.Translation{Language: langs[1].String()})
+	happyReq := randUpdateTranslationReq(t, service.GetId(), &translatev1.Translation{Language: langs[1].String()}, nil)
+
+	req := randUpdateTranslationReq(t, service.GetId(), &translatev1.Translation{
+		Language: langs[1].String(),
+		Messages: []*translatev1.Message{
+			{
+				Id: "Hello", Message: "World",
+			},
+		},
+	},
+		&field_mask.FieldMask{Paths: []string{"messages"}})
 
 	// different language without translation
 	notFoundTranslationReq := randUpdateTranslationReq(t,
-		service.GetId(), &translatev1.Translation{Language: langs[2].String()})
+		service.GetId(), &translatev1.Translation{Language: langs[2].String()}, nil)
 
 	notFoundServiceID := randUpdateTranslationReq(t,
-		gofakeit.UUID(), &translatev1.Translation{Language: langs[1].String()})
+		gofakeit.UUID(), &translatev1.Translation{Language: langs[1].String()}, nil)
 
 	invalidArgumentNilTranslationReq := &translatev1.UpdateTranslationRequest{ServiceId: service.GetId()}
 
-	invalidArgumentUndTranslationLanguageReq := randUpdateTranslationReq(t, gofakeit.UUID(), nil)
+	invalidArgumentUndTranslationLanguageReq := randUpdateTranslationReq(t, gofakeit.UUID(), nil, nil)
 	invalidArgumentUndTranslationLanguageReq.Translation.Language = ""
 
 	originalAlreadyExistsReq := randUpdateTranslationReq(t,
-		service.GetId(), &translatev1.Translation{Language: langs[1].String(), Original: true})
+		service.GetId(), &translatev1.Translation{Language: langs[1].String(), Original: true}, nil)
 
 	tests := []struct {
 		request      *translatev1.UpdateTranslationRequest
@@ -668,6 +679,11 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 		{
 			name:         "Happy Path",
 			request:      happyReq,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Happy path update messages field",
+			request:      req,
 			expectedCode: http.StatusOK,
 		},
 		{

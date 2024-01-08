@@ -8,6 +8,8 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"golang.org/x/text/language"
 )
 
 // deepCopy makes a deep copy of src and returns it.
@@ -213,7 +215,7 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			original := deepCopy(t, dst)
 			dstCopy, srcCopy := deepCopy(t, dst), deepCopy(t, src)
 
-			update(&srcCopy, &dstCopy, tt.mask)
+			Update(&srcCopy, &dstCopy, tt.mask)
 			tt.assertFunc(t, srcCopy, dstCopy, original)
 		})
 	}
@@ -296,6 +298,176 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			require.NoError(t, err)
 
 			tt.assertFunc(t, srcCopy, dstCopy, original)
+		})
+	}
+}
+
+func Test_UpdateTranslationFromMask(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		fieldMask      Mask
+		srcTranslation Translation
+		dstTranslation Translation
+		expected       Translation
+	}{
+		{
+			name:           "Update Original",
+			fieldMask:      Mask{"Original"},
+			dstTranslation: Translation{Original: true, Language: language.English},
+			srcTranslation: Translation{Original: false, Language: language.Latvian},
+			expected:       Translation{Original: false, Language: language.English},
+		},
+		{
+			name:           "Update Original and Messages",
+			fieldMask:      Mask{"Original", "Messages"},
+			dstTranslation: Translation{Original: true, Language: language.English, Messages: []Message{{ID: "1", Message: "Hello"}}},  //nolint:lll
+			srcTranslation: Translation{Original: false, Language: language.Latvian, Messages: []Message{{ID: "1", Message: "World"}}}, //nolint:lll
+			expected:       Translation{Original: false, Language: language.English, Messages: []Message{{ID: "1", Message: "World"}}}, //nolint:lll
+		},
+		{
+			name:           "Update Messages",
+			fieldMask:      Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{{ID: "1", Message: "Hello", Status: MessageStatusUntranslated}}},
+			srcTranslation: Translation{Messages: []Message{{ID: "1", Message: "World", Status: MessageStatusTranslated}}},
+			expected:       Translation{Messages: []Message{{ID: "1", Message: "World", Status: MessageStatusTranslated}}},
+		},
+		{
+			name:      "Update multiple Messages",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
+				{ID: "2", Message: "Bonjour", Status: MessageStatusTranslated},
+			}},
+			srcTranslation: Translation{Messages: []Message{
+				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
+				{ID: "1", Message: "World", Status: MessageStatusTranslated},
+			}},
+			expected: Translation{Messages: []Message{
+				{ID: "1", Message: "World", Status: MessageStatusTranslated},
+				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
+			}},
+		},
+		{
+			name:           "Update Messages, add new Message",
+			fieldMask:      Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{{ID: "1", Message: "Hello"}}},
+			srcTranslation: Translation{Messages: []Message{{ID: "2", Message: "World"}}},
+			expected:       Translation{Messages: []Message{{ID: "1", Message: "Hello"}, {ID: "2", Message: "World"}}},
+		},
+		{
+			name:      "Update Messages, add multiple Messages",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello"},
+			}},
+			srcTranslation: Translation{Messages: []Message{
+				{ID: "2", Message: "World"},
+				{ID: "3", Message: "Sun"},
+				{ID: "4", Message: "Bye"},
+			}},
+			expected: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello"},
+				{ID: "2", Message: "World"},
+				{ID: "3", Message: "Sun"},
+				{ID: "4", Message: "Bye"},
+			}},
+		},
+		{
+			name:      "add Messages, update existing Messages in random order",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello"},
+			}},
+			srcTranslation: Translation{Messages: []Message{
+				{ID: "2", Message: "World"},
+				{ID: "3", Message: "Sun"},
+				{ID: "4", Message: "Bye"},
+				{ID: "1", Message: "World"},
+			}},
+			expected: Translation{Messages: []Message{
+				{ID: "1", Message: "World"},
+				{ID: "2", Message: "World"},
+				{ID: "3", Message: "Sun"},
+				{ID: "4", Message: "Bye"},
+			}},
+		},
+		{
+			name:      "Update multiple Messages, add new Message",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
+				{ID: "2", Message: "Bonjour", Status: MessageStatusTranslated},
+			}},
+			srcTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "World", Status: MessageStatusTranslated},
+				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
+				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
+			}},
+			expected: Translation{Messages: []Message{
+				{ID: "1", Message: "World", Status: MessageStatusTranslated},
+				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
+				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
+			}},
+		},
+		{
+			name:      "Update multiple Messages, add new Message in random order",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
+				{ID: "2", Message: "Bonjour", Status: MessageStatusTranslated},
+			}},
+			srcTranslation: Translation{Messages: []Message{
+				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
+				{ID: "1", Message: "World", Status: MessageStatusTranslated},
+				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
+			}},
+			expected: Translation{Messages: []Message{
+				{ID: "1", Message: "World", Status: MessageStatusTranslated},
+				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
+				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
+			}},
+		},
+		{
+			name:      "Add one Message to multiples",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
+				{ID: "2", Message: "Bonjour", Status: MessageStatusTranslated},
+			}},
+			srcTranslation: Translation{Messages: []Message{
+				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
+			}},
+			expected: Translation{Messages: []Message{
+				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
+				{ID: "2", Message: "Bonjour", Status: MessageStatusTranslated},
+				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
+			}},
+		},
+		{
+			name:      "Update Message Description",
+			fieldMask: Mask{"Messages"},
+			dstTranslation: Translation{Original: true, Messages: []Message{
+				{ID: "1", Message: "Hello", Description: "welcome"},
+			}},
+			srcTranslation: Translation{Original: true, Messages: []Message{
+				{ID: "1", Message: "Hello", Description: "hi"},
+			}},
+			expected: Translation{Original: true, Messages: []Message{
+				{ID: "1", Message: "Hello", Description: "hi"},
+			}},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			Update(&tt.srcTranslation, &tt.dstTranslation, tt.fieldMask)
+
+			assert.Equal(t, tt.expected, tt.dstTranslation)
 		})
 	}
 }
