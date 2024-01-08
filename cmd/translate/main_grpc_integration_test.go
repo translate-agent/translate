@@ -689,13 +689,13 @@ func Test_UpdateTranslationFromMask_gRPC(t *testing.T) {
 	ctx, _ := testutil.Trace(t)
 
 	// Prepare
-	langs := rand.Languages(5)
+	lang := rand.Language()
 	service := createService(ctx, t)
 
 	// Add multiple messages and update one message.
 	createTranslation(ctx, t, service.GetId(), &translatev1.Translation{
 		Original: false,
-		Language: langs[0].String(),
+		Language: lang.String(),
 		Messages: []*translatev1.Message{
 			{
 				Id:      "Hello",
@@ -705,7 +705,7 @@ func Test_UpdateTranslationFromMask_gRPC(t *testing.T) {
 	})
 
 	req := randUpdateTranslationReq(t, service.GetId(), &translatev1.Translation{
-		Language: langs[0].String(),
+		Language: lang.String(),
 		Messages: []*translatev1.Message{
 			{
 				Id:          "Bye",
@@ -731,7 +731,7 @@ func Test_UpdateTranslationFromMask_gRPC(t *testing.T) {
 	expected := &translatev1.ListTranslationsResponse{
 		Translations: []*translatev1.Translation{
 			{
-				Language: langs[0].String(),
+				Language: lang.String(),
 				Original: false,
 				Messages: []*translatev1.Message{
 					{

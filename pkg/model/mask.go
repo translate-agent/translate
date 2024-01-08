@@ -33,7 +33,7 @@ import (
 //	...
 type Mask []string
 
-// update updates the dst with the values from src based on the mask.
+// Update updates the dst with the values from src based on the mask.
 //
 // Following scenarios are possible:
 //   - mask is nil: All fields are updated.
@@ -144,14 +144,12 @@ func updateSliceField(srcField, dstField reflect.Value) {
 			return -1
 		}
 
-		index := idx(srcID)
-
-		if index >= 0 {
-			dstField.Index(index).Set(srcField.Index(i))
-			continue
+		switch j := idx(srcID); j {
+		default:
+			dstField.Index(j).Set(srcField.Index(i))
+		case -1:
+			dstField.Set(reflect.Append(dstField, srcField.Index(i)))
 		}
-
-		dstField.Set(reflect.Append(dstField, srcField.Index(i)))
 	}
 }
 
