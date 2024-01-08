@@ -28,7 +28,7 @@ type MessageNode struct {
 	TranslatorComment     []string
 	ExtractedComment      []string
 	References            []string
-	Flag                  string
+	Flags                 []string
 	MsgCtxtPrevCtxt       string
 	MsgIDPrevUntPluralStr string
 	MsgIDPrevUnt          string
@@ -40,6 +40,8 @@ type Po struct {
 	Messages []MessageNode
 }
 
+// Parse function takes an io.Reader object and parses the contents into a Po struct
+// which represents object representing a Portable Object file.
 func Parse(r io.Reader) (Po, error) {
 	tokens, err := lex(r)
 	if err != nil {
@@ -105,7 +107,7 @@ func tokensToPo(tokens []Token) (Po, error) {
 		case TokenTypeReference:
 			currentMessage.References = append(currentMessage.References, token.Value)
 		case TokenTypeFlag:
-			currentMessage.Flag = token.Value
+			currentMessage.Flags = append(currentMessage.Flags, token.Value)
 		case TokenTypeTranslatorComment:
 			currentMessage.TranslatorComment = append(currentMessage.TranslatorComment, token.Value)
 		case TokenTypeMsgctxtPreviousContext:

@@ -206,7 +206,7 @@ func parseValue(line string) string {
 		return ""
 	}
 
-	return strings.Trim(fields[1], `"`)
+	return strings.TrimSuffix(strings.TrimPrefix(fields[1], "\""), "\"")
 }
 
 // parseMultilineValue parses the value of the multiline msgid, msgstr, msgid_plural, msgstr[*]
