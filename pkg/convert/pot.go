@@ -2,14 +2,221 @@ package convert
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
+	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
+	mf2 "go.expect.digital/mf2"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/pot"
 )
+
+const pluralCountLimit = 2 // max value for plural count. //TODO why ?
+
+// ---------------------------------------PO->Translation---------------------------------------
+
+// FromPo converts a byte slice representing a PO file to a model.Translation structure.
+func FromPo(b []byte, originalOverride *bool) (model.Translation, error) {
+	po, err := pot.Parse(bytes.NewReader(b))
+	if err != nil {
+		return model.Translation{}, fmt.Errorf("parse po file: %w", err)
+	}
+
+	translation := model.Translation{
+		Language: po.Header.Language,
+		Messages: make([]model.Message, 0, len(po.Messages)),
+		Original: isOriginalPO(po, originalOverride),
+	}
+
+	var (
+		getStatus   func(pot.MessageNode) model.MessageStatus // status getter based on originality
+		getMessages func(pot.MessageNode) []string            // messages getter based on originality
+	)
+
+	switch translation.Original {
+	// on original, all messages are considered translated
+	// messages are get from msgid and msgid_plural if exists.
+	case true:
+		getStatus = func(pot.MessageNode) model.MessageStatus { return model.MessageStatusTranslated }
+		getMessages = func(n pot.MessageNode) []string {
+			if n.MsgIDPlural != "" {
+				return []string{n.MsgID, n.MsgIDPlural}
+			}
+
+			return []string{n.MsgID}
+		}
+	// on non original, all messages are considered untranslated or fuzzy
+	// messages are get from msgstr and msgstr[*] if exists.
+	case false:
+		getStatus = func(n pot.MessageNode) model.MessageStatus {
+			if slices.Contains(n.Flags, "fuzzy") {
+				return model.MessageStatusFuzzy
+			}
+
+			return model.MessageStatusUntranslated
+		}
+		getMessages = func(n pot.MessageNode) []string { return n.MsgStr }
+	}
+
+	for _, node := range po.Messages {
+		mf2Msg, err := msgNodeToMF2(node, getMessages)
+		if err != nil {
+			return model.Translation{}, fmt.Errorf("convert message node to mf2 format: %w", err)
+		}
+
+		translation.Messages = append(translation.Messages, model.Message{
+			ID:          node.MsgID,
+			PluralID:    node.MsgIDPlural,
+			Description: strings.Join(node.ExtractedComment, "\n"),
+			Positions:   node.References,
+			Message:     mf2Msg,
+			Status:      getStatus(node),
+		})
+	}
+
+	return translation, nil
+}
+
+// isOriginalPO function determines whether a PO file is an original or a translation.
+func isOriginalPO(po pot.Po, override *bool) bool {
+	// if override is not nil, use it.
+	if override != nil {
+		return *override
+	}
+
+	// if in all messages msgstr is empty, then it's original.
+	allMsgStrEmpty := slices.ContainsFunc(po.Messages, func(node pot.MessageNode) bool {
+		for _, msg := range node.MsgStr {
+			if msg != "" {
+				return false
+			}
+		}
+
+		return true
+	})
+
+	// XXX: originality can also be determined by file extension.
+	// .pot == original, .po == translation.
+	// but we don't preserve file extension, so we can't use this method for now.
+
+	return allMsgStrEmpty
+}
+
+// XXX: Can every convert use that ?
+var placeholderFormats = map[string]*regexp.Regexp{
+	"pythonVar":    regexp.MustCompile(`%\((\w+)\)([sd])`), // hello %(var)s | hello %(var)d
+	"printf":       regexp.MustCompile(`%(s|d|f)`),         // hello %s | hello %d | hello %f
+	"bracketVar":   regexp.MustCompile(`\{(\w+)\}`),        // hello {var} | hello {0}
+	"emptyBracket": regexp.MustCompile(`\{\}`),             // hello {}
+}
+
+// msgNodeToMF2 function converts a pot.MessageNode to a MessageFormat2 string.
+func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []string) (string, error) {
+	// look for placeholder flag, e.g. #, python-format, c-format
+	// avoid flags with "no-" prefix, e.g. #, no-python-format, no-c-format
+	placeholderFlagIDx := slices.IndexFunc(node.Flags, func(flag string) bool {
+		return strings.Contains(flag, "-format") && !strings.Contains(flag, "no-")
+	})
+
+	mfBuilder := mf2.NewBuilder()
+	placeholders := make(map[string]struct{}) // map of placeholders to avoid duplicates, only for plural messages
+
+	switch messages := getMessages(node); len(messages) {
+	case 1: // singular message
+		if placeholderFlagIDx == -1 { //  without placeholders
+			mfBuilder.Text(messages[0])
+		} else { // with placeholders
+			mfBuilder.Local("format", mf2.Literal(node.Flags[placeholderFlagIDx])) // capture format flag
+			if err := textWithPlaceholder(mfBuilder, messages[0], placeholders); err != nil {
+				return "", fmt.Errorf("parse message with placeholders: %w", err)
+			}
+		}
+
+	default: // plural message
+		mfBuilder.Match(mf2.Var("$count")) // match to arbitrary variable name
+
+		var build func(*mf2.Builder, string, map[string]struct{}) error // build function based on placeholders
+
+		switch placeholderFlagIDx {
+		case -1: // without placeholders
+			build = func(mfBuilder *mf2.Builder, msg string, _ map[string]struct{}) error { mfBuilder.Text(msg); return nil }
+		default: //  with placeholders
+			mfBuilder.Local("format", mf2.Literal(node.Flags[placeholderFlagIDx])) // capture format flag
+
+			build = textWithPlaceholder
+		}
+
+		for i := range messages {
+			if i == len(messages)-1 {
+				mfBuilder.Keys("*")
+			} else {
+				mfBuilder.Keys(i + 1) // arbitrary key names to match to //TODO can be derived from plural forms
+			}
+
+			if err := build(mfBuilder, messages[i], placeholders); err != nil {
+				return "", fmt.Errorf("parse plural message with placeholders: %w", err)
+			}
+		}
+	}
+
+	mf2String, err := mfBuilder.Build()
+	if err != nil {
+		return "", fmt.Errorf("build mf2 string: %w", err)
+	}
+
+	return mf2String, nil
+}
+
+func textWithPlaceholder(mfBuilder *mf2.Builder, msg string, placeholders map[string]struct{}) error {
+	for name, re := range placeholderFormats {
+		var currentIdx int
+
+		allIndices := re.FindAllStringIndex(msg, -1)
+		for i, indices := range allIndices {
+			// Add text before the placeholder
+			text := msg[currentIdx:indices[0]]
+			if text != "" {
+				mfBuilder.Text(text)
+			}
+
+			originalVariable := msg[indices[0]:indices[1]]
+
+			var mf2Variable string
+
+			switch name {
+			case "printf", "emptyBracket":
+				mf2Variable = fmt.Sprintf("$ph%d", i) // %d|%s|%f -> $ph0|$ph1|$ph2...
+			case "pythonVar":
+				mf2Variable = "$" + originalVariable[2:len(originalVariable)-2] // %(var)s -> $var
+			case "bracketVar":
+				mf2Variable = "$" + originalVariable[1:len(originalVariable)-1] // {var} -> $var
+			}
+
+			// Avoid adding duplicate locals variables when working with plural messages
+			if _, ok := placeholders[mf2Variable]; !ok {
+				mfBuilder.Local(mf2Variable, mf2.Literal(originalVariable))
+
+				placeholders[mf2Variable] = struct{}{}
+			}
+
+			mfBuilder.Expr(mf2.Var(mf2Variable))
+
+			currentIdx = indices[1]
+
+			// If this is the last placeholder, add the text after the placeholder
+			if i == len(allIndices)-1 {
+				mfBuilder.Text(msg[currentIdx:])
+				return nil
+			}
+		}
+	}
+
+	return fmt.Errorf("format flag is present, but no placeholders found: '%s'", msg)
+}
+
+// ---------------------------------------Translation->PO---------------------------------------
 
 type poTag string
 
@@ -19,8 +226,6 @@ const (
 	MsgStrPlural poTag = "msgstr[%d]"
 	MsgStr       poTag = "msgstr"
 )
-
-const pluralCountLimit = 2
 
 // ToPot function takes a model.Translation structure,
 // writes the language information and each message to a buffer in the POT file format,
@@ -49,77 +254,6 @@ func ToPot(t model.Translation) ([]byte, error) {
 	}
 
 	return b.Bytes(), nil
-}
-
-// FromPot function parses a POT file by tokenizing and converting it into a pot.Po structure.
-func FromPot(b []byte, original *bool) (model.Translation, error) {
-	// if original is not provided default to false.
-	if original == nil {
-		original = ptr(false)
-	}
-
-	tokens, err := pot.Lex(bytes.NewReader(b))
-	if err != nil {
-		return model.Translation{}, fmt.Errorf("divide po file to tokens: %w", err)
-	}
-
-	po, err := pot.TokensToPo(tokens)
-	if err != nil {
-		return model.Translation{}, fmt.Errorf("convert tokens to pot.Po: %w", err)
-	}
-
-	if po.Header.PluralForms.NPlurals > pluralCountLimit {
-		return model.Translation{}, errors.New("plural forms with more than 2 forms are not implemented yet")
-	}
-
-	messages := make([]model.Message, 0, len(po.Messages))
-
-	singularValue := func(v pot.MessageNode) string { return v.MsgStr[0] }
-	pluralValue := func(v pot.MessageNode) []string { return v.MsgStr }
-	getStatus := func(v pot.MessageNode) model.MessageStatus {
-		if strings.Contains(v.Flag, "fuzzy") {
-			return model.MessageStatusFuzzy
-		}
-
-		return model.MessageStatusUntranslated
-	}
-
-	if *original {
-		singularValue = func(v pot.MessageNode) string { return v.MsgID }
-		pluralValue = func(v pot.MessageNode) []string { return []string{v.MsgID, v.MsgIDPlural} }
-		getStatus = func(_ pot.MessageNode) model.MessageStatus { return model.MessageStatusTranslated }
-	}
-
-	convert := func(v pot.MessageNode) string { return singularValue(v) } // TODO: convert to MF2 format.
-
-	if po.Header.PluralForms.NPlurals == pluralCountLimit {
-		convert = func(v pot.MessageNode) string {
-			if v.MsgIDPlural == "" {
-				return singularValue(v) // TODO: convert to MF2 format.
-			}
-
-			return convertPluralsToMessageString(pluralValue(v))
-		}
-	}
-
-	for _, node := range po.Messages {
-		message := model.Message{
-			ID:          node.MsgID,
-			PluralID:    node.MsgIDPlural,
-			Description: strings.Join(node.ExtractedComment, "\n "),
-			Positions:   node.References,
-			Message:     convert(node),
-			Status:      getStatus(node),
-		}
-
-		messages = append(messages, message)
-	}
-
-	return model.Translation{
-		Language: po.Header.Language,
-		Messages: messages,
-		Original: *original,
-	}, nil
 }
 
 // writeToPoTag function selects the appropriate write function (writeDefault or writePlural)
@@ -351,32 +485,4 @@ func writeTags(b *bytes.Buffer, message model.Message) error {
 	}
 
 	return nil
-}
-
-// convertPluralsToMessageString converts a slice of strings to MessageFormat plural form.
-func convertPluralsToMessageString(plurals []string) string {
-	var sb strings.Builder
-
-	sb.WriteString("match {$count :number}\n")
-
-	for i, plural := range plurals {
-		// TODO: convert plural string to MF2 format.
-		line := strings.ReplaceAll(plural, "%d", "{$count}")
-
-		var count string
-
-		if i == len(plurals)-1 {
-			count = "*"
-		} else {
-			count = strconv.Itoa(i + 1)
-		}
-
-		if line == "" {
-			sb.WriteString(fmt.Sprintf("when %s\n", count))
-		} else {
-			sb.WriteString(fmt.Sprintf("when %s {%s}\n", count, line))
-		}
-	}
-
-	return sb.String()
 }

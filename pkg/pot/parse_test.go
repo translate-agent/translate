@@ -57,7 +57,7 @@ func Test_TokensToPo(t *testing.T) {
 						TranslatorComment:     []string{"translator comment", "translator comment2"},
 						ExtractedComment:      []string{"extracted comment", "extracted comment2"},
 						References:            []string{"reference1", "reference2", "reference3"},
-						Flag:                  "fuzzy",
+						Flags:                 []string{"fuzzy"},
 						MsgCtxt:               "context",
 						MsgCtxtPrevCtxt:       "previous context",
 						MsgIDPrevUnt:          "msgid prev untranslated string",
