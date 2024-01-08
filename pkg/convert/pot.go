@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"go.expect.digital/translate/pkg/messageformat"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/pot"
 )
@@ -26,6 +25,8 @@ const pluralCountLimit = 2
 // ToPot function takes a model.Translation structure,
 // writes the language information and each message to a buffer in the POT file format,
 // and returns the buffer contents as a byte slice representing the POT file.
+// TODO instead of creating a buffer, create PO structure here and fill it with data.
+// Then convert PO structure to bytes.
 func ToPot(t model.Translation) ([]byte, error) {
 	var b bytes.Buffer
 
@@ -89,12 +90,12 @@ func FromPot(b []byte, original *bool) (model.Translation, error) {
 		getStatus = func(_ pot.MessageNode) model.MessageStatus { return model.MessageStatusTranslated }
 	}
 
-	convert := func(v pot.MessageNode) string { return convertToMessageFormatSingular(singularValue(v)) }
+	convert := func(v pot.MessageNode) string { return singularValue(v) } // TODO: convert to MF2 format.
 
 	if po.Header.PluralForms.NPlurals == pluralCountLimit {
 		convert = func(v pot.MessageNode) string {
 			if v.MsgIDPlural == "" {
-				return convertToMessageFormatSingular(singularValue(v))
+				return singularValue(v) // TODO: convert to MF2 format.
 			}
 
 			return convertPluralsToMessageString(pluralValue(v))
@@ -139,114 +140,124 @@ func writeToPoTag(b *bytes.Buffer, tag poTag, str string) error {
 // writeDefault parses a default message string into nodes, accumulates the text content,
 // handles cases where the default message doesn't have any text, splits the accumulated text into lines,
 // and writes the lines as a multiline tag value to a bytes.Buffer.
-func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
-	var text strings.Builder
+// TODO.
+func writeDefault(b *bytes.Buffer, tag poTag, str string) error { return nil }
 
-	nodes, err := messageformat.Parse(str)
-	if err != nil {
-		return fmt.Errorf("parse message: %w", err)
-	}
+// INFO: old code for reference.
+// func writeDefault(b *bytes.Buffer, tag poTag, str string) error {
+// var text strings.Builder
 
-	for _, node := range nodes {
-		nodeTxt, ok := node.(messageformat.NodeText)
-		if !ok {
-			return errors.New("convert node to messageformat.NodeText")
-		}
+// nodes, err := messageformat.Parse(str)
+// if err != nil {
+// 	return fmt.Errorf("parse message: %w", err)
+// }
 
-		text.WriteString(nodeTxt.Text)
-	}
+// for _, node := range nodes {
+// 	nodeTxt, ok := node.(messageformat.NodeText)
+// 	if !ok {
+// 		return errors.New("convert node to messageformat.NodeText")
+// 	}
 
-	if text.String() == "" {
-		text.WriteString(str)
-	}
+// 	text.WriteString(nodeTxt.Text)
+// }
 
-	lines := getPoTagLines(text.String())
+// if text.String() == "" {
+// 	text.WriteString(str)
+// }
 
-	if len(lines) == 1 {
-		if _, err = fmt.Fprintf(b, "%s \"%s\"\n", tag, lines[0]); err != nil {
-			return fmt.Errorf("write %s: %w", tag, err)
-		}
+// lines := getPoTagLines(text.String())
 
-		return nil
-	}
+// if len(lines) == 1 {
+// 	if _, err = fmt.Fprintf(b, "%s \"%s\"\n", tag, lines[0]); err != nil {
+// 		return fmt.Errorf("write %s: %w", tag, err)
+// 	}
 
-	if _, err = fmt.Fprintf(b, "%s \"\"\n", tag); err != nil {
-		return fmt.Errorf("write %s: %w", tag, err)
-	}
+// 	return nil
+// }
 
-	if err = writeMultiline(b, tag, lines); err != nil {
-		return fmt.Errorf("write multiline: %w", err)
-	}
+// if _, err = fmt.Fprintf(b, "%s \"\"\n", tag); err != nil {
+// 	return fmt.Errorf("write %s: %w", tag, err)
+// }
 
-	return nil
-}
+// if err = writeMultiline(b, tag, lines); err != nil {
+// 	return fmt.Errorf("write multiline: %w", err)
+// }
+
+// return nil
+//}
 
 // writePlural parses a plural message string into nodes, iterates over the nodes,
 // and writes the variants of the plural message to a bytes.Buffer.
-func writePlural(b *bytes.Buffer, tag poTag, str string) error {
-	nodes, err := messageformat.Parse(str)
-	if err != nil {
-		return fmt.Errorf("parse message: %w", err)
-	}
+// TODO.
+func writePlural(b *bytes.Buffer, tag poTag, str string) error { return nil }
 
-	for _, node := range nodes {
-		nodeMatch, ok := node.(messageformat.NodeMatch)
-		if !ok {
-			return errors.New("convert node to messageformat.NodeMatch")
-		}
+// INFO: old code for reference.
+// func writePlural(b *bytes.Buffer, tag poTag, str string) error {
+// nodes, err := messageformat.Parse(str)
+// if err != nil {
+// 	return fmt.Errorf("parse message: %w", err)
+// }
 
-		if err = writeVariants(b, tag, nodeMatch); err != nil {
-			return fmt.Errorf("write variants: %w", err)
-		}
-	}
+// for _, node := range nodes {
+// 	nodeMatch, ok := node.(messageformat.NodeMatch)
+// 	if !ok {
+// 		return errors.New("convert node to messageformat.NodeMatch")
+// 	}
 
-	return nil
-}
+// 	if err = writeVariants(b, tag, nodeMatch); err != nil {
+// 		return fmt.Errorf("write variants: %w", err)
+// 	}
+// }
+
+// return nil
+//}
 
 // writeVariants writes the variants of a plural message to a bytes.Buffer.
-func writeVariants(b *bytes.Buffer, tag poTag, nodeMatch messageformat.NodeMatch) error {
-	for i, variant := range nodeMatch.Variants {
-		if _, err := fmt.Fprintf(b, "msgstr[%d] ", i); err != nil {
-			return fmt.Errorf("write plural msgstr: %w", err)
-		}
+// INFO: old code for reference.
+// func writeVariants(b *bytes.Buffer, tag poTag, nodeMatch messageformat.NodeMatch) error {
+// 	for i, variant := range nodeMatch.Variants {
+// 		if _, err := fmt.Fprintf(b, "msgstr[%d] ", i); err != nil {
+// 			return fmt.Errorf("write plural msgstr: %w", err)
+// 		}
 
-		var txt strings.Builder
+// 		var txt strings.Builder
 
-		for _, msg := range variant.Message {
-			switch node := msg.(type) {
-			case messageformat.NodeText:
-				txt.WriteString(node.Text)
-			case messageformat.NodeVariable:
-				txt.WriteString("%d")
-			default:
-				return errors.New("unknown node type")
-			}
-		}
+// 		for _, msg := range variant.Message {
+// 			switch node := msg.(type) {
+// 			case messageformat.NodeText:
+// 				txt.WriteString(node.Text)
+// 			case messageformat.NodeVariable:
+// 				txt.WriteString("%d")
+// 			default:
+// 				return errors.New("unknown node type")
+// 			}
+// 		}
 
-		lines := getPoTagLines(txt.String())
+// 		lines := getPoTagLines(txt.String())
 
-		if len(lines) == 1 {
-			if _, err := fmt.Fprintf(b, "\"%s\"\n", lines[0]); err != nil {
-				return fmt.Errorf("write %s: %w", tag, err)
-			}
+// 		if len(lines) == 1 {
+// 			if _, err := fmt.Fprintf(b, "\"%s\"\n", lines[0]); err != nil {
+// 				return fmt.Errorf("write %s: %w", tag, err)
+// 			}
 
-			continue
-		}
+// 			continue
+// 		}
 
-		if _, err := fmt.Fprintf(b, "\"\"\n"); err != nil {
-			return fmt.Errorf("write %s: %w", tag, err)
-		}
+// 		if _, err := fmt.Fprintf(b, "\"\"\n"); err != nil {
+// 			return fmt.Errorf("write %s: %w", tag, err)
+// 		}
 
-		if err := writeMultiline(b, tag, lines); err != nil {
-			return fmt.Errorf("write multiline: %w", err)
-		}
-	}
+// 		if err := writeMultiline(b, tag, lines); err != nil {
+// 			return fmt.Errorf("write multiline: %w", err)
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 // writeMultiline writes a slice of strings as a multiline tag value to a bytes.Buffer.
-func writeMultiline(b *bytes.Buffer, tag poTag, lines []string) error {
+// TODO.
+func writeMultiline(b *bytes.Buffer, tag poTag, lines []string) error { //nolint:unused
 	for _, line := range lines {
 		if !strings.HasSuffix(line, "\\n") {
 			line += "\\n"
@@ -263,7 +274,8 @@ func writeMultiline(b *bytes.Buffer, tag poTag, lines []string) error {
 // getPoTagLines processes a string by encoding, splitting it into lines,
 // and handling special cases where the last line is an empty string due to trailing newline characters.
 // It returns a slice of strings representing the individual lines.
-func getPoTagLines(str string) []string {
+// TODO.
+func getPoTagLines(str string) []string { //nolint:unused
 	encodedStr := strconv.Quote(str)
 	encodedStr = strings.ReplaceAll(encodedStr, "\\\\", "\\")
 	encodedStr = encodedStr[1 : len(encodedStr)-1] // trim quotes
@@ -348,7 +360,7 @@ func convertPluralsToMessageString(plurals []string) string {
 	sb.WriteString("match {$count :number}\n")
 
 	for i, plural := range plurals {
-		plural = escapeSpecialChars(plural)
+		// TODO: convert plural string to MF2 format.
 		line := strings.ReplaceAll(plural, "%d", "{$count}")
 
 		var count string
