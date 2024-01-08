@@ -139,7 +139,7 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 			mfBuilder.Text(messages[0])
 		} else { // with placeholders
 			mfBuilder.Local("$format", mf2.Literal(node.Flags[placeholderFlagIDx])) // capture format flag
-			if err := textWithPlaceholder(mfBuilder, messages[0], placeholders); err != nil {
+			if err := textWithPlaceholders(mfBuilder, messages[0], placeholders); err != nil {
 				return "", fmt.Errorf("parse message with placeholders: %w", err)
 			}
 		}
@@ -155,7 +155,7 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 		default: //  with placeholders
 			mfBuilder.Local("$format", mf2.Literal(node.Flags[placeholderFlagIDx])) // capture format flag
 
-			build = textWithPlaceholder
+			build = textWithPlaceholders
 		}
 
 		for i := range messages {
@@ -179,7 +179,8 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 	return mf2String, nil
 }
 
-func textWithPlaceholder(mfBuilder *mf2.Builder, msg string, placeholders map[string]struct{}) error {
+// textWithPlaceholders processes a message string, identifies placeholders, and adds them to a Builder.
+func textWithPlaceholders(mfBuilder *mf2.Builder, msg string, placeholders map[string]struct{}) error {
 	for name, re := range placeholderFormats {
 		var currentIdx int
 
