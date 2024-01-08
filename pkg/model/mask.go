@@ -34,6 +34,9 @@ import (
 type Mask []string
 
 // Update updates the dst with the values from src based on the mask.
+// When updating slices:
+//   - replace the element if slice contains a struct with a field "ID"
+//   - append in all other cases
 //
 // Following scenarios are possible:
 //   - mask is nil: All fields are updated.
@@ -52,7 +55,7 @@ type Mask []string
 //	src := Foo{Bar: "bar2", Baz: "baz2"}
 //	mask := model.Mask{"Bar"}
 //
-//	update(&src, &dst, mask)
+//	Update(&src, &dst, mask)
 //	fmt.Println(dst) // Foo{Bar: "bar2", Baz: "baz"}.
 func Update[T any](src, dst *T, mask Mask) {
 	// If mask is nil, update all fields
