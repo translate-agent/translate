@@ -3,9 +3,11 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/Masterminds/squirrel"
+	"go.expect.digital/translate/pkg/repo"
 )
 
 // DB interface defines method signatures found both in sql.DB and sql.Tx.
@@ -87,4 +89,40 @@ func eq[T any](column string, values []T) squirrel.Eq {
 	}
 
 	return squirrel.Eq{column: values}
+}
+
+// Tx executes a transaction on the repository.
+// Returns an error if there was an error starting the transaction,
+// executing the callback function, or committing the transaction.
+func (r *Repo) Tx(ctx context.Context, fn func(context.Context, repo.Repo) error) (err error) {
+	var tx *sql.Tx
+
+	switch db := r.db.(type) {
+	case *sql.DB: // start transaction
+		if tx, err = db.BeginTx(ctx, nil); err != nil {
+			return fmt.Errorf("repo: begin tx: %w", err)
+		}
+	case *sql.Tx:
+		return errors.New("repo: tx already exists")
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback() //nolint:errcheck
+
+			err = fmt.Errorf("repo: tx panicked: %v", r)
+		}
+	}()
+
+	if err = fn(ctx, &Repo{db: tx}); err != nil {
+		tx.Rollback() //nolint:errcheck
+
+		return fmt.Errorf("repo: execute tx: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("repo: commit tx: %w", err)
+	}
+
+	return nil
 }

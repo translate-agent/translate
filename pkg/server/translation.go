@@ -249,15 +249,15 @@ func (t *TranslateServiceServer) UpdateTranslation(
 	}
 
 	// Update affected translations
-	if txErr := t.repo.Tx(ctx, func(tr repo.TranslationsRepo) error {
+	if err = t.repo.Tx(ctx, func(ctx context.Context, rp repo.Repo) error {
 		for i := range all {
-			if err := tr.SaveTranslation(ctx, params.serviceID, &all[i]); err != nil {
+			if err = rp.SaveTranslation(ctx, params.serviceID, &all[i]); err != nil {
 				return fmt.Errorf("save translation: %w", err)
 			}
 		}
 
 		return nil
-	}); txErr != nil {
+	}); err != nil {
 		return nil, status.Errorf(codes.Internal, "")
 	}
 

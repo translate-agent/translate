@@ -13,51 +13,13 @@ import (
 	"golang.org/x/text/language"
 )
 
-// Tx executes a transaction on the repository.
-// Returns an error if there was an error starting the transaction,
-// executing the callback function, or committing the transaction.
-func (r *Repo) Tx(ctx context.Context, fn func(repo.TranslationsRepo) error) error {
-	var (
-		tx  *sql.Tx
-		err error
-	)
-
-	switch db := r.db.(type) {
-	case *sql.DB: // start transaction
-		if tx, err = db.BeginTx(ctx, nil); err != nil {
-			return fmt.Errorf("repo: begin tx: %w", err)
-		}
-	case *sql.Tx: // use existing transaction
-		tx = db
-	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback() //nolint:errcheck
-		}
-	}()
-
-	if err = fn(&Repo{db: tx}); err != nil {
-		tx.Rollback() //nolint:errcheck
-
-		return fmt.Errorf("repo: execute tx: %w", err)
-	}
-
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("repo: commit tx: %w", err)
-	}
-
-	return nil
-}
-
 func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
 	if _, ok := r.db.(*sql.Tx); ok { // use existing tx
 		return r.saveTranslation(ctx, serviceID, translation)
 	}
 
-	// create new tx
-	return r.Tx(ctx, func(tr repo.TranslationsRepo) error {
-		return tr.SaveTranslation(ctx, serviceID, translation) //nolint:wrapcheck
+	return r.Tx(ctx, func(ctx context.Context, rp repo.Repo) error { // create new tx
+		return rp.SaveTranslation(ctx, serviceID, translation) //nolint:wrapcheck
 	})
 }
 

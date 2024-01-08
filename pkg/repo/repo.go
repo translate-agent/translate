@@ -25,8 +25,6 @@ type LoadTranslationsOpts struct {
 }
 
 type TranslationsRepo interface {
-	// Tx executes fn in a transaction.
-	Tx(ctx context.Context, fn func(TranslationsRepo) error) error
 	// SaveTranslation handles both Create and Update
 	SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error
 	LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts LoadTranslationsOpts) (model.Translations, error)
@@ -37,4 +35,7 @@ type Repo interface {
 	TranslationsRepo
 
 	io.Closer
+
+	// Tx executes fn in a transaction.
+	Tx(ctx context.Context, fn func(ctx context.Context, repo Repo) error) error
 }

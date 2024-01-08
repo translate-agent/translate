@@ -153,9 +153,9 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	}
 
 	// Update affected translations
-	txErr := t.repo.Tx(ctx, func(tr repo.TranslationsRepo) error {
+	err = t.repo.Tx(ctx, func(ctx context.Context, rp repo.Repo) error {
 		for i := range all {
-			if err := t.repo.SaveTranslation(ctx, params.serviceID, &all[i]); err != nil {
+			if err = rp.SaveTranslation(ctx, params.serviceID, &all[i]); err != nil {
 				return fmt.Errorf("save translation: %w", err)
 			}
 		}
@@ -166,9 +166,9 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	switch {
 	default:
 		return &emptypb.Empty{}, nil
-	case errors.Is(txErr, repo.ErrNotFound):
+	case errors.Is(err, repo.ErrNotFound):
 		return nil, status.Errorf(codes.NotFound, "service not found")
-	case txErr != nil:
+	case err != nil:
 		return nil, status.Errorf(codes.Internal, "")
 	}
 }
