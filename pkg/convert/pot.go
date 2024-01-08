@@ -11,6 +11,7 @@ import (
 	mf2 "go.expect.digital/mf2"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/pot"
+	"golang.org/x/text/language"
 )
 
 const pluralCountLimit = 2 // max value for plural count. //TODO why ?
@@ -81,30 +82,39 @@ func FromPo(b []byte, originalOverride *bool) (model.Translation, error) {
 
 // isOriginalPO function determines whether a PO file is an original or a translation.
 func isOriginalPO(po pot.Po, override *bool) bool {
-	// if override is not nil, use it.
+	// If override is not nil, use it.
 	if override != nil {
 		return *override
 	}
 
-	// if in all messages msgstr is empty, then it's original.
-	allMsgStrEmpty := slices.ContainsFunc(po.Messages, func(node pot.MessageNode) bool {
-		for _, msg := range node.MsgStr {
-			if msg != "" {
-				return false
+	// NOTE: Based on my research, all original PO files have empty language.
+	// So that could be a way to determine originality.
+	// Further research is needed to confirm this.
+	if po.Header.Language == language.Und {
+		return true
+	}
+
+	// When dealing with original PO files, all messages are always empty.
+	allEmpty := func(msgs []pot.MessageNode) bool {
+		for _, node := range msgs {
+			for _, msg := range node.MsgStr {
+				if msg != "" {
+					return false
+				}
 			}
 		}
 
 		return true
-	})
+	}
 
-	// XXX: originality can also be determined by file extension.
+	// NOTE: originality can also be determined by file extension.
 	// .pot == original, .po == translation.
 	// but we don't preserve file extension, so we can't use this method for now.
 
-	return allMsgStrEmpty
+	return allEmpty(po.Messages)
 }
 
-// XXX: Can every convert use that ?
+// TODO: Can every convert use that ?
 var placeholderFormats = map[string]*regexp.Regexp{
 	"pythonVar":    regexp.MustCompile(`%\((\w+)\)([sd])`), // hello %(var)s | hello %(var)d
 	"printf":       regexp.MustCompile(`%(s|d|f)`),         // hello %s | hello %d | hello %f
@@ -128,7 +138,7 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 		if placeholderFlagIDx == -1 { //  without placeholders
 			mfBuilder.Text(messages[0])
 		} else { // with placeholders
-			mfBuilder.Local("format", mf2.Literal(node.Flags[placeholderFlagIDx])) // capture format flag
+			mfBuilder.Local("$format", mf2.Literal(node.Flags[placeholderFlagIDx])) // capture format flag
 			if err := textWithPlaceholder(mfBuilder, messages[0], placeholders); err != nil {
 				return "", fmt.Errorf("parse message with placeholders: %w", err)
 			}
@@ -143,7 +153,7 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 		case -1: // without placeholders
 			build = func(mfBuilder *mf2.Builder, msg string, _ map[string]struct{}) error { mfBuilder.Text(msg); return nil }
 		default: //  with placeholders
-			mfBuilder.Local("format", mf2.Literal(node.Flags[placeholderFlagIDx])) // capture format flag
+			mfBuilder.Local("$format", mf2.Literal(node.Flags[placeholderFlagIDx])) // capture format flag
 
 			build = textWithPlaceholder
 		}
