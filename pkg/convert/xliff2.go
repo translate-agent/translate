@@ -6,19 +6,32 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
 
+	"go.expect.digital/mf2"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
 
-// TODO: For now we can only import XLIFF 2.0 files, export is not working correctly yet.
-
-// XLIFF was standardized by OASIS in 2002.
-// Currently latest version is v2.1 (released on 2018-02-13).
-
 // This implementation follows v2.0 specification (last updated 2014-08-05).
 // XLIFF 2.0 Specification: https://docs.oasis-open.org/xliff/xliff-core/v2.0/os/xliff-core-v2.0-os.html
-// XLIFF 2.0 Example: https://localizely.com/xliff-file/?tab=xliff-20
+
+// TODO: For now we can only import XLIFF 2.0 files, export is not working correctly yet.
+// NOTE: Xliff 2.0 has no unified standard for storing fuzzy values, plurals, gender specific text.
+
+// List of elements found in source/target:
+// For more details: https://docs.oasis-open.org/xliff/xliff-core/v2.0/os/xliff-core-v2.0-os.html#source
+const (
+	cp  = "cp"  // Unicode character that is invalid in XML
+	ph  = "ph"  // standalone code of the original format
+	pc  = "pc"  // well-formed spanning original code
+	sc  = "sc"  // start of a spanning original code
+	ec  = "ec"  // end of a spanning original code
+	mrk = "mrk" // annotation pertaining to the marked span
+	sm  = "sm"  // start marker of an annotation
+	em  = "em"  // end marker of an annotation
+)
 
 type xliff2 struct {
 	XMLName xml.Name     `xml:"urn:oasis:names:tc:xliff:document:2.0 xliff"`
@@ -33,13 +46,12 @@ type xliff2File struct {
 }
 
 type unit struct {
-	ID           string  `xml:"id,attr"`           // translation.messages[n].ID
-	Notes        *[]note `xml:"notes>note"`        // set as pointer to avoid empty <notes></notes> when marshalling
+	ID    string  `xml:"id,attr"`    // translation.messages[n].ID
+	Notes *[]note `xml:"notes>note"` // set as pointer to avoid empty <notes></notes> when marshalling
+	// NOTE: OriginalData currently is unused.
 	OriginalData *[]data `xml:"originalData>data"` // contains the original data for given inline code
 	Source       message `xml:"segment>source"`    // translation.messages[n].Message (if no target language is set)
 	Target       message `xml:"segment>target"`    // translation.messages[n].Message (if target language is set)
-
-	// NOTE: Xliff 2.0 has no unified standard for storing fuzzy values, plurals, gender specific text.
 }
 
 type data struct {
@@ -56,15 +68,6 @@ type message struct {
 	Content string `xml:",innerxml"`
 }
 
-// Xliff 2.0 placeholder element specification:
-// https://docs.oasis-open.org/xliff/xliff-core/v2.0/xliff-core-v2.0.html#ph
-type placeholder struct {
-	Attributes *[]xml.Attr `xml:",any,attr"` // other attributes, refer to URL above for more details
-
-	ID      string `xml:"id,attr"`      // required attribute, currently not enforced
-	DataRef string `xml:"dataRef,attr"` // optional attribute, holds the identifier of the <data> element
-}
-
 // FromXliff2 converts serialized data from the XML data in the XLIFF 2 format into a model.Translation struct.
 func FromXliff2(data []byte, original *bool) (model.Translation, error) {
 	var xlf xliff2
@@ -74,7 +77,6 @@ func FromXliff2(data []byte, original *bool) (model.Translation, error) {
 	}
 
 	translation := model.Translation{
-		Language: xlf.TrgLang,
 		Original: xlf.TrgLang == language.Und,
 		Messages: make([]model.Message, 0, len(xlf.File.Units)),
 	}
@@ -84,58 +86,19 @@ func FromXliff2(data []byte, original *bool) (model.Translation, error) {
 		translation.Original = *original
 	}
 
-	getMessage := func(u unit) (string, error) {
-		m, err := messageFromContent(u.Target.Content, u.OriginalData)
-		if err != nil {
-			return "", fmt.Errorf("MF2 message from unit target content: %w", err)
-		}
-
-		return m, nil
-	}
-
-	status := model.MessageStatusUntranslated
-
-	if translation.Original {
+	if *original {
 		translation.Language = xlf.SrcLang
-		getMessage = func(u unit) (string, error) {
-			m, err := messageFromContent(u.Source.Content, u.OriginalData)
-			if err != nil {
-				return "", fmt.Errorf("MF2 message from unit source content: %w", err)
-			}
-
-			return m, nil
-		}
-
-		status = model.MessageStatusTranslated
+	} else {
+		translation.Language = xlf.TrgLang
 	}
 
-	findDescription := func(u unit) string {
-		if u.Notes == nil {
-			return ""
-		}
-
-		for _, note := range *u.Notes {
-			if note.Category == "description" {
-				return note.Content
-			}
-		}
-
-		return ""
-	}
-
-	for _, unit := range xlf.File.Units {
-		message, err := getMessage(unit)
+	for i := range xlf.File.Units {
+		msg, err := messageFromUnit(xlf.File.Units[i], translation.Original)
 		if err != nil {
-			return model.Translation{}, fmt.Errorf("get message: %w", err)
+			return model.Translation{}, fmt.Errorf("message from unit: %w", err)
 		}
 
-		translation.Messages = append(translation.Messages, model.Message{
-			ID:          unit.ID,
-			Message:     message, // TODO: convert message to MF2 format.
-			Description: findDescription(unit),
-			Positions:   positionsFromXliff2(unit.Notes),
-			Status:      status,
-		})
+		translation.Messages = append(translation.Messages, *msg)
 	}
 
 	return translation, nil
@@ -159,25 +122,9 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 
 	// TODO: implement MF2 to Xliff 2.0 conversion.
 	for _, msg := range translation.Messages {
-		message := "" // TODO: convert msg.Message from MF2 format.
-
-		u := unit{
-			ID:    msg.ID,
-			Notes: positionsToXliff2(msg.Positions),
-		}
-
-		if translation.Original {
-			u.Source.Content = message
-		} else {
-			u.Target.Content = message
-		}
-
-		if msg.Description != "" {
-			if u.Notes == nil {
-				u.Notes = &[]note{{Category: "description", Content: msg.Description}}
-			} else {
-				*u.Notes = append(*u.Notes, note{Category: "description", Content: msg.Description})
-			}
+		u, err := messageToUnit(msg, translation.Original)
+		if err != nil {
+			return nil, fmt.Errorf("message to unit: %w", err)
 		}
 
 		xlf.File.Units = append(xlf.File.Units, u)
@@ -192,6 +139,104 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 }
 
 // helpers
+
+// messageFromUnit converts Xliff2.0 unit element to model.Message.
+func messageFromUnit(u unit, original bool) (*model.Message, error) {
+	var decoder *xml.Decoder
+
+	m := &model.Message{
+		ID:          u.ID,
+		Description: descriptionFromXliff2(u),
+		Positions:   positionsFromXliff2(u.Notes),
+	}
+
+	if original {
+		decoder = xml.NewDecoder(bytes.NewBufferString(u.Source.Content))
+		m.Status = model.MessageStatusTranslated
+	} else {
+		decoder = xml.NewDecoder(bytes.NewBufferString(u.Target.Content))
+		m.Status = model.MessageStatusUntranslated
+	}
+
+	// retrieve MF2 message from content
+
+	elementCount := make(map[string]int)
+
+	message := mf2.NewBuilder()
+
+	for {
+		token, err := decoder.Token()
+		if errors.Is(err, io.EOF) {
+			break
+		} else if err != nil {
+			return nil, fmt.Errorf("get token: %w", err)
+		}
+
+		if token == nil {
+			break
+		}
+
+		switch t := token.(type) {
+		case xml.CharData: // Text
+			message.Text(unescapeXML(string(t)))
+		case xml.StartElement:
+			switch elName := t.Name.Local; elName {
+			default:
+				// noop
+			case cp, ph, sc, ec, sm, em, pc, mrk:
+				elementCount[elName]++
+
+				v := "$" + elName + strconv.Itoa(elementCount[elName])
+				message.Expr(mf2.Var(v))
+
+				var attributes string
+
+				for i := range t.Attr {
+					attributes += fmt.Sprintf(` %s="%s"`, t.Attr[i].Name.Local, t.Attr[i].Value)
+				}
+
+				if elName == pc || elName == mrk { // elements with content
+					var content string
+
+					if err = decoder.DecodeElement(&content, &t); err != nil {
+						return nil, fmt.Errorf("decode element: %w", err)
+					}
+
+					message.Local(v, mf2.Literal("<"+elName+attributes+">"+content+"</"+elName+">"))
+				} else { // elements without content
+					message.Local(v, mf2.Literal("<"+elName+attributes+"/>"))
+				}
+			}
+		}
+	}
+
+	m.Message = message.MustBuild()
+
+	return m, nil
+}
+
+func messageToUnit(m model.Message, original bool) (unit, error) {
+	u := unit{
+		ID:    m.ID,
+		Notes: positionsToXliff2(m.Positions),
+	}
+
+	if m.Description != "" {
+		if u.Notes == nil {
+			u.Notes = &[]note{{Category: "description", Content: m.Description}}
+		} else {
+			*u.Notes = append(*u.Notes, note{Category: "description", Content: m.Description})
+		}
+	}
+
+	if original {
+		u.Source.Content = ""
+	} else {
+		u.Target.Content = ""
+	}
+
+	return u, nil
+}
 
 // positionsFromXliff2 extracts line positions from unit []note.
 func positionsFromXliff2(notes *[]note) model.Positions {
@@ -225,101 +270,38 @@ func positionsToXliff2(positions model.Positions) *[]note {
 	return &notes
 }
 
-/*
-	messageFromContent extracts 'Message Format v2' compliant message from unit source/target content.
+func descriptionFromXliff2(u unit) string {
+	if u.Notes == nil {
+		return ""
+	}
 
-Examples:
-input:
-
-	"Entries: <ph id="1" dataRef="d1" canCopy="no" canDelete="no" canOverlap="yes"/>!",
-	&[]data{{ID: "d1", Content: "%d"}}
-
-output:
-
-	"Entries: {:Placeholder format=printf type=int value=%d id=1 dataRef=d1 canCopy=no canDelete=no canOverlap=yes}\\!",
-	nil
-*/
-func messageFromContent(content string, originalData *[]data) (string, error) {
-	var buf bytes.Buffer
-
-	decoder := xml.NewDecoder(bytes.NewBufferString(content))
-
-	for {
-		token, err := decoder.Token()
-
-		if errors.Is(err, io.EOF) {
-			return buf.String(), nil
-		} else if err != nil {
-			return "", fmt.Errorf("get token: %w", err)
-		}
-
-		switch t := token.(type) {
-		default:
-			continue
-		case xml.CharData:
-			buf.WriteString("") // TODO
-		case xml.StartElement:
-			// NOTE: currently only placeholder elements are supported.
-			// TODO: handle other types of elements.
-			if t.Name.Local != "ph" {
-				continue
-			}
-
-			var ph placeholder
-
-			if err = decoder.DecodeElement(&ph, &t); err != nil {
-				return "", fmt.Errorf("decode placeholder: %w", err)
-			}
-
-			// if err := writePlaceholder(&buf, ph, originalData); err != nil {
-			// 	return "", fmt.Errorf("write placeholder: %w", err)
-			// }
+	for _, note := range *u.Notes {
+		if note.Category == "description" {
+			return note.Content
 		}
 	}
+
+	return ""
 }
 
-// // writePlaceholder writes MF2 compliant placeholder expression to bytes.Buffer.
-// func writePlaceholder(buf *bytes.Buffer, ph placeholder, originalData *[]data) error {
-// 	pf := mf2.GetPlaceholderFormat("")
-// 	phExpr := pf.NodeExprF("", pf.Re.FindStringSubmatchIndex(""))
+// unescapeXML replaces XML escape sequences with corresponding chars in text.
+func unescapeXML(s string) string {
+	return strings.NewReplacer(
+		"&amp;", "&",
+		"&lt;", "<",
+		"&gt;", ">",
+		"&quot;", `"`,
+		"&apos;", "'",
+	).Replace(s)
+}
 
-// 	if ph.DataRef != "" && originalData != nil {
-// 		// include details about format specifier if referenced in the original data.
-// 		for _, data := range *originalData {
-// 			if ph.DataRef == data.ID {
-// 				pf = mf2.GetPlaceholderFormat(data.Content)
-// 				phExpr = pf.NodeExprF(data.Content, pf.Re.FindStringSubmatchIndex(data.Content))
-// 				// include format specifier
-// 				phExpr.Function.Options = append(phExpr.Function.Options, mf2.NodeOption{Name: "value", Value: data.Content})
-
-// 				break
-// 			}
-// 		}
-// 	}
-
-// 	// add placeholder attributes to function options
-// 	if ph.ID != "" {
-// 		phExpr.Function.Options = append(phExpr.Function.Options, mf2.NodeOption{Name: "id", Value: ph.ID})
-// 	}
-
-// 	if ph.DataRef != "" {
-// 		phExpr.Function.Options = append(phExpr.Function.Options, mf2.NodeOption{Name: "dataRef", Value: ph.DataRef})
-// 	}
-
-// 	if ph.Attributes != nil {
-// 		for _, v := range *ph.Attributes {
-// 			phExpr.Function.Options = append(phExpr.Function.Options,
-// 				mf2.NodeOption{Name: v.Name.Local, Value: v.Value})
-// 		}
-// 	}
-
-// 	b, err := mf2.AST{phExpr}.MarshalText()
-// 	if err != nil {
-// 		return fmt.Errorf("marshal placeholder text: %w", err)
-// 	}
-
-// 	// write MF2 compliant placeholder expression to bytes.Buffer.
-// 	buf.Write(b)
-
-// 	return nil
-// }
+// escapeXML replaces special chars in text with escape sequences to be XML compliant.
+func escapeXML(s string) string {
+	return strings.NewReplacer(
+		"&", "&amp;",
+		"<", "&lt;",
+		">", "&gt;",
+		`"`, "&quot;",
+		"'", "&apos;",
+	).Replace(s)
+}

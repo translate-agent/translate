@@ -53,6 +53,7 @@ linters:
     - wastedassign
     - whitespace
     - zerologlint
+    - ireturn
 linters-settings:
   cyclop:
     max-complexity: 30
@@ -60,3 +61,11 @@ linters-settings:
     enable-all: true
   predeclared:
     ignore: ""
+  ireturn:
+    allow:
+      - anon
+      - error
+      - empty
+      - generic
+      - stdlib
+      - (or|er)$
