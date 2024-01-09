@@ -126,3 +126,37 @@ func (r *Repo) Tx(ctx context.Context, fn func(context.Context, repo.Repo) error
 
 	return nil
 }
+
+// ensureTx checks for existing db transaction - if present uses existing, otherwise starts a new tx.
+func (r *Repo) ensureTx(ctx context.Context, fn func(context.Context, *Repo) error) (err error) {
+	switch db := r.db.(type) {
+	case *sql.Tx: // use existing tx
+		return fn(ctx, r)
+	case *sql.DB:
+		var tx *sql.Tx
+
+		if tx, err = db.BeginTx(ctx, nil); err != nil {
+			return fmt.Errorf("repo: begin tx: %w", err)
+		}
+
+		defer func() {
+			if r := recover(); r != nil {
+				tx.Rollback() //nolint:errcheck
+
+				err = fmt.Errorf("repo: tx panicked: %v", r)
+			}
+		}()
+
+		if err = fn(ctx, &Repo{db: tx}); err != nil {
+			tx.Rollback() //nolint:errcheck
+
+			return fmt.Errorf("repo: execute tx: %w", err)
+		}
+
+		if err = tx.Commit(); err != nil {
+			return fmt.Errorf("repo: commit tx: %w", err)
+		}
+	}
+
+	return nil
+}

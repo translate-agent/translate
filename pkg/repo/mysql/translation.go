@@ -14,93 +14,85 @@ import (
 )
 
 func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
-	if _, ok := r.db.(*sql.Tx); ok { // use existing tx
-		return r.saveTranslation(ctx, serviceID, translation)
-	}
+	return r.ensureTx(ctx, func(ctx context.Context, r *Repo) error {
+		_, err := r.LoadService(ctx, serviceID)
+		if err != nil {
+			return fmt.Errorf("repo: load service: %w", err)
+		}
 
-	return r.Tx(ctx, func(ctx context.Context, rp repo.Repo) error { // create new tx
-		return rp.SaveTranslation(ctx, serviceID, translation) //nolint:wrapcheck
-	})
-}
+		// Check if translation already exist
+		var translationID uuid.UUID
 
-func (r *Repo) saveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
-	_, err := r.LoadService(ctx, serviceID)
-	if err != nil {
-		return fmt.Errorf("repo: load service: %w", err)
-	}
-
-	// Check if translation already exist
-	var translationID uuid.UUID
-
-	row := r.db.QueryRowContext(
-		ctx,
-		`SELECT id FROM translation WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
-		serviceID,
-		translation.Language.String(),
-	)
-
-	// Check if translation already exists, if not, create a new one
-	switch err = row.Scan(&translationID); {
-	// Translation already exists
-	default:
-		// noop
-
-	// Translation does not exist
-	case errors.Is(err, sql.ErrNoRows):
-		translationID = uuid.New()
-
-		if _, err = r.db.ExecContext(
+		row := r.db.QueryRowContext(
 			ctx,
-			`INSERT INTO translation (id, service_id, language, original) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
-			translationID,
+			`SELECT id FROM translation WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
 			serviceID,
 			translation.Language.String(),
-			translation.Original,
-		); err != nil {
-			return fmt.Errorf("repo: insert message: %w", err)
+		)
+
+		// Check if translation already exists, if not, create a new one
+		switch err = row.Scan(&translationID); {
+		// Translation already exists
+		default:
+			// noop
+
+		// Translation does not exist
+		case errors.Is(err, sql.ErrNoRows):
+			translationID = uuid.New()
+
+			if _, err = r.db.ExecContext(
+				ctx,
+				`INSERT INTO translation (id, service_id, language, original) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
+				translationID,
+				serviceID,
+				translation.Language.String(),
+				translation.Original,
+			); err != nil {
+				return fmt.Errorf("repo: insert message: %w", err)
+			}
+
+		// Error scanning row
+		case err != nil:
+			return fmt.Errorf("repo: scan message: %w", err)
 		}
 
-	// Error scanning row
-	case err != nil:
-		return fmt.Errorf("repo: scan message: %w", err)
-	}
-
-	// Insert into message table,
-	// on duplicate message.id and message.translation_id,
-	// update message's message, description and status values.
-	stmt, err := r.db.PrepareContext(
-		ctx,
-		`INSERT INTO message
-	(translation_id, id, message, description, positions, status)
-VALUES
-	(UUID_TO_BIN(?), ?, ?, ?, ?, ?)
-ON DUPLICATE KEY UPDATE
-	message = VALUES(message),
-	description = VALUES(description),
-	positions = VALUES(positions),
-	status = VALUES(status)`,
-	)
-	if err != nil {
-		return fmt.Errorf("repo: prepare stmt to insert message: %w", err)
-	}
-	defer stmt.Close()
-
-	for _, m := range translation.Messages {
-		_, err = stmt.ExecContext(
+		// Insert into message table,
+		// on duplicate message.id and message.translation_id,
+		// update message's message, description and status values.
+		stmt, err := r.db.PrepareContext(
 			ctx,
-			translationID,
-			m.ID,
-			m.Message,
-			m.Description,
-			m.Positions,
-			m.Status,
+			`INSERT INTO message
+		(translation_id, id, message, description, positions, status)
+	VALUES
+		(UUID_TO_BIN(?), ?, ?, ?, ?, ?)
+	ON DUPLICATE KEY UPDATE
+		message = VALUES(message),
+		description = VALUES(description),
+		positions = VALUES(positions),
+		status = VALUES(status)`,
 		)
 		if err != nil {
-			return fmt.Errorf("repo: insert message: %w", err)
+			return fmt.Errorf("repo: prepare stmt to insert message: %w", err)
 		}
-	}
+		defer stmt.Close()
 
-	return nil
+		for _, m := range translation.Messages {
+			_, err = stmt.ExecContext(
+				ctx,
+				translationID,
+				m.ID,
+				m.Message,
+				m.Description,
+				m.Positions,
+				m.Status,
+			)
+			if err != nil {
+				return fmt.Errorf("repo: insert message: %w", err)
+			}
+		}
+
+		return nil
+	})
 }
 
 func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationsOpts,
@@ -128,7 +120,7 @@ func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts r
 			original bool
 		)
 
-		if err := rows.Scan(
+		if err = rows.Scan(
 			&msg.ID, &msg.Message, &msg.Description, &msg.Positions, &msg.Status, &lang, &original); err != nil {
 			return nil, fmt.Errorf("repo: scan message: %w", err)
 		}

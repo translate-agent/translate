@@ -249,9 +249,9 @@ func (t *TranslateServiceServer) UpdateTranslation(
 	}
 
 	// Update affected translations
-	if err = t.repo.Tx(ctx, func(ctx context.Context, rp repo.Repo) error {
+	if err = t.repo.Tx(ctx, func(ctx context.Context, r repo.Repo) error {
 		for i := range all {
-			if err = rp.SaveTranslation(ctx, params.serviceID, &all[i]); err != nil {
+			if err = r.SaveTranslation(ctx, params.serviceID, &all[i]); err != nil {
 				return fmt.Errorf("save translation: %w", err)
 			}
 		}

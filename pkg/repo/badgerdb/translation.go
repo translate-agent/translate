@@ -22,31 +22,23 @@ func translationKey(serviceID uuid.UUID, language language.Tag) []byte {
 
 // SaveTranslation handles both Create and Update.
 func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
-	if r.tx != nil { // use existing tx
-		return r.saveTranslation(ctx, serviceID, translation)
-	}
+	return r.ensureTx(ctx, func(ctx context.Context, r *Repo) error {
+		_, err := r.LoadService(ctx, serviceID)
+		if err != nil {
+			return fmt.Errorf("repo: load service: %w", err)
+		}
 
-	return r.Tx(ctx, func(ctx context.Context, rp repo.Repo) error { // create new tx
-		return rp.SaveTranslation(ctx, serviceID, translation) //nolint:wrapcheck
+		b, err := json.Marshal(translation)
+		if err != nil {
+			return fmt.Errorf("marshal translation: %w", err)
+		}
+
+		if err = r.tx.Set(translationKey(serviceID, translation.Language), b); err != nil {
+			return fmt.Errorf("repo: set translation: %w", err)
+		}
+
+		return nil
 	})
-}
-
-func (r *Repo) saveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
-	_, err := r.LoadService(ctx, serviceID)
-	if err != nil {
-		return fmt.Errorf("repo: load service: %w", err)
-	}
-
-	b, err := json.Marshal(translation)
-	if err != nil {
-		return fmt.Errorf("marshal translation: %w", err)
-	}
-
-	if err := r.tx.Set(translationKey(serviceID, translation.Language), b); err != nil {
-		return fmt.Errorf("repo: set translation: %w", err)
-	}
-
-	return nil
 }
 
 // LoadTranslations retrieves translations from db based on serviceID and LoadMessageOpts.
