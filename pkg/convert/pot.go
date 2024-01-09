@@ -133,26 +133,29 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 	mfBuilder := mf2.NewBuilder()
 	placeholders := make(map[string]struct{}) // map of placeholders to avoid duplicates, only for plural messages
 
+	// default build function, for message without placeholders
+	build := func(mfBuilder *mf2.Builder, msg string, _ map[string]struct{}) error {
+		mfBuilder.Text(msg)
+
+		return nil
+	}
+
 	switch messages := getMessages(node); len(messages) {
 	case 1: // singular message
-		if placeholderFlagIDx == -1 { //  without placeholders
-			mfBuilder.Text(messages[0])
-		} else { // with placeholders
+		if placeholderFlagIDx != -1 { // with placeholders
 			mfBuilder.Local("$format", mf2.Literal(node.Flags[placeholderFlagIDx])) // capture format flag
-			if err := textWithPlaceholders(mfBuilder, messages[0], placeholders); err != nil {
-				return "", fmt.Errorf("parse message with placeholders: %w", err)
-			}
+
+			build = textWithPlaceholders
+		}
+
+		if err := build(mfBuilder, messages[0], placeholders); err != nil {
+			return "", fmt.Errorf("build singular message: %w", err)
 		}
 
 	default: // plural message
 		mfBuilder.Match(mf2.Var("$count")) // match to arbitrary variable name
 
-		var build func(*mf2.Builder, string, map[string]struct{}) error // build function based on placeholders
-
-		switch placeholderFlagIDx {
-		case -1: // without placeholders
-			build = func(mfBuilder *mf2.Builder, msg string, _ map[string]struct{}) error { mfBuilder.Text(msg); return nil }
-		default: //  with placeholders
+		if placeholderFlagIDx != -1 { // with placeholders
 			mfBuilder.Local("$format", mf2.Literal(node.Flags[placeholderFlagIDx])) // capture format flag
 
 			build = textWithPlaceholders
@@ -166,7 +169,7 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 			}
 
 			if err := build(mfBuilder, messages[i], placeholders); err != nil {
-				return "", fmt.Errorf("parse plural message with placeholders: %w", err)
+				return "", fmt.Errorf("build plural message: %w", err)
 			}
 		}
 	}
@@ -186,7 +189,7 @@ func textWithPlaceholders(mfBuilder *mf2.Builder, msg string, placeholders map[s
 
 		allIndices := re.FindAllStringIndex(msg, -1)
 		for i, indices := range allIndices {
-			// Add text before the placeholder
+			// Add text before the first placeholder, if any.
 			text := msg[currentIdx:indices[0]]
 			if text != "" {
 				mfBuilder.Text(text)
@@ -216,9 +219,13 @@ func textWithPlaceholders(mfBuilder *mf2.Builder, msg string, placeholders map[s
 
 			currentIdx = indices[1]
 
-			// If this is the last placeholder, add the text after the placeholder
+			// If this is the last placeholder, add the remaining text after it, if any.
 			if i == len(allIndices)-1 {
-				mfBuilder.Text(msg[currentIdx:])
+				text := msg[currentIdx:]
+				if text != "" {
+					mfBuilder.Text(text)
+				}
+
 				return nil
 			}
 		}

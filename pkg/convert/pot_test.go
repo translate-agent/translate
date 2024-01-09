@@ -147,11 +147,11 @@ msgid "Hello, {name}!"
 msgstr ""
 
 #, c-format
-msgid "Hello, %s!"
+msgid "%s, Hello!"
 msgstr ""
 
 #, python-format
-msgid "Hello, %(name)s!"
+msgid "Hello, %(name)s, world!"
 msgstr ""
 
 #, python-format
@@ -178,18 +178,18 @@ msgstr ""
 {{Hello, { $name }!}}`,
 					},
 					{
-						ID:     "Hello, %s!",
+						ID:     "%s, Hello!",
 						Status: model.MessageStatusTranslated,
 						Message: `.local $format = { c-format }
 .local $ph0 = { |%s| }
-{{Hello, { $ph0 }!}}`,
+{{{ $ph0 }, Hello!}}`,
 					},
 					{
-						ID:     "Hello, %(name)s!",
+						ID:     "Hello, %(name)s, world!",
 						Status: model.MessageStatusTranslated,
 						Message: `.local $format = { python-format }
 .local $name = { |%(name)s| }
-{{Hello, { $name }!}}`,
+{{Hello, { $name }, world!}}`,
 					},
 					{
 						ID:     "Hello, {}!",
