@@ -62,14 +62,14 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 		stmt, err := r.db.PrepareContext(
 			ctx,
 			`INSERT INTO message
-		(translation_id, id, message, description, positions, status)
-	VALUES
-		(UUID_TO_BIN(?), ?, ?, ?, ?, ?)
-	ON DUPLICATE KEY UPDATE
-		message = VALUES(message),
-		description = VALUES(description),
-		positions = VALUES(positions),
-		status = VALUES(status)`,
+	(translation_id, id, message, description, positions, status)
+VALUES
+	(UUID_TO_BIN(?), ?, ?, ?, ?, ?)
+ON DUPLICATE KEY UPDATE
+	message = VALUES(message),
+	description = VALUES(description),
+	positions = VALUES(positions),
+	status = VALUES(status)`,
 		)
 		if err != nil {
 			return fmt.Errorf("repo: prepare stmt to insert message: %w", err)
