@@ -22,28 +22,23 @@ func translationKey(serviceID uuid.UUID, language language.Tag) []byte {
 
 // SaveTranslation handles both Create and Update.
 func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, translation *model.Translation) error {
-	_, err := r.LoadService(ctx, serviceID)
-	if err != nil {
-		return fmt.Errorf("repo: load service: %w", err)
-	}
+	return r.ensureTx(ctx, func(ctx context.Context, r *Repo) error {
+		_, err := r.LoadService(ctx, serviceID)
+		if err != nil {
+			return fmt.Errorf("repo: load service: %w", err)
+		}
 
-	err = r.db.Update(func(txn *badger.Txn) error {
-		val, marshalErr := json.Marshal(translation)
-		if marshalErr != nil {
+		b, err := json.Marshal(translation)
+		if err != nil {
 			return fmt.Errorf("marshal translation: %w", err)
 		}
 
-		if setErr := txn.Set(translationKey(serviceID, translation.Language), val); setErr != nil {
-			return fmt.Errorf("transaction: set translation: %w", err)
+		if err = r.tx.Set(translationKey(serviceID, translation.Language), b); err != nil {
+			return fmt.Errorf("repo: set translation: %w", err)
 		}
 
 		return nil
 	})
-	if err != nil {
-		return fmt.Errorf("repo: db update: %w", err)
-	}
-
-	return nil
 }
 
 // LoadTranslations retrieves translations from db based on serviceID and LoadMessageOpts.
