@@ -1,16 +1,20 @@
 package badgerdb
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 
 	"github.com/dgraph-io/badger/v4"
 	"github.com/spf13/viper"
+	"go.expect.digital/translate/pkg/repo"
 )
 
 // Repo implements the repo interface.
 type Repo struct {
 	db *badger.DB
+	tx *badger.Txn
 }
 
 func (r *Repo) Close() error {
@@ -65,4 +69,61 @@ func NewRepo(opts ...option) (*Repo, error) {
 	}
 
 	return r, nil
+}
+
+func (r *Repo) Tx(ctx context.Context, fn func(context.Context, repo.Repo) error) (err error) {
+	if r.tx != nil {
+		return errors.New("repo: tx already exists")
+	}
+
+	tx := r.db.NewTransaction(true)
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Discard()
+
+			err = fmt.Errorf("repo: tx panicked: %v", r)
+		}
+	}()
+
+	if err = fn(ctx, &Repo{db: r.db, tx: tx}); err != nil {
+		tx.Discard()
+
+		return fmt.Errorf("repo: execute tx: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("repo: commit tx: %w", err)
+	}
+
+	return nil
+}
+
+// ensureTx checks for existing db transaction - if present uses existing, otherwise starts a new tx.
+func (r *Repo) ensureTx(ctx context.Context, fn func(context.Context, *Repo) error) (err error) {
+	if r.tx != nil { // use existing tx
+		return fn(ctx, r)
+	}
+
+	tx := r.db.NewTransaction(true)
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Discard()
+
+			err = fmt.Errorf("repo: tx panicked: %v", r)
+		}
+	}()
+
+	if err = fn(ctx, &Repo{db: r.db, tx: tx}); err != nil {
+		tx.Discard()
+
+		return fmt.Errorf("repo: execute tx: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("repo: commit tx: %w", err)
+	}
+
+	return nil
 }

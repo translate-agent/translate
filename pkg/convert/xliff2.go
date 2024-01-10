@@ -47,7 +47,7 @@ type xliff2File struct {
 }
 
 type unit struct {
-	ID    string  `xml:"id,attr"`    // translation.messages[n].ID
+	ID    string  `xml:"id,attr"`    // TODO: translation.messages[n].ID should be based on source text.
 	Notes *[]note `xml:"notes>note"` // set as pointer to avoid empty <notes></notes> when marshalling
 	// NOTE: OriginalData currently is unused.
 	OriginalData *[]data `xml:"originalData>data"` // contains the original data for given inline code
@@ -56,7 +56,7 @@ type unit struct {
 }
 
 type data struct {
-	ID      string `xml:"id,attr"` // required attribute, currently not enforced
+	ID      string `xml:"id,attr"` // required attribute
 	Content string `xml:",chardata"`
 }
 
@@ -142,10 +142,13 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 
 // messageFromUnit converts Xliff2.0 unit element to model.Message.
 func messageFromUnit(u unit, original bool) (*model.Message, error) {
-	var decoder *xml.Decoder
+	var (
+		err     error
+		decoder *xml.Decoder
+	)
 
 	m := &model.Message{
-		ID:          u.ID, // TODO: source text should serve as ID instead of unit ID.
+		ID:          u.ID, // TODO: translation.messages[n].ID should be based on source text.
 		Description: descriptionsFromXliff2(u),
 		Positions:   positionsFromXliff2(u.Notes),
 	}
@@ -158,13 +161,15 @@ func messageFromUnit(u unit, original bool) (*model.Message, error) {
 		m.Status = model.MessageStatusUntranslated
 	}
 
-	// retrieve MF2 message from content
+	// content to MF2 message
 
 	elementCount := make(map[string]int)
 	message := mf2.NewBuilder()
 
 	for {
-		token, err := decoder.Token()
+		var token xml.Token
+
+		token, err = decoder.Token()
 		if errors.Is(err, io.EOF) {
 			break
 		} else if err != nil {
@@ -209,7 +214,9 @@ func messageFromUnit(u unit, original bool) (*model.Message, error) {
 		}
 	}
 
-	m.Message = message.MustBuild()
+	if m.Message, err = message.Build(); err != nil {
+		return nil, fmt.Errorf("build mf2 string: %w", err)
+	}
 
 	return m, nil
 }

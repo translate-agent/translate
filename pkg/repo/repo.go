@@ -35,4 +35,7 @@ type Repo interface {
 	TranslationsRepo
 
 	io.Closer
+
+	// Tx executes fn in a transaction.
+	Tx(ctx context.Context, fn func(ctx context.Context, repo Repo) error) error
 }

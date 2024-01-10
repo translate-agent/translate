@@ -3,19 +3,33 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/Masterminds/squirrel"
+	"go.expect.digital/translate/pkg/repo"
 )
 
+// DB interface defines method signatures found both in sql.DB and sql.Tx.
+type DB interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+}
+
 type Repo struct {
-	db *sql.DB
+	db DB
 }
 
 func (r *Repo) Close() error {
-	err := r.db.Close()
-	if err != nil {
-		return fmt.Errorf("close mysql db: %w", err)
+	if db, ok := r.db.(*sql.DB); ok {
+		if err := db.Close(); err != nil {
+			return fmt.Errorf("close mysql db: %w", err)
+		}
 	}
 
 	return nil
@@ -75,4 +89,74 @@ func eq[T any](column string, values []T) squirrel.Eq {
 	}
 
 	return squirrel.Eq{column: values}
+}
+
+// Tx executes a transaction on the repository.
+// Returns an error if there was an error starting the transaction,
+// executing the callback function, or committing the transaction.
+func (r *Repo) Tx(ctx context.Context, fn func(context.Context, repo.Repo) error) (err error) {
+	var tx *sql.Tx
+
+	switch db := r.db.(type) {
+	case *sql.DB: // start transaction
+		if tx, err = db.BeginTx(ctx, nil); err != nil {
+			return fmt.Errorf("repo: begin tx: %w", err)
+		}
+	case *sql.Tx:
+		return errors.New("repo: tx already exists")
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback() //nolint:errcheck
+
+			err = fmt.Errorf("repo: tx panicked: %v", r)
+		}
+	}()
+
+	if err = fn(ctx, &Repo{db: tx}); err != nil {
+		tx.Rollback() //nolint:errcheck
+
+		return fmt.Errorf("repo: execute tx: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("repo: commit tx: %w", err)
+	}
+
+	return nil
+}
+
+// ensureTx checks for existing db transaction - if present uses existing, otherwise starts a new tx.
+func (r *Repo) ensureTx(ctx context.Context, fn func(context.Context, *Repo) error) (err error) {
+	switch db := r.db.(type) {
+	case *sql.Tx: // use existing tx
+		return fn(ctx, r)
+	case *sql.DB:
+		var tx *sql.Tx
+
+		if tx, err = db.BeginTx(ctx, nil); err != nil {
+			return fmt.Errorf("repo: begin tx: %w", err)
+		}
+
+		defer func() {
+			if r := recover(); r != nil {
+				tx.Rollback() //nolint:errcheck
+
+				err = fmt.Errorf("repo: tx panicked: %v", r)
+			}
+		}()
+
+		if err = fn(ctx, &Repo{db: tx}); err != nil {
+			tx.Rollback() //nolint:errcheck
+
+			return fmt.Errorf("repo: execute tx: %w", err)
+		}
+
+		if err = tx.Commit(); err != nil {
+			return fmt.Errorf("repo: commit tx: %w", err)
+		}
+	}
+
+	return nil
 }
