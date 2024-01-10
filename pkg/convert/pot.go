@@ -126,7 +126,7 @@ var placeholderFormats = map[string]*regexp.Regexp{
 func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []string) (string, error) {
 	// look for placeholder flag, e.g. #, python-format, c-format
 	// avoid flags with "no-" prefix, e.g. #, no-python-format, no-c-format
-	placeholderFlagIDx := slices.IndexFunc(node.Flags, func(flag string) bool {
+	placeholderFlagIdx := slices.IndexFunc(node.Flags, func(flag string) bool {
 		return strings.Contains(flag, "-format") && !strings.Contains(flag, "no-")
 	})
 
@@ -142,8 +142,8 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 
 	switch messages := getMessages(node); len(messages) {
 	case 1: // singular message
-		if placeholderFlagIDx != -1 { // with placeholders
-			mfBuilder.Local("$format", mf2.Literal(node.Flags[placeholderFlagIDx])) // capture format flag
+		if placeholderFlagIdx != -1 { // with placeholders
+			mfBuilder.Local("$format", mf2.Literal(node.Flags[placeholderFlagIdx])) // capture format flag
 
 			build = textWithPlaceholders
 		}
@@ -155,8 +155,8 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 	default: // plural message
 		mfBuilder.Match(mf2.Var("$count")) // match to arbitrary variable name
 
-		if placeholderFlagIDx != -1 { // with placeholders
-			mfBuilder.Local("$format", mf2.Literal(node.Flags[placeholderFlagIDx])) // capture format flag
+		if placeholderFlagIdx != -1 { // with placeholders
+			mfBuilder.Local("$format", mf2.Literal(node.Flags[placeholderFlagIdx])) // capture format flag
 
 			build = textWithPlaceholders
 		}
