@@ -16,7 +16,7 @@ import (
 
 // TODO: For now we can only import XLIFF 2.0 files, export is not working correctly yet.
 
-// This implementation follows v2.0 specification (last updated 2014-08-05).
+// This implementation follows OASIS Standard for XLIFF 2.0 specification (last updated 2014-08-05).
 // XLIFF 2.0 Specification: https://docs.oasis-open.org/xliff/xliff-core/v2.0/os/xliff-core-v2.0-os.html
 
 // NOTE: Xliff 2.0 has no unified standard for storing fuzzy values, plurals, gender specific text.
@@ -47,7 +47,7 @@ type xliff2File struct {
 }
 
 type unit struct {
-	ID    string  `xml:"id,attr"`    // TODO: translation.messages[n].ID should be based on source text.
+	ID    string  `xml:"id,attr"`
 	Notes *[]note `xml:"notes>note"` // set as pointer to avoid empty <notes></notes> when marshalling
 	// NOTE: OriginalData currently is unused.
 	OriginalData *[]data `xml:"originalData>data"` // contains the original data for given inline code
@@ -87,7 +87,7 @@ func FromXliff2(data []byte, original *bool) (model.Translation, error) {
 		translation.Original = *original
 	}
 
-	if *original {
+	if translation.Original {
 		translation.Language = xlf.SrcLang
 	} else {
 		translation.Language = xlf.TrgLang
@@ -122,7 +122,7 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 	}
 
 	for _, msg := range translation.Messages {
-		u, err := messageToUnit(msg, translation.Original)
+		u, err := messageToUnit(msg, translation.Original) // TODO
 		if err != nil {
 			return nil, fmt.Errorf("message to unit: %w", err)
 		}
@@ -148,7 +148,7 @@ func messageFromUnit(u unit, original bool) (*model.Message, error) {
 	)
 
 	m := &model.Message{
-		ID:          u.ID, // TODO: translation.messages[n].ID should be based on source text.
+		ID:          u.ID,
 		Description: descriptionsFromXliff2(u),
 		Positions:   positionsFromXliff2(u.Notes),
 	}
@@ -222,6 +222,7 @@ func messageFromUnit(u unit, original bool) (*model.Message, error) {
 }
 
 func messageToUnit(m model.Message, original bool) (unit, error) { //nolint:unparam
+	// TODO: write implementation
 	u := unit{
 		ID:    m.ID,
 		Notes: positionsToXliff2(m.Positions),
@@ -234,8 +235,6 @@ func messageToUnit(m model.Message, original bool) (unit, error) { //nolint:unpa
 			*u.Notes = append(*u.Notes, note{Category: "description", Content: m.Description})
 		}
 	}
-
-	// TODO: mf2 to xliff2.0
 
 	if original {
 		u.Source.Content = ""

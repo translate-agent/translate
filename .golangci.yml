@@ -53,7 +53,6 @@ linters:
     - wastedassign
     - whitespace
     - zerologlint
-    - ireturn
 linters-settings:
   cyclop:
     max-complexity: 30
