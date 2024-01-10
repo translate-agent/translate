@@ -3,6 +3,7 @@ package pot
 import (
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
@@ -12,10 +13,10 @@ import (
 type HeaderNode struct {
 	Language    language.Tag
 	Translator  string
-	PluralForms pluralForm
+	PluralForms PluralForm
 }
 
-type pluralForm struct {
+type PluralForm struct {
 	Plural   string
 	NPlurals int
 }
@@ -27,7 +28,7 @@ type MessageNode struct {
 	TranslatorComment     []string
 	ExtractedComment      []string
 	References            []string
-	Flag                  string
+	Flags                 []string
 	MsgCtxtPrevCtxt       string
 	MsgIDPrevUntPluralStr string
 	MsgIDPrevUnt          string
@@ -39,17 +40,33 @@ type Po struct {
 	Messages []MessageNode
 }
 
+// Parse function takes an io.Reader object and parses the contents into a Po struct
+// which represents object representing a Portable Object file.
+func Parse(r io.Reader) (Po, error) {
+	tokens, err := lex(r)
+	if err != nil {
+		return Po{}, fmt.Errorf("lex: %w", err)
+	}
+
+	po, err := tokensToPo(tokens)
+	if err != nil {
+		return Po{}, fmt.Errorf("tokens to po: %w", err)
+	}
+
+	return po, nil
+}
+
 // max value for plural count.
 const pluralCountLimit = 2
 
-// TokensToPo function takes a slice of Token objects and converts them into a Po object representing
+// tokensToPo function takes a slice of Token objects and converts them into a Po object representing
 // a PO (Portable Object) file. It returns the generated Po object and an error.
-func TokensToPo(tokens []Token) (Po, error) {
+func tokensToPo(tokens []Token) (Po, error) {
 	var messages []MessageNode
 
 	currentMessage := MessageNode{}
 	header := HeaderNode{
-		PluralForms: pluralForm{
+		PluralForms: PluralForm{
 			NPlurals: pluralCountLimit,
 		},
 	}
@@ -90,7 +107,7 @@ func TokensToPo(tokens []Token) (Po, error) {
 		case TokenTypeReference:
 			currentMessage.References = append(currentMessage.References, token.Value)
 		case TokenTypeFlag:
-			currentMessage.Flag = token.Value
+			currentMessage.Flags = append(currentMessage.Flags, token.Value)
 		case TokenTypeTranslatorComment:
 			currentMessage.TranslatorComment = append(currentMessage.TranslatorComment, token.Value)
 		case TokenTypeMsgctxtPreviousContext:
@@ -151,8 +168,8 @@ func TokensToPo(tokens []Token) (Po, error) {
 // The first part represents the "nplurals" information and is further split using "=" as the separator.
 // The second part represents the plural expression and is trimmed of leading and trailing whitespace.
 // The function converts the parsed "nplurals" value to an integer and assigns it to the pluralForm object.
-func parsePluralForms(s string) (pluralForm, error) {
-	var pf pluralForm
+func parsePluralForms(s string) (PluralForm, error) {
+	var pf PluralForm
 
 	var err error
 
