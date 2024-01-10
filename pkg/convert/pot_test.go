@@ -335,10 +335,10 @@ msgstr[1] ""
 .local $firstSuggestions = { |%(firstSuggestions)s| }
 .local $lastSuggestion = { |%(lastSuggestion)s| }
 .match { $count }
-1 {{{ $suggestion }  instead of \\" { $undefinedParameter } ?\\"}}
+1 {{{ $suggestion } instead of \\"{ $undefinedParameter }?\\"}}
 * {{
- { $firstSuggestions }  or  { $lastSuggestion }  instead of
-\\" { $undefinedParameter } \\"?}}`,
+{ $firstSuggestions } or { $lastSuggestion } instead of
+\\"{ $undefinedParameter }\\"?}}`,
 					},
 				},
 			},
