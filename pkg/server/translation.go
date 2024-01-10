@@ -159,8 +159,9 @@ func (t *TranslateServiceServer) ListTranslations(
 
 type updateTranslationParams struct {
 	translation          *model.Translation
-	serviceID            uuid.UUID
+	mask                 model.Mask
 	populateTranslations bool
+	serviceID            uuid.UUID
 }
 
 func parseUpdateTranslationRequestParams(req *translatev1.UpdateTranslationRequest) (*updateTranslationParams, error) {
@@ -175,6 +176,10 @@ func parseUpdateTranslationRequestParams(req *translatev1.UpdateTranslationReque
 
 	if params.translation, err = translationFromProto(req.GetTranslation()); err != nil {
 		return nil, fmt.Errorf("parse translation: %w", err)
+	}
+
+	if params.mask, err = maskFromProto(req.GetTranslation(), req.GetUpdateMask()); err != nil {
+		return nil, fmt.Errorf("parse mask: %w", err)
 	}
 
 	return &params, nil
@@ -196,6 +201,9 @@ func (u *updateTranslationParams) validate() error {
 	return nil
 }
 
+// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
+//
+//nolint:lll
 func (t *TranslateServiceServer) UpdateTranslation(
 	ctx context.Context,
 	req *translatev1.UpdateTranslationRequest,
@@ -223,7 +231,10 @@ func (t *TranslateServiceServer) UpdateTranslation(
 	switch {
 	default:
 		// Original translation is not affected, changes will not affect other translations - update incoming translation.
-		all = model.Translations{*params.translation}
+		model.Update(params.translation,
+			&all[all.LanguageIndex(params.translation.Language)],
+			params.mask,
+		)
 	case params.translation.Original && origIdx != -1:
 		if params.translation.Language != all[origIdx].Language {
 			return nil, status.Errorf(
@@ -236,8 +247,13 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		// Compare repo and request original translation.
 		// Change status for new or altered translation.messages to UNTRANSLATED for all languages
 		all.MarkUntranslated(oldOriginal.FindChangedMessageIDs(params.translation))
-		// Replace original translation with new one.
-		all.Replace(*params.translation)
+
+		// Update original translation with new one.
+		model.Update(params.translation,
+			&all[all.LanguageIndex(params.translation.Language)],
+			params.mask,
+		)
+
 		// Add missing messages for all translations.
 		if params.populateTranslations {
 			all.PopulateTranslations()
@@ -256,7 +272,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		}
 	}
 
-	return translationToProto(params.translation), nil
+	return translationToProto(&all[all.LanguageIndex(params.translation.Language)]), nil
 }
 
 // helpers

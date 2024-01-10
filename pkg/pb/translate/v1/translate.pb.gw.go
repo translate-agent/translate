@@ -105,11 +105,7 @@ func request_TranslateService_CreateService_0(ctx context.Context, marshaler run
 	var protoReq CreateServiceRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Service); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Service); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -122,11 +118,7 @@ func local_request_TranslateService_CreateService_0(ctx context.Context, marshal
 	var protoReq CreateServiceRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Service); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Service); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -136,18 +128,14 @@ func local_request_TranslateService_CreateService_0(ctx context.Context, marshal
 }
 
 var (
-	filter_TranslateService_UpdateService_0 = &utilities.DoubleArray{Encoding: map[string]int{"service": 0, "id": 1}, Base: []int{1, 4, 5, 2, 0, 0, 0, 0}, Check: []int{0, 1, 1, 2, 4, 2, 2, 3}}
+	filter_TranslateService_UpdateService_0 = &utilities.DoubleArray{Encoding: map[string]int{"service": 0, "id": 1}, Base: []int{1, 2, 1, 0, 0}, Check: []int{0, 1, 2, 3, 2}}
 )
 
 func request_TranslateService_UpdateService_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq UpdateServiceRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Service); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Service); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -184,11 +172,7 @@ func local_request_TranslateService_UpdateService_0(ctx context.Context, marshal
 	var protoReq UpdateServiceRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Service); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Service); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -222,7 +206,7 @@ func local_request_TranslateService_UpdateService_0(ctx context.Context, marshal
 }
 
 var (
-	filter_TranslateService_UpdateService_1 = &utilities.DoubleArray{Encoding: map[string]int{"service": 0, "id": 1}, Base: []int{1, 4, 5, 2, 0, 0, 0, 0}, Check: []int{0, 1, 1, 2, 4, 2, 2, 3}}
+	filter_TranslateService_UpdateService_1 = &utilities.DoubleArray{Encoding: map[string]int{"service": 0, "id": 1}, Base: []int{1, 2, 1, 0, 0}, Check: []int{0, 1, 2, 3, 2}}
 )
 
 func request_TranslateService_UpdateService_1(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -377,11 +361,7 @@ func request_TranslateService_CreateTranslation_0(ctx context.Context, marshaler
 	var protoReq CreateTranslationRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Translation); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Translation); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -411,11 +391,7 @@ func local_request_TranslateService_CreateTranslation_0(ctx context.Context, mar
 	var protoReq CreateTranslationRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Translation); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Translation); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -442,18 +418,14 @@ func local_request_TranslateService_CreateTranslation_0(ctx context.Context, mar
 }
 
 var (
-	filter_TranslateService_UpdateTranslation_0 = &utilities.DoubleArray{Encoding: map[string]int{"translation": 0, "service_id": 1, "serviceId": 2, "language": 3}, Base: []int{1, 4, 5, 6, 7, 2, 0, 0, 0, 0, 0, 0}, Check: []int{0, 1, 1, 1, 1, 2, 6, 2, 2, 3, 4, 5}}
+	filter_TranslateService_UpdateTranslation_0 = &utilities.DoubleArray{Encoding: map[string]int{"translation": 0, "service_id": 1, "language": 2}, Base: []int{1, 2, 3, 1, 0, 0, 0}, Check: []int{0, 1, 1, 2, 4, 2, 3}}
 )
 
 func request_TranslateService_UpdateTranslation_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq UpdateTranslationRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Translation); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Translation); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -500,11 +472,7 @@ func local_request_TranslateService_UpdateTranslation_0(ctx context.Context, mar
 	var protoReq UpdateTranslationRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Translation); err != nil && err != io.EOF {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq.Translation); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -600,7 +568,7 @@ func local_request_TranslateService_ListTranslations_0(ctx context.Context, mars
 }
 
 var (
-	filter_TranslateService_UploadTranslationFile_0 = &utilities.DoubleArray{Encoding: map[string]int{"service_id": 0, "serviceId": 1, "language": 2}, Base: []int{1, 1, 2, 4, 0, 0, 0, 0}, Check: []int{0, 1, 1, 1, 2, 3, 4, 4}}
+	filter_TranslateService_UploadTranslationFile_0 = &utilities.DoubleArray{Encoding: map[string]int{"service_id": 0, "language": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 )
 
 func request_TranslateService_UploadTranslationFile_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -701,7 +669,7 @@ func local_request_TranslateService_UploadTranslationFile_0(ctx context.Context,
 }
 
 var (
-	filter_TranslateService_UploadTranslationFile_1 = &utilities.DoubleArray{Encoding: map[string]int{"service_id": 0, "serviceId": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
+	filter_TranslateService_UploadTranslationFile_1 = &utilities.DoubleArray{Encoding: map[string]int{"service_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
 func request_TranslateService_UploadTranslationFile_1(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -782,7 +750,7 @@ func local_request_TranslateService_UploadTranslationFile_1(ctx context.Context,
 }
 
 var (
-	filter_TranslateService_DownloadTranslationFile_0 = &utilities.DoubleArray{Encoding: map[string]int{"service_id": 0, "serviceId": 1, "language": 2}, Base: []int{1, 1, 2, 4, 0, 0, 0, 0}, Check: []int{0, 1, 1, 1, 2, 3, 4, 4}}
+	filter_TranslateService_DownloadTranslationFile_0 = &utilities.DoubleArray{Encoding: map[string]int{"service_id": 0, "language": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 )
 
 func request_TranslateService_DownloadTranslationFile_0(ctx context.Context, marshaler runtime.Marshaler, client TranslateServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {

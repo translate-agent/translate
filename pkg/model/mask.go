@@ -33,7 +33,10 @@ import (
 //	...
 type Mask []string
 
-// update updates the dst with the values from src based on the mask.
+// Update updates the dst with the values from src based on the mask.
+// When updating slices:
+//   - replace the element if slice contains a struct with a field "ID"
+//   - append in all other cases
 //
 // Following scenarios are possible:
 //   - mask is nil: All fields are updated.
@@ -52,9 +55,9 @@ type Mask []string
 //	src := Foo{Bar: "bar2", Baz: "baz2"}
 //	mask := model.Mask{"Bar"}
 //
-//	update(&src, &dst, mask)
+//	Update(&src, &dst, mask)
 //	fmt.Println(dst) // Foo{Bar: "bar2", Baz: "baz"}.
-func update[T any](src, dst *T, mask Mask) {
+func Update[T any](src, dst *T, mask Mask) {
 	// If mask is nil, update all fields
 	if mask == nil {
 		*dst = *src
@@ -93,13 +96,8 @@ func updateField(src, dst reflect.Value, fields []string) {
 			} else {
 				dstField.Set(srcField)
 			}
-
 		case reflect.Slice:
-			//nolint:lll
-			// If the field is a slice, append new values from src to existing slice in dst
-			// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
-			dstField.Set(reflect.AppendSlice(dstField, srcField))
-
+			updateSliceField(srcField, dstField)
 		case reflect.Map:
 			// Same rule for maps as for slices
 			for _, key := range srcField.MapKeys() {
@@ -112,6 +110,49 @@ func updateField(src, dst reflect.Value, fields []string) {
 		}
 
 		return
+	}
+}
+
+// updateSliceField this function updates a destination slice by either replacing a struct with a matching ID
+// or appending new values if no matching ID is found.
+func updateSliceField(srcField, dstField reflect.Value) {
+	appendOnly := func() bool {
+		el := srcField.Type().Elem()
+
+		if el.Kind() != reflect.Struct {
+			return true
+		}
+
+		_, ok := el.FieldByName("ID")
+
+		return !ok
+	}
+
+	if appendOnly() {
+		dstField.Set(reflect.AppendSlice(dstField, srcField))
+		return
+	}
+
+	// If found by id, replace the corresponding structure in the destination slice. Otherwise, append.
+	for i := 0; i < srcField.Len(); i++ {
+		srcID := srcField.Index(i).FieldByName("ID").Interface()
+
+		idx := func(id interface{}) int {
+			for j := 0; j < dstField.Len(); j++ {
+				if dstField.Index(j).FieldByName("ID").Interface() == id {
+					return j
+				}
+			}
+
+			return -1
+		}
+
+		switch j := idx(srcID); j {
+		default:
+			dstField.Index(j).Set(srcField.Index(i))
+		case -1:
+			dstField.Set(reflect.Append(dstField, srcField.Index(i)))
+		}
 	}
 }
 
@@ -131,7 +172,7 @@ func UpdateService(src, dst *Service, mask Mask) error {
 	// When mask is nil dstService is updated with all fields from srcService
 	// So we need to make sure that the ID is not updated
 	src.ID = dst.ID
-	update(src, dst, mask)
+	Update(src, dst, mask)
 
 	return nil
 }

@@ -81,8 +81,9 @@ message ListTranslationsResponse {
 
 message UpdateTranslationRequest {
   string service_id = 1;
-  bool populate_translations = 2;
-  Translation translation = 3;
+  Translation translation = 2;
+  google.protobuf.FieldMask update_mask = 3;
+  bool populate_translations = 4;
 }
 
 // -----------------Service requests/responses-----------------------
