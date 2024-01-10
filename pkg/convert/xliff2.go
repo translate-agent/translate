@@ -121,7 +121,6 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 		xlf.TrgLang = translation.Language
 	}
 
-	// TODO: implement MF2 to Xliff 2.0 conversion.
 	for _, msg := range translation.Messages {
 		u, err := messageToUnit(msg, translation.Original)
 		if err != nil {
@@ -146,7 +145,7 @@ func messageFromUnit(u unit, original bool) (*model.Message, error) {
 	var decoder *xml.Decoder
 
 	m := &model.Message{
-		ID:          u.ID,
+		ID:          u.ID, // TODO: source text should serve as ID instead of unit ID.
 		Description: descriptionsFromXliff2(u),
 		Positions:   positionsFromXliff2(u.Notes),
 	}
