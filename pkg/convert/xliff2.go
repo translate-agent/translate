@@ -166,6 +166,11 @@ func messageFromUnit(u unit, original bool) (*model.Message, error) {
 	elementCount := make(map[string]int)
 	message := mf2.NewBuilder()
 
+	if !original {
+		// NOTE: source text is stored for use in MF2 to XLIFF2.0 conversion.
+		message.Local("$source", mf2.Literal("<source>"+u.Source.Content+"</source>"))
+	}
+
 	for {
 		var token xml.Token
 

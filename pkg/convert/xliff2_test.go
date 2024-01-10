@@ -14,6 +14,7 @@ import (
 func Test_FromXliff2_Default(t *testing.T) {
 	t.Parallel()
 
+	//nolint:lll
 	tests := []struct {
 		expected    *model.Translation
 		expectedErr error
@@ -109,7 +110,7 @@ func Test_FromXliff2_Default(t *testing.T) {
 			name: "translation, target content with placeholders",
 			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
 					<xliff version="2.0"
-						xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang ="en" trgLang="en">
+						xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang ="lv" trgLang="en">
 						<file>
 							<unit id="4">
 							<notes>
@@ -118,6 +119,8 @@ func Test_FromXliff2_Default(t *testing.T) {
 							<note category="description">project-id</note>
 							</notes>
 							<segment>
+									<source>Ieraksti: <ph id="1" canCopy="no" canDelete="no" canOverlap="yes"/>!` +
+				`<ph id="2" canCopy="no" canDelete="no" canOverlap="yes"/>(Atšķirots)</source>
 									<target>Entries: <ph id="1" canCopy="no" canDelete="no" canOverlap="yes"/>!` +
 				`<ph id="2" canCopy="no" canDelete="no" canOverlap="yes"/>(Filtered)</target>
 							</segment>
@@ -130,7 +133,8 @@ func Test_FromXliff2_Default(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID: "4",
-						Message: `.local $ph1 = { |<ph id="1" canCopy="no" canDelete="no" canOverlap="yes"/>| }
+						Message: `.local $source = { |<source>Ieraksti: <ph id="1" canCopy="no" canDelete="no" canOverlap="yes"/>!<ph id="2" canCopy="no" canDelete="no" canOverlap="yes"/>(Atšķirots)</source>| }
+.local $ph1 = { |<ph id="1" canCopy="no" canDelete="no" canOverlap="yes"/>| }
 .local $ph2 = { |<ph id="2" canCopy="no" canDelete="no" canOverlap="yes"/>| }
 {{Entries: { $ph1 }!{ $ph2 }(Filtered)}}`,
 						Status:      model.MessageStatusUntranslated,
