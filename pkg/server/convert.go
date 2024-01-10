@@ -31,7 +31,7 @@ func TranslationFromData(params *uploadParams) (*model.Translation, error) {
 	case translatev1.Schema_JSON_NGX_TRANSLATE:
 		from = convert.FromNgxTranslate
 	case translatev1.Schema_POT:
-		from = convert.FromPot
+		from = convert.FromPo
 	case translatev1.Schema_XLIFF_2:
 		from = convert.FromXliff2
 	case translatev1.Schema_XLIFF_12:

@@ -1,17 +1,364 @@
 package convert
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/stretchr/testify/require"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
+
+// -–––--------------------------PO->Translation-----------------------–––-----
+
+func Test_FromPoSingular(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		original *bool
+		input    string
+	}
+
+	tests := []struct {
+		name     string
+		args     args
+		expected model.Translation
+	}{
+		// Without placeholders
+		{
+			name: "simple original",
+			args: args{
+				original: nil,
+				input: `msgid ""
+msgstr ""
+"Language: en\n"
+
+msgid "Hello, world!"
+msgstr ""
+
+msgid "Goodbye!"
+msgstr ""
+`,
+			},
+			expected: model.Translation{
+				Language: language.English,
+				Original: true,
+				Messages: []model.Message{
+					{
+						ID:      "Hello, world!",
+						Message: "Hello, world!",
+						Status:  model.MessageStatusTranslated,
+					},
+					{
+						ID:      "Goodbye!",
+						Message: "Goodbye!",
+						Status:  model.MessageStatusTranslated,
+					},
+				},
+			},
+		},
+		{
+			name: "simple translation",
+			args: args{
+				original: nil,
+				input: `msgid ""
+msgstr ""
+"Language: lv\n"
+
+msgid "Hello, world!"
+msgstr "Sveika, pasaule!"
+
+msgid "Goodbye!"
+msgstr ""
+
+#, fuzzy
+msgid "Dinosaurs"
+msgstr "Dinozauri"
+`,
+			},
+			expected: model.Translation{
+				Language: language.Latvian,
+				Original: false,
+				Messages: []model.Message{
+					{
+						ID:      "Hello, world!",
+						Message: "Sveika, pasaule!",
+						Status:  model.MessageStatusUntranslated,
+					},
+					{
+						ID:      "Goodbye!",
+						Message: "",
+						Status:  model.MessageStatusUntranslated,
+					},
+					{
+						ID:      "Dinosaurs",
+						Message: "Dinozauri",
+						Status:  model.MessageStatusFuzzy,
+					},
+				},
+			},
+		},
+		{
+			name: "multiline translation",
+			args: args{
+				original: ptr(false),
+				input: `msgid ""
+msgstr ""
+"Language: de\n"
+
+#: superset-frontend/plugins/legacy-preset-chart-deckgl/src/utilities/Shared_DeckGL.jsx:222
+#: superset-frontend/plugins/legacy-preset-chart-deckgl/src/utilities/Shared_DeckGL.jsx:235
+msgid ""
+" Set the opacity to 0 if you do not want to override the color specified "
+"in the GeoJSON"
+msgstr ""
+" Setzen Sie die Deckkraft auf 0, wenn Sie die im GeoJSON angegebene Farbe"
+" nicht überschreiben möchten."
+`,
+			},
+			expected: model.Translation{
+				Language: language.German,
+				Original: false,
+				Messages: []model.Message{
+					{
+						ID:      "\n Set the opacity to 0 if you do not want to override the color specified \nin the GeoJSON",
+						Message: "\n Setzen Sie die Deckkraft auf 0, wenn Sie die im GeoJSON angegebene Farbe\n nicht überschreiben möchten.", //nolint:lll
+						Status:  model.MessageStatusUntranslated,
+						Positions: []string{
+							"superset-frontend/plugins/legacy-preset-chart-deckgl/src/utilities/Shared_DeckGL.jsx:222",
+							"superset-frontend/plugins/legacy-preset-chart-deckgl/src/utilities/Shared_DeckGL.jsx:235",
+						},
+					},
+				},
+			},
+		},
+		// With placeholders
+		{
+			name: "placeholders",
+			args: args{
+				original: nil,
+				input: `msgid ""
+msgstr ""
+
+#, python-format
+msgid "Hello, {name}!"
+msgstr ""
+
+#, c-format
+msgid "%s, Hello!"
+msgstr ""
+
+#, python-format
+msgid "Hello, %(name)s, world!"
+msgstr ""
+
+#, python-format
+msgid "Hello, {}!"
+msgstr ""
+
+#, no-c-format
+msgid "Hello, %s!"
+msgstr ""
+
+msgid "Hello, %s!"
+msgstr ""
+`,
+			},
+			expected: model.Translation{
+				Language: language.Und,
+				Original: true,
+				Messages: []model.Message{
+					{
+						ID:     "Hello, {name}!",
+						Status: model.MessageStatusTranslated,
+						Message: `.local $format = { python-format }
+.local $name = { |{name}| }
+{{Hello, { $name }!}}`,
+					},
+					{
+						ID:     "%s, Hello!",
+						Status: model.MessageStatusTranslated,
+						Message: `.local $format = { c-format }
+.local $ph0 = { |%s| }
+{{{ $ph0 }, Hello!}}`,
+					},
+					{
+						ID:     "Hello, %(name)s, world!",
+						Status: model.MessageStatusTranslated,
+						Message: `.local $format = { python-format }
+.local $name = { |%(name)s| }
+{{Hello, { $name }, world!}}`,
+					},
+					{
+						ID:     "Hello, {}!",
+						Status: model.MessageStatusTranslated,
+						Message: `.local $format = { python-format }
+.local $ph0 = { |{}| }
+{{Hello, { $ph0 }!}}`,
+					},
+					{
+						ID:      "Hello, %s!",
+						Message: "Hello, %s!",
+						Status:  model.MessageStatusTranslated,
+					},
+					{
+						ID:      "Hello, %s!",
+						Message: "Hello, %s!",
+						Status:  model.MessageStatusTranslated,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual, err := FromPo([]byte(tt.args.input), tt.args.original)
+			require.NoError(t, err)
+
+			testutil.EqualTranslations(t, &tt.expected, &actual)
+		})
+	}
+}
+
+func Test_FromPoPlural(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		original *bool
+		input    string
+	}
+
+	tests := []struct {
+		name     string
+		args     args
+		expected model.Translation
+	}{
+		// Without placeholders
+		{
+			name: "original",
+			args: args{
+				original: nil,
+				input: `msgid ""
+msgstr ""
+
+#. Description
+msgid "There is one apple."
+msgid_plural "There are multiple apples."
+msgstr[0] ""
+msgstr[1] ""
+`,
+			},
+			expected: model.Translation{
+				Language: language.Und,
+				Original: true,
+				Messages: []model.Message{
+					{
+						ID:          "There is one apple.",
+						PluralID:    "There are multiple apples.",
+						Message:     ".match { $count }\n1 {{There is one apple.}}\n* {{There are multiple apples.}}",
+						Description: "Description",
+						Status:      model.MessageStatusTranslated,
+					},
+				},
+			},
+		},
+		{
+			name: "translation",
+			args: args{
+				original: nil,
+				input: `msgid ""
+msgstr ""
+"Language: ru\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2)\n"
+
+#: superset-frontend/src/filters/components/GroupBy/GroupByFilterPlugin.tsx:87
+msgid "option"
+msgid_plural "options"
+msgstr[0] "вариант"
+msgstr[1] "варианта"
+msgstr[2] "вариантов"
+`,
+			},
+			expected: model.Translation{
+				Language: language.Russian,
+				Original: false,
+				Messages: []model.Message{
+					{
+						ID:       "option",
+						PluralID: "options",
+						Message:  ".match { $count }\n1 {{вариант}}\n2 {{варианта}}\n* {{вариантов}}",
+						Status:   model.MessageStatusUntranslated,
+						Positions: []string{
+							"superset-frontend/src/filters/components/GroupBy/GroupByFilterPlugin.tsx:87",
+						},
+					},
+				},
+			},
+		},
+		// With placeholders
+		{
+			name: "placeholders",
+			args: args{
+				original: ptr(true),
+				input: `msgid ""
+msgstr ""
+
+#: superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88
+#, python-format
+msgid "%(suggestion)s instead of \"%(undefinedParameter)s?\""
+msgid_plural ""
+"%(firstSuggestions)s or %(lastSuggestion)s instead of"
+"\"%(undefinedParameter)s\"?"
+msgstr[0] ""
+msgstr[1] ""
+`,
+			},
+			expected: model.Translation{
+				Language: language.Und,
+				Original: true,
+				Messages: []model.Message{
+					{
+						ID:        "%(suggestion)s instead of \\\"%(undefinedParameter)s?\\\"",
+						PluralID:  "\n%(firstSuggestions)s or %(lastSuggestion)s instead of\n\\\"%(undefinedParameter)s\\\"?",
+						Status:    model.MessageStatusTranslated,
+						Positions: []string{"superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88"},
+						Message: `.local $format = { python-format }
+.local $suggestion = { |%(suggestion)s| }
+.local $undefinedParameter = { |%(undefinedParameter)s| }
+.local $firstSuggestions = { |%(firstSuggestions)s| }
+.local $lastSuggestion = { |%(lastSuggestion)s| }
+.match { $count }
+1 {{{ $suggestion } instead of \\"{ $undefinedParameter }?\\"}}
+* {{
+{ $firstSuggestions } or { $lastSuggestion } instead of
+\\"{ $undefinedParameter }\\"?}}`,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual, err := FromPo([]byte(tt.args.input), tt.args.original)
+			require.NoError(t, err)
+
+			testutil.EqualTranslations(t, &tt.expected, &actual)
+		})
+	}
+}
+
+// -–––--------------------------Translation->PO-----------------------–––-----
 
 func Test_ToPot(t *testing.T) {
 	t.Parallel()
@@ -844,696 +1191,6 @@ msgstr "Au revoir!"
 	}
 }
 
-func TestFromPot(t *testing.T) {
-	t.Skip() // TODO
-	t.Parallel()
-
-	tests := []struct {
-		expectedErr error
-		input       []byte
-		name        string
-		expected    model.Translation
-	}{
-		{
-			name: "valid input",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							#. a greeting
-							msgid "Hello"
-							msgstr "Hello, world!"
-
-							#. a farewell
-							#, fuzzy
-							msgid "Goodbye"
-							msgstr "Goodbye, world!"
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:          "Hello",
-						Message:     "{Hello, world!}",
-						Description: "a greeting",
-						Status:      model.MessageStatusUntranslated,
-					},
-					{
-						ID:          "Goodbye",
-						Message:     "{Goodbye, world!}",
-						Description: "a farewell",
-						Status:      model.MessageStatusFuzzy,
-					},
-				},
-			},
-		},
-		{
-			name: "fuzzy param before empty id",
-			input: []byte(`#, fuzzy
-							msgid ""
-							msgstr ""
-							"Language: en\n"
-							#. a greeting
-							msgid "Hello"
-							msgstr "Hello, world!"
-
-							#. a farewell
-							msgid "Goodbye"
-							msgstr "Goodbye, world!"
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:          "Hello",
-						Message:     "{Hello, world!}",
-						Description: "a greeting",
-						Status:      model.MessageStatusFuzzy,
-					},
-					{
-						ID:          "Goodbye",
-						Message:     "{Goodbye, world!}",
-						Description: "a farewell",
-						Status:      model.MessageStatusUntranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "msgid and msgstr empty headers",
-			input: []byte(`#, fuzzy
-							"Language: en\n"
-							#. a greeting
-							msgid "Hello"
-							msgstr "Hello, world!"
-
-							#. a farewell
-							msgid "Goodbye"
-							msgstr "Goodbye, world!"
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:          "Hello",
-						Message:     "{Hello, world!}",
-						Description: "a greeting",
-						Status:      model.MessageStatusFuzzy,
-					},
-					{
-						ID:          "Goodbye",
-						Message:     "{Goodbye, world!}",
-						Description: "a farewell",
-						Status:      model.MessageStatusUntranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "if empty msgstr missing",
-			input: []byte(`msgid ""
-							"Language: en\n"
-							#. a greeting
-							msgid "Hello"
-							msgstr "Hello, world!"
-
-							#. a farewell
-							msgid "Goodbye"
-							msgstr "Goodbye, world!"
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:          "Hello",
-						Message:     "{Hello, world!}",
-						Description: "a greeting",
-						Status:      model.MessageStatusUntranslated,
-					},
-					{
-						ID:          "Goodbye",
-						Message:     "{Goodbye, world!}",
-						Description: "a farewell",
-						Status:      model.MessageStatusUntranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "multiline description",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							#. a greeting
-							#. a greeting2
-							msgid "Hello"
-							msgstr ""
-							"Hello, world!\n"
-							"very long string\n"
-
-							#. a farewell
-							#, fuzzy
-							msgid "Goodbye"
-							msgstr "Goodbye, world!"
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:          "Hello",
-						Message:     "{\nHello, world!\\\\n\nvery long string\\\\n}",
-						Description: "a greeting\n a greeting2",
-						Status:      model.MessageStatusUntranslated,
-					},
-					{
-						ID:          "Goodbye",
-						Message:     "{Goodbye, world!}",
-						Description: "a farewell",
-						Status:      model.MessageStatusFuzzy,
-					},
-				},
-			},
-		},
-		{
-			name: "multiline msgid",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							#. a greeting
-							#, fuzzy
-							msgid ""
-							"Hello\n"
-							"Hello2\n"
-							msgstr "Hello, world!"
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:          "\nHello\\n\nHello2\\n",
-						Message:     "{Hello, world!}",
-						Description: "a greeting",
-						Status:      model.MessageStatusFuzzy,
-					},
-				},
-			},
-		},
-		{
-			name: "Multiple headers",
-			input: []byte(`msgid ""
-						msgstr ""
-						"Project-Id-Version: \n"
-						"POT-Creation-Date: \n"
-						"PO-Revision-Date: \n"
-						"Last-Translator: \n"
-						"Language-Team: \n"
-						"Language: fr\n"
-						"MIME-Version: 1.0\n"
-						"Content-Type: text/plain; charset=UTF-8\n"
-						"Content-Transfer-Encoding: 8bit\n"
-						"X-Generator: Poedit 2.2\n"
-						"Plural-Forms: nplurals=2; plural=(n > 1);\n"
-
-						#: examples/simple/example.clj:10
-						msgid "Greetings"
-						msgstr "Bonjour"
-
-						#: examples/simple/example.clj:20
-						msgid "Please confirm your email"
-						msgstr "Veuillez confirmer votre email"
-
-						#: examples/simple/example.clj:30
-						msgid "Welcome, %s!"
-						msgstr "Bienvenue, %s!"
-
-						#: examples/simple/example.clj:40
-						#: examples/simple/example.clj:50
-						msgid "product"
-						msgid_plural "%s products"
-						msgstr[0] "produit"
-						msgstr[1] "%s produits"
-			`),
-			expected: model.Translation{
-				Language: language.French,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:        "Greetings",
-						Message:   "{Bonjour}",
-						Positions: []string{"examples/simple/example.clj:10"},
-						Status:    model.MessageStatusUntranslated,
-					},
-					{
-						ID:        "Please confirm your email",
-						Message:   "{Veuillez confirmer votre email}",
-						Positions: []string{"examples/simple/example.clj:20"},
-						Status:    model.MessageStatusUntranslated,
-					},
-					{
-						ID:        "Welcome, %s!",
-						Message:   "{Bienvenue, %s!}",
-						Positions: []string{"examples/simple/example.clj:30"},
-						Status:    model.MessageStatusUntranslated,
-					},
-					{
-						ID:       "product",
-						PluralID: "%s products",
-						Message: `match {$count :number}
-when 1 {produit}
-when * {%s produits}
-`,
-						Positions: []string{"examples/simple/example.clj:40", "examples/simple/example.clj:50"},
-						Status:    model.MessageStatusUntranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "plural msgstr with simple msgstr",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: it\n"
-							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-							#. apple counts
-							msgid "There is %d apple."
-							msgid_plural "There are %d apples."
-							msgstr[0] "Il y a %d pomme."
-							msgstr[1] "Il y a %d pommes."
-
-							msgid "hi"
-							msgstr "ciao"
-			`),
-			expected: model.Translation{
-				Language: language.Italian,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:       "There is %d apple.",
-						PluralID: "There are %d apples.",
-						Message: `match {$count :number}
-when 1 {Il y a {$count} pomme.}
-when * {Il y a {$count} pommes.}
-`,
-						Description: "apple counts",
-						Status:      model.MessageStatusUntranslated,
-					},
-					{
-						ID:      "hi",
-						Message: "{ciao}",
-						Status:  model.MessageStatusUntranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "plural msgstr",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: fr\n"
-							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-							#. apple counts
-							msgid "There is %d apple."
-							msgid_plural "There are %d apples."
-							msgstr[0] "Il y a %d pomme."
-							msgstr[1] "Il y a %d pommes."
-			`),
-			expected: model.Translation{
-				Language: language.French,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:       "There is %d apple.",
-						PluralID: "There are %d apples.",
-						Message: `match {$count :number}
-when 1 {Il y a {$count} pomme.}
-when * {Il y a {$count} pommes.}
-`,
-						Description: "apple counts",
-						Status:      model.MessageStatusUntranslated,
-					},
-				},
-			},
-		},
-
-		{
-			name: "multiline plural",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: fr\n"
-							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-							#. apple counts
-							msgid "There is %d apple."
-							msgid_plural ""
-							"There are %d "
-							"apples."
-							msgstr[0] ""
-							"Il y a %d "
-							"pomme."
-							msgstr[1] ""
-							"Il y a %d "
-							"pommes."
-			`),
-			expected: model.Translation{
-				Language: language.French,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:          "There is %d apple.",
-						PluralID:    "\nThere are %d \napples.",
-						Message:     "match {$count :number}\nwhen 1 {\nIl y a {$count} \npomme.}\nwhen * {\nIl y a {$count} \npommes.}\n", //nolint:lll
-						Description: "apple counts",
-						Status:      model.MessageStatusUntranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "mix of multiline and single line plural",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: fr\n"
-							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-							#. apple counts
-							msgid "There is %d apple."
-							msgid_plural ""
-							"There are %d apples.\n"
-							msgstr[0] ""
-							"Il y a %d\n"
-							"pomme.\n"
-							msgstr[1] "Il y a %d pommes."
-			`),
-			expected: model.Translation{
-				Language: language.French,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:          "There is %d apple.",
-						PluralID:    "\nThere are %d apples.\\n",
-						Message:     "match {$count :number}\nwhen 1 {\nIl y a {$count}\\\\n\npomme.\\\\n}\nwhen * {Il y a {$count} pommes.}\n", //nolint:lll
-						Description: "apple counts",
-						Status:      model.MessageStatusUntranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "single msgstr with original lang",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							#. a greeting
-							msgid "Hello"
-							msgstr ""
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: true,
-				Messages: []model.Message{
-					{
-						ID:          "Hello",
-						Message:     "{Hello}",
-						Description: "a greeting",
-						Status:      model.MessageStatusTranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "plural msgstr with original lang",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-							#. apple counts
-							msgid "There is %d apple."
-							msgid_plural "There are %d apples."
-							msgstr[0] ""
-							msgstr[1] ""
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: true,
-				Messages: []model.Message{
-					{
-						ID:       "There is %d apple.",
-						PluralID: "There are %d apples.",
-						Message: `match {$count :number}
-when 1 {There is {$count} apple.}
-when * {There are {$count} apples.}
-`,
-						Description: "apple counts",
-						Status:      model.MessageStatusTranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "msgstr plural without PluralForm header",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							msgid "message"
-							msgid_plural "messages"
-							msgstr[0] ""
-							msgstr[1] ""
-
-							#: superset/views/core.py:385
-							#, python-format
-							msgid "message2"
-							msgstr ""
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:       "message",
-						PluralID: "messages",
-						Message: `match {$count :number}
-when 1
-when *
-`,
-						Description: "",
-						Status:      model.MessageStatusUntranslated,
-					},
-					{
-						ID:        "message2",
-						Message:   "",
-						Positions: []string{"superset/views/core.py:385"},
-						Status:    model.MessageStatusUntranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "invalid input",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							#. a greeting
-							msgid 323344
-			`),
-			expectedErr: errors.New("convert tokens to pot.Po: invalid po file: no messages found"),
-		},
-		{
-			name: "msgid before empty msgstr is missing",
-			input: []byte(`msgstr ""
-							"Language: en\n"
-							#. a greeting
-							msgid "Hello"
-							msgstr "Hello, world!"
-
-							#. a farewell
-							msgid "Goodbye"
-							msgstr "Goodbye, world!"
-			`),
-			expectedErr: errors.New("convert tokens to pot.Po: get previous token: no previous token"),
-		},
-		{
-			name: "msgid with curly braces inside",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							msgid "+ {%s} hello"
-							msgstr ""
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: true,
-				Messages: []model.Message{
-					{
-						ID:      "+ {%s} hello",
-						Message: `{+ \{%s\} hello}`,
-						Status:  model.MessageStatusTranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "msgid with pipe inside",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							msgid "+ | hello"
-							msgstr ""
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: true,
-				Messages: []model.Message{
-					{
-						ID:      "+ | hello",
-						Message: `{+ \| hello}`,
-						Status:  model.MessageStatusTranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "msgid with double pipe inside",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							msgid "+ || hello"
-							msgstr ""
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: true,
-				Messages: []model.Message{
-					{
-						ID:      "+ || hello",
-						Message: `{+ \|\| hello}`,
-						Status:  model.MessageStatusTranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "msgid with slash inside",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: en\n"
-							msgid "+ \ hello"
-							msgstr ""
-			`),
-			expected: model.Translation{
-				Language: language.English,
-				Original: true,
-				Messages: []model.Message{
-					{
-						ID:      "+ \\ hello",
-						Message: `{+ \\ hello}`,
-						Status:  model.MessageStatusTranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "plural msgstr with curly braces",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: fr\n"
-							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-							msgid "There is %d apple."
-							msgid_plural "There are %d apples."
-							msgstr[0] "Il y a %d pomme {test}."
-							msgstr[1] "Il y a %d pommes {tests}."
-			`),
-			expected: model.Translation{
-				Language: language.French,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:       "There is %d apple.",
-						PluralID: "There are %d apples.",
-						Message: `match {$count :number}
-when 1 {Il y a {$count} pomme \{test\}.}
-when * {Il y a {$count} pommes \{tests\}.}
-`,
-						Status: model.MessageStatusUntranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "plural msgstr with pipe",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: fr\n"
-							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-							msgid "There is %d apple."
-							msgid_plural "There are %d apples."
-							msgstr[0] "Il y a %d pomme |."
-							msgstr[1] "Il y a %d pommes |."
-			`),
-			expected: model.Translation{
-				Language: language.French,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:       "There is %d apple.",
-						PluralID: "There are %d apples.",
-						Message: `match {$count :number}
-when 1 {Il y a {$count} pomme \|.}
-when * {Il y a {$count} pommes \|.}
-`,
-						Status: model.MessageStatusUntranslated,
-					},
-				},
-			},
-		},
-		{
-			name: "plural msgstr with slash",
-			input: []byte(`msgid ""
-							msgstr ""
-							"Language: fr\n"
-							"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-							msgid "There is %d apple."
-							msgid_plural "There are %d apples."
-							msgstr[0] "Il y a %d pomme \."
-							msgstr[1] "Il y a %d pommes \."
-			`),
-			expected: model.Translation{
-				Language: language.French,
-				Original: false,
-				Messages: []model.Message{
-					{
-						ID:       "There is %d apple.",
-						PluralID: "There are %d apples.",
-						Message: `match {$count :number}
-when 1 {Il y a {$count} pomme \\.}
-when * {Il y a {$count} pommes \\.}
-`,
-						Status: model.MessageStatusUntranslated,
-					},
-				},
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			result, err := FromPot(tt.input, &tt.expected.Original)
-			if tt.expectedErr != nil {
-				require.Errorf(t, err, tt.expectedErr.Error())
-				return
-			}
-
-			require.NoError(t, err)
-			testutil.EqualTranslations(t, &tt.expected, &result)
-		})
-	}
-}
-
 func Test_TransformMessage(t *testing.T) {
 	t.Skip() // TODO
 	t.Parallel()
@@ -1560,7 +1217,7 @@ func Test_TransformMessage(t *testing.T) {
 	msgPot, err := ToPot(translation)
 	require.NoError(t, err)
 
-	restoredTranslation, err := FromPot(msgPot, &translation.Original)
+	restoredTranslation, err := FromPo(msgPot, &translation.Original)
 	require.NoError(t, err)
 
 	assert.Equal(t, translation, restoredTranslation)

@@ -63,9 +63,9 @@ func withIndex(index int) func(t *Token) {
 	}
 }
 
-// Lex function performs lexical analysis on the input by reading lines from the reader
+// lex function performs lexical analysis on the input by reading lines from the reader
 // and parsing each line using the parseLine function.
-func Lex(r io.Reader) ([]Token, error) {
+func lex(r io.Reader) ([]Token, error) {
 	var tokens []Token
 
 	scanner := bufio.NewScanner(r)
@@ -206,7 +206,7 @@ func parseValue(line string) string {
 		return ""
 	}
 
-	return strings.Trim(fields[1], `"`)
+	return strings.TrimSuffix(strings.TrimPrefix(fields[1], "\""), "\"")
 }
 
 // parseMultilineValue parses the value of the multiline msgid, msgstr, msgid_plural, msgstr[*]

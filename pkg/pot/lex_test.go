@@ -238,7 +238,7 @@ displayed in the filter.`),
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			r := strings.NewReader(tt.input)
-			result, err := Lex(r)
+			result, err := lex(r)
 
 			if tt.expectedErr != nil {
 				require.Errorf(t, err, tt.expectedErr.Error())
