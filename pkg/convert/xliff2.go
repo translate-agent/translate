@@ -14,10 +14,11 @@ import (
 	"golang.org/x/text/language"
 )
 
+// TODO: For now we can only import XLIFF 2.0 files, export is not working correctly yet.
+
 // This implementation follows v2.0 specification (last updated 2014-08-05).
 // XLIFF 2.0 Specification: https://docs.oasis-open.org/xliff/xliff-core/v2.0/os/xliff-core-v2.0-os.html
 
-// TODO: For now we can only import XLIFF 2.0 files, export is not working correctly yet.
 // NOTE: Xliff 2.0 has no unified standard for storing fuzzy values, plurals, gender specific text.
 
 // List of elements found in source/target:
@@ -146,7 +147,7 @@ func messageFromUnit(u unit, original bool) (*model.Message, error) {
 
 	m := &model.Message{
 		ID:          u.ID,
-		Description: descriptionFromXliff2(u),
+		Description: descriptionsFromXliff2(u),
 		Positions:   positionsFromXliff2(u.Notes),
 	}
 
@@ -161,7 +162,6 @@ func messageFromUnit(u unit, original bool) (*model.Message, error) {
 	// retrieve MF2 message from content
 
 	elementCount := make(map[string]int)
-
 	message := mf2.NewBuilder()
 
 	for {
@@ -215,7 +215,7 @@ func messageFromUnit(u unit, original bool) (*model.Message, error) {
 	return m, nil
 }
 
-func messageToUnit(m model.Message, original bool) (unit, error) {
+func messageToUnit(m model.Message, original bool) (unit, error) { //nolint:unparam
 	u := unit{
 		ID:    m.ID,
 		Notes: positionsToXliff2(m.Positions),
@@ -228,6 +228,8 @@ func messageToUnit(m model.Message, original bool) (unit, error) {
 			*u.Notes = append(*u.Notes, note{Category: "description", Content: m.Description})
 		}
 	}
+
+	// TODO: mf2 to xliff2.0
 
 	if original {
 		u.Source.Content = ""
@@ -270,18 +272,20 @@ func positionsToXliff2(positions model.Positions) *[]note {
 	return &notes
 }
 
-func descriptionFromXliff2(u unit) string {
+func descriptionsFromXliff2(u unit) string {
 	if u.Notes == nil {
 		return ""
 	}
 
+	descriptions := make([]string, 0, len(*u.Notes))
+
 	for _, note := range *u.Notes {
 		if note.Category == "description" {
-			return note.Content
+			descriptions = append(descriptions, note.Content)
 		}
 	}
 
-	return ""
+	return strings.Join(descriptions, "\n")
 }
 
 // unescapeXML replaces XML escape sequences with corresponding chars in text.
@@ -296,7 +300,7 @@ func unescapeXML(s string) string {
 }
 
 // escapeXML replaces special chars in text with escape sequences to be XML compliant.
-func escapeXML(s string) string {
+func escapeXML(s string) string { //nolint:unused
 	return strings.NewReplacer(
 		"&", "&amp;",
 		"<", "&lt;",

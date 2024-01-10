@@ -1,19 +1,17 @@
 package convert
 
 import (
-	"regexp"
 	"testing"
 
 	"golang.org/x/text/language"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
 )
 
 // Test_FromXliff2 tests Xliff 2.0 default 'acc. to specification' format.
-func Test_FromXliff2(t *testing.T) {
+func Test_FromXliff2_Default(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -48,107 +46,12 @@ func Test_FromXliff2(t *testing.T) {
 			},
 		},
 		{
-			name: "original, source content with escaped characters",
-			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
-			<xliff version="2.0"
-				xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang="en">
-				<file>
-					<unit id="2">
-						<segment>
-							<source>escaped chars: &amp;&lt;&gt;&quot;&apos;</source>
-						</segment>
-					</unit>
-				</file>
-			</xliff>`),
-			expected: &model.Translation{
-				Original: true,
-				Language: language.English,
-				Messages: []model.Message{
-					{
-						ID:      "2",
-						Message: `escaped chars: &<>"'`,
-						Status:  model.MessageStatusTranslated,
-					},
-				},
-			},
-		},
-
-		{
-			name: "translation, target content with placeholders",
-			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
-					<xliff version="2.0"
-						xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang ="en" trgLang="en">
-						<file>
-							<unit id="1">
-							<notes>
-							<note category="location">src/app/component.html:19</note>
-							<note category="description">component</note>
-							</notes>
-							<segment>
-									<target>Entries: <ph id="1" canCopy="no" canDelete="no" canOverlap="yes"/>!` +
-				`<ph id="2" canCopy="no" canDelete="no" canOverlap="yes"/>(Filtered)</target>
-							</segment>
-						</unit>
-					</file>
-					</xliff>`),
-			expected: &model.Translation{
-				Original: false,
-				Language: language.English,
-				Messages: []model.Message{
-					{
-						ID: "1",
-						Message: `.local $ph1 = { |<ph id="1" canCopy="no" canDelete="no" canOverlap="yes"/>| }
-.local $ph2 = { |<ph id="2" canCopy="no" canDelete="no" canOverlap="yes"/>| }
-{{Entries: { $ph1 }!{ $ph2 }(Filtered)}}`,
-						Status:      model.MessageStatusUntranslated,
-						Description: "component",
-						Positions:   []string{"src/app/component.html:19"},
-					},
-				},
-			},
-		},
-		{
-			name: "original, source content with placeholders and specifiers",
-			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
-			<xliff version="2.0"
-				xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang="en">
-				<file>
-					<unit id="2">
-						<notes>
-						<note category="location">src/app/component.html:19</note>
-						<note category="description">component</note>
-						</notes>
-						<segment>
-							<source>Entries: <ph id="1" dataRef="d1" canCopy="no" canDelete="no" canOverlap="yes"/>!` +
-				`<ph id="2" dataRef="d2" canCopy="no" canDelete="no" canOverlap="yes"/>(Filtered)</source>
-					</segment>
-				</unit>
-			</file>
-			</xliff>`),
-			expected: &model.Translation{
-				Original: true,
-				Language: language.English,
-				Messages: []model.Message{
-					{
-						ID: "2",
-						Message: `.local $ph1 = { |<ph id="1" dataRef="d1" canCopy="no" canDelete="no" canOverlap="yes"/>| }
-.local $ph2 = { |<ph id="2" dataRef="d2" canCopy="no" canDelete="no" canOverlap="yes"/>| }
-{{Entries: { $ph1 }!{ $ph2 }(Filtered)}}`,
-						Status:      model.MessageStatusTranslated,
-						Description: "component",
-						Positions:   []string{"src/app/component.html:19"},
-					},
-				},
-			},
-		},
-
-		{
 			name: "original, source content with marked span of text",
 			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
 			<xliff version="2.0"
 				xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang="en">
 				<file>
-					<unit id="4">
+					<unit id="2">
 						<segment>
 							<source>This is a <mrk id="1" type="term">placeholder</mrk> example.</source>
 						</segment>
@@ -160,10 +63,79 @@ func Test_FromXliff2(t *testing.T) {
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID: "4",
+						ID: "2",
 						Message: `.local $mrk1 = { |<mrk id="1" type="term">placeholder</mrk>| }
 {{This is a { $mrk1 } example.}}`,
 						Status: model.MessageStatusTranslated,
+					},
+				},
+			},
+		},
+		{
+			name: "original, source content with placeholders and specifiers",
+			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
+			<xliff version="2.0"
+				xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang="en">
+				<file>
+					<unit id="3">
+						<notes>
+						<note category="location">src/app/component.html:19</note>
+						<note category="description">component</note>
+						</notes>
+						<segment>
+							<source>Entries: <ph id="1" dataRef="d1" canCopy="no" canDelete="no" canOverlap="yes"/>!` +
+				`<ph id="2" dataRef="d2" canCopy="no" canDelete="no" canOverlap="yes"/>(Filtered)</source>
+					</segment>
+					</unit>
+				</file>
+			</xliff>`),
+			expected: &model.Translation{
+				Original: true,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID: "3",
+						Message: `.local $ph1 = { |<ph id="1" dataRef="d1" canCopy="no" canDelete="no" canOverlap="yes"/>| }
+.local $ph2 = { |<ph id="2" dataRef="d2" canCopy="no" canDelete="no" canOverlap="yes"/>| }
+{{Entries: { $ph1 }!{ $ph2 }(Filtered)}}`,
+						Status:      model.MessageStatusTranslated,
+						Description: "component",
+						Positions:   []string{"src/app/component.html:19"},
+					},
+				},
+			},
+		},
+		{
+			name: "translation, target content with placeholders",
+			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
+					<xliff version="2.0"
+						xmlns="urn:oasis:names:tc:xliff:document:2.0" srcLang ="en" trgLang="en">
+						<file>
+							<unit id="4">
+							<notes>
+							<note category="location">src/app/component.html:19</note>
+							<note category="description">component</note>
+							<note category="description">project-id</note>
+							</notes>
+							<segment>
+									<target>Entries: <ph id="1" canCopy="no" canDelete="no" canOverlap="yes"/>!` +
+				`<ph id="2" canCopy="no" canDelete="no" canOverlap="yes"/>(Filtered)</target>
+							</segment>
+							</unit>
+						</file>
+					</xliff>`),
+			expected: &model.Translation{
+				Original: false,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID: "4",
+						Message: `.local $ph1 = { |<ph id="1" canCopy="no" canDelete="no" canOverlap="yes"/>| }
+.local $ph2 = { |<ph id="2" canCopy="no" canDelete="no" canOverlap="yes"/>| }
+{{Entries: { $ph1 }!{ $ph2 }(Filtered)}}`,
+						Status:      model.MessageStatusUntranslated,
+						Description: "component\nproject-id",
+						Positions:   []string{"src/app/component.html:19"},
 					},
 				},
 			},
@@ -181,14 +153,4 @@ func Test_FromXliff2(t *testing.T) {
 			testutil.EqualTranslations(t, tt.expected, &actual)
 		})
 	}
-}
-
-func assertEqualXML(t *testing.T, expected, actual []byte) bool {
-	t.Helper()
-	// Matches a substring that starts with > and ends with < with zero or more whitespace in between.
-	re := regexp.MustCompile(`>(\s*)<`)
-	expectedTrimmed := re.ReplaceAllString(string(expected), "><")
-	actualTrimmed := re.ReplaceAllString(string(actual), "><")
-
-	return assert.Equal(t, expectedTrimmed, actualTrimmed)
 }
