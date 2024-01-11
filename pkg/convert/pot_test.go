@@ -1,7 +1,6 @@
 package convert
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -256,14 +255,7 @@ msgstr "Sveika, {name}!"
 			actualPo, err := ToPo(actual)
 			require.NoError(t, err)
 
-			// TODO: Remove
-			os.WriteFile("actual.po", actualPo, 0o644)
-			os.WriteFile("expected.po", []byte(tt.args.input), 0o644)
-
 			require.Equal(t, tt.args.input, string(actualPo), "convert back to Po")
-
-			os.Remove("actual.po")
-			os.Remove("expected.po")
 		})
 	}
 }
@@ -455,14 +447,7 @@ msgstr[2] ""
 			actualPo, err := ToPo(actual)
 			require.NoError(t, err)
 
-			// TODO: Remove
-			os.WriteFile("actual.po", actualPo, 0o644)
-			os.WriteFile("expected.po", []byte(tt.args.input), 0o644)
-
 			require.Equal(t, tt.args.input, string(actualPo), "convert back to Po")
-
-			os.Remove("actual.po")
-			os.Remove("expected.po")
 		})
 	}
 }
