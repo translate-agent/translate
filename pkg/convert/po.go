@@ -260,12 +260,12 @@ func ToPo(t model.Translation) ([]byte, error) {
 		return text
 	}
 
-	unquoteLiteral := func(l ast.Literal) string { return strings.ReplaceAll(l.String(), "|", "") }
-
 	// If original, msgstr are empty
 	if t.Original {
 		patternsToMsg = func(patterns []ast.Pattern) string { return "" }
 	}
+
+	unquoteLiteral := func(l ast.Literal) string { return strings.ReplaceAll(l.String(), "|", "") }
 
 	for _, message := range t.Messages {
 		// Build po.MessageNode, from model.Message.
