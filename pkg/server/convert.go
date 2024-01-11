@@ -62,7 +62,7 @@ func TranslationToData(schema translatev1.Schema, translation *model.Translation
 	case translatev1.Schema_JSON_NGX_TRANSLATE:
 		to = convert.ToNgxTranslate
 	case translatev1.Schema_POT:
-		to = convert.ToPot
+		to = convert.ToPo
 	case translatev1.Schema_XLIFF_2:
 		to = convert.ToXliff2
 	case translatev1.Schema_XLIFF_12:
