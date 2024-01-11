@@ -1,4 +1,4 @@
-package pot
+package po
 
 import (
 	"fmt"
