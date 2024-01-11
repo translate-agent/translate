@@ -17,25 +17,18 @@ type HeaderNode struct {
 	PluralForms PluralForm
 }
 
-func (h *HeaderNode) marshal() []byte {
-	var sb bytes.Buffer
-
-	sb.WriteString("msgid \"\"\nmsgstr \"\"\n")
+func (h *HeaderNode) marshal(b *bytes.Buffer) {
+	b.WriteString("msgid \"\"\nmsgstr \"\"\n")
 
 	if h.Language != language.Und {
-		sb.WriteString(fmt.Sprintf("\"Language: %s\\n\"\n", h.Language.String()))
+		b.WriteString(fmt.Sprintf("\"Language: %s\\n\"\n", h.Language.String()))
 	}
 
 	if h.Translator != "" {
-		sb.WriteString(fmt.Sprintf("\"Last-Translator: %s\\n\"\n", h.Translator))
+		b.WriteString(fmt.Sprintf("\"Last-Translator: %s\\n\"\n", h.Translator))
 	}
 
-	if pluralForms := h.PluralForms.marshal(); len(pluralForms) > 0 {
-		sb.Write(pluralForms)
-		sb.WriteByte('\n')
-	}
-
-	return sb.Bytes()
+	h.PluralForms.marshal(b)
 }
 
 type PluralForm struct {
@@ -43,12 +36,12 @@ type PluralForm struct {
 	NPlurals int
 }
 
-func (pf *PluralForm) marshal() []byte {
+func (pf *PluralForm) marshal(b *bytes.Buffer) {
 	if pf.Plural == "" && pf.NPlurals == 0 {
-		return []byte{}
+		return
 	}
 
-	return []byte(fmt.Sprintf("\"Plural-Forms: nplurals=%d; %s\\n\"", pf.NPlurals, pf.Plural))
+	b.WriteString(fmt.Sprintf("\"Plural-Forms: nplurals=%d; %s\\n\"\n", pf.NPlurals, pf.Plural))
 }
 
 type MessageNode struct {
@@ -65,9 +58,8 @@ type MessageNode struct {
 	MsgStr                []string
 }
 
-func (m *MessageNode) marshal() []byte {
-	var sb bytes.Buffer
-
+// TODO: Add support for other fields.
+func (m *MessageNode) marshal(b *bytes.Buffer) {
 	// quoteLines function splits a string into multiple lines and wraps each line in double quotes.
 	quoteLines := func(s string) string {
 		split := strings.Split(s, "\n")
@@ -78,42 +70,38 @@ func (m *MessageNode) marshal() []byte {
 		return strings.Join(split, "\n")
 	}
 
-	sb.WriteByte('\n') // empty line before each message
+	b.WriteByte('\n') // empty line before each message
 
 	for _, reference := range m.References {
-		sb.WriteString(fmt.Sprintf("#: %s\n", reference))
+		b.WriteString(fmt.Sprintf("#: %s\n", reference))
 	}
 
 	for _, ec := range m.ExtractedComment {
-		sb.WriteString(fmt.Sprintf("#. %s\n", ec))
+		b.WriteString(fmt.Sprintf("#. %s\n", ec))
 	}
 
 	for _, flag := range m.Flags {
-		sb.WriteString(fmt.Sprintf("#, %s\n", flag))
+		b.WriteString(fmt.Sprintf("#, %s\n", flag))
 	}
 
 	if m.MsgID != "" {
-		sb.WriteString(fmt.Sprintf("msgid %s\n", quoteLines(m.MsgID)))
+		b.WriteString(fmt.Sprintf("msgid %s\n", quoteLines(m.MsgID)))
 	}
 
 	if m.MsgIDPlural != "" {
-		sb.WriteString(fmt.Sprintf("msgid_plural %s\n", quoteLines(m.MsgIDPlural)))
+		b.WriteString(fmt.Sprintf("msgid_plural %s\n", quoteLines(m.MsgIDPlural)))
 	}
 
 	switch len(m.MsgStr) {
 	case 0:
-		sb.WriteString("msgstr \"\"\n")
+		b.WriteString("msgstr \"\"\n")
 	case 1:
-		sb.WriteString(fmt.Sprintf("msgstr %s\n", quoteLines(m.MsgStr[0])))
+		b.WriteString(fmt.Sprintf("msgstr %s\n", quoteLines(m.MsgStr[0])))
 	default:
 		for i, ms := range m.MsgStr {
-			sb.WriteString(fmt.Sprintf("msgstr[%d] %s\n", i, quoteLines(ms)))
+			b.WriteString(fmt.Sprintf("msgstr[%d] %s\n", i, quoteLines(ms)))
 		}
 	}
-
-	// TODO: Add support for other fields
-
-	return sb.Bytes()
 }
 
 type Po struct {
@@ -123,15 +111,15 @@ type Po struct {
 
 // Marshal serializes the Po object into a byte slice.
 func (p *Po) Marshal() []byte {
-	var sb bytes.Buffer
+	var b bytes.Buffer
 
-	sb.Write(p.Header.marshal())
+	p.Header.marshal(&b)
 
 	for _, msg := range p.Messages {
-		sb.Write(msg.marshal())
+		msg.marshal(&b)
 	}
 
-	return sb.Bytes()
+	return b.Bytes()
 }
 
 // Parse function takes an io.Reader object and parses the contents into a Po struct
