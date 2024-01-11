@@ -12,7 +12,7 @@ enum Schema {
   JSON_NGX_TRANSLATE = 2;
   GO = 3;
   ARB = 4;
-  PO = 5;
+  POT = 5;
   XLIFF_12 = 6;
   XLIFF_2 = 7;
 }

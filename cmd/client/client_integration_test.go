@@ -348,7 +348,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		require.ErrorContains(t, err,
-			"must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2")
+			"must be one of: json_ng_localize, json_ngx_translate, go, arb, pot, xliff_12, xliff_2")
 		assert.Nil(t, res)
 	})
 
@@ -367,7 +367,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		require.ErrorContains(t, err,
-			"must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2")
+			"must be one of: json_ng_localize, json_ngx_translate, go, arb, pot, xliff_12, xliff_2")
 		assert.Nil(t, res)
 	})
 

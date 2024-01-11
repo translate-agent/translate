@@ -1,4 +1,4 @@
-package po
+package pot
 
 import (
 	"bytes"

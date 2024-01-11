@@ -30,7 +30,7 @@ func TranslationFromData(params *uploadParams) (*model.Translation, error) {
 		from = convert.FromNgLocalize
 	case translatev1.Schema_JSON_NGX_TRANSLATE:
 		from = convert.FromNgxTranslate
-	case translatev1.Schema_PO:
+	case translatev1.Schema_POT:
 		from = convert.FromPo
 	case translatev1.Schema_XLIFF_2:
 		from = convert.FromXliff2
@@ -61,7 +61,7 @@ func TranslationToData(schema translatev1.Schema, translation *model.Translation
 		to = convert.ToNgLocalize
 	case translatev1.Schema_JSON_NGX_TRANSLATE:
 		to = convert.ToNgxTranslate
-	case translatev1.Schema_PO:
+	case translatev1.Schema_POT:
 		to = convert.ToPo
 	case translatev1.Schema_XLIFF_2:
 		to = convert.ToXliff2
