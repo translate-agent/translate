@@ -197,7 +197,7 @@ func TestPo_Marshal(t *testing.T) {
 			name: "singular",
 			input: Po{
 				Header: HeaderNode{
-					Language:   language.English,
+					Language:   language.Und,
 					Translator: "John Doe",
 				},
 				Messages: []MessageNode{
@@ -212,7 +212,6 @@ func TestPo_Marshal(t *testing.T) {
 			},
 			expected: `msgid ""
 msgstr ""
-"Language: en\n"
 "Last-Translator: John Doe\n"
 
 #: main.go:1
