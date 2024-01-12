@@ -195,6 +195,26 @@ func textToBatches(text []string, batchLimit int) [][]string {
 	return batches
 }
 
+// getTexts extracts translatable text from translation.Messages,
+// to avoid translation of placeholders, they are replaced with simplified placeholder version {$d}.
+//
+// Example:
+// Input:
+// 	&model.Translation{
+// 		Original: false,
+// 		Language: language.English,
+// 		Messages: []model.Message{
+// 			{
+// 				ID:      "Hello World!",
+// 				Message: `Hello, { |name| :function } World!`,
+// 				Status:  model.MessageStatusUntranslated,
+// 			},
+// 		},
+// 	}
+
+// Output:
+// []string{"Hello, {$0} World!"}, nil
+// .
 func getTexts(translation *model.Translation) ([]string, error) {
 	texts := make([]string, 0, len(translation.Messages))
 
@@ -224,14 +244,15 @@ func getTexts(translation *model.Translation) ([]string, error) {
 
 // printPattern ranges over pattern appending TextPatterns to a string
 // when a placeholderPattern is encountered - {$d} is appended, returns resulting string.
-// input:
+// Example:
+// Input:
 //
 //	[]ast.Patterns{
 //		TextPattern("Hello"),
 //		PlaceholderPattern{ Expression: LiteralExpression{Literal: QuotedLiteral("name")}},
 //		}
 //
-// output:
+// Output:
 // "Hello {$0}"
 // .
 func printPattern(pattern []ast.Pattern) string {
@@ -325,8 +346,8 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 
 func buildTranslatedPattern(translatedText string, patterns []ast.Pattern) ([]ast.Pattern, error) {
 	re := regexp.MustCompile(`\{\$(\d+)\}`)
-	textParts := splitText(translatedText)
-	placeholders := getPlaceholders(patterns)
+	textParts := splitTextByPlaceholder(translatedText)
+	placeholders := filterPlaceholders(patterns)
 	translatedPatterns := make([]ast.Pattern, 0, len(patterns))
 
 	for i, v := range textParts {
@@ -345,7 +366,8 @@ func buildTranslatedPattern(translatedText string, patterns []ast.Pattern) ([]as
 	return translatedPatterns, nil
 }
 
-func getPlaceholders(patterns []ast.Pattern) []ast.PlaceholderPattern {
+// filterPlaceholders ranges over patterns, gathers and returns a slice of placeholderPatterns.
+func filterPlaceholders(patterns []ast.Pattern) []ast.PlaceholderPattern {
 	placeholders := make([]ast.PlaceholderPattern, 0, len(patterns))
 
 	for i := range patterns {
@@ -360,14 +382,17 @@ func getPlaceholders(patterns []ast.Pattern) []ast.PlaceholderPattern {
 	return placeholders
 }
 
-// splitText splits string into all substrings separated by {$d}
+// splitTextByPlaceholder splits string into all substrings separated by {$d}
 // and returns a slice of the substrings including separators.
-// input:
-// "Hello {$0} {$1}! Welcome to {$2}."
-// output:
-// []string{"Hello ", "{$0}", " ", "{$1}" "! Welcome to ", "{$2}"}
+// Example:
+//
+//	Input:
+//	"Hello {$0} {$1}! Welcome to {$2}."
+//	Output:
+//	[]]string{"Hello ", "{$0}", " ", "{$1}" "! Welcome to ", "{$2}"}
+//
 // .
-func splitText(s string) []string {
+func splitTextByPlaceholder(s string) []string {
 	var startIndex int
 
 	parts := make([]string, 0, 1)
