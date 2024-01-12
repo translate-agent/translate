@@ -60,3 +60,11 @@ linters-settings:
     enable-all: true
   predeclared:
     ignore: ""
+  ireturn:
+    allow:
+      - anon
+      - error
+      - empty
+      - generic
+      - stdlib
+      - (or|er)$

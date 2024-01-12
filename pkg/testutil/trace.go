@@ -30,7 +30,7 @@ func init() {
 }
 
 // Tracer returns test tracer.
-func Tracer() trace.Tracer { return testTracer } //nolint:ireturn
+func Tracer() trace.Tracer { return testTracer }
 
 // Trace starts a new root span using the provided Tracer.
 // The span name is derived from the provided testing.T.

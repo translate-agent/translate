@@ -13,7 +13,7 @@ import (
 )
 
 // deepCopy makes a deep copy of src and returns it.
-func deepCopy[T any](t *testing.T, src T) (dst T) { //nolint:ireturn
+func deepCopy[T any](t *testing.T, src T) (dst T) {
 	t.Helper()
 
 	data, err := json.Marshal(src)

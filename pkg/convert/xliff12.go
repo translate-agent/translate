@@ -14,6 +14,8 @@ import (
 // XLIFF 1.2 specification: https://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html
 // XLIFF 1.2 example: https://localizely.com/xliff-file/?tab=xliff-12
 
+// TODO: Add support for platform specific XLIFF 1.2 implementations used by xcode (apple), angular etc..
+
 type xliff12 struct {
 	XMLName xml.Name    `xml:"urn:oasis:names:tc:xliff:document:1.2 xliff"`
 	Version string      `xml:"version,attr"`

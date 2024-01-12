@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 	"testing/quick"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
@@ -234,4 +236,16 @@ func Test_TransformXLIFF12(t *testing.T) {
 	}
 
 	require.NoError(t, quick.Check(f, conf))
+}
+
+// helpers
+
+func assertEqualXML(t *testing.T, expected, actual []byte) bool {
+	t.Helper()
+	// Matches a substring that starts with > and ends with < with zero or more whitespace in between.
+	re := regexp.MustCompile(`>(\s*)<`)
+	expectedTrimmed := re.ReplaceAllString(string(expected), "><")
+	actualTrimmed := re.ReplaceAllString(string(actual), "><")
+
+	return assert.Equal(t, expectedTrimmed, actualTrimmed)
 }
