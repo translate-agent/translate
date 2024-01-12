@@ -197,8 +197,8 @@ func textToBatches(text []string, batchLimit int) [][]string {
 	return batches
 }
 
-// getTexts extracts translatable text from translation.Messages,
-// to avoid translation of placeholders, they are replaced with simplified placeholder version {$d}.
+// getTexts extracts translatable text from translation.Messages.
+// To avoid translation of placeholders, they are replaced with numbered simplified placeholder versions {$d}.
 //
 // Example:
 // Input:
@@ -208,14 +208,14 @@ func textToBatches(text []string, batchLimit int) [][]string {
 // 		Messages: []model.Message{
 // 			{
 // 				ID:      "Hello World!",
-// 				Message: `Hello, { |name| :function } World!`,
+// 				Message: `Hello, { |name| :function } { |lastName| :function2 }!`,
 // 				Status:  model.MessageStatusUntranslated,
 // 			},
 // 		},
 // 	}
 
 // Output:
-// []string{"Hello, {$0} World!"}, nil .
+// []string{"Hello, {$0} {$1}!"}, nil .
 func getTexts(translation *model.Translation) ([]string, error) {
 	texts := make([]string, 0, len(translation.Messages))
 
@@ -251,10 +251,13 @@ func getTexts(translation *model.Translation) ([]string, error) {
 //	[]ast.Patterns{
 //		TextPattern("Hello"),
 //		PlaceholderPattern{ Expression: LiteralExpression{Literal: QuotedLiteral("name")}},
+//		TextPattern(" "),
+//		PlaceholderPattern{ Expression: LiteralExpression{Literal: QuotedLiteral("lastName")}},
+//		TextPattern("!"),
 //		}
 //
 // Output:
-// "Hello {$0}".
+// "Hello {$0} {$1}!".
 func printPattern(pattern []ast.Pattern) string {
 	var (
 		phIndex int
