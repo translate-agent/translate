@@ -4,7 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"regexp"
+	"strconv"
 	"unicode/utf8"
+
+	ast "go.expect.digital/mf2/parse"
 
 	translate "cloud.google.com/go/translate/apiv3"
 	"cloud.google.com/go/translate/apiv3/translatepb"
@@ -113,83 +117,39 @@ func (g *GoogleTranslate) Translate(
 		return nil, nil //nolint:nilnil
 	}
 
-	// TODO: Implement translation of message texts.
-
-	// NOTE: temporary fix to avoid failing tests.
-	if len(translation.Messages) == 0 {
-		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
+	// Retrieve all translatable text from translation
+	texts, err := getTexts(translation)
+	if err != nil {
+		return nil, fmt.Errorf("google translate: get texts: %w", err)
 	}
 
-	translated := &model.Translation{
-		Language: targetLanguage,
-		Original: translation.Original,
-		Messages: make([]model.Message, len(translation.Messages)),
+	// Split text from translation into batches to avoid exceeding
+	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
+	batches := textToBatches(texts, googleTranslateRequestLimit)
+	translatedTexts := make([]string, 0, len(texts))
+
+	// Translate text batches using Google Translate client.
+	for i := range batches {
+		res, err := g.client.TranslateText(ctx, &translatepb.TranslateTextRequest{ //nolint:govet
+			Parent:             parent(),
+			SourceLanguageCode: translation.Language.String(),
+			TargetLanguageCode: targetLanguage.String(),
+			Contents:           batches[i],
+		})
+		if err != nil {
+			return nil, fmt.Errorf("google translate client: translate text #%d from batch: %w", i, err)
+		}
+
+		for i := range res.GetTranslations() {
+			translatedTexts = append(translatedTexts, res.GetTranslations()[i].GetTranslatedText())
+		}
 	}
 
-	for i := range translation.Messages {
-		translated.Messages = append(translated.Messages, translation.Messages[i])
-		translated.Messages[i].Status = model.MessageStatusFuzzy
+	// build translation with new translated text
+	translated, err := buildTranslated(translation, translatedTexts, targetLanguage)
+	if err != nil {
+		return nil, fmt.Errorf("google translate: get translated: %w", err)
 	}
-
-	// NOTE: Previous implementation of the translation of message texts, for reference!
-
-	// // Extract translatable text from translation.
-	// asts, err := mf.ParseTranslation(translation)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("google translate: parse translation messages: %w", err)
-	// }
-
-	// textNodes := mf.GetTextNodes(asts)
-	// texts := textNodes.GetTexts()
-
-	// // Split text from translation into batches to avoid exceeding
-	// // googleTranslateRequestLimit or googleTranslateCodePointsLimit.
-	// batches := textToBatches(texts, googleTranslateRequestLimit)
-	// translatedTexts := make([]string, 0, len(texts))
-
-	// // Translate text batches using Google Translate client.
-	// for i := range batches {
-	// 	res, err := g.client.TranslateText(ctx, &translatepb.TranslateTextRequest{
-	// 		Parent:             parent(),
-	// 		SourceLanguageCode: translation.Language.String(),
-	// 		TargetLanguageCode: targetLanguage.String(),
-	// 		Contents:           batches[i],
-	// 	})
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("google translate client: translate text #%d from batch: %w", i, err)
-	// 	}
-
-	// 	for i := range res.GetTranslations() {
-	// 		translatedTexts = append(translatedTexts, res.GetTranslations()[i].GetTranslatedText())
-	// 	}
-	// }
-
-	// // Overwrite text nodes in ASTs to include newly translated text.
-	// if err := textNodes.OverwriteTexts(translatedTexts); err != nil {
-	// 	return nil, fmt.Errorf("google translate: overwrite text nodes in ASTs: %w", err)
-	// }
-
-	// // create translation with newly translated messages.
-	// translated := model.Translation{
-	// 	Language: targetLanguage,
-	// 	Original: translation.Original,
-	// 	Messages: make([]model.Message, len(translation.Messages)),
-	// }
-
-	// for i := range asts {
-	// 	b, err := asts[i].MarshalText()
-	// 	if err != nil {
-	// 		return nil,
-	// 			fmt.Errorf("google translate: marshal text from AST for message ID '%s': %w", translation.Messages[i].ID, err)
-	// 	}
-
-	// 	m := translation.Messages[i]
-	// 	m.Message = string(b)
-	// 	m.Status = model.MessageStatusFuzzy
-	// 	translated.Messages[i] = m
-	// }
-
-	// return &translated, nil
 
 	return translated, nil
 }
@@ -204,9 +164,8 @@ func parent() string {
 	return fmt.Sprintf("projects/%s/locations/%s", projectID, location)
 }
 
-// TODO: Remove if not used.
 // textToBatches splits text into batches with predefined maximum amount of elements.
-func textToBatches(text []string, batchLimit int) [][]string { //nolint:unused
+func textToBatches(text []string, batchLimit int) [][]string {
 	var codePointsInBatch int
 
 	batch := make([]string, 0, batchLimit)
@@ -229,4 +188,201 @@ func textToBatches(text []string, batchLimit int) [][]string { //nolint:unused
 	batches = append(batches, batch)
 
 	return batches
+}
+
+func getTexts(translation *model.Translation) ([]string, error) { //nolint:gocognit
+	texts := make([]string, 0, len(translation.Messages))
+
+	for i := range translation.Messages {
+		messageAST, err := ast.Parse(translation.Messages[i].Message)
+		if err != nil {
+			return nil, fmt.Errorf("parse mf2 message: %w", err)
+		}
+
+		var (
+			text    string
+			phIndex int
+		)
+
+		switch v := messageAST.Message.(type) {
+		case ast.SimpleMessage:
+			for i := range v.Patterns {
+				switch v := v.Patterns[i].(type) {
+				case ast.TextPattern:
+					text += string(v)
+				case ast.PlaceholderPattern:
+					text += fmt.Sprintf("{$%d}", phIndex)
+					phIndex++
+				}
+			}
+
+			texts = append(texts, text)
+		case ast.ComplexMessage:
+			switch v := v.ComplexBody.(type) {
+			case ast.Matcher:
+				for _, variant := range v.Variants {
+					for _, pattern := range variant.QuotedPattern.Patterns {
+						switch v := pattern.(type) {
+						case ast.TextPattern:
+							text += string(v)
+						case ast.PlaceholderPattern:
+							text += fmt.Sprintf("{$%d}", phIndex)
+							phIndex++
+						}
+					}
+
+					texts = append(texts, text)
+					text, phIndex = "", 0
+				}
+			case ast.QuotedPattern:
+				for _, pattern := range v.Patterns {
+					switch v := pattern.(type) {
+					case ast.TextPattern:
+						text += string(v)
+					case ast.PlaceholderPattern:
+						text += fmt.Sprintf("{$%d}", phIndex)
+						phIndex++
+					}
+				}
+
+				texts = append(texts, text)
+			}
+		}
+	}
+
+	return texts, nil
+}
+
+func buildTranslated(translation *model.Translation, translatedTexts []string, targetLanguage language.Tag,
+) (*model.Translation, error) {
+	translated := &model.Translation{
+		Language: targetLanguage,
+		Original: translation.Original,
+		Messages: make([]model.Message, len(translation.Messages)),
+	}
+
+	var textIndex int
+
+	for i := range translation.Messages {
+		messageAST, err := ast.Parse(translation.Messages[i].Message)
+		if err != nil {
+			return nil, fmt.Errorf("parse mf2 message: %w", err)
+		}
+
+		switch message := messageAST.Message.(type) {
+		case ast.SimpleMessage:
+			message.Patterns, err = buildTranslatedPattern(translatedTexts[textIndex], message.Patterns)
+			if err != nil {
+				return nil, fmt.Errorf("build translated pattern for simple message: %w", err)
+			}
+
+			textIndex++
+
+			// rewrite AST
+			messageAST.Message = message
+		case ast.ComplexMessage:
+			switch complexBody := message.ComplexBody.(type) {
+			case ast.Matcher:
+				for i := range complexBody.Variants {
+					complexBody.Variants[i].QuotedPattern.Patterns, err = buildTranslatedPattern(
+						translatedTexts[textIndex], complexBody.Variants[i].QuotedPattern.Patterns)
+					if err != nil {
+						return nil, fmt.Errorf("build translated pattern for matcher variant: %w", err)
+					}
+
+					textIndex++
+				}
+
+				// rewrite AST
+				message.ComplexBody = complexBody
+				messageAST.Message = message
+			case ast.QuotedPattern:
+				complexBody.Patterns, err = buildTranslatedPattern(translatedTexts[textIndex], complexBody.Patterns)
+				if err != nil {
+					return nil, fmt.Errorf("build translated pattern for quoted pattern: %w", err)
+				}
+
+				textIndex++
+
+				// rewrite AST
+				message.ComplexBody = complexBody
+				messageAST.Message = message
+			}
+		}
+
+		translated.Messages[i] = model.Message{
+			ID:          translation.Messages[i].ID,
+			PluralID:    translation.Messages[i].PluralID,
+			Message:     messageAST.String(),
+			Description: translation.Messages[i].Description,
+			Positions:   translation.Messages[i].Positions,
+			Status:      model.MessageStatusFuzzy,
+		}
+	}
+
+	return translated, nil
+}
+
+// helpers
+
+func buildTranslatedPattern(translatedText string, patterns []ast.Pattern) ([]ast.Pattern, error) {
+	re := regexp.MustCompile(`\{\$(\d+)\}`)
+	texts := splitWithDelimiter(translatedText)
+	placeholders := getPlaceholders(patterns)
+	translatedPatterns := make([]ast.Pattern, 0, len(patterns))
+
+	for i, translatedText := range texts {
+		if re.MatchString(texts[i]) { // placeholder
+			placeholderIndex, err := strconv.ParseInt(translatedText[2:len(translatedText)-1], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("parse placeholder index: %w", err)
+			}
+
+			translatedPatterns = append(translatedPatterns, placeholders[placeholderIndex])
+		} else { // text
+			translatedPatterns = append(translatedPatterns, ast.TextPattern(texts[i]))
+		}
+	}
+
+	return translatedPatterns, nil
+}
+
+func getPlaceholders(patterns []ast.Pattern) []ast.PlaceholderPattern {
+	placeholders := make([]ast.PlaceholderPattern, 0, len(patterns))
+
+	for i := range patterns {
+		switch v := patterns[i].(type) {
+		default:
+			// noop
+		case ast.PlaceholderPattern:
+			placeholders = append(placeholders, v)
+		}
+	}
+
+	return placeholders
+}
+
+func splitWithDelimiter(s string) []string {
+	var startIndex int
+
+	parts := make([]string, 0, 1)
+	indices := regexp.MustCompile(`\{\$(\d+)\}`).FindAllStringIndex(s, -1)
+
+	for _, indexPair := range indices {
+		if s[startIndex:indexPair[0]] != "" {
+			parts = append(parts, s[startIndex:indexPair[0]])
+		}
+
+		if s[indexPair[0]:indexPair[1]] != "" {
+			parts = append(parts, s[indexPair[0]:indexPair[1]])
+		}
+
+		startIndex = indexPair[1]
+	}
+
+	if s[startIndex:] != "" {
+		parts = append(parts, s[startIndex:])
+	}
+
+	return parts
 }
