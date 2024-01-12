@@ -195,7 +195,7 @@ func textToBatches(text []string, batchLimit int) [][]string {
 	return batches
 }
 
-func getTexts(translation *model.Translation) ([]string, error) { //nolint:gocognit
+func getTexts(translation *model.Translation) ([]string, error) {
 	texts := make([]string, 0, len(translation.Messages))
 
 	for i := range translation.Messages {
@@ -204,58 +204,53 @@ func getTexts(translation *model.Translation) ([]string, error) { //nolint:gocog
 			return nil, fmt.Errorf("parse mf2 message: %w", err)
 		}
 
-		var (
-			text    string
-			phIndex int
-		)
-
 		switch v := messageAST.Message.(type) {
 		case ast.SimpleMessage:
-			for i := range v.Patterns {
-				switch v := v.Patterns[i].(type) {
-				case ast.TextPattern:
-					text += string(v)
-				case ast.PlaceholderPattern:
-					text += fmt.Sprintf("{$%d}", phIndex)
-					phIndex++
-				}
-			}
-
-			texts = append(texts, text)
+			texts = append(texts, printPattern(v.Patterns))
 		case ast.ComplexMessage:
 			switch v := v.ComplexBody.(type) {
 			case ast.Matcher:
 				for _, variant := range v.Variants {
-					for _, pattern := range variant.QuotedPattern.Patterns {
-						switch v := pattern.(type) {
-						case ast.TextPattern:
-							text += string(v)
-						case ast.PlaceholderPattern:
-							text += fmt.Sprintf("{$%d}", phIndex)
-							phIndex++
-						}
-					}
-
-					texts = append(texts, text)
-					text, phIndex = "", 0
+					texts = append(texts, printPattern(variant.QuotedPattern.Patterns))
 				}
 			case ast.QuotedPattern:
-				for _, pattern := range v.Patterns {
-					switch v := pattern.(type) {
-					case ast.TextPattern:
-						text += string(v)
-					case ast.PlaceholderPattern:
-						text += fmt.Sprintf("{$%d}", phIndex)
-						phIndex++
-					}
-				}
-
-				texts = append(texts, text)
+				texts = append(texts, printPattern(v.Patterns))
 			}
 		}
 	}
 
 	return texts, nil
+}
+
+// printPattern ranges over pattern appending TextPatterns to a string
+// when a placeholderPattern is encountered - {$d} is appended, returns resulting string.
+// input:
+//
+//	[]ast.Patterns{
+//		TextPattern("Hello"),
+//		PlaceholderPattern{ Expression: LiteralExpression{Literal: QuotedLiteral("name")}},
+//		}
+//
+// output:
+// "Hello {$0}"
+// .
+func printPattern(pattern []ast.Pattern) string {
+	var (
+		phIndex int
+		text    string
+	)
+
+	for i := range pattern {
+		switch v := pattern[i].(type) {
+		case ast.TextPattern:
+			text += string(v)
+		case ast.PlaceholderPattern:
+			text += fmt.Sprintf("{$%d}", phIndex)
+			phIndex++
+		}
+	}
+
+	return text
 }
 
 func buildTranslated(translation *model.Translation, translatedTexts []string, targetLanguage language.Tag,
@@ -330,7 +325,7 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 
 func buildTranslatedPattern(translatedText string, patterns []ast.Pattern) ([]ast.Pattern, error) {
 	re := regexp.MustCompile(`\{\$(\d+)\}`)
-	textParts := splitTranslatedText(translatedText)
+	textParts := splitText(translatedText)
 	placeholders := getPlaceholders(patterns)
 	translatedPatterns := make([]ast.Pattern, 0, len(patterns))
 
@@ -365,7 +360,14 @@ func getPlaceholders(patterns []ast.Pattern) []ast.PlaceholderPattern {
 	return placeholders
 }
 
-func splitTranslatedText(s string) []string {
+// splitText splits string into all substrings separated by {$d}
+// and returns a slice of the substrings including separators.
+// input:
+// "Hello {$0} {$1}! Welcome to {$2}."
+// output:
+// []string{"Hello ", "{$0}", " ", "{$1}" "! Welcome to ", "{$2}"}
+// .
+func splitText(s string) []string {
 	var startIndex int
 
 	parts := make([]string, 0, 1)
@@ -374,9 +376,7 @@ func splitTranslatedText(s string) []string {
 	for _, indexPair := range indices {
 		if s[startIndex:indexPair[0]] != "" {
 			parts = append(parts, s[startIndex:indexPair[0]])
-		}
-
-		if s[indexPair[0]:indexPair[1]] != "" {
+		} else if s[indexPair[0]:indexPair[1]] != "" {
 			parts = append(parts, s[indexPair[0]:indexPair[1]])
 		}
 
