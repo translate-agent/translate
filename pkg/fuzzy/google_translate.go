@@ -25,10 +25,10 @@ import (
 // https://github.com/googleapis/googleapis/blob/master/google/cloud/translate/v3/translation_service.proto
 const (
 	// googleTranslateRequestLimit limits the number of strings per translation request.
-	googleTranslateRequestLimit = 1024 //nolint:unused
+	googleTranslateRequestLimit = 1024
 
 	// googleTranslateCodePointsLimit limits the number of Unicode codepoints per single translation request.
-	googleTranslateCodePointsLimit = 30_000 //nolint:unused
+	googleTranslateCodePointsLimit = 30_000
 )
 
 // --------------------Definitions--------------------
@@ -148,7 +148,7 @@ func (g *GoogleTranslate) Translate(
 	// build translation with new translated text
 	translated, err := buildTranslated(translation, translatedTexts, targetLanguage)
 	if err != nil {
-		return nil, fmt.Errorf("google translate: get translated: %w", err)
+		return nil, fmt.Errorf("google translate: build translated: %w", err)
 	}
 
 	return translated, nil
