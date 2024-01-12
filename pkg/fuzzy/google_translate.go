@@ -122,7 +122,7 @@ func (g *GoogleTranslate) Translate(
 		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
 	}
 
-	// TODO: Find a solution to avoid panic when encountering text that contains {$d}.
+	// TODO: Find a solution to avoid panic when encountering text that contains '{$d}'.
 
 	// Retrieve all translatable text from translation
 	texts, err := getTexts(translation)
@@ -198,7 +198,7 @@ func textToBatches(text []string, batchLimit int) [][]string {
 }
 
 // getTexts extracts translatable text from translation.Messages.
-// To avoid translation of placeholders, they are replaced with numbered simplified placeholder versions {$d}.
+// To avoid translating placeholders, they are replaced with simplified placeholders that are numbered '{$d}'.
 //
 // Example:
 // Input:
@@ -226,6 +226,8 @@ func getTexts(translation *model.Translation) ([]string, error) {
 		}
 
 		switch v := messageAST.Message.(type) {
+		default:
+			return nil, fmt.Errorf("unsupported message type: %T", v)
 		case ast.SimpleMessage:
 			texts = append(texts, printPattern(v.Patterns))
 		case ast.ComplexMessage:
@@ -243,8 +245,8 @@ func getTexts(translation *model.Translation) ([]string, error) {
 	return texts, nil
 }
 
-// printPattern ranges over pattern appending TextPatterns to a string,
-// when a placeholderPattern is encountered simplified placeholder version {$d} is appended, returns resulting string.
+// printPattern ranges over pattern appending TextPatterns to a string, when a ast.PlaceholderPattern
+// is encountered a simplified placeholder version '{$d}' is appended, returns resulting string.
 // Example:
 // Input:
 //
@@ -254,29 +256,57 @@ func getTexts(translation *model.Translation) ([]string, error) {
 //		TextPattern(" "),
 //		PlaceholderPattern{ Expression: LiteralExpression{Literal: QuotedLiteral("lastName")}},
 //		TextPattern("!"),
-//		}
+//	}
 //
 // Output:
 // "Hello {$0} {$1}!".
 func printPattern(pattern []ast.Pattern) string {
-	var (
-		phIndex int
-		text    string
-	)
+	var text string
 
 	for i := range pattern {
 		switch v := pattern[i].(type) {
 		case ast.TextPattern:
 			text += string(v)
 		case ast.PlaceholderPattern:
-			text += fmt.Sprintf("{$%d}", phIndex)
-			phIndex++
+			text += fmt.Sprintf("{$%d}", pattern[i])
 		}
 	}
 
 	return text
 }
 
+// buildTranslated builds translated translation using previous translation and translated texts.
+// Returns translation.
+// Example:
+// Input:
+//
+//	translation: &model.Translation{
+//		Original: false,
+//		Language: language.English,
+//		Messages: []model.Message{
+//			{
+//				ID:      "Hello World!",
+//				Message: `Hello, { |name| :function } { |lastName| :function2 }!`,
+//				Status:  model.MessageStatusUntranslated,
+//			},
+//		},
+//	},
+//	translatedTexts: []string{"Sveiki, {$0} {$1}!"},
+//	targetLanguage: "lv"
+//
+// Output:
+//
+//	&model.Translation{
+//		Original: false,
+//		Language: language.English,
+//		Messages: []model.Message{
+//			{
+//				ID:      "Hello World!",
+//				Message: `Sveiki, { |name| :function } { |lastName| :function2 }!`,
+//				Status:  model.MessageStatusFuzzy,
+//			},
+//		},
+//	}, nil
 func buildTranslated(translation *model.Translation, translatedTexts []string, targetLanguage language.Tag,
 ) (*model.Translation, error) {
 	translated := &model.Translation{
@@ -295,7 +325,7 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 
 		switch message := messageAST.Message.(type) {
 		case ast.SimpleMessage:
-			message.Patterns, err = buildTranslatedPattern(translatedTexts[textIndex], getPlaceholders(message.Patterns))
+			message.Patterns, err = buildTranslatedPattern(translatedTexts[textIndex], message.Patterns)
 			if err != nil {
 				return nil, fmt.Errorf("build translated pattern for simple message: %w", err)
 			}
@@ -304,12 +334,13 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 
 			// rewrite AST
 			messageAST.Message = message
+
 		case ast.ComplexMessage:
 			switch complexBody := message.ComplexBody.(type) {
 			case ast.Matcher:
 				for i := range complexBody.Variants {
 					complexBody.Variants[i].QuotedPattern.Patterns, err = buildTranslatedPattern(
-						translatedTexts[textIndex], getPlaceholders(complexBody.Variants[i].QuotedPattern.Patterns))
+						translatedTexts[textIndex], complexBody.Variants[i].QuotedPattern.Patterns)
 					if err != nil {
 						return nil, fmt.Errorf("build translated pattern for matcher variant: %w", err)
 					}
@@ -320,9 +351,9 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 				// rewrite AST
 				message.ComplexBody = complexBody
 				messageAST.Message = message
+
 			case ast.QuotedPattern:
-				complexBody.Patterns, err = buildTranslatedPattern(
-					translatedTexts[textIndex], getPlaceholders(complexBody.Patterns))
+				complexBody.Patterns, err = buildTranslatedPattern(translatedTexts[textIndex], complexBody.Patterns)
 				if err != nil {
 					return nil, fmt.Errorf("build translated pattern for quoted pattern: %w", err)
 				}
@@ -348,13 +379,13 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 	return translated, nil
 }
 
-// buildTranslatedPattern() constructs a new pattern by splitting translated text into parts that contain
-// translated text and simplified placeholders, text is appended as TextPattern, but
-// simplified placeholders are replaced with placeholderPatterns from message AST.
-func buildTranslatedPattern(translatedText string, placeholders []ast.PlaceholderPattern) ([]ast.Pattern, error) {
+// buildTranslatedPattern() constructs a pattern by appending translated text and placeholders
+// that extracted from translated text. Simplified placeholders are replaced with corresponding
+// ast.PlaceholderPatterns from message AST. Returns slice of ast.Pattern.
+func buildTranslatedPattern(translatedText string, previousPattern []ast.Pattern) ([]ast.Pattern, error) {
 	re := regexp.MustCompile(`\{\$(\d+)\}`)
 
-	translatedPattern := make([]ast.Pattern, 0, len(placeholders))
+	translatedPattern := make([]ast.Pattern, 0, len(previousPattern))
 
 	for _, v := range splitTextByPlaceholder(translatedText) {
 		if re.MatchString(v) { // simplified placeholder
@@ -363,7 +394,7 @@ func buildTranslatedPattern(translatedText string, placeholders []ast.Placeholde
 				return nil, fmt.Errorf("parse placeholder index: %w", err)
 			}
 
-			translatedPattern = append(translatedPattern, placeholders[placeholderIndex])
+			translatedPattern = append(translatedPattern, previousPattern[placeholderIndex])
 		} else { // translated text
 			translatedPattern = append(translatedPattern, ast.TextPattern(v))
 		}
@@ -372,30 +403,14 @@ func buildTranslatedPattern(translatedText string, placeholders []ast.Placeholde
 	return translatedPattern, nil
 }
 
-// getPlaceholders ranges over patterns, gathers and returns a slice of placeholderPatterns.
-func getPlaceholders(patterns []ast.Pattern) []ast.PlaceholderPattern {
-	placeholders := make([]ast.PlaceholderPattern, 0, len(patterns))
-
-	for i := range patterns {
-		switch v := patterns[i].(type) {
-		default:
-			// noop
-		case ast.PlaceholderPattern:
-			placeholders = append(placeholders, v)
-		}
-	}
-
-	return placeholders
-}
-
-// splitTextByPlaceholder splits string into all substrings separated by {$d}
+// splitTextByPlaceholder splits string into all substrings separated by '{$d}'
 // and returns a slice of the substrings including separators.
 // Example:
 //
 //	Input:
 //	"Hello {$0} {$1}! Welcome to {$2}."
 //	Output:
-//	[]]string{"Hello ", "{$0}", " ", "{$1}" "! Welcome to ", "{$2}"}
+//	[]string{"Hello ", "{$0}", " ", "{$1}" "! Welcome to ", "{$2}"}
 func splitTextByPlaceholder(s string) []string {
 	var startIndex int
 
@@ -405,7 +420,9 @@ func splitTextByPlaceholder(s string) []string {
 	for _, indexPair := range indices {
 		if s[startIndex:indexPair[0]] != "" {
 			parts = append(parts, s[startIndex:indexPair[0]])
-		} else if s[indexPair[0]:indexPair[1]] != "" {
+		}
+
+		if s[indexPair[0]:indexPair[1]] != "" {
 			parts = append(parts, s[indexPair[0]:indexPair[1]])
 		}
 
