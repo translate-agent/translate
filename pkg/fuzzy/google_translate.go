@@ -122,6 +122,8 @@ func (g *GoogleTranslate) Translate(
 		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
 	}
 
+	// TODO: Find a solution to avoid panic when encountering text that contains {$d}.
+
 	// Retrieve all translatable text from translation
 	texts, err := getTexts(translation)
 	if err != nil {
@@ -213,8 +215,7 @@ func textToBatches(text []string, batchLimit int) [][]string {
 // 	}
 
 // Output:
-// []string{"Hello, {$0} World!"}, nil
-// .
+// []string{"Hello, {$0} World!"}, nil .
 func getTexts(translation *model.Translation) ([]string, error) {
 	texts := make([]string, 0, len(translation.Messages))
 
@@ -242,8 +243,8 @@ func getTexts(translation *model.Translation) ([]string, error) {
 	return texts, nil
 }
 
-// printPattern ranges over pattern appending TextPatterns to a string
-// when a placeholderPattern is encountered - {$d} is appended, returns resulting string.
+// printPattern ranges over pattern appending TextPatterns to a string,
+// when a placeholderPattern is encountered simplified placeholder version {$d} is appended, returns resulting string.
 // Example:
 // Input:
 //
@@ -253,8 +254,7 @@ func getTexts(translation *model.Translation) ([]string, error) {
 //		}
 //
 // Output:
-// "Hello {$0}"
-// .
+// "Hello {$0}".
 func printPattern(pattern []ast.Pattern) string {
 	var (
 		phIndex int
@@ -292,7 +292,7 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 
 		switch message := messageAST.Message.(type) {
 		case ast.SimpleMessage:
-			message.Patterns, err = buildTranslatedPattern(translatedTexts[textIndex], message.Patterns)
+			message.Patterns, err = buildTranslatedPattern(translatedTexts[textIndex], getPlaceholders(message.Patterns))
 			if err != nil {
 				return nil, fmt.Errorf("build translated pattern for simple message: %w", err)
 			}
@@ -306,7 +306,7 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 			case ast.Matcher:
 				for i := range complexBody.Variants {
 					complexBody.Variants[i].QuotedPattern.Patterns, err = buildTranslatedPattern(
-						translatedTexts[textIndex], complexBody.Variants[i].QuotedPattern.Patterns)
+						translatedTexts[textIndex], getPlaceholders(complexBody.Variants[i].QuotedPattern.Patterns))
 					if err != nil {
 						return nil, fmt.Errorf("build translated pattern for matcher variant: %w", err)
 					}
@@ -318,7 +318,8 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 				message.ComplexBody = complexBody
 				messageAST.Message = message
 			case ast.QuotedPattern:
-				complexBody.Patterns, err = buildTranslatedPattern(translatedTexts[textIndex], complexBody.Patterns)
+				complexBody.Patterns, err = buildTranslatedPattern(
+					translatedTexts[textIndex], getPlaceholders(complexBody.Patterns))
 				if err != nil {
 					return nil, fmt.Errorf("build translated pattern for quoted pattern: %w", err)
 				}
@@ -344,30 +345,32 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 	return translated, nil
 }
 
-func buildTranslatedPattern(translatedText string, patterns []ast.Pattern) ([]ast.Pattern, error) {
+// buildTranslatedPattern() constructs a new pattern by splitting translated text into parts that contain
+// translated text and simplified placeholders, text is appended as TextPattern, but
+// simplified placeholders are replaced with placeholderPatterns from message AST.
+func buildTranslatedPattern(translatedText string, placeholders []ast.PlaceholderPattern) ([]ast.Pattern, error) {
 	re := regexp.MustCompile(`\{\$(\d+)\}`)
-	textParts := splitTextByPlaceholder(translatedText)
-	placeholders := filterPlaceholders(patterns)
-	translatedPatterns := make([]ast.Pattern, 0, len(patterns))
 
-	for i, v := range textParts {
-		if re.MatchString(textParts[i]) { // placeholder
-			placeholderIndex, err := strconv.ParseInt(v[2:len(v)-1], 10, 64)
+	translatedPattern := make([]ast.Pattern, 0, len(placeholders))
+
+	for _, v := range splitTextByPlaceholder(translatedText) {
+		if re.MatchString(v) { // simplified placeholder
+			placeholderIndex, err := strconv.Atoi(v)
 			if err != nil {
 				return nil, fmt.Errorf("parse placeholder index: %w", err)
 			}
 
-			translatedPatterns = append(translatedPatterns, placeholders[placeholderIndex])
-		} else { // text
-			translatedPatterns = append(translatedPatterns, ast.TextPattern(textParts[i]))
+			translatedPattern = append(translatedPattern, placeholders[placeholderIndex])
+		} else { // translated text
+			translatedPattern = append(translatedPattern, ast.TextPattern(v))
 		}
 	}
 
-	return translatedPatterns, nil
+	return translatedPattern, nil
 }
 
-// filterPlaceholders ranges over patterns, gathers and returns a slice of placeholderPatterns.
-func filterPlaceholders(patterns []ast.Pattern) []ast.PlaceholderPattern {
+// getPlaceholders ranges over patterns, gathers and returns a slice of placeholderPatterns.
+func getPlaceholders(patterns []ast.Pattern) []ast.PlaceholderPattern {
 	placeholders := make([]ast.PlaceholderPattern, 0, len(patterns))
 
 	for i := range patterns {
@@ -390,8 +393,6 @@ func filterPlaceholders(patterns []ast.Pattern) []ast.PlaceholderPattern {
 //	"Hello {$0} {$1}! Welcome to {$2}."
 //	Output:
 //	[]]string{"Hello ", "{$0}", " ", "{$1}" "! Welcome to ", "{$2}"}
-//
-// .
 func splitTextByPlaceholder(s string) []string {
 	var startIndex int
 
