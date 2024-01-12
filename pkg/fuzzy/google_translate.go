@@ -153,7 +153,7 @@ func (g *GoogleTranslate) Translate(
 	// build translation with new translated text
 	translated, err := buildTranslated(translation, translatedTexts, targetLanguage)
 	if err != nil {
-		return nil, fmt.Errorf("google translate:  translated: %w", err)
+		return nil, fmt.Errorf("google translate: build translated: %w", err)
 	}
 
 	return translated, nil
@@ -330,20 +330,20 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 
 func buildTranslatedPattern(translatedText string, patterns []ast.Pattern) ([]ast.Pattern, error) {
 	re := regexp.MustCompile(`\{\$(\d+)\}`)
-	texts := splitTranslatedText(translatedText)
+	textParts := splitTranslatedText(translatedText)
 	placeholders := getPlaceholders(patterns)
 	translatedPatterns := make([]ast.Pattern, 0, len(patterns))
 
-	for i, translatedText := range texts {
-		if re.MatchString(texts[i]) { // placeholder
-			placeholderIndex, err := strconv.ParseInt(translatedText[2:len(translatedText)-1], 10, 64)
+	for i, v := range textParts {
+		if re.MatchString(textParts[i]) { // placeholder
+			placeholderIndex, err := strconv.ParseInt(v[2:len(v)-1], 10, 64)
 			if err != nil {
 				return nil, fmt.Errorf("parse placeholder index: %w", err)
 			}
 
 			translatedPatterns = append(translatedPatterns, placeholders[placeholderIndex])
 		} else { // text
-			translatedPatterns = append(translatedPatterns, ast.TextPattern(texts[i]))
+			translatedPatterns = append(translatedPatterns, ast.TextPattern(textParts[i]))
 		}
 	}
 
