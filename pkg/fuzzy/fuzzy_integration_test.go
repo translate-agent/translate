@@ -20,14 +20,12 @@ import (
 // ---–––--------------Actual Tests------------------–––---
 
 func Test_Translate(t *testing.T) {
-	// NOTE: Tests skipped for now until fuzzy translation is fixed.
-	t.Skip()
 	t.Parallel()
 
 	allTranslators(t, func(t *testing.T, translator Translator, subTest testutil.SubtestFn) {
 		subTest("Multiple translations", func(ctx context.Context, t *testing.T) {
-			translation := randTranslation(3, language.Latvian)
-			translation.Language = language.English // set original language
+			translation := translationWithMF2Messages() // TODO: create translation with randomized MF2 messages.
+			translation.Language = language.English     // set original language
 			translated, err := translator.Translate(ctx, translation, language.Latvian)
 			require.NoError(t, err)
 
@@ -48,7 +46,7 @@ func Test_Translate(t *testing.T) {
 // translators is a map of all possible translation services, e.g. Google Translate, DeepL, etc.
 var translators = map[string]Translator{
 	"GoogleTranslate": nil,
-	"AWSTranslate":    nil,
+	"AWSTranslate":    nil, // TODO
 }
 
 // initAWSTranslate creates a new AWS Translate service and adds it to the translators map.
@@ -121,6 +119,10 @@ func allTranslators(t *testing.T, f func(t *testing.T, translator Translator, su
 	for name, translator := range translators {
 		name, translator := name, translator
 		t.Run(name, func(t *testing.T) {
+			if name == "AWSTranslate" { // TODO
+				t.Skip()
+			}
+
 			t.Parallel()
 
 			if translator == nil {
@@ -132,4 +134,108 @@ func allTranslators(t *testing.T, f func(t *testing.T, translator Translator, su
 			f(t, translator, subTest)
 		})
 	}
+}
+
+// TODO: Temporary  implementation, remove after implementing randomized MF2 messages.
+func translationWithMF2Messages() *model.Translation {
+	translation := model.Translation{
+		Original: true,
+		Messages: []model.Message{
+			{
+				ID:      "1",
+				Message: "Hello, world!",
+				Status:  model.MessageStatusUntranslated,
+			},
+			{
+				ID:      "2",
+				Message: "Hello, \\{World!\\}",
+				Status:  model.MessageStatusUntranslated,
+			},
+			{
+				ID:      "3",
+				Message: "{ $variable } Hello, World!",
+				Status:  model.MessageStatusUntranslated,
+			},
+			{
+				ID:      "4",
+				Message: "Hello, World! { $variable }",
+				Status:  model.MessageStatusUntranslated,
+			},
+			{
+				ID:      "5",
+				Message: "Hello, { $variable :function }  World!",
+				Status:  model.MessageStatusUntranslated,
+			},
+			{
+				ID:      "6",
+				Message: "Hello, { $variable :function option1 = -3.14 ns:option2 = |value2| option3 = $variable2 } World!",
+				Status:  model.MessageStatusUntranslated,
+			},
+			{
+				ID:      "7",
+				Message: "Hello, { |literal| }  World!",
+				Status:  model.MessageStatusUntranslated,
+			},
+			{
+				ID:      "8",
+				Message: "Hello, { |name| :function ns1:option1 = -1 ns2:option2 = 1 option3 = |value3| } World!",
+				Status:  model.MessageStatusUntranslated,
+			},
+			{
+				ID:      "9",
+				Message: "Hello, { |name| :function } World!",
+				Status:  model.MessageStatusUntranslated,
+			},
+			{
+				ID:      "10",
+				Message: "{{Hello, { |literal| } World!}}",
+				Status:  model.MessageStatusUntranslated,
+			},
+			{
+				ID:      "11",
+				Message: ".local $var={2} {{Hello world}}",
+				Status:  model.MessageStatusUntranslated,
+			},
+			{
+				ID:      "12",
+				Message: ".local $var = { $anotherVar } {{Hello { $var } world}}",
+				Status:  model.MessageStatusUntranslated,
+			},
+			{
+				ID: "13",
+				Message: `.local $var = { :ns1:function opt1 = 1 opt2 = |val2| }
+			 .local $var = { 2 } {{Hello { $var :ns2:function2 } world}}`,
+				Status: model.MessageStatusUntranslated,
+			},
+			{
+				ID: "14",
+				Message: `.match { $variable :number }
+							1 {{Hello { $variable } world}}
+							* {{Hello { $variable } worlds}}`,
+				Status: model.MessageStatusUntranslated,
+			},
+			{
+				ID: "15",
+				Message: `.local $var1 = { male }
+							.local $var2 = { |female| }
+							.match { :gender }
+							male {{Hello sir!}}
+							|female| {{Hello madam!}}
+							* {{Hello { $var1 } or { $var2 }!}}`,
+				Status: model.MessageStatusUntranslated,
+			},
+			//nolint:dupword
+			{
+				ID: "16",
+				Message: `.match { $var1 } { $var2 }
+						yes yes {{Hello beautiful world!}}
+						yes no {{Hello beautiful!}}
+						no yes {{Hello world!}}
+						no no {{Hello!}}`,
+				Status: model.MessageStatusUntranslated,
+			},
+		},
+	}
+
+	return &translation
 }

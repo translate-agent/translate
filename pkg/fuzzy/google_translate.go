@@ -197,8 +197,11 @@ func textToBatches(text []string, batchLimit int) [][]string {
 	return batches
 }
 
-// getTexts extracts translatable text from translation.Messages.
-// To avoid translating placeholders, they are replaced with simplified placeholders that are numbered '{$d}'.
+// getTexts extracts translatable text from the translation.Messages slice.
+// To prevent the translation of placeholders, they are replaced with simplified
+// numbered placeholders '{$d}', where the placeholder number represents the
+// index of the ast.PlaceholderPattern element in the message AST.
+// The function returns a slice of strings representing the extracted translatable texts and error.
 //
 // Example:
 // Input:
@@ -245,8 +248,9 @@ func getTexts(translation *model.Translation) ([]string, error) {
 	return texts, nil
 }
 
-// printPattern ranges over pattern appending TextPatterns to a string, when a ast.PlaceholderPattern
-// is encountered a simplified placeholder version '{$d}' is appended, returns resulting string.
+// printPattern iterates over an ast.Pattern slice, appending ast.TextPatterns to a string.
+// When an ast.PlaceholderPattern is encountered, a simplified placeholder version '{$d}' is appended.
+// The function returns a string representing the concatenated patterns.
 // Example:
 // Input:
 //
@@ -268,15 +272,15 @@ func printPattern(pattern []ast.Pattern) string {
 		case ast.TextPattern:
 			text += string(v)
 		case ast.PlaceholderPattern:
-			text += fmt.Sprintf("{$%d}", pattern[i])
+			text += fmt.Sprintf("{$%d}", i)
 		}
 	}
 
 	return text
 }
 
-// buildTranslated builds translated translation using previous translation and translated texts.
-// Returns translation.
+// buildTranslated constructs a translated version of the untranslated translation
+// using provided translated texts. The function returns the resulting translation and error.
 // Example:
 // Input:
 //
@@ -379,9 +383,9 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 	return translated, nil
 }
 
-// buildTranslatedPattern() constructs a pattern by appending translated text and placeholders
-// that extracted from translated text. Simplified placeholders are replaced with corresponding
-// ast.PlaceholderPatterns from message AST. Returns slice of ast.Pattern.
+// buildTranslatedPattern constructs a slice of ast.Pattern from a given text and placeholders
+// extracted from a translated text. Placeholders are replaced with corresponding
+// ast.PlaceholderPatterns retrieved from the message AST. The function returns a slice of ast.Pattern and error.
 func buildTranslatedPattern(translatedText string, previousPattern []ast.Pattern) ([]ast.Pattern, error) {
 	re := regexp.MustCompile(`\{\$(\d+)\}`)
 
@@ -389,7 +393,7 @@ func buildTranslatedPattern(translatedText string, previousPattern []ast.Pattern
 
 	for _, v := range splitTextByPlaceholder(translatedText) {
 		if re.MatchString(v) { // simplified placeholder
-			placeholderIndex, err := strconv.Atoi(v)
+			placeholderIndex, err := strconv.Atoi(v[2 : len(v)-1])
 			if err != nil {
 				return nil, fmt.Errorf("parse placeholder index: %w", err)
 			}
@@ -403,15 +407,21 @@ func buildTranslatedPattern(translatedText string, previousPattern []ast.Pattern
 	return translatedPattern, nil
 }
 
-// splitTextByPlaceholder splits string into all substrings separated by '{$d}'
-// and returns a slice of the substrings including separators.
+// splitTextByPlaceholder splits a given string into substrings separated by '{$d}'
+// and returns a slice containing both the substrings and the separators.
+//
 // Example:
 //
 //	Input:
-//	"Hello {$0} {$1}! Welcome to {$2}."
+//	  "Hello {$0} {$1}! Welcome to {$2}."
+//
 //	Output:
-//	[]string{"Hello ", "{$0}", " ", "{$1}" "! Welcome to ", "{$2}"}
+//	  []string{"Hello ", "{$0}", " ", "{$1}" "! Welcome to ", "{$2}"}
 func splitTextByPlaceholder(s string) []string {
+	if s == "" {
+		return nil
+	}
+
 	var startIndex int
 
 	parts := make([]string, 0, 1)

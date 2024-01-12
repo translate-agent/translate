@@ -1,7 +1,6 @@
 package fuzzy
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -48,10 +47,10 @@ func Test_SplitTextByPlaceholder(t *testing.T) {
 		},
 	}
 
-	for i, test := range tests {
+	for _, test := range tests {
 		test := test
 
-		t.Run(fmt.Sprintf("test number %d", i), func(t *testing.T) {
+		t.Run(test.input, func(t *testing.T) {
 			t.Parallel()
 
 			actual := splitTextByPlaceholder(test.input)
