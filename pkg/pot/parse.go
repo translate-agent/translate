@@ -21,7 +21,7 @@ func (h *HeaderNode) marshal(b *bytes.Buffer) {
 	b.WriteString("msgid \"\"\nmsgstr \"\"\n")
 
 	if h.Language != language.Und {
-		b.WriteString(fmt.Sprintf("\"Language: %s\\n\"\n", h.Language.String()))
+		b.WriteString(fmt.Sprintf("\"Language: %v\\n\"\n", h.Language))
 	}
 
 	if h.Translator != "" {

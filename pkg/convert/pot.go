@@ -135,7 +135,7 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 
 	// look for format flag, e.g. #, python-format, c-format, no-python-format, etc.
 	formatFlagIdx := slices.IndexFunc(node.Flags, func(flag string) bool {
-		return strings.Contains(flag, "-format")
+		return strings.HasSuffix(flag, "-format")
 	})
 
 	if formatFlagIdx != -1 {
