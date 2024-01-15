@@ -14,6 +14,18 @@ func Test_SplitTextByPlaceholder(t *testing.T) {
 		expected []string
 	}{
 		{
+			input:    "",
+			expected: []string(nil),
+		},
+		{
+			input:    "a",
+			expected: []string{"a"},
+		},
+		{
+			input:    "Welcome to",
+			expected: []string{"Welcome to"},
+		},
+		{
 			input:    "{$0}",
 			expected: []string{"{$0}"},
 		},
@@ -44,6 +56,10 @@ func Test_SplitTextByPlaceholder(t *testing.T) {
 		{
 			input:    "Hello {$0} {$1}! Welcome to {$2}.",
 			expected: []string{"Hello ", "{$0}", " ", "{$1}", "! Welcome to ", "{$2}", "."},
+		},
+		{
+			input:    "{$100} {$200}! Welcome to {$300}",
+			expected: []string{"{$100}", " ", "{$200}", "! Welcome to ", "{$300}"},
 		},
 	}
 

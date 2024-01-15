@@ -225,7 +225,7 @@ func getTexts(translation *model.Translation) ([]string, error) {
 	for i := range translation.Messages {
 		messageAST, err := ast.Parse(translation.Messages[i].Message)
 		if err != nil {
-			return nil, fmt.Errorf("parse mf2 message: %w", err)
+			return nil, fmt.Errorf("parse mf2 message '%s': %w", translation.Messages[i].ID, err)
 		}
 
 		switch v := messageAST.Message.(type) {
@@ -422,26 +422,24 @@ func splitTextByPlaceholder(s string) []string {
 		return nil
 	}
 
+	textParts := make([]string, 0, 1)
+	placeholderIndices := regexp.MustCompile(`\{\$(\d+)\}`).FindAllStringIndex(s, -1)
+
 	var startIndex int
 
-	parts := make([]string, 0, 1)
-	indices := regexp.MustCompile(`\{\$(\d+)\}`).FindAllStringIndex(s, -1)
-
-	for _, indexPair := range indices {
-		if s[startIndex:indexPair[0]] != "" {
-			parts = append(parts, s[startIndex:indexPair[0]])
+	for _, indexPair := range placeholderIndices {
+		if startIndex != indexPair[0] { // if leading text exists append text
+			textParts = append(textParts, s[startIndex:indexPair[0]])
 		}
 
-		if s[indexPair[0]:indexPair[1]] != "" {
-			parts = append(parts, s[indexPair[0]:indexPair[1]])
-		}
+		textParts = append(textParts, s[indexPair[0]:indexPair[1]]) // append placeholder
 
 		startIndex = indexPair[1]
 	}
 
-	if s[startIndex:] != "" {
-		parts = append(parts, s[startIndex:])
+	if startIndex != len(s) { // if trailing text exists append text
+		textParts = append(textParts, s[startIndex:])
 	}
 
-	return parts
+	return textParts
 }
