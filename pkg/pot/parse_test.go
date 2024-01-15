@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"golang.org/x/text/language"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/text/language"
 )
 
 func Test_TokensToPo(t *testing.T) {
@@ -162,19 +161,6 @@ func Test_TokensToPo(t *testing.T) {
 			expectedErr: fmt.Errorf("invalid nplurals part"),
 		},
 		{
-			name: "Invalid plural string order is provided",
-			input: []Token{
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-				mkToken(TokenTypeHeaderTranslator, "John Doe"),
-				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
-				mkToken(TokenTypeMsgID, "There is 1 apple"),
-				mkToken(TokenTypePluralMsgID, "There is %d apples"),
-				mkToken(TokenTypePluralMsgStr, "Il y a 1 pomme", withIndex(1)),
-				mkToken(TokenTypePluralMsgStr, "Il y a %d pommes", withIndex(0)),
-			},
-			expectedErr: fmt.Errorf("invalid plural string order %d", 1),
-		},
-		{
 			name: "Invalid po file: no messages found",
 			input: []Token{
 				mkToken(TokenTypeHeaderLanguage, "en-US"),
@@ -195,6 +181,131 @@ func Test_TokensToPo(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestPo_Marshal(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		expected string
+		input    Po
+	}{
+		{
+			name: "singular",
+			input: Po{
+				Header: HeaderNode{
+					Language:   language.Und,
+					Translator: "John Doe",
+				},
+				Messages: []MessageNode{
+					{
+						MsgID:            "Hello, world!",
+						MsgStr:           []string{},
+						Flags:            []string{"fuzzy"},
+						ExtractedComment: []string{"A simple greeting"},
+						References:       []string{"main.go:1"},
+					},
+				},
+			},
+			expected: `msgid ""
+msgstr ""
+"Last-Translator: John Doe\n"
+
+#: main.go:1
+#. A simple greeting
+#, fuzzy
+msgid "Hello, world!"
+msgstr ""
+`,
+		},
+		{
+			name: "plural",
+			input: Po{
+				Header: HeaderNode{
+					Language:   language.Latvian,
+					Translator: "John Doe",
+					PluralForms: PluralForm{
+						NPlurals: 2,
+						Plural:   "n != 1",
+					},
+				},
+				Messages: []MessageNode{
+					{
+						MsgID:       "There is 1 apple",
+						MsgIDPlural: "There is 2 apples",
+						MsgStr:      []string{"Ir 1 ābols", "Ir 2 āboli"},
+					},
+				},
+			},
+			expected: `msgid ""
+msgstr ""
+"Language: lv\n"
+"Last-Translator: John Doe\n"
+"Plural-Forms: nplurals=2; n != 1\n"
+
+msgid "There is 1 apple"
+msgid_plural "There is 2 apples"
+msgstr[0] "Ir 1 ābols"
+msgstr[1] "Ir 2 āboli"
+`,
+		},
+		{
+			name: "multiline",
+			input: Po{
+				Header: HeaderNode{
+					Language:   language.Latvian,
+					Translator: "John Doe",
+					PluralForms: PluralForm{
+						NPlurals: 2,
+						Plural:   "n != 1",
+					},
+				},
+				Messages: []MessageNode{
+					{
+						MsgID:  "\nThere is apple",
+						MsgStr: []string{"\nIr ābols"},
+					},
+					{
+						MsgID:       "\nThere is 1 orange",
+						MsgIDPlural: "\nThere is multiple oranges",
+						MsgStr:      []string{"\nIr 1 apelsīns", "\nIr vairāki apelsīni"},
+					},
+				},
+			},
+			expected: `msgid ""
+msgstr ""
+"Language: lv\n"
+"Last-Translator: John Doe\n"
+"Plural-Forms: nplurals=2; n != 1\n"
+
+msgid ""
+"There is apple"
+msgstr ""
+"Ir ābols"
+
+msgid ""
+"There is 1 orange"
+msgid_plural ""
+"There is multiple oranges"
+msgstr[0] ""
+"Ir 1 apelsīns"
+msgstr[1] ""
+"Ir vairāki apelsīni"
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			actual := tt.input.Marshal()
+
+			require.Equal(t, tt.expected, string(actual))
 		})
 	}
 }

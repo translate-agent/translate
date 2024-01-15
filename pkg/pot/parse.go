@@ -1,6 +1,7 @@
 package pot
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -16,9 +17,31 @@ type HeaderNode struct {
 	PluralForms PluralForm
 }
 
+func (h *HeaderNode) marshal(b *bytes.Buffer) {
+	b.WriteString("msgid \"\"\nmsgstr \"\"\n")
+
+	if h.Language != language.Und {
+		b.WriteString(fmt.Sprintf("\"Language: %v\\n\"\n", h.Language))
+	}
+
+	if h.Translator != "" {
+		b.WriteString(fmt.Sprintf("\"Last-Translator: %s\\n\"\n", h.Translator))
+	}
+
+	h.PluralForms.marshal(b)
+}
+
 type PluralForm struct {
 	Plural   string
 	NPlurals int
+}
+
+func (pf *PluralForm) marshal(b *bytes.Buffer) {
+	if pf.Plural == "" && pf.NPlurals == 0 {
+		return
+	}
+
+	b.WriteString(fmt.Sprintf("\"Plural-Forms: nplurals=%d; %s\\n\"\n", pf.NPlurals, pf.Plural))
 }
 
 type MessageNode struct {
@@ -35,9 +58,68 @@ type MessageNode struct {
 	MsgStr                []string
 }
 
+// TODO: Add support for other fields.
+func (m *MessageNode) marshal(b *bytes.Buffer) {
+	// quoteLines function splits a string into multiple lines and wraps each line in double quotes.
+	quoteLines := func(s string) string {
+		split := strings.Split(s, "\n")
+		for i, line := range split {
+			split[i] = fmt.Sprintf("\"%s\"", line)
+		}
+
+		return strings.Join(split, "\n")
+	}
+
+	b.WriteByte('\n') // empty line before each message
+
+	for _, reference := range m.References {
+		b.WriteString(fmt.Sprintf("#: %s\n", reference))
+	}
+
+	for _, ec := range m.ExtractedComment {
+		b.WriteString(fmt.Sprintf("#. %s\n", ec))
+	}
+
+	for _, flag := range m.Flags {
+		b.WriteString(fmt.Sprintf("#, %s\n", flag))
+	}
+
+	if m.MsgID != "" {
+		b.WriteString(fmt.Sprintf("msgid %s\n", quoteLines(m.MsgID)))
+	}
+
+	if m.MsgIDPlural != "" {
+		b.WriteString(fmt.Sprintf("msgid_plural %s\n", quoteLines(m.MsgIDPlural)))
+	}
+
+	switch len(m.MsgStr) {
+	case 0:
+		b.WriteString("msgstr \"\"\n")
+	case 1:
+		b.WriteString(fmt.Sprintf("msgstr %s\n", quoteLines(m.MsgStr[0])))
+	default:
+		for i, ms := range m.MsgStr {
+			b.WriteString(fmt.Sprintf("msgstr[%d] %s\n", i, quoteLines(ms)))
+		}
+	}
+}
+
 type Po struct {
 	Header   HeaderNode
 	Messages []MessageNode
+}
+
+// Marshal serializes the Po object into a byte slice.
+func (p *Po) Marshal() []byte {
+	var b bytes.Buffer
+
+	p.Header.marshal(&b)
+
+	for _, msg := range p.Messages {
+		msg.marshal(&b)
+	}
+
+	return b.Bytes()
 }
 
 // Parse function takes an io.Reader object and parses the contents into a Po struct
@@ -56,20 +138,14 @@ func Parse(r io.Reader) (Po, error) {
 	return po, nil
 }
 
-// max value for plural count.
-const pluralCountLimit = 2
-
 // tokensToPo function takes a slice of Token objects and converts them into a Po object representing
 // a PO (Portable Object) file. It returns the generated Po object and an error.
 func tokensToPo(tokens []Token) (Po, error) {
 	var messages []MessageNode
 
 	currentMessage := MessageNode{}
-	header := HeaderNode{
-		PluralForms: PluralForm{
-			NPlurals: pluralCountLimit,
-		},
-	}
+
+	var header HeaderNode
 
 	for i, token := range tokens {
 		if token.Value == "" && token.Type == TokenTypeMsgStr {
@@ -125,16 +201,9 @@ func tokensToPo(tokens []Token) (Po, error) {
 			messages = append(messages, currentMessage)
 			currentMessage = MessageNode{}
 		case TokenTypePluralMsgStr:
-			switch {
-			case token.Index == 0:
-				currentMessage.MsgStr = []string{token.Value}
-			case len(currentMessage.MsgStr) == token.Index:
-				currentMessage.MsgStr = append(currentMessage.MsgStr, token.Value)
-			case len(currentMessage.MsgStr) < token.Index:
-				return Po{}, fmt.Errorf("invalid plural string order: %d", token.Index)
-			}
-
-			if header.PluralForms.NPlurals == len(currentMessage.MsgStr) {
+			currentMessage.MsgStr = append(currentMessage.MsgStr, token.Value)
+			// if next token is not plural msgstr, then we have all the plural msgstrs
+			if i+1 >= len(tokens) || tokens[i+1].Type != TokenTypePluralMsgStr {
 				messages = append(messages, currentMessage)
 				currentMessage = MessageNode{}
 			}
