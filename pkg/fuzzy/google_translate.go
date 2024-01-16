@@ -117,7 +117,6 @@ func (g *GoogleTranslate) Translate(
 		return nil, nil //nolint:nilnil
 	}
 
-	// NOTE: temporary fix to avoid failing tests.
 	if len(translation.Messages) == 0 {
 		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
 	}
@@ -130,7 +129,7 @@ func (g *GoogleTranslate) Translate(
 
 	// Split text from translation into batches to avoid exceeding
 	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
-	batches := textToBatches(texts, googleTranslateRequestLimit)
+	batches := textToBatches(texts)
 	translatedTexts := make([]string, 0, len(texts))
 
 	// Translate text batches using Google Translate client.
@@ -171,10 +170,10 @@ func parent() string {
 }
 
 // textToBatches splits text into batches with predefined maximum amount of elements.
-func textToBatches(text []string, batchLimit int) [][]string {
+func textToBatches(text []string) [][]string {
 	var codePointsInBatch int
 
-	batch := make([]string, 0, batchLimit)
+	batch := make([]string, 0, googleTranslateRequestLimit)
 	batches := make([][]string, 0, 1)
 
 	for _, text := range text {
@@ -231,15 +230,15 @@ func getTexts(translation *model.Translation) ([]string, error) {
 		default:
 			return nil, fmt.Errorf("unsupported message type: %T", v)
 		case ast.SimpleMessage:
-			texts = append(texts, printPattern(v.Patterns))
+			texts = append(texts, patternToString(v.Patterns))
 		case ast.ComplexMessage:
 			switch v := v.ComplexBody.(type) {
 			case ast.Matcher:
 				for _, variant := range v.Variants {
-					texts = append(texts, printPattern(variant.QuotedPattern.Patterns))
+					texts = append(texts, patternToString(variant.QuotedPattern.Patterns))
 				}
 			case ast.QuotedPattern:
-				texts = append(texts, printPattern(v.Patterns))
+				texts = append(texts, patternToString(v.Patterns))
 			}
 		}
 	}
@@ -247,7 +246,7 @@ func getTexts(translation *model.Translation) ([]string, error) {
 	return texts, nil
 }
 
-// printPattern iterates over an ast.Pattern slice, appending ast.TextPatterns to a string.
+// patternToString iterates over an ast.Pattern slice, appending ast.TextPatterns to a string.
 // When an ast.PlaceholderPattern is encountered, a simplified placeholder version '{$d}' is appended.
 // The function returns a string representing the concatenated patterns.
 // Example:
@@ -263,7 +262,7 @@ func getTexts(translation *model.Translation) ([]string, error) {
 //
 // Output:
 // "Hello {$0} {$1}!".
-func printPattern(pattern []ast.Pattern) string {
+func patternToString(pattern []ast.Pattern) string {
 	var text string
 
 	for i := range pattern {

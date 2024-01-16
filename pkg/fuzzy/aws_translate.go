@@ -109,10 +109,6 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 		return nil, nil //nolint:nilnil
 	}
 
-	if len(translation.Messages) == 0 {
-		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
-	}
-
 	// TODO: Implement translation of message texts.
 
 	// NOTE: temporary fix to avoid failing tests.
