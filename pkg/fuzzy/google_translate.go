@@ -145,8 +145,10 @@ func (g *GoogleTranslate) Translate(
 			return nil, fmt.Errorf("google translate client: translate text #%d from batch: %w", i, err)
 		}
 
-		for i := range res.GetTranslations() {
-			translatedTexts = append(translatedTexts, res.GetTranslations()[i].GetTranslatedText())
+		translations := res.GetTranslations()
+
+		for i := range translations {
+			translatedTexts = append(translatedTexts, translations[i].GetTranslatedText())
 		}
 	}
 
