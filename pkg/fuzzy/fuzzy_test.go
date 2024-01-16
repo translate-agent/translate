@@ -70,7 +70,6 @@ func Test_TranslateMock(t *testing.T) {
 					require.NoError(t, err, "parse MF2 message")
 
 					// Reset the message to empty and fuzzy to original values, for the last check for side effects.
-					translated.Messages[i].Message = tt.translation.Messages[i].Message
 					translated.Messages[i].Status = tt.translation.Messages[i].Status
 				}
 
@@ -103,8 +102,8 @@ func (m *MockGoogleTranslateClient) TranslateText(
 		Translations: make([]*translatepb.Translation, 0, len(req.GetContents())),
 	}
 
-	for range req.GetContents() {
-		res.Translations = append(res.GetTranslations(), &translatepb.Translation{TranslatedText: gofakeit.SentenceSimple()})
+	for _, v := range req.GetContents() {
+		res.Translations = append(res.GetTranslations(), &translatepb.Translation{TranslatedText: v})
 	}
 
 	return res, nil

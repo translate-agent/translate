@@ -3,6 +3,7 @@ package rand
 import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
+	"go.expect.digital/mf2"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -67,10 +68,28 @@ func WithID(id uuid.UUID) ModelServiceOption {
 
 // modelMessage generates a random model.Message.
 func modelMessage() *model.Message {
+	message := mf2.NewBuilder()
+
+	switch gofakeit.Bool() {
+	default: // simple message
+		message.Text(gofakeit.SentenceSimple())
+	case true:
+		v := gofakeit.Word()
+
+		if gofakeit.Bool() { // complex message, local declaration
+			message.Local(v, mf2.Var(gofakeit.Word()))
+			message.Text(gofakeit.SentenceSimple()).Expr(mf2.Var(v))
+		} else { // complex message, matcher
+			message.Match(mf2.Var(v))
+			message.Keys(gofakeit.Word()).Text(gofakeit.SentenceSimple())
+			message.Keys("*").Text(gofakeit.SentenceSimple())
+		}
+	}
+
 	msg := &model.Message{
 		ID:          gofakeit.SentenceSimple(),
 		PluralID:    gofakeit.SentenceSimple(),
-		Message:     gofakeit.SentenceSimple(),
+		Message:     message.MustBuild(),
 		Description: gofakeit.SentenceSimple(),
 		Status:      MessageStatus(),
 	}
