@@ -210,6 +210,15 @@ only scanning a subset\n
 displayed in the filter.`),
 			},
 		},
+		{
+			name: "Multiline msgid escaped quote at the end",
+			input: `msgid ""
+"If duplicate columns are not overridden, they will be presented as \"X.1,"
+" X.2 ...X.x\""`,
+			expected: []Token{
+				mkToken(TokenTypeMsgID, "\nIf duplicate columns are not overridden, they will be presented as \\\"X.1,\n X.2 ...X.x\\\""), //nolint:lll
+			},
+		},
 		// negative tests
 		{
 			name: "When msgid value is incorrect",

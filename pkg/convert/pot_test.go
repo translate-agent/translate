@@ -30,7 +30,6 @@ func Test_PoSingular(t *testing.T) {
 				original: nil,
 				input: `msgid ""
 msgstr ""
-"Language: en\n"
 
 msgid "Hello, world!"
 msgstr ""
@@ -40,7 +39,6 @@ msgstr ""
 `,
 			},
 			expected: model.Translation{
-				Language: language.English,
 				Original: true,
 				Messages: []model.Message{
 					{

@@ -127,11 +127,7 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 	placeholders := make(map[string]struct{}) // map of placeholders to avoid duplicates, only for plural messages
 
 	// default build function, for message without placeholders
-	build := func(mfBuilder *mf2.Builder, msg string, _ map[string]struct{}) error {
-		mfBuilder.Text(msg)
-
-		return nil
-	}
+	build := func(mfBuilder *mf2.Builder, msg string, _ map[string]struct{}) { mfBuilder.Text(msg) }
 
 	// look for format flag, e.g. #, python-format, c-format, no-python-format, etc.
 	formatFlagIdx := slices.IndexFunc(node.Flags, func(flag string) bool {
@@ -148,9 +144,7 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 			build = textWithPlaceholders
 		}
 
-		if err := build(mfBuilder, messages[0], placeholders); err != nil {
-			return "", fmt.Errorf("build singular message: %w", err)
-		}
+		build(mfBuilder, messages[0], placeholders)
 
 	default: // plural message
 		mfBuilder.Match(mf2.Var("$count")) // match to arbitrary variable name
@@ -166,9 +160,7 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 				mfBuilder.Keys(i + 1) // arbitrary key names to match to //TODO can be derived from plural forms
 			}
 
-			if err := build(mfBuilder, messages[i], placeholders); err != nil {
-				return "", fmt.Errorf("build plural message: %w", err)
-			}
+			build(mfBuilder, messages[i], placeholders)
 		}
 	}
 
@@ -181,7 +173,7 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 }
 
 // textWithPlaceholders processes a message string, identifies placeholders, and adds them to a Builder.
-func textWithPlaceholders(mfBuilder *mf2.Builder, msg string, placeholders map[string]struct{}) error {
+func textWithPlaceholders(mfBuilder *mf2.Builder, msg string, placeholders map[string]struct{}) {
 	for name, re := range placeholderFormats {
 		var currentIdx int
 
@@ -224,21 +216,23 @@ func textWithPlaceholders(mfBuilder *mf2.Builder, msg string, placeholders map[s
 					mfBuilder.Text(text)
 				}
 
-				return nil
+				return
 			}
 		}
 	}
 
-	return fmt.Errorf("format flag is present, but no placeholders found: '%s'", msg)
+	// placeholder flag is present, but no placeholders found
+	mfBuilder.Text(msg)
 }
 
 // ---------------------------------------Translation->PO---------------------------------------
 
 // ToPo converts a model.Translation structure to a byte slice representing a PO file.
 func ToPo(t model.Translation) ([]byte, error) {
-	po := pot.Po{
-		Header:   pot.HeaderNode{Language: t.Language},
-		Messages: make([]pot.MessageNode, 0, len(t.Messages)),
+	po := pot.Po{Messages: make([]pot.MessageNode, 0, len(t.Messages))}
+
+	if !t.Original {
+		po.Header.Language = t.Language
 	}
 
 	var placeholders map[ast.Variable]string // MF2Variable:OriginalVariable, only for complex messages

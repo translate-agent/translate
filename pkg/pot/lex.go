@@ -222,7 +222,7 @@ func parseMultilineValue(line string, tokens []Token) error {
 		TokenTypeHeaderLanguageTeam, TokenTypeHeaderLastTranslator, TokenTypeHeaderXGenerator,
 		TokenTypeHeaderReportMsgidBugsTo, TokenTypeHeaderMIMEVersion, TokenTypeHeaderContentType,
 		TokenTypeHeaderContentTransferEncoding, TokenTypeHeaderGeneratedBy:
-		lastToken.Value += "\n" + strings.Trim(line, `"`)
+		lastToken.Value += "\n" + strings.TrimPrefix(strings.TrimSuffix(line, "\""), "\"")
 
 	case TokenTypeMsgCtxt, TokenTypeTranslatorComment, TokenTypeExtractedComment,
 		TokenTypeReference, TokenTypeFlag, TokenTypeMsgctxtPreviousContext,
