@@ -135,7 +135,7 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 	})
 
 	if formatFlagIdx != -1 {
-		mfBuilder.Local("$format", mf2.Literal(node.Flags[formatFlagIdx])) // capture format flag
+		mfBuilder.Local("format", mf2.Literal(node.Flags[formatFlagIdx])) // capture format flag
 	}
 
 	switch messages := getMessages(node); len(messages) {
@@ -147,7 +147,7 @@ func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []stri
 		build(mfBuilder, messages[0], placeholders)
 
 	default: // plural message
-		mfBuilder.Match(mf2.Var("$count")) // match to arbitrary variable name
+		mfBuilder.Match(mf2.Var("count")) // match to arbitrary variable name
 
 		if formatFlagIdx != -1 && !strings.HasPrefix(node.Flags[formatFlagIdx], "no-") { // with placeholders
 			build = textWithPlaceholders
@@ -191,11 +191,11 @@ func textWithPlaceholders(mfBuilder *mf2.Builder, msg string, placeholders map[s
 
 			switch name {
 			case "printf", "emptyBracket":
-				mf2Variable = fmt.Sprintf("$ph%d", i) // %d|%s|%f -> $ph0|$ph1|$ph2...
+				mf2Variable = fmt.Sprintf("ph%d", i) // %d|%s|%f -> ph0|ph1|ph2...
 			case "pythonVar":
-				mf2Variable = "$" + originalVariable[2:len(originalVariable)-2] // %(var)s -> $var
+				mf2Variable = originalVariable[2 : len(originalVariable)-2] // %(var)s -> var
 			case "bracketVar":
-				mf2Variable = "$" + originalVariable[1:len(originalVariable)-1] // {var} -> $var
+				mf2Variable = originalVariable[1 : len(originalVariable)-1] // {var} -> var
 			}
 
 			// Avoid adding duplicate locals variables when working with plural messages
