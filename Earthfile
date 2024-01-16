@@ -3,10 +3,10 @@ PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
 
-ARG --global go_version=1.21.5
+ARG --global go_version=1.21.6
 ARG --global golangci_lint_version=1.55.2
 ARG --global bufbuild_version=1.28.1
-ARG --global migrate_version=4.16.2
+ARG --global migrate_version=4.17.0
 ARG --global sqlfluff_version=2.3.5
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
@@ -58,6 +58,7 @@ init:
 up:
   LOCALLY
   RUN docker compose --project-name=translate --project-directory=.earthly up --detach --wait --timeout 60
+  RUN docker exec mysql sh -c 'mysqladmin ping -h 127.0.0.1 -u root --wait=30 --silent'
   BUILD +migrate --db=mysql
 
 down:
@@ -88,7 +89,7 @@ proto:
   RUN \
     --mount=type=cache,target=$BUF_CACHE_DIR \
     --mount=type=cache,target=$BUF_CACHE_DIR,mode=0700 \
-       buf mod update && buf build && buf generate
+      buf mod update && buf build && buf generate
 
   RUN sed -i'.bak' '/client.UploadTranslationFile/i \
   \\tfile, _, err := req.FormFile("file")\n\
