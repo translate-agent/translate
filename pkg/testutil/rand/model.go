@@ -70,7 +70,7 @@ func modelMessage() *model.Message {
 	msg := &model.Message{
 		ID:          gofakeit.SentenceSimple(),
 		PluralID:    gofakeit.SentenceSimple(),
-		Message:     "{" + gofakeit.SentenceSimple() + "}",
+		Message:     gofakeit.SentenceSimple(),
 		Description: gofakeit.SentenceSimple(),
 		Status:      MessageStatus(),
 	}

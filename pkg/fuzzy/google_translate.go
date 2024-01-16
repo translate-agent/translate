@@ -122,8 +122,6 @@ func (g *GoogleTranslate) Translate(
 		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
 	}
 
-	// TODO: Find a solution to avoid panic when encountering text that contains '{$d}'.
-
 	// Retrieve all translatable text from translation
 	texts, err := getTexts(translation)
 	if err != nil {
@@ -142,6 +140,7 @@ func (g *GoogleTranslate) Translate(
 			SourceLanguageCode: translation.Language.String(),
 			TargetLanguageCode: targetLanguage.String(),
 			Contents:           batches[i],
+			MimeType:           "text/plain",
 		})
 		if err != nil {
 			return nil, fmt.Errorf("google translate client: translate text #%d from batch: %w", i, err)
@@ -225,7 +224,7 @@ func getTexts(translation *model.Translation) ([]string, error) {
 	for i := range translation.Messages {
 		messageAST, err := ast.Parse(translation.Messages[i].Message)
 		if err != nil {
-			return nil, fmt.Errorf("parse mf2 message '%s': %w", translation.Messages[i].ID, err)
+			return nil, fmt.Errorf("parse mf2 message with ID '%s': %w", translation.Messages[i].ID, err)
 		}
 
 		switch v := messageAST.Message.(type) {
@@ -387,7 +386,7 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 // extracted from a translated text. Placeholders are replaced with corresponding
 // ast.PlaceholderPatterns retrieved from the message AST. The function returns a slice of ast.Pattern and error.
 func buildTranslatedPattern(translatedText string, previousPattern []ast.Pattern) ([]ast.Pattern, error) {
-	re := regexp.MustCompile(`\{\$(\d+)\}`)
+	re := regexp.MustCompile(`\{\$(0|[1-9]\d*)\}`)
 
 	translatedPattern := make([]ast.Pattern, 0, len(previousPattern))
 
@@ -423,7 +422,7 @@ func splitTextByPlaceholder(s string) []string {
 	}
 
 	textParts := make([]string, 0, 1)
-	placeholderIndices := regexp.MustCompile(`\{\$(\d+)\}`).FindAllStringIndex(s, -1)
+	placeholderIndices := regexp.MustCompile(`\{\$(0|[1-9]\d*)\}`).FindAllStringIndex(s, -1)
 
 	var startIndex int
 
