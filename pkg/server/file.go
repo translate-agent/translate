@@ -100,8 +100,6 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	// TODO: fail validation if message contains '{\$(0|[1-9]\d*)\}'.
-
 	if err = params.validate(); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
