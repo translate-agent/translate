@@ -4,7 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"regexp"
+	"strconv"
 	"unicode/utf8"
+
+	ast "go.expect.digital/mf2/parse"
 
 	translate "cloud.google.com/go/translate/apiv3"
 	"cloud.google.com/go/translate/apiv3/translatepb"
@@ -21,10 +25,10 @@ import (
 // https://github.com/googleapis/googleapis/blob/master/google/cloud/translate/v3/translation_service.proto
 const (
 	// googleTranslateRequestLimit limits the number of strings per translation request.
-	googleTranslateRequestLimit = 1024 //nolint:unused
+	googleTranslateRequestLimit = 1024
 
 	// googleTranslateCodePointsLimit limits the number of Unicode codepoints per single translation request.
-	googleTranslateCodePointsLimit = 30_000 //nolint:unused
+	googleTranslateCodePointsLimit = 30_000
 )
 
 // --------------------Definitions--------------------
@@ -113,83 +117,46 @@ func (g *GoogleTranslate) Translate(
 		return nil, nil //nolint:nilnil
 	}
 
-	// TODO: Implement translation of message texts.
-
-	// NOTE: temporary fix to avoid failing tests.
 	if len(translation.Messages) == 0 {
 		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
 	}
 
-	translated := &model.Translation{
-		Language: targetLanguage,
-		Original: translation.Original,
-		Messages: make([]model.Message, len(translation.Messages)),
+	// Retrieve all translatable text from translation
+	texts, err := getTexts(translation)
+	if err != nil {
+		return nil, fmt.Errorf("google translate: get texts: %w", err)
 	}
 
-	for i := range translation.Messages {
-		translated.Messages = append(translated.Messages, translation.Messages[i])
-		translated.Messages[i].Status = model.MessageStatusFuzzy
+	// Split text from translation into batches to avoid exceeding
+	// googleTranslateRequestLimit or googleTranslateCodePointsLimit.
+	batches := textToBatches(texts)
+	translatedTexts := make([]string, 0, len(texts))
+
+	// Translate text batches using Google Translate client.
+	for i := range batches {
+		res, err := g.client.TranslateText(ctx, &translatepb.TranslateTextRequest{ //nolint:govet
+			Parent:             parent(),
+			SourceLanguageCode: translation.Language.String(),
+			TargetLanguageCode: targetLanguage.String(),
+			Contents:           batches[i],
+			MimeType:           "text/plain",
+		})
+		if err != nil {
+			return nil, fmt.Errorf("google translate client: translate text #%d from batch: %w", i, err)
+		}
+
+		translations := res.GetTranslations()
+
+		for i := range translations {
+			translatedTexts = append(translatedTexts, translations[i].GetTranslatedText())
+		}
 	}
 
-	// NOTE: Previous implementation of the translation of message texts, for reference!
-
-	// // Extract translatable text from translation.
-	// asts, err := mf.ParseTranslation(translation)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("google translate: parse translation messages: %w", err)
-	// }
-
-	// textNodes := mf.GetTextNodes(asts)
-	// texts := textNodes.GetTexts()
-
-	// // Split text from translation into batches to avoid exceeding
-	// // googleTranslateRequestLimit or googleTranslateCodePointsLimit.
-	// batches := textToBatches(texts, googleTranslateRequestLimit)
-	// translatedTexts := make([]string, 0, len(texts))
-
-	// // Translate text batches using Google Translate client.
-	// for i := range batches {
-	// 	res, err := g.client.TranslateText(ctx, &translatepb.TranslateTextRequest{
-	// 		Parent:             parent(),
-	// 		SourceLanguageCode: translation.Language.String(),
-	// 		TargetLanguageCode: targetLanguage.String(),
-	// 		Contents:           batches[i],
-	// 	})
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("google translate client: translate text #%d from batch: %w", i, err)
-	// 	}
-
-	// 	for i := range res.GetTranslations() {
-	// 		translatedTexts = append(translatedTexts, res.GetTranslations()[i].GetTranslatedText())
-	// 	}
-	// }
-
-	// // Overwrite text nodes in ASTs to include newly translated text.
-	// if err := textNodes.OverwriteTexts(translatedTexts); err != nil {
-	// 	return nil, fmt.Errorf("google translate: overwrite text nodes in ASTs: %w", err)
-	// }
-
-	// // create translation with newly translated messages.
-	// translated := model.Translation{
-	// 	Language: targetLanguage,
-	// 	Original: translation.Original,
-	// 	Messages: make([]model.Message, len(translation.Messages)),
-	// }
-
-	// for i := range asts {
-	// 	b, err := asts[i].MarshalText()
-	// 	if err != nil {
-	// 		return nil,
-	// 			fmt.Errorf("google translate: marshal text from AST for message ID '%s': %w", translation.Messages[i].ID, err)
-	// 	}
-
-	// 	m := translation.Messages[i]
-	// 	m.Message = string(b)
-	// 	m.Status = model.MessageStatusFuzzy
-	// 	translated.Messages[i] = m
-	// }
-
-	// return &translated, nil
+	// build translation with new translated text
+	translated, err := buildTranslated(translation, translatedTexts, targetLanguage)
+	if err != nil {
+		return nil, fmt.Errorf("google translate: build translated: %w", err)
+	}
 
 	return translated, nil
 }
@@ -204,12 +171,11 @@ func parent() string {
 	return fmt.Sprintf("projects/%s/locations/%s", projectID, location)
 }
 
-// TODO: Remove if not used.
 // textToBatches splits text into batches with predefined maximum amount of elements.
-func textToBatches(text []string, batchLimit int) [][]string { //nolint:unused
+func textToBatches(text []string) [][]string {
 	var codePointsInBatch int
 
-	batch := make([]string, 0, batchLimit)
+	batch := make([]string, 0, googleTranslateRequestLimit)
 	batches := make([][]string, 0, 1)
 
 	for _, text := range text {
@@ -229,4 +195,251 @@ func textToBatches(text []string, batchLimit int) [][]string { //nolint:unused
 	batches = append(batches, batch)
 
 	return batches
+}
+
+// getTexts extracts translatable text from the translation.Messages slice.
+// To prevent the translation of placeholders, they are replaced with simplified
+// numbered placeholders '{$d}', where the placeholder number represents the
+// index of the ast.PlaceholderPattern element in the message AST.
+// The function returns a slice of strings representing the extracted translatable texts and error.
+//
+// Example:
+// Input:
+// 	&model.Translation{
+// 		Original: false,
+// 		Language: language.English,
+// 		Messages: []model.Message{
+// 			{
+// 				ID:      "Hello World!",
+// 				Message: `Hello, { |name| :function } { |lastName| :function2 }!`,
+// 				Status:  model.MessageStatusUntranslated,
+// 			},
+// 		},
+// 	}
+
+// Output:
+// []string{"Hello, {$0} {$1}!"}, nil .
+func getTexts(translation *model.Translation) ([]string, error) {
+	texts := make([]string, 0, len(translation.Messages))
+
+	for i := range translation.Messages {
+		messageAST, err := ast.Parse(translation.Messages[i].Message)
+		if err != nil {
+			return nil, fmt.Errorf("parse mf2 message with ID '%s': %w", translation.Messages[i].ID, err)
+		}
+
+		switch v := messageAST.Message.(type) {
+		default:
+			return nil, fmt.Errorf("unsupported message type: %T", v)
+		case ast.SimpleMessage:
+			texts = append(texts, patternToString(v.Patterns))
+		case ast.ComplexMessage:
+			switch v := v.ComplexBody.(type) {
+			case ast.Matcher:
+				for _, variant := range v.Variants {
+					texts = append(texts, patternToString(variant.QuotedPattern.Patterns))
+				}
+			case ast.QuotedPattern:
+				texts = append(texts, patternToString(v.Patterns))
+			}
+		}
+	}
+
+	return texts, nil
+}
+
+// patternToString iterates over an ast.Pattern slice, appending ast.TextPatterns to a string.
+// When an ast.PlaceholderPattern is encountered, a simplified placeholder version '{$d}' is appended.
+// The function returns a string representing the concatenated patterns.
+// Example:
+// Input:
+//
+//	[]ast.Patterns{
+//		TextPattern("Hello"),
+//		PlaceholderPattern{ Expression: LiteralExpression{Literal: QuotedLiteral("name")}},
+//		TextPattern(" "),
+//		PlaceholderPattern{ Expression: LiteralExpression{Literal: QuotedLiteral("lastName")}},
+//		TextPattern("!"),
+//	}
+//
+// Output:
+// "Hello {$0} {$1}!".
+func patternToString(pattern []ast.Pattern) string {
+	var text string
+
+	for i := range pattern {
+		switch v := pattern[i].(type) {
+		case ast.TextPattern:
+			text += string(v)
+		case ast.PlaceholderPattern:
+			text += fmt.Sprintf("{$%d}", i)
+		}
+	}
+
+	return text
+}
+
+// buildTranslated constructs a translated version of the untranslated translation
+// using provided translated texts. The function returns the resulting translation and error.
+// Example:
+// Input:
+//
+//	translation: &model.Translation{
+//		Original: false,
+//		Language: language.English,
+//		Messages: []model.Message{
+//			{
+//				ID:      "Hello World!",
+//				Message: `Hello, { |name| :function } { |lastName| :function2 }!`,
+//				Status:  model.MessageStatusUntranslated,
+//			},
+//		},
+//	},
+//	translatedTexts: []string{"Sveiki, {$0} {$1}!"},
+//	targetLanguage: "lv"
+//
+// Output:
+//
+//	&model.Translation{
+//		Original: false,
+//		Language: language.English,
+//		Messages: []model.Message{
+//			{
+//				ID:      "Hello World!",
+//				Message: `Sveiki, { |name| :function } { |lastName| :function2 }!`,
+//				Status:  model.MessageStatusFuzzy,
+//			},
+//		},
+//	}, nil
+func buildTranslated(translation *model.Translation, translatedTexts []string, targetLanguage language.Tag,
+) (*model.Translation, error) {
+	translated := &model.Translation{
+		Language: targetLanguage,
+		Original: translation.Original,
+		Messages: make([]model.Message, len(translation.Messages)),
+	}
+
+	var textIndex int
+
+	for i := range translation.Messages {
+		messageAST, err := ast.Parse(translation.Messages[i].Message)
+		if err != nil {
+			return nil, fmt.Errorf("parse mf2 message: %w", err)
+		}
+
+		switch message := messageAST.Message.(type) {
+		case ast.SimpleMessage:
+			message.Patterns, err = buildTranslatedPattern(translatedTexts[textIndex], message.Patterns)
+			if err != nil {
+				return nil, fmt.Errorf("build translated pattern for simple message: %w", err)
+			}
+
+			textIndex++
+
+			// rewrite AST
+			messageAST.Message = message
+
+		case ast.ComplexMessage:
+			switch complexBody := message.ComplexBody.(type) {
+			case ast.Matcher:
+				for i := range complexBody.Variants {
+					complexBody.Variants[i].QuotedPattern.Patterns, err = buildTranslatedPattern(
+						translatedTexts[textIndex], complexBody.Variants[i].QuotedPattern.Patterns)
+					if err != nil {
+						return nil, fmt.Errorf("build translated pattern for matcher variant: %w", err)
+					}
+
+					textIndex++
+				}
+
+				// rewrite AST
+				message.ComplexBody = complexBody
+				messageAST.Message = message
+
+			case ast.QuotedPattern:
+				complexBody.Patterns, err = buildTranslatedPattern(translatedTexts[textIndex], complexBody.Patterns)
+				if err != nil {
+					return nil, fmt.Errorf("build translated pattern for quoted pattern: %w", err)
+				}
+
+				textIndex++
+
+				// rewrite AST
+				message.ComplexBody = complexBody
+				messageAST.Message = message
+			}
+		}
+
+		translated.Messages[i] = model.Message{
+			ID:          translation.Messages[i].ID,
+			PluralID:    translation.Messages[i].PluralID,
+			Message:     messageAST.String(),
+			Description: translation.Messages[i].Description,
+			Positions:   translation.Messages[i].Positions,
+			Status:      model.MessageStatusFuzzy,
+		}
+	}
+
+	return translated, nil
+}
+
+// buildTranslatedPattern constructs a slice of ast.Pattern from a given text and placeholders
+// extracted from a translated text. Placeholders are replaced with corresponding
+// ast.PlaceholderPatterns retrieved from the message AST. The function returns a slice of ast.Pattern and error.
+func buildTranslatedPattern(translatedText string, previousPattern []ast.Pattern) ([]ast.Pattern, error) {
+	re := regexp.MustCompile(`\{\$(0|[1-9]\d*)\}`)
+
+	translatedPattern := make([]ast.Pattern, 0, len(previousPattern))
+
+	for _, v := range splitTextByPlaceholder(translatedText) {
+		if re.MatchString(v) { // simplified placeholder
+			placeholderIndex, err := strconv.Atoi(v[2 : len(v)-1])
+			if err != nil {
+				return nil, fmt.Errorf("parse placeholder index: %w", err)
+			}
+
+			translatedPattern = append(translatedPattern, previousPattern[placeholderIndex])
+		} else { // translated text
+			translatedPattern = append(translatedPattern, ast.TextPattern(v))
+		}
+	}
+
+	return translatedPattern, nil
+}
+
+// splitTextByPlaceholder splits a given string into substrings separated by '{$d}'
+// and returns a slice containing both the substrings and the separators.
+//
+// Example:
+//
+//	Input:
+//	  "Hello {$0} {$1}! Welcome to {$2}."
+//
+//	Output:
+//	  []string{"Hello ", "{$0}", " ", "{$1}" "! Welcome to ", "{$2}"}
+func splitTextByPlaceholder(s string) []string {
+	if s == "" {
+		return nil
+	}
+
+	textParts := make([]string, 0, 1)
+	placeholderIndices := regexp.MustCompile(`\{\$(0|[1-9]\d*)\}`).FindAllStringIndex(s, -1)
+
+	var startIndex int
+
+	for _, indexPair := range placeholderIndices {
+		if startIndex != indexPair[0] { // if leading text exists append text
+			textParts = append(textParts, s[startIndex:indexPair[0]])
+		}
+
+		textParts = append(textParts, s[indexPair[0]:indexPair[1]]) // append placeholder
+
+		startIndex = indexPair[1]
+	}
+
+	if startIndex != len(s) { // if trailing text exists append text
+		textParts = append(textParts, s[startIndex:])
+	}
+
+	return textParts
 }

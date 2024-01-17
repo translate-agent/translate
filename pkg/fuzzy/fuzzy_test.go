@@ -11,6 +11,7 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/googleapis/gax-go/v2"
 	"github.com/stretchr/testify/require"
+	ast "go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
@@ -19,8 +20,7 @@ import (
 // ---–––--------------Actual Tests------------------–––---
 
 func Test_TranslateMock(t *testing.T) {
-	// NOTE: Tests skipped for now until fuzzy translation is fixed.
-	t.Skip() // TODO
+	// NOTE: AWS skipped for now until fuzzy translation is fixed.
 	t.Parallel()
 
 	allMocks(t, func(t *testing.T, mock Translator) {
@@ -66,8 +66,10 @@ func Test_TranslateMock(t *testing.T) {
 					require.NotEmpty(t, m.Message)
 					require.Equal(t, model.MessageStatusFuzzy, m.Status)
 
+					_, err := ast.Parse(m.Message)
+					require.NoError(t, err, "parse MF2 message")
+
 					// Reset the message to empty and fuzzy to original values, for the last check for side effects.
-					translated.Messages[i].Message = tt.translation.Messages[i].Message
 					translated.Messages[i].Status = tt.translation.Messages[i].Status
 				}
 
@@ -100,8 +102,8 @@ func (m *MockGoogleTranslateClient) TranslateText(
 		Translations: make([]*translatepb.Translation, 0, len(req.GetContents())),
 	}
 
-	for range req.GetContents() {
-		res.Translations = append(res.GetTranslations(), &translatepb.Translation{TranslatedText: gofakeit.SentenceSimple()})
+	for _, v := range req.GetContents() {
+		res.Translations = append(res.GetTranslations(), &translatepb.Translation{TranslatedText: v})
 	}
 
 	return res, nil
@@ -148,6 +150,14 @@ var mockTranslators map[string]Translator
 func init() {
 	mockTranslators = make(map[string]Translator, len(SupportedServices))
 
+	// TODO
+	// at, _ := NewAWSTranslate(
+	// 	context.Background(),
+	// 	WithAWSClient(&MockAWSTranslateClient{}),
+	// )
+
+	// mockTranslators["AWSTranslate"] = at
+
 	// Google Translate
 	gt, _, _ := NewGoogleTranslate(
 		context.Background(),
@@ -155,13 +165,6 @@ func init() {
 	)
 
 	mockTranslators["GoogleTranslate"] = gt
-
-	at, _ := NewAWSTranslate(
-		context.Background(),
-		WithAWSClient(&MockAWSTranslateClient{}),
-	)
-
-	mockTranslators["AWSTranslate"] = at
 }
 
 // allMocks runs a test function f for each mocked translate service that is defined in the mockTranslators map.

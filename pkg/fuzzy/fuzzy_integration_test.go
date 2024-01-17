@@ -20,8 +20,6 @@ import (
 // ---–––--------------Actual Tests------------------–––---
 
 func Test_Translate(t *testing.T) {
-	// NOTE: Tests skipped for now until fuzzy translation is fixed.
-	t.Skip()
 	t.Parallel()
 
 	allTranslators(t, func(t *testing.T, translator Translator, subTest testutil.SubtestFn) {
@@ -48,7 +46,7 @@ func Test_Translate(t *testing.T) {
 // translators is a map of all possible translation services, e.g. Google Translate, DeepL, etc.
 var translators = map[string]Translator{
 	"GoogleTranslate": nil,
-	"AWSTranslate":    nil,
+	// "AWSTranslate":    nil, // TODO
 }
 
 // initAWSTranslate creates a new AWS Translate service and adds it to the translators map.
@@ -121,6 +119,10 @@ func allTranslators(t *testing.T, f func(t *testing.T, translator Translator, su
 	for name, translator := range translators {
 		name, translator := name, translator
 		t.Run(name, func(t *testing.T) {
+			if name == "AWSTranslate" { // TODO
+				t.Skip()
+			}
+
 			t.Parallel()
 
 			if translator == nil {
