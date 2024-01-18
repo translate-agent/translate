@@ -151,7 +151,7 @@ func Test_FromXliff12(t *testing.T) {
 						ID: "9204248378636247318",
 						Message: ".local $x1 = { |<x id=\"PH\" equiv-text=\"status.filename\"/>| }\n" +
 							".local .local $x2 = { |<x id=\"PH2\" equiv-text=\"status.filename2\"/>| }\n " +
-							"{{Document { $x1 } was added to paperless.}}",
+							"{{Document { $x1 } was added to { $x2 } paperless.}}",
 						Status:    model.MessageStatusTranslated,
 						Positions: []string{"src/app/app.component.ts:51"},
 					},
@@ -204,9 +204,11 @@ func Test_FromXliff12(t *testing.T) {
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:      "7",
-						Message: "local $ph1 = { | {{ limit }} | }\n  {{Selecteer maximaal { $ph1 } optie.|Selecteer maximaal { $ph1 }\nopties.}}",
-						Status:  model.MessageStatusTranslated,
+						ID: "7",
+						Message: "local $ph1 = { | {{ limit }} | }\n  " +
+							"{{Selecteer maximaal { $ph1 } optie.|Selecteer maximaal { $ph1 }\n" +
+							"opties.}}",
+						Status: model.MessageStatusTranslated,
 					},
 				},
 			},
