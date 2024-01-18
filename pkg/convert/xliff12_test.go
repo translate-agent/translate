@@ -74,19 +74,19 @@ func randXliff12(translation *model.Translation) []byte {
 func Test_FromXliff12(t *testing.T) {
 	t.Parallel()
 
-	t.Skip() // TODO
+	//t.Skip() // TODO
 
-	originalTranslation := testutilrand.ModelTranslation(
-		3,
-		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
-		testutilrand.WithOriginal(true),
-	)
-
-	nonOriginalTranslation := testutilrand.ModelTranslation(
-		3,
-		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusUntranslated)},
-		testutilrand.WithOriginal(false),
-	)
+	//originalTranslation := testutilrand.ModelTranslation(
+	//	3,
+	//	[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
+	//	testutilrand.WithOriginal(true),
+	//)
+	//
+	//nonOriginalTranslation := testutilrand.ModelTranslation(
+	//	3,
+	//	[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusUntranslated)},
+	//	testutilrand.WithOriginal(false),
+	//)
 
 	tests := []struct {
 		name     string
@@ -94,41 +94,192 @@ func Test_FromXliff12(t *testing.T) {
 		data     []byte
 	}{
 		{
-			name:     "Original",
-			data:     randXliff12(originalTranslation),
-			expected: originalTranslation,
-		},
-		{
-			name:     "Different language",
-			data:     randXliff12(nonOriginalTranslation),
-			expected: nonOriginalTranslation,
-		},
-		{
-			name: "Message with special chars {}",
-			data: randXliff12(
-				&model.Translation{
-					Language: language.English,
-					Original: false,
-					Messages: []model.Message{
-						{
-							ID:      "order canceled",
-							Message: `{Order #{Id} has been canceled for {ClientName} | \}`,
-						},
-					},
-				},
-			),
+			name: "input with x tag",
+			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
+			<xliff version="1.2"
+				xmlns="urn:oasis:names:tc:xliff:document:1.2">
+			<file source-language="en">
+				<body>
+					<trans-unit id="9204248378636247318" datatype="html">
+						<source>Document <x id="PH" equiv-text="status.filename"/> was added to paperless.</source>
+ 					 	<context-group purpose="location">
+    					<context context-type="sourcefile">src/app/app.component.ts</context>
+    					<context context-type="linenumber">51</context>
+  						</context-group>
+  					<target state="needs-translation">Document <x id="PH" equiv-text="status.filename"/> was added to paperless.</target>
+					</trans-unit>
+				</body>
+			</file>	
+			</xliff>`),
 			expected: &model.Translation{
-				Original: false,
+				Original: true,
 				Language: language.English,
 				Messages: []model.Message{
 					{
-						ID:      "order canceled",
-						Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
-						Status:  model.MessageStatusUntranslated,
+						ID: "9204248378636247318",
+						Message: ".local $x1 = { |<x id=\"PH\" equiv-text=\"status.filename\"/>| }\n" +
+							"{{Document { $x1 } was added to paperless.}}",
+						Status:    model.MessageStatusTranslated,
+						Positions: []string{"src/app/app.component.ts:51"},
 					},
 				},
 			},
 		},
+		{
+			name: "input with multiple x tag",
+			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
+			<xliff version="1.2"
+				xmlns="urn:oasis:names:tc:xliff:document:1.2">
+			<file source-language="en">
+				<body>
+					<trans-unit id="9204248378636247318" datatype="html">
+						<source>Document <x id="PH" equiv-text="status.filename"/> was added to <x id="PH2" equiv-text="status.filename2"/> paperless.</source>
+ 					 	<context-group purpose="location">
+    					<context context-type="sourcefile">src/app/app.component.ts</context>
+    					<context context-type="linenumber">51</context>
+  						</context-group>
+  					<target state="needs-translation">Document <x id="PH" equiv-text="status.filename"/> was added to paperless.</target>
+					</trans-unit>
+				</body>
+			</file>	
+			</xliff>`),
+			expected: &model.Translation{
+				Original: true,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID: "9204248378636247318",
+						Message: ".local $x1 = { |<x id=\"PH\" equiv-text=\"status.filename\"/>| }\n" +
+							".local .local $x2 = { |<x id=\"PH2\" equiv-text=\"status.filename2\"/>| }\n " +
+							"{{Document { $x1 } was added to paperless.}}",
+						Status:    model.MessageStatusTranslated,
+						Positions: []string{"src/app/app.component.ts:51"},
+					},
+				},
+			},
+		},
+		{
+			name: "input with ph tag",
+			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
+			<xliff version="1.2"
+				xmlns="urn:oasis:names:tc:xliff:document:1.2">
+			<file source-language="en">
+				<body>
+					<trans-unit id="6955537025048058867" datatype="html">
+  						<source><ph disp="{{ farmers }}" equiv="INTERPOLATION" id="0"/>total</source>
+  						<target><ph disp="{{ farmers }}" equiv="INTERPOLATION" id="0"/>razem</target>
+					</trans-unit>
+				</body>
+			</file>	
+			</xliff>`),
+			expected: &model.Translation{
+				Original: true,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID: "6955537025048058867",
+						Message: ".local $ph1 = { |<ph disp=\"{{ farmers }}\" equiv=\"INTERPOLATION\" id=\"0\"/>| }\n" +
+							"{{{ $ph1 }razem}}",
+						Status: model.MessageStatusTranslated,
+					},
+				},
+			},
+		},
+		{
+			name: "input without tag",
+			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
+			<xliff version="1.2"
+				xmlns="urn:oasis:names:tc:xliff:document:1.2">
+			<file source-language="en">
+				<body>
+					<trans-unit id="7">
+						<source>You must select at most {{ limit }} choice.|You must select at most {{ limit }} choices.</source>
+    					<target>Selecteer maximaal {{ limit }} optie.|Selecteer maximaal {{ limit }} opties.</target>
+					</trans-unit>
+				</body>
+			</file>	
+			</xliff>`),
+			expected: &model.Translation{
+				Original: true,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "7",
+						Message: "local $ph1 = { | {{ limit }} | }\n  {{Selecteer maximaal { $ph1 } optie.|Selecteer maximaal { $ph1 }\nopties.}}",
+						Status:  model.MessageStatusTranslated,
+					},
+				},
+			},
+		},
+		{
+			name: "simple input",
+			data: []byte(`<?xml version="1.0" encoding="UTF-8" ?>
+			<xliff version="1.2"
+				xmlns="urn:oasis:names:tc:xliff:document:1.2">
+			<file source-language="en">
+				<body>
+					<trans-unit id="1" datatype="html">
+						<source>Document was added to paperless.</source>
+ 					 	<context-group purpose="location">
+    					<context context-type="sourcefile">src/app/app.component.ts</context>
+    					<context context-type="linenumber">51</context>
+  						</context-group>
+  					<target state="needs-translation">Document was added to paperless.</target>
+					</trans-unit>
+				</body>
+			</file>	
+			</xliff>`),
+			expected: &model.Translation{
+				Original: true,
+				Language: language.English,
+				Messages: []model.Message{
+					{
+						ID:      "1",
+						Message: "Document was added to paperless.",
+						Status:  model.MessageStatusTranslated,
+						Positions: []string{
+							"src/app/app.component.ts:51",
+						},
+					},
+				},
+			},
+		},
+		//{
+		//	name:     "Original",
+		//	data:     randXliff12(originalTranslation),
+		//	expected: originalTranslation,
+		//},
+		//{
+		//	name:     "Different language",
+		//	data:     randXliff12(nonOriginalTranslation),
+		//	expected: nonOriginalTranslation,
+		//},
+		//{
+		//	name: "Message with special chars {}",
+		//	data: randXliff12(
+		//		&model.Translation{
+		//			Language: language.English,
+		//			Original: false,
+		//			Messages: []model.Message{
+		//				{
+		//					ID:      "order canceled",
+		//					Message: `{Order #{Id} has been canceled for {ClientName} | \}`,
+		//				},
+		//			},
+		//		},
+		//	),
+		//	expected: &model.Translation{
+		//		Original: false,
+		//		Language: language.English,
+		//		Messages: []model.Message{
+		//			{
+		//				ID:      "order canceled",
+		//				Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
+		//				Status:  model.MessageStatusUntranslated,
+		//			},
+		//		},
+		//	},
+		//},
 	}
 
 	for _, tt := range tests {
@@ -139,6 +290,8 @@ func Test_FromXliff12(t *testing.T) {
 			actual, err := FromXliff12(tt.data, &tt.expected.Original)
 			require.NoError(t, err)
 
+			t.Logf("expect: \n%v\n", tt.expected)
+			t.Logf("actual: \n%v\n", &actual)
 			testutil.EqualTranslations(t, tt.expected, &actual)
 		})
 	}
