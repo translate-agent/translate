@@ -110,7 +110,7 @@ func newUploadCmd() *cobra.Command {
 	uploadFlags.String("file", "", "local path or URL for the translation file")
 	uploadFlags.String("language", "", "translation language")
 	uploadFlags.Var(&schemaFlag, "schema",
-		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)
+		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'po', 'xliff_12', 'xliff_2'`)
 	uploadFlags.Bool("original", false, "file's language is an original language")
 	uploadFlags.Bool("populate_translations", true, "populate translation messages from original file")
 

@@ -13,7 +13,7 @@
       "cwd": "${workspaceFolder}",
       "envFile": "${workspaceFolder}/.env.test",
       // When debugging service, the badgerdb path is set to the system temp directory to avoid badgerDB in-memory limits
-      // for example when uploading supersets .pot file
+      // for example when uploading supersets .po file
       "env": {
         "TRANSLATE_DB_BADGERDB_PATH": "${env:TMPDIR}badgerdb"
       }

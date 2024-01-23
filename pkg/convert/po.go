@@ -10,7 +10,7 @@ import (
 	"go.expect.digital/mf2"
 	ast "go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/pot"
+	"go.expect.digital/translate/pkg/po"
 	"golang.org/x/text/language"
 )
 
@@ -19,28 +19,28 @@ import (
 // FromPo converts a byte slice representing a PO file to a model.Translation structure.
 // TODO: We need to find a way to preserve Plural-Forms from PO file.
 func FromPo(b []byte, originalOverride *bool) (model.Translation, error) {
-	po, err := pot.Parse(bytes.NewReader(b))
+	portableObject, err := po.Parse(bytes.NewReader(b))
 	if err != nil {
-		return model.Translation{}, fmt.Errorf("parse po file: %w", err)
+		return model.Translation{}, fmt.Errorf("parse portableObject file: %w", err)
 	}
 
 	translation := model.Translation{
-		Language: po.Header.Language,
-		Messages: make([]model.Message, 0, len(po.Messages)),
-		Original: isOriginalPO(po, originalOverride),
+		Language: portableObject.Header.Language,
+		Messages: make([]model.Message, 0, len(portableObject.Messages)),
+		Original: isOriginalPO(portableObject, originalOverride),
 	}
 
 	var (
-		getStatus   func(pot.MessageNode) model.MessageStatus // status getter based on originality
-		getMessages func(pot.MessageNode) []string            // messages getter based on originality
+		getStatus   func(po.MessageNode) model.MessageStatus // status getter based on originality
+		getMessages func(po.MessageNode) []string            // messages getter based on originality
 	)
 
 	switch translation.Original {
 	// on original, all messages are considered translated
 	// messages are get from msgid and msgid_plural if exists.
 	case true:
-		getStatus = func(pot.MessageNode) model.MessageStatus { return model.MessageStatusTranslated }
-		getMessages = func(n pot.MessageNode) []string {
+		getStatus = func(po.MessageNode) model.MessageStatus { return model.MessageStatusTranslated }
+		getMessages = func(n po.MessageNode) []string {
 			if n.MsgIDPlural != "" {
 				return []string{n.MsgID, n.MsgIDPlural}
 			}
@@ -50,17 +50,17 @@ func FromPo(b []byte, originalOverride *bool) (model.Translation, error) {
 	// on non original, all messages are considered untranslated or fuzzy
 	// messages are get from msgstr and msgstr[*] if exists.
 	case false:
-		getStatus = func(n pot.MessageNode) model.MessageStatus {
+		getStatus = func(n po.MessageNode) model.MessageStatus {
 			if slices.Contains(n.Flags, "fuzzy") {
 				return model.MessageStatusFuzzy
 			}
 
 			return model.MessageStatusUntranslated
 		}
-		getMessages = func(n pot.MessageNode) []string { return n.MsgStr }
+		getMessages = func(n po.MessageNode) []string { return n.MsgStr }
 	}
 
-	for _, node := range po.Messages {
+	for _, node := range portableObject.Messages {
 		mf2Msg, err := msgNodeToMF2(node, getMessages)
 		if err != nil {
 			return model.Translation{}, fmt.Errorf("convert message node to mf2 format: %w", err)
@@ -80,7 +80,7 @@ func FromPo(b []byte, originalOverride *bool) (model.Translation, error) {
 }
 
 // isOriginalPO function determines whether a PO file is an original or a translation.
-func isOriginalPO(po pot.Po, override *bool) bool {
+func isOriginalPO(portableObject po.Po, override *bool) bool {
 	// If override is not nil, use it.
 	if override != nil {
 		return *override
@@ -89,12 +89,12 @@ func isOriginalPO(po pot.Po, override *bool) bool {
 	// NOTE: Based on my research, all original PO files have empty language.
 	// So that could be a way to determine originality.
 	// Further research is needed to confirm this.
-	if po.Header.Language == language.Und {
+	if portableObject.Header.Language == language.Und {
 		return true
 	}
 
 	// When dealing with original PO files, all messages are always empty.
-	allEmpty := func(msgs []pot.MessageNode) bool {
+	allEmpty := func(msgs []po.MessageNode) bool {
 		for _, node := range msgs {
 			for _, msg := range node.MsgStr {
 				if msg != "" {
@@ -107,10 +107,10 @@ func isOriginalPO(po pot.Po, override *bool) bool {
 	}
 
 	// NOTE: originality can also be determined by file extension.
-	// .pot == original, .po == translation.
+	// .po == original, .portableObject == translation.
 	// but we don't preserve file extension, so we can't use this method for now.
 
-	return allEmpty(po.Messages)
+	return allEmpty(portableObject.Messages)
 }
 
 // TODO: Can every convert use that ?
@@ -121,8 +121,8 @@ var placeholderFormats = map[string]*regexp.Regexp{
 	"emptyBracket": regexp.MustCompile(`\{\}`),             // hello {}
 }
 
-// msgNodeToMF2 function converts a pot.MessageNode to a MessageFormat2 string.
-func msgNodeToMF2(node pot.MessageNode, getMessages func(pot.MessageNode) []string) (string, error) {
+// msgNodeToMF2 function converts a po.MessageNode to a MessageFormat2 string.
+func msgNodeToMF2(node po.MessageNode, getMessages func(po.MessageNode) []string) (string, error) {
 	mfBuilder := mf2.NewBuilder()
 	placeholders := make(map[string]struct{}) // map of placeholders to avoid duplicates, only for plural messages
 
@@ -229,10 +229,10 @@ func textWithPlaceholders(mfBuilder *mf2.Builder, msg string, placeholders map[s
 
 // ToPo converts a model.Translation structure to a byte slice representing a PO file.
 func ToPo(t model.Translation) ([]byte, error) {
-	po := pot.Po{Messages: make([]pot.MessageNode, 0, len(t.Messages))}
+	portableObject := po.Po{Messages: make([]po.MessageNode, 0, len(t.Messages))}
 
 	if !t.Original {
-		po.Header.Language = t.Language
+		portableObject.Header.Language = t.Language
 	}
 
 	var placeholders map[ast.Variable]string // MF2Variable:OriginalVariable, only for complex messages
@@ -262,8 +262,8 @@ func ToPo(t model.Translation) ([]byte, error) {
 	unquoteLiteral := func(l ast.Literal) string { return strings.ReplaceAll(l.String(), "|", "") }
 
 	for _, message := range t.Messages {
-		// Build pot.MessageNode, from model.Message.
-		poMsg := pot.MessageNode{
+		// Build po.MessageNode, from model.Message.
+		poMsg := po.MessageNode{
 			MsgID:       message.ID,
 			MsgIDPlural: message.PluralID,
 			References:  message.Positions,
@@ -318,8 +318,8 @@ func ToPo(t model.Translation) ([]byte, error) {
 			}
 		}
 
-		po.Messages = append(po.Messages, poMsg)
+		portableObject.Messages = append(portableObject.Messages, poMsg)
 	}
 
-	return po.Marshal(), nil
+	return portableObject.Marshal(), nil
 }
