@@ -107,7 +107,7 @@ func isOriginalPO(portableObject po.Po, override *bool) bool {
 	}
 
 	// NOTE: originality can also be determined by file extension.
-	// .po == original, .portableObject == translation.
+	// .pot == original and .po == translation,
 	// but we don't preserve file extension, so we can't use this method for now.
 
 	return allEmpty(portableObject.Messages)
