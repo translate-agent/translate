@@ -1,4 +1,4 @@
-package pot
+package po
 
 import (
 	"fmt"
@@ -122,7 +122,7 @@ msgstr ""
 			},
 		},
 		{
-			name: "pot with plural and escaped newline",
+			name: "po with plural and escaped newline",
 			input: `msgid ""
 msgstr ""
 "Language: en-US\n"

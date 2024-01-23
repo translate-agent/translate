@@ -17,7 +17,7 @@ import (
 const (
 	arb  = "arb"
 	json = "json"
-	pot  = "po"
+	po   = "po"
 	xlf  = "xlf"
 )
 
@@ -78,8 +78,8 @@ func newDownloadCmd() *cobra.Command {
 				fileName += "." + arb
 			case translatev1.Schema_JSON_NG_LOCALIZE, translatev1.Schema_JSON_NGX_TRANSLATE, translatev1.Schema_GO:
 				fileName += "." + json
-			case translatev1.Schema_POT:
-				fileName += "." + pot
+			case translatev1.Schema_PO:
+				fileName += "." + po
 			case translatev1.Schema_XLIFF_12, translatev1.Schema_XLIFF_2:
 				fileName += "." + xlf
 			}
@@ -101,7 +101,7 @@ func newDownloadCmd() *cobra.Command {
 	downloadFlags.String("path", "", "download folder path")
 	downloadFlags.String("language", "", "translation language in BCP47 format")
 	downloadFlags.Var(&schemaFlag, "schema",
-		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'pot', 'xliff_12', 'xliff_2'`)
+		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'po', 'xliff_12', 'xliff_2'`)
 
 	if err := downloadCmd.MarkFlagRequired("service"); err != nil {
 		log.Panicf("download file cmd: set field 'service' as required: %v", err)
