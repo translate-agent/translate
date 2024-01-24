@@ -167,7 +167,10 @@ lint:
 
 test-unit:
   FROM +go
-  RUN --mount=type=cache,id=mod-cache,target=/go/pkg/mod go test ./...
+  RUN \
+    --mount=type=cache,id=go-mod,target=/go/pkg/mod \
+    --mount=type=cache,id=go-build,target=/root/.cache/go-build \
+    go test ./...
 
 test-integration:
   FROM earthly/dind:alpine-3.18
