@@ -219,26 +219,63 @@ displayed in the filter.`),
 				mkToken(TokenTypeMsgID, "\nIf duplicate columns are not overridden, they will be presented as \\\"X.1,\n X.2 ...X.x\\\""), //nolint:lll
 			},
 		},
+		{
+			name: "Language, empty values",
+			input: `"Language:"
+"Language: "
+"Language:  "`,
+			expected: []Token{
+				mkToken(TokenTypeHeaderLanguage, ""),
+				mkToken(TokenTypeHeaderLanguage, ""),
+				mkToken(TokenTypeHeaderLanguage, ""),
+			},
+		},
+		{
+			name:  "Language, trailing whitespace",
+			input: `"Language: en-US" `,
+			expected: []Token{
+				mkToken(TokenTypeHeaderLanguage, "en-US"),
+			},
+		},
+		{
+			name:  "msgid, double whitespace separator",
+			input: `msgid  "quoted"`,
+			expected: []Token{
+				mkToken(TokenTypeMsgID, "quoted"),
+			},
+		},
+		{
+			name:  "msgid, trailing whitespace",
+			input: `msgid "quoted" `,
+			expected: []Token{
+				mkToken(TokenTypeMsgID, "quoted"),
+			},
+		},
 		// negative tests
 		{
-			name: "When msgid value is incorrect",
+			name:        "msgid, missing whitespace separator",
+			input:       `msgid"quoted"`,
+			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+		},
+		{
+			name:        "msgid, missing closing quotes",
+			input:       `msgid "\"quoted\" id`,
+			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+		},
+		{
+			name:        "Language, missing closing quotes",
+			input:       `"Language: en-US`,
+			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+		},
+		{
+			name: "Language, missing opening quotes",
 			input: "msgid \"\"\n" +
 				"msgstr \"\"\n" +
 				"Language: en-US\n" +
 				"Plural-Forms: nplurals=2; plural=(n != 1);\n" +
 				"msgid\"id\"\n" +
 				"msgstr \"\"quoted\" str\"\n",
-			expectedErr: fmt.Errorf("incorrect format of msgid: incorrect format of po tags"),
-		},
-		{
-			name: "When msgstr value is incorrect",
-			input: "msgid \"\"\n" +
-				"msgstr \"\"\n" +
-				"Language: en-US\n" +
-				"Plural-Forms: nplurals=2; plural=(n != 1);\n" +
-				"msgid \"id\"\n" +
-				"msgstr\"str\"\n",
-			expectedErr: fmt.Errorf("incorrect format of msgstr: incorrect format of po tags"),
+			expectedErr: fmt.Errorf("unknown prefix"),
 		},
 	}
 
