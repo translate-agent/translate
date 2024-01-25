@@ -70,7 +70,7 @@ down:
 deps:
   WORKDIR /translate
   COPY go.mod go.sum .
-  RUN --mount=type=cache,target=/go/pkg/mod go mod download
+  RUN --mount=type=cache,id=go-mod,target=/go/pkg/mod go mod download
   SAVE ARTIFACT go.mod AS LOCAL go.mod
   SAVE ARTIFACT go.sum AS LOCAL go.sum
 
@@ -87,7 +87,6 @@ proto:
   COPY --dir proto .
   WORKDIR proto
   RUN \
-    --mount=type=cache,target=$BUF_CACHE_DIR \
     --mount=type=cache,target=$BUF_CACHE_DIR,mode=0700 \
       buf mod update && buf build && buf generate
 
@@ -147,7 +146,11 @@ lint-go:
   WORKDIR translate
   COPY +go/translate .
   COPY .golangci.yml .
-  RUN --mount=type=cache,target=/root/.cache/golangci_lint golangci-lint run --timeout 3m
+  RUN \
+    --mount=type=cache,id=go-mod,target=/go/pkg/mod \
+    --mount=type=cache,id=go-build,target=/root/.cache/go-build \
+    --mount=type=cache,target=/root/.cache/golangci_lint \
+    golangci-lint run --timeout 3m
 
 lint-proto:
   FROM bufbuild/buf:$bufbuild_version
@@ -164,7 +167,10 @@ lint:
 
 test-unit:
   FROM +go
-  RUN --mount=type=cache,target=/go/pkg/mod go test ./...
+  RUN \
+    --mount=type=cache,id=go-mod,target=/go/pkg/mod \
+    --mount=type=cache,id=go-build,target=/root/.cache/go-build \
+    go test ./...
 
 test-integration:
   FROM earthly/dind:alpine-3.18
@@ -176,8 +182,8 @@ test-integration:
       --secret=aws_access_key_id \
       --secret=aws_secret_access_key \
       --mount=type=secret,target=/translate/google_account_key.json,id=google_account_key \
-      --mount=type=cache,target=/go/pkg/mod \
-      --mount=type=cache,target=/root/.cache/go-build \
+      --mount=type=cache,id=go-mod,target=/go/pkg/mod \
+      --mount=type=cache,id=go-build,target=/root/.cache/go-build \
 
       # Wait for the MySQL server to start running
       docker exec mysql sh -c 'mysqladmin ping -h 127.0.0.1 -u root --wait=30 --silent' && \
@@ -219,8 +225,8 @@ build:
   COPY --platform=linux/$USERARCH +go/translate translate
   WORKDIR translate
   RUN \
-  --mount=type=cache,target=/go/pkg/mod \
-  --mount=type=cache,target=/root/.cache/go-build \
+  --mount=type=cache,id=go-mod,target=/go/pkg/mod \
+  --mount=type=cache,id=go-build,target=/root/.cache/go-build \
     go build -o translate-service cmd/translate/main.go && \
     go build -o translate cmd/client/main.go
   SAVE ARTIFACT translate-service bin/translate-service # service
