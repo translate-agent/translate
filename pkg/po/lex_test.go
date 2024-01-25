@@ -220,55 +220,53 @@ displayed in the filter.`),
 			},
 		},
 		{
-			name: "Language, empty values",
-			input: `"Language:"
-"Language: "
-"Language:  "`,
-			expected: []Token{
-				mkToken(TokenTypeHeaderLanguage, ""),
-				mkToken(TokenTypeHeaderLanguage, ""),
-				mkToken(TokenTypeHeaderLanguage, ""),
-			},
+			name:     "language header, empty value",
+			input:    `"Language:"`,
+			expected: []Token{mkToken(TokenTypeHeaderLanguage, "")},
 		},
 		{
-			name:  "Language, trailing whitespace",
-			input: `"Language: en-US" `,
-			expected: []Token{
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-			},
+			name:     "language header, without whitespace separator",
+			input:    `"Language:en-US"`,
+			expected: []Token{mkToken(TokenTypeHeaderLanguage, "en-US")},
 		},
 		{
-			name:  "msgid, double whitespace separator",
-			input: `msgid  "quoted"`,
-			expected: []Token{
-				mkToken(TokenTypeMsgID, "quoted"),
-			},
+			name:     "language header, value enclosed in spaces",
+			input:    `"Language:   en-US"  `,
+			expected: []Token{mkToken(TokenTypeHeaderLanguage, "en-US")},
 		},
 		{
-			name:  "msgid, trailing whitespace",
-			input: `msgid "quoted" `,
-			expected: []Token{
-				mkToken(TokenTypeMsgID, "quoted"),
-			},
+			name:     "message id, value enclosed in spaces",
+			input:    `msgid    "quoted"   `,
+			expected: []Token{mkToken(TokenTypeMsgID, "quoted")},
+		},
+		{
+			name:     "plural message, value enclosed in spaces",
+			input:    `msgstr[0]   "message"   `,
+			expected: []Token{mkToken(TokenTypePluralMsgStr, "message")},
+		},
+		{
+			name:     "translator comment, empty value",
+			input:    `#`,
+			expected: []Token{mkToken(TokenTypeTranslatorComment, "")},
+		},
+		{
+			name:     "msgctxt comment",
+			input:    `#| msgctxt context`,
+			expected: []Token{mkToken(TokenTypeMsgctxtPreviousContext, "msgctxt context")},
+		},
+		{
+			name:     "msgctxt comment, value enclosed in spaces",
+			input:    `#| msgctxt     context    `,
+			expected: []Token{mkToken(TokenTypeMsgctxtPreviousContext, "msgctxt context")},
 		},
 		// negative tests
 		{
-			name:        "msgid, missing whitespace separator",
-			input:       `msgid"quoted"`,
-			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
-		},
-		{
-			name:        "msgid, missing closing quotes",
-			input:       `msgid "\"quoted\" id`,
-			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
-		},
-		{
-			name:        "Language, missing closing quotes",
+			name:        "language header, missing closing quotes",
 			input:       `"Language: en-US`,
 			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
 		},
 		{
-			name: "Language, missing opening quotes",
+			name: "language header, missing opening quotes",
 			input: "msgid \"\"\n" +
 				"msgstr \"\"\n" +
 				"Language: en-US\n" +
@@ -276,6 +274,31 @@ displayed in the filter.`),
 				"msgid\"id\"\n" +
 				"msgstr \"\"quoted\" str\"\n",
 			expectedErr: fmt.Errorf("unknown prefix"),
+		},
+		{
+			name:        "message id, missing whitespace separator",
+			input:       `msgid"quoted"`,
+			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+		},
+		{
+			name:        "message id, missing closing quotes",
+			input:       `msgid "\"quoted\" id`,
+			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+		},
+		{
+			name:        "plural message, invalid index format",
+			input:       `msgstr[-1]`,
+			expectedErr: fmt.Errorf("invalid prefix"),
+		},
+		{
+			name:        "msgctxt comment, missing whitespace separator",
+			input:       `#| msgctxtcontext`,
+			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+		},
+		{
+			name:        "translator comment, missing whitespace separator",
+			input:       `#comment`,
+			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
 		},
 	}
 
