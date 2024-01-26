@@ -269,7 +269,7 @@ displayed in the filter.`),
 		{
 			name:        "language header, missing closing quotes",
 			input:       `"Language: en-US`,
-			expectedErr: fmt.Errorf("line must end with double quote"),
+			expectedErr: fmt.Errorf("line must end with double quotation mark - \" "),
 		},
 		{
 			name: "language header, missing opening quotes",
@@ -289,13 +289,13 @@ displayed in the filter.`),
 		{
 			name:        "message id, missing closing quotes",
 			input:       `msgid "\"quoted\" id`,
-			expectedErr: fmt.Errorf("value must be enclosed in double quotes"),
+			expectedErr: fmt.Errorf("value must be enclosed in double quotation mark - \"\" "),
 		},
 		{
-			name: "message, multiline missing closing double quote",
+			name: "message, multiline missing closing double quotation mark",
 			input: `msgstr "hello "   
 			"world`,
-			expectedErr: fmt.Errorf("line must end with double quote"),
+			expectedErr: fmt.Errorf("line must end with double quotation mark - \" "),
 		},
 		{
 			name:        "plural message, invalid index format",

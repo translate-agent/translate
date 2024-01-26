@@ -242,7 +242,7 @@ func parseTokenValue(linePrefix, line string, tokenType TokenType) (string, erro
 
 		// value must be enclosed in double quotes
 		if !(strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"")) {
-			return "", fmt.Errorf("token type '%d': value must be enclosed in double quotes", tt)
+			return "", fmt.Errorf("token type '%d': value must be enclosed in double quotation mark - \"\" ", tt)
 		}
 
 		value = strings.TrimPrefix(strings.TrimSuffix(value, "\""), "\"")
@@ -254,7 +254,7 @@ func parseTokenValue(linePrefix, line string, tokenType TokenType) (string, erro
 		value = strings.TrimSpace(value)
 
 		if !strings.HasSuffix(value, "\"") {
-			return "", fmt.Errorf("token type '%d': line must end with double quote", tt)
+			return "", fmt.Errorf("token type '%d': line must end with double quotation mark - \" ", tt)
 		}
 
 		value = strings.TrimSuffix(value, "\"")
@@ -306,7 +306,7 @@ func parseMultilineValue(line string, tokens []Token) error {
 		line = strings.TrimSpace(line)
 
 		if !strings.HasSuffix(line, "\"") {
-			return fmt.Errorf("token type '%d': line must end with double quote", lastToken.Type)
+			return fmt.Errorf("token type '%d': line must end with double quotation mark - \" ", lastToken.Type)
 		}
 
 		lastToken.Value += "\n" + strings.TrimPrefix(strings.TrimSuffix(line, "\""), "\"")
