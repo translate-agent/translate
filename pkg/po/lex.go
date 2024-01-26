@@ -233,7 +233,8 @@ func parseTokenValue(linePrefix, line string, tokenType TokenType) (string, erro
 	value := strings.TrimPrefix(line, linePrefix)
 
 	switch tt := tokenType; tt {
-	case TokenTypeMsgID, TokenTypePluralMsgID, TokenTypeMsgStr, TokenTypeMsgCtxt, TokenTypePluralMsgStr:
+	case TokenTypeMsgID, TokenTypePluralMsgID, TokenTypeMsgStr, TokenTypeMsgCtxt, TokenTypePluralMsgStr,
+		TokenTypeMsgidPluralPrevUntStrPlural, TokenTypeMsgctxtPreviousContext, TokenTypeMsgidPrevUntStr:
 		if !strings.HasPrefix(value, " ") {
 			return "", fmt.Errorf("token type '%d': value must be prefixed with space", tt)
 		}
@@ -259,12 +260,6 @@ func parseTokenValue(linePrefix, line string, tokenType TokenType) (string, erro
 
 		value = strings.TrimSuffix(value, "\"")
 	case TokenTypeTranslatorComment, TokenTypeExtractedComment, TokenTypeReference, TokenTypeFlag:
-		if !(len(value) == 0 || strings.HasPrefix(value, " ")) {
-			return "", fmt.Errorf("token type '%d': value must be prefixed with space", tt)
-		}
-
-		value = strings.TrimSpace(value)
-	case TokenTypeMsgidPluralPrevUntStrPlural, TokenTypeMsgctxtPreviousContext, TokenTypeMsgidPrevUntStr:
 		if !(len(value) == 0 || strings.HasPrefix(value, " ")) {
 			return "", fmt.Errorf("token type '%d': value must be prefixed with space", tt)
 		}
