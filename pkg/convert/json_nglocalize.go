@@ -59,9 +59,7 @@ func FromNgLocalize(data []byte, original *bool) (model.Translation, error) {
 }
 
 func toMF2(msg string) (string, error) {
-	b := mf2.NewBuilder()
-
-	b.Text(msg)
+	b := mf2.NewBuilder().Text(msg)
 
 	s, err := b.Build()
 	if err != nil {
