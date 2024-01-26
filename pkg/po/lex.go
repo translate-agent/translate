@@ -280,18 +280,20 @@ func parseMultilineValue(line string, tokens []Token) error {
 		TokenTypeHeaderLanguageTeam, TokenTypeHeaderLastTranslator, TokenTypeHeaderXGenerator,
 		TokenTypeHeaderReportMsgidBugsTo, TokenTypeHeaderMIMEVersion, TokenTypeHeaderContentType,
 		TokenTypeHeaderContentTransferEncoding, TokenTypeHeaderGeneratedBy:
-		// TODO:
 		line = strings.TrimSpace(line)
 
-		if strings.HasPrefix(line, "\"") && strings.HasSuffix(line, "\"") {
-			lastToken.Value += "\n" + strings.TrimPrefix(strings.TrimSuffix(line, "\""), "\"")
-		} else {
+		// value must be enclosed in double quotes
+		if !(strings.HasPrefix(line, "\"") && strings.HasSuffix(line, "\"")) {
 			return fmt.Errorf("invalid syntax in multiline string for token type: '%d'", lastToken.Type)
 		}
+
+		lastToken.Value += "\n" + strings.TrimPrefix(strings.TrimSuffix(line, "\""), "\"")
 	case TokenTypeMsgCtxt, TokenTypeTranslatorComment, TokenTypeExtractedComment,
 		TokenTypeReference, TokenTypeFlag, TokenTypeMsgctxtPreviousContext,
 		TokenTypeMsgidPluralPrevUntStrPlural, TokenTypeMsgidPrevUntStr:
 		return fmt.Errorf("unsupported multiline string for token type: '%d'", lastToken.Type)
+	default:
+		return fmt.Errorf("unsupported token type: '%d'", lastToken.Type)
 	}
 
 	return nil

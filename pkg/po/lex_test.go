@@ -240,6 +240,12 @@ displayed in the filter.`),
 			expected: []Token{mkToken(TokenTypeMsgID, "quoted")},
 		},
 		{
+			name: "message, multiline",
+			input: `msgstr "hello "   
+			"world"`,
+			expected: []Token{mkToken(TokenTypeMsgStr, "hello \nworld")},
+		},
+		{
 			name:     "plural message, value enclosed in spaces",
 			input:    `msgstr[0]   "message"   `,
 			expected: []Token{mkToken(TokenTypePluralMsgStr, "message")},
@@ -283,6 +289,12 @@ displayed in the filter.`),
 		{
 			name:        "message id, missing closing quotes",
 			input:       `msgid "\"quoted\" id`,
+			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+		},
+		{
+			name: "message, multiline missing closing quotes",
+			input: `msgstr "hello "   
+			"world`,
 			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
 		},
 		{
