@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"go.expect.digital/mf2"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -42,14 +43,32 @@ func FromNgLocalize(data []byte, original *bool) (model.Translation, error) {
 	}
 
 	for k, v := range ng.Translations {
+		val, err := toMF2(v)
+		if err != nil {
+			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
+		}
+
 		translation.Messages = append(translation.Messages, model.Message{
 			ID:      k,
-			Message: v, // TODO: convert v to MF2 format.
+			Message: val,
 			Status:  status,
 		})
 	}
 
 	return translation, nil
+}
+
+func toMF2(msg string) (string, error) {
+	b := mf2.NewBuilder()
+
+	b.Text(msg)
+
+	s, err := b.Build()
+	if err != nil {
+		return "", fmt.Errorf("build MF2: %w", err)
+	}
+
+	return s, nil
 }
 
 // ToNgLocalize converts a model.Translation struct into a byte slice in @angular/localize JSON format.

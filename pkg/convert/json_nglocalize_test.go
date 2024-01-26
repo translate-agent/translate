@@ -14,8 +14,6 @@ import (
 func Test_FromNgLocalize(t *testing.T) {
 	t.Parallel()
 
-	t.Skip() // TODO
-
 	tests := []struct {
 		expectedErr error
 		input       []byte
@@ -39,12 +37,12 @@ func Test_FromNgLocalize(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "Hello",
-						Message: `{Bonjour}`,
+						Message: `Bonjour`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "Welcome",
-						Message: `{Bienvenue}`,
+						Message: `Bienvenue`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -66,12 +64,12 @@ func Test_FromNgLocalize(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "Hello",
-						Message: `{Welcome \{user\}! \| \\}`,
+						Message: `Welcome \{user\}! | \\`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "Welcome",
-						Message: `{Bienvenue}`,
+						Message: `Bienvenue`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
