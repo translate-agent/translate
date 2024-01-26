@@ -96,9 +96,9 @@ msgstr[1] "There are %d oranges"
 				mkToken(TokenTypeReference, "reference2"),
 				mkToken(TokenTypeReference, "reference3"),
 				mkToken(TokenTypeFlag, "flag"),
-				mkToken(TokenTypeMsgctxtPreviousContext, "msgctxt previous context"),
-				mkToken(TokenTypeMsgidPrevUntStr, "msgid previous id"),
-				mkToken(TokenTypeMsgidPluralPrevUntStrPlural, "msgid_plural previous id plural"),
+				mkToken(TokenTypeMsgctxtPreviousContext, "previous context"),
+				mkToken(TokenTypeMsgidPrevUntStr, "previous id"),
+				mkToken(TokenTypeMsgidPluralPrevUntStrPlural, "previous id plural"),
 			},
 		},
 		{
@@ -258,12 +258,12 @@ displayed in the filter.`),
 		{
 			name:     "msgctxt comment",
 			input:    `#| msgctxt context`,
-			expected: []Token{mkToken(TokenTypeMsgctxtPreviousContext, "msgctxt context")},
+			expected: []Token{mkToken(TokenTypeMsgctxtPreviousContext, "context")},
 		},
 		{
 			name:     "msgctxt comment, value enclosed in spaces",
 			input:    `#| msgctxt     context    `,
-			expected: []Token{mkToken(TokenTypeMsgctxtPreviousContext, "msgctxt context")},
+			expected: []Token{mkToken(TokenTypeMsgctxtPreviousContext, "context")},
 		},
 		// negative tests
 		{

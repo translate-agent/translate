@@ -270,19 +270,6 @@ func parseTokenValue(linePrefix, line string, tokenType TokenType) (string, erro
 		}
 
 		value = strings.TrimSpace(value)
-
-		if len(value) != 0 {
-			value = " " + value
-		}
-
-		switch tt { //nolint:exhaustive
-		case TokenTypeMsgidPluralPrevUntStrPlural:
-			value = "msgid_plural" + value
-		case TokenTypeMsgctxtPreviousContext:
-			value = "msgctxt" + value
-		case TokenTypeMsgidPrevUntStr:
-			value = "msgid" + value
-		}
 	default:
 		return "", fmt.Errorf("unsupported token type '%d'", tt)
 	}
