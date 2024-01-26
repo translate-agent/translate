@@ -269,7 +269,7 @@ displayed in the filter.`),
 		{
 			name:        "language header, missing closing quotes",
 			input:       `"Language: en-US`,
-			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+			expectedErr: fmt.Errorf("line must end with double quote"),
 		},
 		{
 			name: "language header, missing opening quotes",
@@ -279,38 +279,38 @@ displayed in the filter.`),
 				"Plural-Forms: nplurals=2; plural=(n != 1);\n" +
 				"msgid\"id\"\n" +
 				"msgstr \"\"quoted\" str\"\n",
-			expectedErr: fmt.Errorf("unknown prefix"),
+			expectedErr: fmt.Errorf("unknown line prefix"),
 		},
 		{
 			name:        "message id, missing whitespace separator",
 			input:       `msgid"quoted"`,
-			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+			expectedErr: fmt.Errorf("value must be prefixed with space"),
 		},
 		{
 			name:        "message id, missing closing quotes",
 			input:       `msgid "\"quoted\" id`,
-			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+			expectedErr: fmt.Errorf("value must be enclosed in double quotes"),
 		},
 		{
-			name: "message, multiline missing closing quotes",
+			name: "message, multiline missing closing double quote",
 			input: `msgstr "hello "   
 			"world`,
-			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+			expectedErr: fmt.Errorf("line must end with double quote"),
 		},
 		{
 			name:        "plural message, invalid index format",
 			input:       `msgstr[-1]`,
-			expectedErr: fmt.Errorf("invalid prefix"),
+			expectedErr: fmt.Errorf("invalid syntax"),
 		},
 		{
 			name:        "msgctxt comment, missing whitespace separator",
 			input:       `#| msgctxtcontext`,
-			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+			expectedErr: fmt.Errorf("value must be prefixed with space"),
 		},
 		{
 			name:        "translator comment, missing whitespace separator",
 			input:       `#comment`,
-			expectedErr: fmt.Errorf("invalid syntax in line string for token type"),
+			expectedErr: fmt.Errorf("value must be prefixed with space"),
 		},
 	}
 
@@ -322,7 +322,7 @@ displayed in the filter.`),
 			result, err := lex(r)
 
 			if tt.expectedErr != nil {
-				require.Errorf(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
