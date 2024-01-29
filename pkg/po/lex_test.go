@@ -1,7 +1,7 @@
 package po
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 	"testing"
 
@@ -63,9 +63,9 @@ msgstr[1] "There are %d oranges"
 #: reference2
 #: reference3
 #, flag
-#| msgctxt previous context
-#| msgid previous id
-#| msgid_plural previous id plural
+#| msgctxt "previous context"
+#| msgid "previous id"
+#| msgid_plural "previous id plural"
 `,
 			expected: []Token{
 				mkToken(TokenTypeMsgID, ""),
@@ -96,9 +96,9 @@ msgstr[1] "There are %d oranges"
 				mkToken(TokenTypeReference, "reference2"),
 				mkToken(TokenTypeReference, "reference3"),
 				mkToken(TokenTypeFlag, "flag"),
-				mkToken(TokenTypeMsgctxtPreviousContext, "msgctxt previous context"),
-				mkToken(TokenTypeMsgidPrevUntStr, "msgid previous id"),
-				mkToken(TokenTypeMsgidPluralPrevUntStrPlural, "msgid_plural previous id plural"),
+				mkToken(TokenTypeMsgctxtPreviousContext, "previous context"),
+				mkToken(TokenTypeMsgidPrevUntStr, "previous id"),
+				mkToken(TokenTypeMsgidPluralPrevUntStrPlural, "previous id plural"),
 			},
 		},
 		{
@@ -219,26 +219,98 @@ displayed in the filter.`),
 				mkToken(TokenTypeMsgID, "\nIf duplicate columns are not overridden, they will be presented as \\\"X.1,\n X.2 ...X.x\\\""), //nolint:lll
 			},
 		},
+		{
+			name:     "language header, empty value",
+			input:    `"Language:"`,
+			expected: []Token{mkToken(TokenTypeHeaderLanguage, "")},
+		},
+		{
+			name:     "language header, without whitespace separator",
+			input:    `"Language:en-US"`,
+			expected: []Token{mkToken(TokenTypeHeaderLanguage, "en-US")},
+		},
+		{
+			name:     "language header, value enclosed in spaces",
+			input:    `"Language:   en-US"  `,
+			expected: []Token{mkToken(TokenTypeHeaderLanguage, "en-US")},
+		},
+		{
+			name:     "message id, value enclosed in spaces",
+			input:    `msgid    "quoted"   `,
+			expected: []Token{mkToken(TokenTypeMsgID, "quoted")},
+		},
+		{
+			name: "message, multiline",
+			input: `msgstr "hello "   
+			"world"`,
+			expected: []Token{mkToken(TokenTypeMsgStr, "hello \nworld")},
+		},
+		{
+			name:     "plural message, value enclosed in spaces",
+			input:    `msgstr[0]   "message"   `,
+			expected: []Token{mkToken(TokenTypePluralMsgStr, "message")},
+		},
+		{
+			name:     "translator comment, empty value",
+			input:    `#`,
+			expected: []Token{mkToken(TokenTypeTranslatorComment, "")},
+		},
+		{
+			name:     "msgctxt comment, empty space line prefix",
+			input:    ` #| msgctxt "context"`,
+			expected: []Token{mkToken(TokenTypeMsgctxtPreviousContext, "context")},
+		},
+		{
+			name:     "msgctxt comment, value enclosed in spaces",
+			input:    `#| msgctxt     "context"    `,
+			expected: []Token{mkToken(TokenTypeMsgctxtPreviousContext, "context")},
+		},
 		// negative tests
 		{
-			name: "When msgid value is incorrect",
+			name:        "language header, missing closing quotes",
+			input:       `"Language: en-US`,
+			expectedErr: errors.New("line must end with double quotation mark - \" "),
+		},
+		{
+			name: "language header, missing opening quotes",
 			input: "msgid \"\"\n" +
 				"msgstr \"\"\n" +
 				"Language: en-US\n" +
 				"Plural-Forms: nplurals=2; plural=(n != 1);\n" +
 				"msgid\"id\"\n" +
 				"msgstr \"\"quoted\" str\"\n",
-			expectedErr: fmt.Errorf("incorrect format of msgid: incorrect format of po tags"),
+			expectedErr: errors.New("unknown line prefix"),
 		},
 		{
-			name: "When msgstr value is incorrect",
-			input: "msgid \"\"\n" +
-				"msgstr \"\"\n" +
-				"Language: en-US\n" +
-				"Plural-Forms: nplurals=2; plural=(n != 1);\n" +
-				"msgid \"id\"\n" +
-				"msgstr\"str\"\n",
-			expectedErr: fmt.Errorf("incorrect format of msgstr: incorrect format of po tags"),
+			name:        "message id, missing whitespace separator",
+			input:       `msgid"quoted"`,
+			expectedErr: errors.New("value must be prefixed with space"),
+		},
+		{
+			name:        "message id, missing closing quotes",
+			input:       `msgid "\"quoted\" id`,
+			expectedErr: errors.New("value must be enclosed in double quotation mark - \"\" "),
+		},
+		{
+			name: "message, multiline missing closing double quotation mark",
+			input: `msgstr "hello "   
+			"world`,
+			expectedErr: errors.New("line must end with double quotation mark - \" "),
+		},
+		{
+			name:        "plural message, invalid index format",
+			input:       `msgstr[-1]`,
+			expectedErr: errors.New("invalid syntax"),
+		},
+		{
+			name:        "msgctxt comment, missing whitespace separator",
+			input:       `#| msgctxtcontext`,
+			expectedErr: errors.New("value must be prefixed with space"),
+		},
+		{
+			name:        "translator comment, missing whitespace separator",
+			input:       `#comment`,
+			expectedErr: errors.New("value must be prefixed with space"),
 		},
 	}
 
@@ -250,7 +322,7 @@ displayed in the filter.`),
 			result, err := lex(r)
 
 			if tt.expectedErr != nil {
-				require.Errorf(t, err, tt.expectedErr.Error())
+				require.ErrorContains(t, err, tt.expectedErr.Error())
 				return
 			}
 
