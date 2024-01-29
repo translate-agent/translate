@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mysql:8.0.35
+    image: mysql:8.0.36
     container_name: mysql
     hostname: mysql
     networks:
@@ -38,7 +38,7 @@ services:
     restart: always
 
   envoy:
-    image: envoyproxy/envoy:v1.28-latest
+    image: envoyproxy/envoy:v1.29.0-latest
     ports:
       - "8080:8080"
     volumes:

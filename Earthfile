@@ -5,7 +5,7 @@ ARG --global USERARCH # Arch of the user running the build
 
 ARG --global go_version=1.21.6
 ARG --global golangci_lint_version=1.55.2
-ARG --global bufbuild_version=1.28.1
+ARG --global bufbuild_version=1.29.0
 ARG --global migrate_version=4.17.0
 ARG --global sqlfluff_version=2.3.5
 

@@ -271,7 +271,7 @@ func patternToString(pattern []ast.Pattern) string {
 		switch v := pattern[i].(type) {
 		case ast.TextPattern:
 			text += string(v)
-		case ast.PlaceholderPattern:
+		case ast.Pattern:
 			text += fmt.Sprintf("{$%d}", i)
 		}
 	}
