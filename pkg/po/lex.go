@@ -42,6 +42,8 @@ const (
 	msgidPrevUntStrPrefix             = "#| msgid"
 )
 
+var pluralMsgStrRegex = regexp.MustCompile(`^msgstr\[(?:\d+|\*)\]`)
+
 type TokenType int
 
 const (
@@ -173,7 +175,7 @@ func parseLine(line string, tokens []Token) (token *Token, err error) { //nolint
 		tokenType, linePrefix = TokenTypeMsgID, msgIDPrefix
 	case strings.HasPrefix(line, pluralMsgStrPrefix):
 		if tokenType, linePrefix = TokenTypePluralMsgStr,
-			regexp.MustCompile(`^msgstr\[\d+\]|\[\*\]`).FindString(line); linePrefix == "" {
+			pluralMsgStrRegex.FindString(line); linePrefix == "" {
 			return nil, fmt.Errorf("invalid syntax for token type '%d'", tokenType)
 		}
 	case strings.HasPrefix(line, msgStrPrefix):
