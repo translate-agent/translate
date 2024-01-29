@@ -256,8 +256,8 @@ displayed in the filter.`),
 			expected: []Token{mkToken(TokenTypeTranslatorComment, "")},
 		},
 		{
-			name:     "msgctxt comment",
-			input:    `#| msgctxt "context"`,
+			name:     "msgctxt comment, empty space line prefix",
+			input:    ` #| msgctxt "context"`,
 			expected: []Token{mkToken(TokenTypeMsgctxtPreviousContext, "context")},
 		},
 		{

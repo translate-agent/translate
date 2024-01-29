@@ -10,6 +10,38 @@ import (
 	"strings"
 )
 
+// Line prefix constants.
+const (
+	// Header line prefixes.
+	headerLanguagePrefix                = "\"Language:"
+	headerPluralFormsPrefix             = "\"Plural-Forms:"
+	headerTranslatorPrefix              = "\"Translator:"
+	headerProjectIDVersionPrefix        = "\"Project-Id-Version:"
+	headerPOTCreationDatePrefix         = "\"POT-Creation-Date:"
+	headerPORevisionDatePrefix          = "\"PO-Revision-Date:"
+	headerLastTranslatorPrefix          = "\"Last-Translator:"
+	headerLanguageTeamPrefix            = "\"Language-Team:"
+	headerMIMEVersionPrefix             = "\"MIME-Version:"
+	headerContentTypePrefix             = "\"Content-Type:"
+	headerContentTransferEncodingPrefix = "\"Content-Transfer-Encoding:"
+	headerReportMsgidBugsToPrefix       = "\"Report-Msgid-Bugs-To:"
+	headerXGeneratorPrefix              = "\"X-Generator:"
+	headerGeneratedByPrefix             = "\"Generated-By:"
+	// Message line prefixes.
+	msgCtxtPrefix                     = "msgctxt"
+	msgIDPrefix                       = "msgid"
+	msgStrPrefix                      = "msgstr"
+	pluralMsgIDPrefix                 = "msgid_plural"
+	pluralMsgStrPrefix                = "msgstr["
+	translatorCommentPrefix           = "#"
+	extractedCommentPrefix            = "#."
+	referenceCommentPrefix            = "#:"
+	flagPrefix                        = "#,"
+	msgctxtPreviousCtxPrefix          = "#| msgctxt"
+	msgidPluralPrevUntStrPluralPrefix = "#| msgid_plural"
+	msgidPrevUntStrPrefix             = "#| msgid"
+)
+
 type TokenType int
 
 const (
@@ -96,9 +128,7 @@ func lex(r io.Reader) ([]Token, error) {
 
 // parseLine function processes the line based on different prefixes
 // and returns a pointer to a Token object and an error.
-//
-//nolint:gocyclo, cyclop, gosec
-func parseLine(line string, tokens []Token) (token *Token, err error) {
+func parseLine(line string, tokens []Token) (token *Token, err error) { //nolint:cyclop
 	var (
 		tokenType  TokenType
 		linePrefix string
@@ -107,64 +137,61 @@ func parseLine(line string, tokens []Token) (token *Token, err error) {
 	switch {
 	default:
 		return nil, errors.New("unknown line prefix")
-	case strings.HasPrefix(line, "\"Language:"):
-		tokenType, linePrefix = TokenTypeHeaderLanguage, "\"Language:"
-	case strings.HasPrefix(line, "\"Plural-Forms:"):
-		tokenType, linePrefix = TokenTypeHeaderPluralForms, "\"Plural-Forms:"
-	case strings.HasPrefix(line, "\"Translator:"):
-		tokenType, linePrefix = TokenTypeHeaderTranslator, "\"Translator:"
-	case strings.HasPrefix(line, "\"Project-Id-Version:"):
-		tokenType, linePrefix = TokenTypeHeaderProjectIDVersion, "\"Project-Id-Version:"
-	case strings.HasPrefix(line, "\"POT-Creation-Date:"):
-		tokenType, linePrefix = TokenTypeHeaderPOTCreationDate, "\"POT-Creation-Date:"
-	case strings.HasPrefix(line, "\"PO-Revision-Date:"):
-		tokenType, linePrefix = TokenTypeHeaderPORevisionDate, "\"PO-Revision-Date:"
-	case strings.HasPrefix(line, "\"Last-Translator:"):
-		tokenType, linePrefix = TokenTypeHeaderLastTranslator, "\"Last-Translator:"
-	case strings.HasPrefix(line, "\"Language-Team:"):
-		tokenType, linePrefix = TokenTypeHeaderLanguageTeam, "\"Language-Team:"
-	case strings.HasPrefix(line, "\"MIME-Version:"):
-		tokenType, linePrefix = TokenTypeHeaderMIMEVersion, "\"MIME-Version:"
-	case strings.HasPrefix(line, "\"Content-Type:"):
-		tokenType, linePrefix = TokenTypeHeaderContentType, "\"Content-Type:"
-	case strings.HasPrefix(line, "\"Content-Transfer-Encoding:"):
-		tokenType, linePrefix = TokenTypeHeaderContentTransferEncoding, "\"Content-Transfer-Encoding:"
-	case strings.HasPrefix(line, "\"Report-Msgid-Bugs-To:"):
-		tokenType, linePrefix = TokenTypeHeaderReportMsgidBugsTo, "\"Report-Msgid-Bugs-To:"
-	case strings.HasPrefix(line, "\"X-Generator:"):
-		tokenType, linePrefix = TokenTypeHeaderXGenerator, "\"X-Generator:"
-	case strings.HasPrefix(line, "\"Generated-By:"):
-		tokenType, linePrefix = TokenTypeHeaderGeneratedBy, "\"Generated-By:"
-	case strings.HasPrefix(line, "msgctxt"):
-		tokenType, linePrefix = TokenTypeMsgCtxt, "msgctxt"
-	case strings.HasPrefix(line, "msgid_plural"):
-		tokenType, linePrefix = TokenTypePluralMsgID, "msgid_plural"
-	case strings.HasPrefix(line, "msgid"):
-		tokenType, linePrefix = TokenTypeMsgID, "msgid"
-	case strings.HasPrefix(line, "msgstr["):
-		prefix := regexp.MustCompile(`^msgstr\[\d+\]|\[\*\]`).FindString(line)
-
-		if prefix == "" {
+	case strings.HasPrefix(line, headerLanguagePrefix):
+		tokenType, linePrefix = TokenTypeHeaderLanguage, headerLanguagePrefix
+	case strings.HasPrefix(line, headerPluralFormsPrefix):
+		tokenType, linePrefix = TokenTypeHeaderPluralForms, headerPluralFormsPrefix
+	case strings.HasPrefix(line, headerTranslatorPrefix):
+		tokenType, linePrefix = TokenTypeHeaderTranslator, headerTranslatorPrefix
+	case strings.HasPrefix(line, headerProjectIDVersionPrefix):
+		tokenType, linePrefix = TokenTypeHeaderProjectIDVersion, headerProjectIDVersionPrefix
+	case strings.HasPrefix(line, headerPOTCreationDatePrefix):
+		tokenType, linePrefix = TokenTypeHeaderPOTCreationDate, headerPOTCreationDatePrefix
+	case strings.HasPrefix(line, headerPORevisionDatePrefix):
+		tokenType, linePrefix = TokenTypeHeaderPORevisionDate, headerPORevisionDatePrefix
+	case strings.HasPrefix(line, headerLastTranslatorPrefix):
+		tokenType, linePrefix = TokenTypeHeaderLastTranslator, headerLastTranslatorPrefix
+	case strings.HasPrefix(line, headerLanguageTeamPrefix):
+		tokenType, linePrefix = TokenTypeHeaderLanguageTeam, headerLanguageTeamPrefix
+	case strings.HasPrefix(line, headerMIMEVersionPrefix):
+		tokenType, linePrefix = TokenTypeHeaderMIMEVersion, headerMIMEVersionPrefix
+	case strings.HasPrefix(line, headerContentTypePrefix):
+		tokenType, linePrefix = TokenTypeHeaderContentType, headerContentTypePrefix
+	case strings.HasPrefix(line, headerContentTransferEncodingPrefix):
+		tokenType, linePrefix = TokenTypeHeaderContentTransferEncoding, headerContentTransferEncodingPrefix
+	case strings.HasPrefix(line, headerReportMsgidBugsToPrefix):
+		tokenType, linePrefix = TokenTypeHeaderReportMsgidBugsTo, headerReportMsgidBugsToPrefix
+	case strings.HasPrefix(line, headerXGeneratorPrefix):
+		tokenType, linePrefix = TokenTypeHeaderXGenerator, headerXGeneratorPrefix
+	case strings.HasPrefix(line, headerGeneratedByPrefix):
+		tokenType, linePrefix = TokenTypeHeaderGeneratedBy, headerGeneratedByPrefix
+	case strings.HasPrefix(line, msgCtxtPrefix):
+		tokenType, linePrefix = TokenTypeMsgCtxt, msgCtxtPrefix
+	case strings.HasPrefix(line, pluralMsgIDPrefix):
+		tokenType, linePrefix = TokenTypePluralMsgID, pluralMsgIDPrefix
+	case strings.HasPrefix(line, msgIDPrefix):
+		tokenType, linePrefix = TokenTypeMsgID, msgIDPrefix
+	case strings.HasPrefix(line, pluralMsgStrPrefix):
+		if tokenType, linePrefix = TokenTypePluralMsgStr,
+			regexp.MustCompile(`^msgstr\[\d+\]|\[\*\]`).FindString(line); linePrefix == "" {
 			return nil, fmt.Errorf("invalid syntax for token type '%d'", tokenType)
 		}
-
-		tokenType, linePrefix = TokenTypePluralMsgStr, prefix
-	case strings.HasPrefix(line, "msgstr"):
-		tokenType, linePrefix = TokenTypeMsgStr, "msgstr"
-	case strings.HasPrefix(line, "#."):
-		tokenType, linePrefix = TokenTypeExtractedComment, "#."
-	case strings.HasPrefix(line, "#:"):
-		tokenType, linePrefix = TokenTypeReference, "#:"
-	case strings.HasPrefix(line, "#| msgid_plural"):
-		tokenType, linePrefix = TokenTypeMsgidPluralPrevUntStrPlural, "#| msgid_plural"
-	case strings.HasPrefix(line, "#| msgid"):
-		tokenType, linePrefix = TokenTypeMsgidPrevUntStr, "#| msgid"
-	case strings.HasPrefix(line, "#| msgctxt"):
-		tokenType, linePrefix = TokenTypeMsgctxtPreviousContext, "#| msgctxt"
-	case strings.HasPrefix(line, "#,"):
-		tokenType, linePrefix = TokenTypeFlag, "#,"
-	case strings.HasPrefix(line, "#"):
-		tokenType, linePrefix = TokenTypeTranslatorComment, "#"
+	case strings.HasPrefix(line, msgStrPrefix):
+		tokenType, linePrefix = TokenTypeMsgStr, msgStrPrefix
+	case strings.HasPrefix(line, extractedCommentPrefix):
+		tokenType, linePrefix = TokenTypeExtractedComment, extractedCommentPrefix
+	case strings.HasPrefix(line, referenceCommentPrefix):
+		tokenType, linePrefix = TokenTypeReference, referenceCommentPrefix
+	case strings.HasPrefix(line, msgidPluralPrevUntStrPluralPrefix):
+		tokenType, linePrefix = TokenTypeMsgidPluralPrevUntStrPlural, msgidPluralPrevUntStrPluralPrefix
+	case strings.HasPrefix(line, msgidPrevUntStrPrefix):
+		tokenType, linePrefix = TokenTypeMsgidPrevUntStr, msgidPrevUntStrPrefix
+	case strings.HasPrefix(line, msgctxtPreviousCtxPrefix):
+		tokenType, linePrefix = TokenTypeMsgctxtPreviousContext, msgctxtPreviousCtxPrefix
+	case strings.HasPrefix(line, flagPrefix):
+		tokenType, linePrefix = TokenTypeFlag, flagPrefix
+	case strings.HasPrefix(line, translatorCommentPrefix):
+		tokenType, linePrefix = TokenTypeTranslatorComment, translatorCommentPrefix
 	// Special case for multiline strings, i.e. msgid, msgstr, msgid_plural, msgstr[*] and headers
 	case strings.HasPrefix(line, `"`):
 		if err = parseMultilineValue(line, tokens); err != nil {
