@@ -43,30 +43,19 @@ func FromNgLocalize(data []byte, original *bool) (model.Translation, error) {
 	}
 
 	for k, v := range ng.Translations {
-		val, err := toMF2(v)
+		msg, err := mf2.NewBuilder().Text(v).Build()
 		if err != nil {
 			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
 		}
 
 		translation.Messages = append(translation.Messages, model.Message{
 			ID:      k,
-			Message: val,
+			Message: msg,
 			Status:  status,
 		})
 	}
 
 	return translation, nil
-}
-
-func toMF2(msg string) (string, error) {
-	b := mf2.NewBuilder().Text(msg)
-
-	s, err := b.Build()
-	if err != nil {
-		return "", fmt.Errorf("build MF2: %w", err)
-	}
-
-	return s, nil
 }
 
 // ToNgLocalize converts a model.Translation struct into a byte slice in @angular/localize JSON format.
