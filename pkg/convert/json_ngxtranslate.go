@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"go.expect.digital/mf2"
+
 	"go.expect.digital/translate/pkg/model"
 )
 
@@ -36,9 +38,14 @@ func FromNgxTranslate(b []byte, original *bool) (translation model.Translation, 
 		default:
 			return fmt.Errorf("unsupported value type %T for key %s", value, key)
 		case string:
+			msg, err := mf2.NewBuilder().Text(v).Build() //nolint:govet
+			if err != nil {
+				return fmt.Errorf("convert string to MF2: %w", err)
+			}
+
 			translation.Messages = append(translation.Messages, model.Message{
 				ID:      key,
-				Message: v, // TODO: convert v to MF2 format.
+				Message: msg,
 				Status:  status,
 			})
 		case map[string]interface{}:

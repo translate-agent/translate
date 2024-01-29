@@ -13,8 +13,6 @@ import (
 func Test_FromNgxTranslate(t *testing.T) {
 	t.Parallel()
 
-	t.Skip() // TODO
-
 	tests := []struct {
 		name        string
 		input       []byte
@@ -30,7 +28,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: `{example}`,
+						Message: `example`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -44,7 +42,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
+						Message: `Order #\{Id\} has been canceled for \{ClientName\} | \\`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -58,7 +56,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
-						Message: `{message1}`,
+						Message: `message1`,
 						Status:  model.MessageStatusUntranslated,
 					},
 				},
@@ -86,12 +84,12 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message.example",
-						Message: `{message1}`,
+						Message: `message1`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "msg.example",
-						Message: `{message2}`,
+						Message: `message2`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},

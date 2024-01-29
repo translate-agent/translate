@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"go.expect.digital/mf2"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -42,9 +43,14 @@ func FromNgLocalize(data []byte, original *bool) (model.Translation, error) {
 	}
 
 	for k, v := range ng.Translations {
+		msg, err := mf2.NewBuilder().Text(v).Build()
+		if err != nil {
+			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
+		}
+
 		translation.Messages = append(translation.Messages, model.Message{
 			ID:      k,
-			Message: v, // TODO: convert v to MF2 format.
+			Message: msg,
 			Status:  status,
 		})
 	}
