@@ -245,9 +245,8 @@ func ToPo(t model.Translation) ([]byte, error) {
 			switch p := p.(type) {
 			case ast.TextPattern:
 				text += string(p)
-			case ast.PlaceholderPattern:
-				//nolint:forcetypeassert // No other types are possible.
-				text += placeholders[p.Expression.(ast.VariableExpression).Variable]
+			case ast.VariableExpression: // No other types are possible for now
+				text += placeholders[p.Variable]
 			}
 		}
 
