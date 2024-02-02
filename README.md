@@ -24,6 +24,7 @@ export TRANSLATE_OTHER_AWS_REGION= # AWS region e.g. eu-west-2
 # Optional
 
 # Persist data (on Host) when deleting container.
+# Named volume or bind mount.
 export TRANSLATE_DB_HOST_BADGERDB_PATH=translate_badgerDB
 
 # Provide custom envoy.yaml
