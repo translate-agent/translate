@@ -26,6 +26,8 @@ init:
     echo "TRANSLATE_SERVICE_PORT=8080" >> .env.test && \
     echo "TRANSLATE_SERVICE_HOST=0.0.0.0" >> .env.test && \
     echo "TRANSLATE_SERVICE_DB=badgerdb" >> .env.test && \
+    echo "" >> .env.test && \
+    echo "# Translator" >> .env.test && \
     echo "TRANSLATE_SERVICE_TRANSLATOR=GoogleTranslate" >> .env.test && \
     echo "" >> .env.test && \
     echo "# MySQL" >> .env.test && \
