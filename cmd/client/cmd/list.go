@@ -17,7 +17,7 @@ func newLsCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			timeout, err := cmd.InheritedFlags().GetDuration("timeout")
 			if err != nil {
-				return fmt.Errorf("download file: get cli parameter 'timeout': %w", err)
+				return fmt.Errorf("list services: get cli parameter 'timeout': %w", err)
 			}
 
 			ctx, cancelFunc := context.WithTimeout(cmd.Context(), timeout)

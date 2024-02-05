@@ -65,7 +65,7 @@ func newUploadCmd() *cobra.Command {
 			var data []byte
 
 			if strings.HasPrefix(filePath, "http://") || strings.HasPrefix(filePath, "https://") {
-				if data, err = readFileFromURL(cmd.Context(), filePath); err != nil {
+				if data, err = readFileFromURL(ctx, filePath); err != nil {
 					return fmt.Errorf("upload file: read file from URL: %w", err)
 				}
 			} else {
