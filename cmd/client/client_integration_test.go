@@ -33,14 +33,18 @@ import (
 const host = "localhost"
 
 var (
-	addr   string
+	port = mustGetFreePort()
+	addr = fmt.Sprintf("%s:%s", host, port)
+
+	// client is a gRPC client for the translate service, used in tests to create resources, before testing the CLI.
 	client translatev1.TranslateServiceClient
 )
 
 func TestMain(m *testing.M) {
-	port := mustGetFreePort()
-	addr = fmt.Sprintf("%s:%s", host, port)
+	os.Exit(testMain(m))
+}
 
+func testMain(m *testing.M) int {
 	viper.Set("service.port", port)
 	viper.Set("service.host", host)
 
@@ -53,12 +57,35 @@ func TestMain(m *testing.M) {
 		translatesrv.Serve()
 	}()
 
+	clientCloser := setUpClient()
+	defer func() {
+		if err := clientCloser(); err != nil {
+			log.Fatalf("close client connection: %v", err)
+		}
+	}()
+
+	// Run the tests.
+	code := m.Run()
+	// Send soft kill (termination) signal to process.
+	err := syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+	if err != nil {
+		log.Panicf("send termination signal: %v", err)
+	}
+
+	// Wait for main() to finish cleanup.
+	wg.Wait()
+
+	return code
+}
+
+// setUpClient creates a gRPC client connection to the translate service and assigns it to the client variable.
+func setUpClient() func() error {
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithBlock(),
 	}
-	// Wait for the server to start and establish a connection.
+
 	clientConn, err := grpc.DialContext(context.Background(), host+":"+port, grpcOpts...)
 	if err != nil {
 		log.Panicf("create connection to gRPC server: %v", err)
@@ -66,22 +93,7 @@ func TestMain(m *testing.M) {
 
 	client = translatev1.NewTranslateServiceClient(clientConn)
 
-	// Run the tests.
-	code := m.Run()
-	// Send soft kill (termination) signal to process.
-	err = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
-	if err != nil {
-		log.Panicf("send termination signal: %v", err)
-	}
-	// Wait for main() to finish cleanup.
-	wg.Wait()
-
-	// Close the connection and tracer.
-	if err := clientConn.Close(); err != nil {
-		log.Panicf("close gRPC client connection: %v", err)
-	}
-
-	os.Exit(code)
+	return clientConn.Close
 }
 
 func mustGetFreePort() string {
