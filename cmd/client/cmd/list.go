@@ -17,18 +17,13 @@ func newLsCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			timeout, err := cmd.InheritedFlags().GetDuration("timeout")
 			if err != nil {
-				return fmt.Errorf("list services: get cli parameter 'timeout': %w", err)
+				return fmt.Errorf("download file: get cli parameter 'timeout': %w", err)
 			}
 
 			ctx, cancelFunc := context.WithTimeout(cmd.Context(), timeout)
 			defer cancelFunc()
 
-			client, err := newClientConn(ctx, cmd)
-			if err != nil {
-				return fmt.Errorf("list services: new GRPC client connection: %w", err)
-			}
-
-			resp, err := translatev1.NewTranslateServiceClient(client).ListServices(ctx, &translatev1.ListServicesRequest{})
+			resp, err := translatev1.NewTranslateServiceClient(conn).ListServices(ctx, &translatev1.ListServicesRequest{})
 			if err != nil {
 				return fmt.Errorf("list services: send GRPC request: %w", err)
 			}

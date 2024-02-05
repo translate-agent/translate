@@ -38,7 +38,6 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	ctx := context.Background()
 	port := mustGetFreePort()
 	addr = fmt.Sprintf("%s:%s", host, port)
 
@@ -60,12 +59,12 @@ func TestMain(m *testing.M) {
 		grpc.WithBlock(),
 	}
 	// Wait for the server to start and establish a connection.
-	conn, err := grpc.DialContext(ctx, host+":"+port, grpcOpts...)
+	clientConn, err := grpc.DialContext(context.Background(), host+":"+port, grpcOpts...)
 	if err != nil {
 		log.Panicf("create connection to gRPC server: %v", err)
 	}
 
-	client = translatev1.NewTranslateServiceClient(conn)
+	client = translatev1.NewTranslateServiceClient(clientConn)
 
 	// Run the tests.
 	code := m.Run()
@@ -78,7 +77,7 @@ func TestMain(m *testing.M) {
 	wg.Wait()
 
 	// Close the connection and tracer.
-	if err := conn.Close(); err != nil {
+	if err := clientConn.Close(); err != nil {
 		log.Panicf("close gRPC client connection: %v", err)
 	}
 

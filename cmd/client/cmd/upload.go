@@ -31,11 +31,6 @@ func newUploadCmd() *cobra.Command {
 			ctx, cancelFunc := context.WithTimeout(cmd.Context(), timeout)
 			defer cancelFunc()
 
-			client, err := newClientConn(ctx, cmd)
-			if err != nil {
-				return fmt.Errorf("upload file: new GRPC client connection: %w", err)
-			}
-
 			serviceID, err := cmd.Flags().GetString("service")
 			if err != nil {
 				return fmt.Errorf("upload file: get cli parameter 'service': %w", err)
@@ -70,7 +65,7 @@ func newUploadCmd() *cobra.Command {
 			var data []byte
 
 			if strings.HasPrefix(filePath, "http://") || strings.HasPrefix(filePath, "https://") {
-				if data, err = readFileFromURL(ctx, filePath); err != nil {
+				if data, err = readFileFromURL(cmd.Context(), filePath); err != nil {
 					return fmt.Errorf("upload file: read file from URL: %w", err)
 				}
 			} else {
@@ -84,7 +79,7 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: schema to translate schema: %w", err)
 			}
 
-			if _, err = translatev1.NewTranslateServiceClient(client).UploadTranslationFile(ctx,
+			if _, err = translatev1.NewTranslateServiceClient(conn).UploadTranslationFile(ctx,
 				&translatev1.UploadTranslationFileRequest{
 					Language:             language,
 					Data:                 data,

@@ -13,22 +13,49 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+var conn *grpc.ClientConn
+
 func newRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:              "translate",
-		TraverseChildren: true,
-		Short:            "Translate provides tools for interacting with translate agent service",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := cmd.Help(); err != nil {
-				return fmt.Errorf("display help: %w", err)
-			}
-			return nil
-		},
+		Use:               "translate",
+		TraverseChildren:  true,
+		Short:             "Translate provides tools for interacting with translate agent service",
+		PersistentPreRunE: rootCmdPersistentPreRunE,
+		RunE:              func(cmd *cobra.Command, _ []string) error { return cmd.Help() }, //nolint:wrapcheck
+		// TODO: Add graceful connection close, in PersistentPostRunE
 	}
 
 	rootCmd.AddCommand(newServiceCmd())
 
 	return rootCmd
+}
+
+func rootCmdPersistentPreRunE(cmd *cobra.Command, _ []string) error {
+	opts := []grpc.DialOption{
+		grpc.WithBlock(),
+	}
+
+	address, err := cmd.InheritedFlags().GetString("address")
+	if err != nil {
+		return fmt.Errorf("get cli parameter 'address': %w", err)
+	}
+
+	connIsInsecure, err := cmd.InheritedFlags().GetBool("insecure")
+	if err != nil {
+		return fmt.Errorf("get cli parameter 'insecure': %w", err)
+	}
+
+	if connIsInsecure {
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
+
+	// Wait for the server to start and establish a connection.
+	conn, err = grpc.DialContext(cmd.Context(), address, opts...)
+	if err != nil {
+		return fmt.Errorf("dial context: %w", err)
+	}
+
+	return nil
 }
 
 func Execute(ctx context.Context) error {
@@ -59,29 +86,6 @@ func ExecuteWithParams(ctx context.Context, params []string) ([]byte, error) {
 }
 
 // helpers
-
-func newClientConn(ctx context.Context, cmd *cobra.Command) (*grpc.ClientConn, error) {
-	opts := []grpc.DialOption{
-		grpc.WithBlock(),
-	}
-
-	address, err := cmd.InheritedFlags().GetString("address")
-	if err != nil {
-		return nil, fmt.Errorf("get cli parameter 'address': %w", err)
-	}
-
-	connIsInsecure, err := cmd.InheritedFlags().GetBool("insecure")
-	if err != nil {
-		return nil, fmt.Errorf("get cli parameter 'insecure': %w", err)
-	}
-
-	if connIsInsecure {
-		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	}
-
-	// Wait for the server to start and establish a connection.
-	return grpc.DialContext(ctx, address, opts...) //nolint:wrapcheck
-}
 
 type schema string
 
