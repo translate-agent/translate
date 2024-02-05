@@ -72,7 +72,7 @@ func testMain(m *testing.M) int {
 		log.Panicf("send termination signal: %v", err)
 	}
 
-	// Wait for main() to finish cleanup.
+	// Wait for grpc server to stop.
 	wg.Wait()
 
 	return code
@@ -86,14 +86,14 @@ func setUpClient() func() error {
 		grpc.WithBlock(),
 	}
 
-	clientConn, err := grpc.DialContext(context.Background(), host+":"+port, grpcOpts...)
+	conn, err := grpc.DialContext(context.Background(), host+":"+port, grpcOpts...)
 	if err != nil {
 		log.Panicf("create connection to gRPC server: %v", err)
 	}
 
-	client = translatev1.NewTranslateServiceClient(clientConn)
+	client = translatev1.NewTranslateServiceClient(conn)
 
-	return clientConn.Close
+	return conn.Close
 }
 
 func mustGetFreePort() string {
