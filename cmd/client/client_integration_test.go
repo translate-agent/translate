@@ -1,6 +1,5 @@
 //go:build integration
 
-//nolint:paralleltest
 package main
 
 import (
@@ -104,7 +103,10 @@ func mustGetFreePort() string {
 }
 
 func Test_ListServices_CLI(t *testing.T) {
+	t.Parallel()
+
 	t.Run("OK", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -118,6 +120,7 @@ func Test_ListServices_CLI(t *testing.T) {
 	})
 
 	t.Run("error, no transport security set", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -131,7 +134,10 @@ func Test_ListServices_CLI(t *testing.T) {
 }
 
 func Test_TranslationFileUpload_CLI(t *testing.T) {
+	t.Parallel()
+
 	t.Run("OK, file from local path", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -161,6 +167,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("OK, with local file and original flag", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -191,6 +198,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("OK, with local file, original=true populate=false", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -222,6 +230,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("OK, file from URL", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -272,6 +281,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 	// Translation has language tag, but CLI parameter 'language' is not set.
 	t.Run("OK, local without lang parameter", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -301,6 +311,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, malformed language", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
@@ -334,6 +345,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' unrecognized", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -353,6 +365,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' unspecified", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -372,6 +385,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -390,6 +404,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 	// Translation does not have language tag, and CLI parameter 'language' is not set.
 	t.Run("error, language could not be determined", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -419,6 +434,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'path' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -436,6 +452,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'service' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -454,7 +471,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 }
 
 func Test_TranslationFileDownload_CLI(t *testing.T) {
+	t.Parallel()
+
 	t.Run("OK", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -503,6 +523,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -520,6 +541,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -537,6 +559,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'service' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -554,6 +577,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'path' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{

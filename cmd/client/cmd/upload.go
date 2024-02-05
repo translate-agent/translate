@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -124,10 +123,6 @@ func newUploadCmd() *cobra.Command {
 
 	if err := uploadCmd.MarkFlagRequired("schema"); err != nil {
 		log.Panicf("upload file cmd: set field 'schema' as required: %v", err)
-	}
-
-	if err := viper.BindPFlags(uploadFlags); err != nil {
-		log.Panicf("upload file cmd: bind flags: %v", err)
 	}
 
 	return uploadCmd
