@@ -14,8 +14,6 @@ import (
 func Test_FromArb(t *testing.T) {
 	t.Parallel()
 
-	t.Skip() // TODO
-
 	tests := []struct {
 		expectedErr error
 		name        string
@@ -47,18 +45,18 @@ func Test_FromArb(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "title",
-						Message:     "{Hello World!}",
+						Message:     "Hello World!",
 						Description: `Message to greet the World`,
 						Status:      model.MessageStatusTranslated,
 					},
 					{
 						ID:      "greeting",
-						Message: `{Welcome \{user\} \| \\ !}`,
+						Message: `Welcome \{user\} | \\ !`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{
 						ID:      "farewell",
-						Message: `{Goodbye friend}`,
+						Message: `Goodbye friend`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},

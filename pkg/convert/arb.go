@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"go.expect.digital/mf2"
+
 	"github.com/mitchellh/mapstructure"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
@@ -119,9 +121,13 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 			return model.Translation{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
 		}
 
-		msg.Message = "" // TODO: convert to MF2 format.
+		message, err := mf2.NewBuilder().Text(msg.Message).Build()
+		if err != nil {
+			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
+		}
 
-		var err error
+		msg.Message = message
+
 		if msg.Description, err = findDescription(key); err != nil {
 			return model.Translation{}, fmt.Errorf("find description of '%s': %w", key, err)
 		}
