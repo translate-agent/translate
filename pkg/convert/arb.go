@@ -121,12 +121,10 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 			return model.Translation{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
 		}
 
-		message, err := mf2.NewBuilder().Text(msg.Message).Build()
+		msg.Message, err = mf2.NewBuilder().Text(msg.Message).Build()
 		if err != nil {
 			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
 		}
-
-		msg.Message = message
 
 		if msg.Description, err = findDescription(key); err != nil {
 			return model.Translation{}, fmt.Errorf("find description of '%s': %w", key, err)
