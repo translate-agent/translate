@@ -200,7 +200,7 @@ func textToBatches(text []string) [][]string {
 // getTexts extracts translatable text from the translation.Messages slice.
 // To prevent the translation of placeholders, they are replaced with simplified
 // numbered placeholders '{$d}', where the placeholder number represents the
-// index of the ast.PlaceholderPattern element in the message AST.
+// index of the ast.Pattern element in the message AST.
 // The function returns a slice of strings representing the extracted translatable texts and error.
 //
 // Example:
@@ -249,16 +249,16 @@ func getTexts(translation *model.Translation) ([]string, error) {
 }
 
 // patternToString iterates over an ast.Pattern slice, appending ast.TextPatterns to a string.
-// When an ast.PlaceholderPattern is encountered, a simplified placeholder version '{$d}' is appended.
+// When an non Text ast.Pattern is encountered, a simplified placeholder version '{$d}' is appended.
 // The function returns a string representing the concatenated patterns.
 // Example:
 // Input:
 //
-//	[]ast.Patterns{
+//	[]Pattern{
 //		TextPattern("Hello"),
-//		PlaceholderPattern{ Expression: LiteralExpression{Literal: QuotedLiteral("name")}},
+//		Expression{Operand: QuotedLiteral("name")},
 //		TextPattern(" "),
-//		PlaceholderPattern{ Expression: LiteralExpression{Literal: QuotedLiteral("lastName")}},
+//		Expression{Operand: QuotedLiteral("lastName")},
 //		TextPattern("!"),
 //	}
 //
@@ -385,7 +385,7 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 
 // buildTranslatedPattern constructs a slice of ast.Pattern from a given text and placeholders
 // extracted from a translated text. Placeholders are replaced with corresponding
-// ast.PlaceholderPatterns retrieved from the message AST. The function returns a slice of ast.Pattern and error.
+// ast.Pattern retrieved from the message AST. The function returns a slice of ast.Pattern and error.
 func buildTranslatedPattern(translatedText string, previousPattern []ast.Pattern) ([]ast.Pattern, error) {
 	re := regexp.MustCompile(`\{\$(0|[1-9]\d*)\}`)
 
