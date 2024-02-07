@@ -142,18 +142,6 @@ func ToArb(translation model.Translation) ([]byte, error) {
 	// dst length = number of messages + number of potential descriptions (same as number of messages) + locale.
 	dst := make(map[string]interface{}, len(translation.Messages)*2+1)
 
-	patternsToMsg := func(patterns []ast.Pattern) string {
-		var text string
-
-		for _, p := range patterns {
-			if textPattern, ok := p.(ast.TextPattern); ok {
-				text += string(textPattern)
-			}
-		}
-
-		return text
-	}
-
 	// "und" (Undetermined) language.Tag is also valid BCP47 tag.
 	dst["@@locale"] = translation.Language
 
@@ -163,11 +151,14 @@ func ToArb(translation model.Translation) ([]byte, error) {
 			return nil, fmt.Errorf("parse mf2 message: %w", err)
 		}
 
-		if simpleMessage, ok := tree.Message.(ast.SimpleMessage); ok {
-			msg.Message = patternsToMsg(simpleMessage.Patterns)
+		switch mf2Msg := tree.Message.(type) {
+		case nil:
+			dst[msg.ID] = ""
+		case ast.SimpleMessage:
+			dst[msg.ID] = PatternsToMsg(mf2Msg.Patterns)
+		case ast.ComplexMessage:
+			return nil, fmt.Errorf("complex message not supported")
 		}
-
-		dst[msg.ID] = msg.Message
 
 		if len(msg.Description) > 0 {
 			dst["@"+msg.ID] = map[string]string{"description": msg.Description}
