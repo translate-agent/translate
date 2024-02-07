@@ -5,11 +5,9 @@
 ### Setting up environment
 
 ```bash
-# Path where BadgerDB will store data inside the container. Do not change
-export TRANSLATE_DB_BADGERDB_PATH=/data/badgerdb 
-
 # 3rd party Translator Service
-export TRANSLATE_SERVICE_TRANSLATOR=GoogleTranslate # "" (Noop), GoogleTranslate or AWSTranslate
+# Empty string for no Translator Service
+export TRANSLATE_SERVICE_TRANSLATOR=GoogleTranslate # "", GoogleTranslate or AWSTranslate
 
 # Only when TRANSLATOR == GoogleTranslate
 export TRANSLATE_OTHER_GOOGLE_PROJECT_ID= # Google project id
@@ -38,7 +36,6 @@ export TRANSLATE_ENVOY_CONFIG_PATH= # Path to envoy.yaml
 docker run -d --name translate-all-in-one \
   -p 8080:8080 \
   -p 16686:16686 \
-  -e TRANSLATE_DB_BADGERDB_PATH \
   -e TRANSLATE_SERVICE_TRANSLATOR \
   -e TRANSLATE_OTHER_GOOGLE_PROJECT_ID \
   -e TRANSLATE_OTHER_GOOGLE_LOCATION \
@@ -49,10 +46,10 @@ docker run -d --name translate-all-in-one \
   expectdigital/translate-agent-all-in-one:latest
 
 # Add to arguments if you want to persist data on host
-# -v $TRANSLATE_DB_HOST_BADGERDB_PATH:/data/badgerdb \ 
+# -v $TRANSLATE_DB_HOST_BADGERDB_PATH:/data/badgerdb \
 
 # Add to arguments if you want to use custom envoy.yaml
-# -v $TRANSLATE_ENVOY_CONFIG_PATH:/app/envoy.yaml \ 
+# -v $TRANSLATE_ENVOY_CONFIG_PATH:/app/envoy.yaml \
 ```
 
 ### Updating all in one image
@@ -65,7 +62,6 @@ docker pull expectdigital/translate-agent-all-in-one
 docker run -d --name translate-all-in-one \
   -p 8080:8080 \
   -p 16686:16686 \
-  -e TRANSLATE_DB_BADGERDB_PATH \
   -e TRANSLATE_SERVICE_TRANSLATOR \
   -e TRANSLATE_OTHER_GOOGLE_PROJECT_ID \
   -e TRANSLATE_OTHER_GOOGLE_LOCATION \
