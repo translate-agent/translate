@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	ast "go.expect.digital/mf2/parse"
+
 	"go.expect.digital/mf2"
 
 	"github.com/mitchellh/mapstructure"
@@ -121,8 +123,7 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 			return model.Translation{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
 		}
 
-		msg.Message, err = mf2.NewBuilder().Text(msg.Message).Build()
-		if err != nil {
+		if msg.Message, err = mf2.NewBuilder().Text(msg.Message).Build(); err != nil {
 			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
 		}
 
@@ -145,7 +146,19 @@ func ToArb(translation model.Translation) ([]byte, error) {
 	dst["@@locale"] = translation.Language
 
 	for _, msg := range translation.Messages {
-		dst[msg.ID] = "" // TODO: convert from MF2 format.
+		tree, err := ast.Parse(msg.Message)
+		if err != nil {
+			return nil, fmt.Errorf("parse mf2 message: %w", err)
+		}
+
+		switch mf2Msg := tree.Message.(type) {
+		case nil:
+			dst[msg.ID] = ""
+		case ast.SimpleMessage:
+			dst[msg.ID] = PatternsToMsg(mf2Msg.Patterns)
+		case ast.ComplexMessage:
+			return nil, fmt.Errorf("complex message not supported")
+		}
 
 		if len(msg.Description) > 0 {
 			dst["@"+msg.ID] = map[string]string{"description": msg.Description}
