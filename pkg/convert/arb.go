@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	ast "go.expect.digital/mf2/parse"
+
 	"go.expect.digital/mf2"
 
 	"github.com/mitchellh/mapstructure"
@@ -121,8 +123,7 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 			return model.Translation{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
 		}
 
-		msg.Message, err = mf2.NewBuilder().Text(msg.Message).Build()
-		if err != nil {
+		if msg.Message, err = mf2.NewBuilder().Text(msg.Message).Build(); err != nil {
 			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
 		}
 
@@ -141,11 +142,32 @@ func ToArb(translation model.Translation) ([]byte, error) {
 	// dst length = number of messages + number of potential descriptions (same as number of messages) + locale.
 	dst := make(map[string]interface{}, len(translation.Messages)*2+1)
 
+	patternsToMsg := func(patterns []ast.Pattern) string {
+		var text string
+
+		for _, p := range patterns {
+			if textPattern, ok := p.(ast.TextPattern); ok {
+				text += string(textPattern)
+			}
+		}
+
+		return text
+	}
+
 	// "und" (Undetermined) language.Tag is also valid BCP47 tag.
 	dst["@@locale"] = translation.Language
 
 	for _, msg := range translation.Messages {
-		dst[msg.ID] = "" // TODO: convert from MF2 format.
+		tree, err := ast.Parse(msg.Message)
+		if err != nil {
+			return nil, fmt.Errorf("parse mf2 message: %w", err)
+		}
+
+		if simpleMessage, ok := tree.Message.(ast.SimpleMessage); ok {
+			msg.Message = patternsToMsg(simpleMessage.Patterns)
+		}
+
+		dst[msg.ID] = msg.Message
 
 		if len(msg.Description) > 0 {
 			dst["@"+msg.ID] = map[string]string{"description": msg.Description}
