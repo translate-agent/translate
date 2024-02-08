@@ -70,11 +70,11 @@ func Test_TranslateMock(t *testing.T) {
 
 // ---–––--------------Google Translate------------------–––---
 
-// MockGoogleTranslateClient is a mock implementation of the Google Translate client.
-type MockGoogleTranslateClient struct{}
+// mockGoogleTranslateClient is a mock implementation of the Google Translate client.
+type mockGoogleTranslateClient struct{}
 
 // TranslateText mocks the Translate method of the Google Translate client.
-func (m *MockGoogleTranslateClient) TranslateText(
+func (m *mockGoogleTranslateClient) TranslateText(
 	ctx context.Context,
 	req *translatepb.TranslateTextRequest,
 	opts ...gax.CallOption,
@@ -87,15 +87,15 @@ func (m *MockGoogleTranslateClient) TranslateText(
 	return &translatepb.TranslateTextResponse{Translations: translations}, nil
 }
 
-func (m *MockGoogleTranslateClient) Close() error { return nil }
+func (m *mockGoogleTranslateClient) Close() error { return nil }
 
 // ---–––--------------AWS Translate------------------–––---
 
-// MockAWSTranslateClient is a mock implementation of the AWS Translate client.
-type MockAWSTranslateClient struct{}
+// mockAWSTranslateClient is a mock implementation of the AWS Translate client.
+type mockAWSTranslateClient struct{}
 
 // Translate mocks the TranslateText method of the AWS Translate client.
-func (m *MockAWSTranslateClient) TranslateText(
+func (m *mockAWSTranslateClient) TranslateText(
 	ctx context.Context,
 	params *awst.TranslateTextInput,
 	optFns ...func(*awst.Options),
@@ -116,7 +116,7 @@ func init() {
 
 	at, _ := NewAWSTranslate(
 		context.Background(),
-		WithAWSClient(&MockAWSTranslateClient{}),
+		WithAWSClient(&mockAWSTranslateClient{}),
 	)
 
 	mockTranslators["AWSTranslate"] = at
@@ -124,7 +124,7 @@ func init() {
 	// Google Translate
 	gt, _, _ := NewGoogleTranslate(
 		context.Background(),
-		WithGoogleClient(&MockGoogleTranslateClient{}),
+		WithGoogleClient(&mockGoogleTranslateClient{}),
 	)
 
 	mockTranslators["GoogleTranslate"] = gt
