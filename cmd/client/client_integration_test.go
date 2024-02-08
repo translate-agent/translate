@@ -157,7 +157,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		file, err := os.CreateTemp(t.TempDir(), "test")
 		require.NoError(t, err)
 
-		data, lang := randUploadData(t, translatev1.Schema_PO)
+		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
 		require.NoError(t, err)
@@ -169,7 +169,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 			"--language", lang.String(),
 			"--file", file.Name(),
-			"--schema", "po",
+			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
 
@@ -187,7 +187,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		file, err := os.CreateTemp(t.TempDir(), "test")
 		require.NoError(t, err)
 
-		data, lang := randUploadData(t, translatev1.Schema_PO)
+		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
 		require.NoError(t, err)
@@ -200,7 +200,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--language", lang.String(),
 			"--original", "true",
 			"--file", file.Name(),
-			"--schema", "po",
+			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
 
@@ -218,7 +218,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		file, err := os.CreateTemp(t.TempDir(), "test")
 		require.NoError(t, err)
 
-		data, lang := randUploadData(t, translatev1.Schema_PO)
+		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
 		require.NoError(t, err)
@@ -231,7 +231,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--language", lang.String(),
 			"--original", "true",
 			"--file", file.Name(),
-			"--schema", "po",
+			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 			"--populate_translations", "false",
 		})
@@ -252,7 +252,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		file, err := os.CreateTemp(tempDir, "test")
 		require.NoError(t, err)
 
-		data, lang := randUploadData(t, translatev1.Schema_PO)
+		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
 		require.NoError(t, err)
@@ -264,7 +264,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 			"--language", lang.String(),
 			"--file", file.Name(),
-			"--schema", "po",
+			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
 
@@ -301,8 +301,8 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		file, err := os.CreateTemp(t.TempDir(), "test")
 		require.NoError(t, err)
 
-		// PO schema has language tag in the file.
-		data, _ := randUploadData(t, translatev1.Schema_PO)
+		// Ng localise schema has language tag in the file.
+		data, _ := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
 		require.NoError(t, err)
@@ -313,7 +313,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--insecure", "true",
 
 			"--file", file.Name(),
-			"--schema", "po",
+			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
 
@@ -496,7 +496,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		file, err := os.CreateTemp(tempDir, "test")
 		require.NoError(t, err)
 
-		data, lang := randUploadData(t, translatev1.Schema_PO)
+		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
 		require.NoError(t, err)
@@ -508,7 +508,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 
 			"--language", lang.String(),
 			"--file", file.Name(),
-			"--schema", "po",
+			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
 

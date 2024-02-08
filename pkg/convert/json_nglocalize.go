@@ -77,7 +77,7 @@ func ToNgLocalize(translation model.Translation) ([]byte, error) {
 		case nil:
 			ng.Translations[msg.ID] = ""
 		case ast.SimpleMessage:
-			ng.Translations[msg.ID] = PatternsToMsg(mf2Msg)
+			ng.Translations[msg.ID] = patternsToMsg(mf2Msg)
 		case ast.ComplexMessage:
 			return nil, fmt.Errorf("complex message not supported")
 		}
