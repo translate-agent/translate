@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	ast "go.expect.digital/mf2/parse"
+
 	"go.expect.digital/mf2"
 
 	"go.expect.digital/translate/pkg/model"
@@ -71,14 +73,26 @@ func FromNgxTranslate(b []byte, original *bool) (translation model.Translation, 
 }
 
 // ToNgxTranslate converts a model.Translation structure into the ngx-translate format.
-func ToNgxTranslate(translation model.Translation) (b []byte, err error) {
+func ToNgxTranslate(translation model.Translation) ([]byte, error) {
 	dst := make(map[string]string, len(translation.Messages))
 
 	for _, msg := range translation.Messages {
-		dst[msg.ID] = "" // TODO: convert msg.Message from MF2 format.
+		tree, err := ast.Parse(msg.Message)
+		if err != nil {
+			return nil, fmt.Errorf("parse mf2 message: %w", err)
+		}
+
+		switch mf2Msg := tree.Message.(type) {
+		case nil:
+			dst[msg.ID] = ""
+		case ast.SimpleMessage:
+			dst[msg.ID] = patternsToMsg(mf2Msg)
+		case ast.ComplexMessage:
+			return nil, fmt.Errorf("complex message not supported")
+		}
 	}
 
-	b, err = json.Marshal(dst)
+	b, err := json.Marshal(dst)
 	if err != nil {
 		return nil, fmt.Errorf("marshal from model.Translation to ngx-translate: %w", err)
 	}
