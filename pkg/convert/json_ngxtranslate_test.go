@@ -128,8 +128,6 @@ func Test_FromNgxTranslate(t *testing.T) {
 func Test_ToNgxTranslate(t *testing.T) {
 	t.Parallel()
 
-	t.Skip() // TODO
-
 	tests := []struct {
 		expected []byte
 		name     string
@@ -141,11 +139,11 @@ func Test_ToNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: `{example}`,
+						Message: `example`,
 					},
 					{
 						ID:      "message.example",
-						Message: `{message1}`,
+						Message: `message1`,
 					},
 				},
 			},
@@ -157,7 +155,7 @@ func Test_ToNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: `{Welcome \{user\} \| \\ !}`,
+						Message: `Welcome \{user\} | \\ !`,
 					},
 				},
 			},
