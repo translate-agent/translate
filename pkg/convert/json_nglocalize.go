@@ -3,6 +3,7 @@ package convert
 import (
 	"encoding/json"
 	"fmt"
+	ast "go.expect.digital/mf2/parse"
 
 	"go.expect.digital/mf2"
 	"go.expect.digital/translate/pkg/model"
@@ -66,7 +67,19 @@ func ToNgLocalize(translation model.Translation) ([]byte, error) {
 	}
 
 	for _, msg := range translation.Messages {
-		ng.Translations[msg.ID] = "" // TODO: convert msg.Message from MF2 format.
+		tree, err := ast.Parse(msg.Message)
+		if err != nil {
+			return nil, fmt.Errorf("parse mf2 message: %w", err)
+		}
+
+		switch mf2Msg := tree.Message.(type) {
+		case nil:
+			ng.Translations[msg.ID] = ""
+		case ast.SimpleMessage:
+			ng.Translations[msg.ID] = PatternsToMsg(mf2Msg)
+		case ast.ComplexMessage:
+			return nil, fmt.Errorf("complex message not supported")
+		}
 	}
 
 	data, err := json.Marshal(ng)
