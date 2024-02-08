@@ -635,7 +635,7 @@ func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.Tag) {
 	t.Helper()
 
-	translation := rand.ModelTranslation(3, nil)
+	translation := rand.ModelTranslation(3, nil, rand.WithSimpleMF2Messages())
 
 	data, err := server.TranslationToData(schema, translation)
 	require.NoError(t, err, "convert rand translation to serialized data")

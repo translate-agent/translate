@@ -135,17 +135,17 @@ func Test_ToNgLocalize(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Welcome",
-						Message:     `{Welcome to our website!}`,
+						Message:     `Welcome to our website!`,
 						Description: "To welcome a new visitor",
 					},
 					{
 						ID:          "Error",
-						Message:     `{Something went wrong. Please try again later.}`,
+						Message:     `Something went wrong. Please try again later.`,
 						Description: "To inform the user of an error",
 					},
 					{
 						ID:      "Feedback",
-						Message: `{We appreciate your feedback. Thank you for using our service.}`,
+						Message: `We appreciate your feedback. Thank you for using our service.`,
 					},
 				},
 			},
@@ -158,7 +158,7 @@ func Test_ToNgLocalize(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "Welcome",
-						Message:     `{Welcome to our website \{user\} 99\|100 \\}`,
+						Message:     `Welcome to our website \{user\} 99|100 \\`,
 						Description: "To welcome a new visitor",
 					},
 				},
