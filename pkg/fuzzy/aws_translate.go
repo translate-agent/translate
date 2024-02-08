@@ -128,8 +128,7 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 			&translate.TranslateTextInput{
 				TargetLanguageCode: awsLanguage(targetLanguage),
 				SourceLanguageCode: awsLanguage(translation.Language),
-				// Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
-				Text: ptr(texts[i]),
+				Text:               ptr(texts[i]), // Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
 			})
 		if translateErr != nil {
 			return nil, fmt.Errorf("aws translate: translate text #%d: %w", i, translateErr)
