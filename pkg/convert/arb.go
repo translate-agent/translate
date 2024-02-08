@@ -155,7 +155,7 @@ func ToArb(translation model.Translation) ([]byte, error) {
 		case nil:
 			dst[msg.ID] = ""
 		case ast.SimpleMessage:
-			dst[msg.ID] = PatternsToMsg(mf2Msg.Patterns)
+			dst[msg.ID] = PatternsToMsg(mf2Msg)
 		case ast.ComplexMessage:
 			return nil, fmt.Errorf("complex message not supported")
 		}

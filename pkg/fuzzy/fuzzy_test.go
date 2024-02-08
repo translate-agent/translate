@@ -11,8 +11,8 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/googleapis/gax-go/v2"
 	"github.com/stretchr/testify/require"
-	ast "go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
+	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
@@ -62,15 +62,12 @@ func Test_TranslateMock(t *testing.T) {
 				require.Len(t, translated.Messages, len(tt.translation.Messages))
 
 				for i, m := range translated.Messages {
-					// Check the translated translation.messages are not empty and are marked as fuzzy.
-					require.NotEmpty(t, m.Message)
 					require.Equal(t, model.MessageStatusFuzzy, m.Status)
-
-					_, err := ast.Parse(m.Message)
-					require.NoError(t, err, "parse MF2 message")
+					testutil.EqualMF2Message(t, tt.translation.Messages[i].Message, m.Message)
 
 					// Reset the message to empty and fuzzy to original values, for the last check for side effects.
 					translated.Messages[i].Status = tt.translation.Messages[i].Status
+					translated.Messages[i].Message = tt.translation.Messages[i].Message
 				}
 
 				// Check the translated translation.messages are the same as the input messages. (Check for side effects)

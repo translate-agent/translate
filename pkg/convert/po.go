@@ -245,8 +245,8 @@ func ToPo(t model.Translation) ([]byte, error) {
 			switch p := p.(type) {
 			case ast.TextPattern:
 				text += string(p)
-			case ast.VariableExpression: // No other types are possible for now
-				text += placeholders[p.Variable]
+			case ast.Expression:
+				text += placeholders[p.Operand.(ast.Variable)] //nolint:forcetypeassert // operand is always of type Variable
 			}
 		}
 
@@ -288,7 +288,7 @@ func ToPo(t model.Translation) ([]byte, error) {
 		case nil:
 			poMsg.MsgStr = append(poMsg.MsgStr, "") // no mf2 message
 		case ast.SimpleMessage:
-			poMsg.MsgStr = append(poMsg.MsgStr, patternsToMsg(message.Patterns))
+			poMsg.MsgStr = append(poMsg.MsgStr, patternsToMsg(message))
 		case ast.ComplexMessage:
 			// Declarations
 			placeholders = make(map[ast.Variable]string, len(message.Declarations))
@@ -299,9 +299,9 @@ func ToPo(t model.Translation) ([]byte, error) {
 				//nolint:forcetypeassert // All declarations are of type LiteralExpression.
 				switch decl.Variable.String() {
 				case "$format": // flag
-					poMsg.Flags = append(poMsg.Flags, unquoteLiteral(decl.Expression.(ast.LiteralExpression).Literal))
+					poMsg.Flags = append(poMsg.Flags, unquoteLiteral(decl.Expression.Operand.(ast.Literal)))
 				default: // placeholder
-					placeholders[decl.Variable] = unquoteLiteral(decl.Expression.(ast.LiteralExpression).Literal)
+					placeholders[decl.Variable] = unquoteLiteral(decl.Expression.Operand.(ast.Literal))
 				}
 			}
 
@@ -310,10 +310,10 @@ func ToPo(t model.Translation) ([]byte, error) {
 			case ast.Matcher:
 				poMsg.MsgStr = make([]string, 0, len(body.Variants))
 				for _, variant := range body.Variants {
-					poMsg.MsgStr = append(poMsg.MsgStr, patternsToMsg(variant.QuotedPattern.Patterns))
+					poMsg.MsgStr = append(poMsg.MsgStr, patternsToMsg(variant.QuotedPattern))
 				}
 			case ast.QuotedPattern:
-				poMsg.MsgStr = append(poMsg.MsgStr, patternsToMsg(body.Patterns))
+				poMsg.MsgStr = append(poMsg.MsgStr, patternsToMsg(body))
 			}
 		}
 

@@ -200,7 +200,7 @@ func textToBatches(text []string) [][]string {
 // getTexts extracts translatable text from the translation.Messages slice.
 // To prevent the translation of placeholders, they are replaced with simplified
 // numbered placeholders '{$d}', where the placeholder number represents the
-// index of the ast.PlaceholderPattern element in the message AST.
+// index of the ast.Pattern element in the message AST.
 // The function returns a slice of strings representing the extracted translatable texts and error.
 //
 // Example:
@@ -232,15 +232,15 @@ func getTexts(translation *model.Translation) ([]string, error) {
 		default:
 			return nil, fmt.Errorf("unsupported message type: %T", v)
 		case ast.SimpleMessage:
-			texts = append(texts, patternToString(v.Patterns))
+			texts = append(texts, patternToString(v))
 		case ast.ComplexMessage:
 			switch v := v.ComplexBody.(type) {
 			case ast.Matcher:
 				for _, variant := range v.Variants {
-					texts = append(texts, patternToString(variant.QuotedPattern.Patterns))
+					texts = append(texts, patternToString(variant.QuotedPattern))
 				}
 			case ast.QuotedPattern:
-				texts = append(texts, patternToString(v.Patterns))
+				texts = append(texts, patternToString(v))
 			}
 		}
 	}
@@ -249,16 +249,16 @@ func getTexts(translation *model.Translation) ([]string, error) {
 }
 
 // patternToString iterates over an ast.Pattern slice, appending ast.TextPatterns to a string.
-// When an ast.PlaceholderPattern is encountered, a simplified placeholder version '{$d}' is appended.
+// When an non Text ast.Pattern is encountered, a simplified placeholder version '{$d}' is appended.
 // The function returns a string representing the concatenated patterns.
 // Example:
 // Input:
 //
-//	[]ast.Patterns{
+//	[]Pattern{
 //		TextPattern("Hello"),
-//		PlaceholderPattern{ Expression: LiteralExpression{Literal: QuotedLiteral("name")}},
+//		Expression{Operand: QuotedLiteral("name")},
 //		TextPattern(" "),
-//		PlaceholderPattern{ Expression: LiteralExpression{Literal: QuotedLiteral("lastName")}},
+//		Expression{Operand: QuotedLiteral("lastName")},
 //		TextPattern("!"),
 //	}
 //
@@ -271,7 +271,7 @@ func patternToString(pattern []ast.Pattern) string {
 		switch v := pattern[i].(type) {
 		case ast.TextPattern:
 			text += string(v)
-		case ast.LiteralExpression, ast.AnnotationExpression, ast.VariableExpression, ast.Markup:
+		case ast.Expression, ast.Markup:
 			text += fmt.Sprintf("{$%d}", i)
 		}
 	}
@@ -329,7 +329,7 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 
 		switch message := messageAST.Message.(type) {
 		case ast.SimpleMessage:
-			message.Patterns, err = buildTranslatedPattern(translatedTexts[textIndex], message.Patterns)
+			message, err = buildTranslatedPattern(translatedTexts[textIndex], message)
 			if err != nil {
 				return nil, fmt.Errorf("build translated pattern for simple message: %w", err)
 			}
@@ -343,8 +343,8 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 			switch complexBody := message.ComplexBody.(type) {
 			case ast.Matcher:
 				for i := range complexBody.Variants {
-					complexBody.Variants[i].QuotedPattern.Patterns, err = buildTranslatedPattern(
-						translatedTexts[textIndex], complexBody.Variants[i].QuotedPattern.Patterns)
+					complexBody.Variants[i].QuotedPattern, err = buildTranslatedPattern(
+						translatedTexts[textIndex], complexBody.Variants[i].QuotedPattern)
 					if err != nil {
 						return nil, fmt.Errorf("build translated pattern for matcher variant: %w", err)
 					}
@@ -357,7 +357,7 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 				messageAST.Message = message
 
 			case ast.QuotedPattern:
-				complexBody.Patterns, err = buildTranslatedPattern(translatedTexts[textIndex], complexBody.Patterns)
+				complexBody, err = buildTranslatedPattern(translatedTexts[textIndex], complexBody)
 				if err != nil {
 					return nil, fmt.Errorf("build translated pattern for quoted pattern: %w", err)
 				}
@@ -385,7 +385,7 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 
 // buildTranslatedPattern constructs a slice of ast.Pattern from a given text and placeholders
 // extracted from a translated text. Placeholders are replaced with corresponding
-// ast.PlaceholderPatterns retrieved from the message AST. The function returns a slice of ast.Pattern and error.
+// ast.Pattern retrieved from the message AST. The function returns a slice of ast.Pattern and error.
 func buildTranslatedPattern(translatedText string, previousPattern []ast.Pattern) ([]ast.Pattern, error) {
 	re := regexp.MustCompile(`\{\$(0|[1-9]\d*)\}`)
 
