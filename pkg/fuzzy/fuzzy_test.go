@@ -68,12 +68,13 @@ func Test_TranslateMock(t *testing.T) {
 
 // -------------------------Mocks------------------------------
 
-// ---–––--------------Google Translate------------------–––---
-
 // mockGoogleTranslateClient is a mock implementation of the Google Translate client.
 type mockGoogleTranslateClient struct{}
 
-// TranslateText mocks the Translate method of the Google Translate client.
+// mockAWSTranslateClient is a mock implementation of the AWS Translate client.
+type mockAWSTranslateClient struct{}
+
+// TranslateText returns the input text as translated text.
 func (m *mockGoogleTranslateClient) TranslateText(
 	ctx context.Context,
 	req *translatepb.TranslateTextRequest,
@@ -87,14 +88,7 @@ func (m *mockGoogleTranslateClient) TranslateText(
 	return &translatepb.TranslateTextResponse{Translations: translations}, nil
 }
 
-func (m *mockGoogleTranslateClient) Close() error { return nil }
-
-// ---–––--------------AWS Translate------------------–––---
-
-// mockAWSTranslateClient is a mock implementation of the AWS Translate client.
-type mockAWSTranslateClient struct{}
-
-// Translate mocks the TranslateText method of the AWS Translate client.
+// TranslateText returns the input text as translated text.
 func (m *mockAWSTranslateClient) TranslateText(
 	ctx context.Context,
 	params *awst.TranslateTextInput,
@@ -106,6 +100,8 @@ func (m *mockAWSTranslateClient) TranslateText(
 		TranslatedText:     params.Text,
 	}, nil
 }
+
+func (m *mockGoogleTranslateClient) Close() error { return nil }
 
 // -----------------------Helpers and init----------------------------
 
