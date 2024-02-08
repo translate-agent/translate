@@ -2,13 +2,10 @@ package fuzzy
 
 import (
 	"context"
-	"errors"
-	"strings"
 	"testing"
 
 	"cloud.google.com/go/translate/apiv3/translatepb"
 	awst "github.com/aws/aws-sdk-go-v2/service/translate"
-	"github.com/brianvoe/gofakeit/v6"
 	"github.com/googleapis/gax-go/v2"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
@@ -20,22 +17,22 @@ import (
 // ---–––--------------Actual Tests------------------–––---
 
 func Test_TranslateMock(t *testing.T) {
-	// NOTE: AWS skipped for now until fuzzy translation is fixed.
 	t.Parallel()
+
+	targetLang := language.Latvian
 
 	allMocks(t, func(t *testing.T, mock Translator) {
 		tests := []struct {
-			expectedErr error
-			translation *model.Translation
-			name        string
+			input *model.Translation
+			name  string
 		}{
 			{
-				name:        "One message",
-				translation: randTranslation(1, language.Latvian),
+				name:  "One message",
+				input: rand.ModelTranslation(1, nil, rand.WithLanguage(language.English)),
 			},
 			{
-				name:        "Multiple messages",
-				translation: randTranslation(5, language.German),
+				name:  "Multiple messages",
+				input: rand.ModelTranslation(3, nil, rand.WithLanguage(language.English)),
 			},
 		}
 
@@ -44,34 +41,26 @@ func Test_TranslateMock(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
-				translation := tt.translation
-				translation.Language = language.English // set original language
-				translated, err := mock.Translate(context.Background(), translation, tt.translation.Language)
-
-				if tt.expectedErr != nil {
-					require.ErrorContains(t, err, tt.expectedErr.Error())
-					return
-				}
-
+				output, err := mock.Translate(context.Background(), tt.input, targetLang)
 				require.NoError(t, err)
 
 				// Check the that the translated translation have the correct language.
-				require.Equal(t, tt.translation.Language, translated.Language)
+				require.Equal(t, targetLang, output.Language)
 
 				// Check that length matches.
-				require.Len(t, translated.Messages, len(tt.translation.Messages))
+				require.Len(t, output.Messages, len(tt.input.Messages))
 
-				for i, m := range translated.Messages {
+				for i, m := range output.Messages {
 					require.Equal(t, model.MessageStatusFuzzy, m.Status)
-					testutil.EqualMF2Message(t, tt.translation.Messages[i].Message, m.Message)
+					testutil.EqualMF2Message(t, tt.input.Messages[i].Message, m.Message)
 
 					// Reset the message to empty and fuzzy to original values, for the last check for side effects.
-					translated.Messages[i].Status = tt.translation.Messages[i].Status
-					translated.Messages[i].Message = tt.translation.Messages[i].Message
+					output.Messages[i].Status = tt.input.Messages[i].Status
+					output.Messages[i].Message = tt.input.Messages[i].Message
 				}
 
 				// Check the translated translation.messages are the same as the input messages. (Check for side effects)
-				require.ElementsMatch(t, tt.translation.Messages, translated.Messages)
+				require.ElementsMatch(t, tt.input.Messages, output.Messages)
 			})
 		}
 	})
@@ -90,20 +79,12 @@ func (m *MockGoogleTranslateClient) TranslateText(
 	req *translatepb.TranslateTextRequest,
 	opts ...gax.CallOption,
 ) (*translatepb.TranslateTextResponse, error) {
-	// Mock the Bad request error for unsupported language.Afrikaans.
-	if req.GetTargetLanguageCode() == language.Afrikaans.String() {
-		return nil, errors.New("mock: bad request: unsupported language")
-	}
-
-	res := &translatepb.TranslateTextResponse{
-		Translations: make([]*translatepb.Translation, 0, len(req.GetContents())),
-	}
-
+	translations := make([]*translatepb.Translation, 0, len(req.GetContents()))
 	for _, v := range req.GetContents() {
-		res.Translations = append(res.GetTranslations(), &translatepb.Translation{TranslatedText: v})
+		translations = append(translations, &translatepb.Translation{TranslatedText: v})
 	}
 
-	return res, nil
+	return &translatepb.TranslateTextResponse{Translations: translations}, nil
 }
 
 func (m *MockGoogleTranslateClient) Close() error { return nil }
@@ -119,24 +100,10 @@ func (m *MockAWSTranslateClient) TranslateText(
 	params *awst.TranslateTextInput,
 	optFns ...func(*awst.Options),
 ) (*awst.TranslateTextOutput, error) {
-	// Mock the Bad request error for unsupported language.Und.
-	if *params.SourceLanguageCode == language.Und.String() ||
-		*params.TargetLanguageCode == language.Und.String() {
-		return nil, errors.New("mock: bad request: Unsupported language pair: zh to und")
-	}
-
-	// remove trailing newline character.
-	*params.Text = strings.TrimSuffix(*params.Text, "\n")
-	translations := strings.Split(*params.Text, "\n")
-
-	for i := range translations {
-		translations[i] = gofakeit.SentenceSimple()
-	}
-
 	return &awst.TranslateTextOutput{
 		SourceLanguageCode: params.SourceLanguageCode,
 		TargetLanguageCode: params.TargetLanguageCode,
-		TranslatedText:     ptr(strings.Join(translations, "\n")),
+		TranslatedText:     params.Text,
 	}, nil
 }
 
@@ -147,13 +114,12 @@ var mockTranslators map[string]Translator
 func init() {
 	mockTranslators = make(map[string]Translator, len(SupportedServices))
 
-	// TODO
-	// at, _ := NewAWSTranslate(
-	// 	context.Background(),
-	// 	WithAWSClient(&MockAWSTranslateClient{}),
-	// )
+	at, _ := NewAWSTranslate(
+		context.Background(),
+		WithAWSClient(&MockAWSTranslateClient{}),
+	)
 
-	// mockTranslators["AWSTranslate"] = at
+	mockTranslators["AWSTranslate"] = at
 
 	// Google Translate
 	gt, _, _ := NewGoogleTranslate(
@@ -174,13 +140,4 @@ func allMocks(t *testing.T, f func(t *testing.T, mock Translator)) {
 			f(t, mock)
 		})
 	}
-}
-
-// randTranslation returns a random translation model with the given count of messages and source language.
-// The messages will not be fuzzy.
-func randTranslation(msgCount uint, srcLang language.Tag) *model.Translation {
-	msgOpts := []rand.ModelMessageOption{rand.WithStatus(model.MessageStatusUntranslated)}
-	translationOpts := []rand.ModelTranslationOption{rand.WithLanguage(srcLang)}
-
-	return rand.ModelTranslation(msgCount, msgOpts, translationOpts...)
 }
