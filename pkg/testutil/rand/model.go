@@ -224,3 +224,12 @@ func WithSameIDs(t *model.Translation) ModelTranslationOption {
 		}
 	}
 }
+
+// WithSimpleMF2Messages sets the message of the model.Translation to simple mf2 messages.
+func WithSimpleMF2Messages() ModelTranslationOption {
+	return func(t *model.Translation) {
+		for i := range t.Messages {
+			t.Messages[i].Message = mf2.NewBuilder().Text(gofakeit.SentenceSimple()).MustBuild()
+		}
+	}
+}

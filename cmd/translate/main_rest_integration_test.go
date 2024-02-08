@@ -24,8 +24,10 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 
-// TODO Currently, we manually create requests for the REST API.
+// TODO: Currently, we manually create requests for the REST API.
 // We could use a client generated from the OpenAPI specification to simplify testing and integration.
+
+// TODO: DRY: Tests are the same with gRPC tests. We could combine them to avoid duplication.
 
 // -------------Translation File-------------.
 
@@ -98,7 +100,6 @@ func gRPCDownloadFileToRESTReq(
 
 func Test_UploadTranslationFile_REST(t *testing.T) {
 	t.Parallel()
-	t.Skip() // TODO
 
 	ctx, subtest := testutil.Trace(t)
 
@@ -114,8 +115,8 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	happyRequestNoLang := &translatev1.UploadTranslationFileRequest{
 		ServiceId: service.GetId(),
 		// NG Localize has language in the file.
-		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, rand.Language()),
-		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
+		Data:   randUploadData(t, rand.Language()),
+		Schema: translatev1.Schema_PO,
 	}
 
 	invalidArgumentMissingServiceRequest := randUploadTranslationFileReq(t, service.GetId())
@@ -167,7 +168,6 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 }
 
 func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
-	t.Skip() // TODO
 	t.Parallel()
 
 	ctx, _ := testutil.Trace(t)
@@ -182,7 +182,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	require.NoError(t, err, "create test translation file")
 
 	// Change translation and upload again with the same language and serviceID
-	uploadReq.Data = randUploadData(t, uploadReq.GetSchema(), language.MustParse(uploadReq.GetLanguage()))
+	uploadReq.Data = randUploadData(t, language.MustParse(uploadReq.GetLanguage()))
 
 	resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, uploadReq))
 	require.NoError(t, err, "do request")
@@ -194,7 +194,6 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 }
 
 func Test_DownloadTranslationFile_REST(t *testing.T) {
-	t.Skip() // TODO
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
@@ -533,7 +532,6 @@ func Test_ListServices_REST(t *testing.T) {
 
 // POST.
 func Test_CreateTranslation_REST(t *testing.T) {
-	t.Skip() // TODO
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
@@ -747,7 +745,6 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 
 // GET.
 func Test_GetTranslations_REST(t *testing.T) {
-	t.Skip() // TODO
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)

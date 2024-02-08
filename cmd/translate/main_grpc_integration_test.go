@@ -12,8 +12,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.expect.digital/translate/pkg/convert"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/server"
 	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
@@ -24,12 +24,13 @@ import (
 
 // -------------Translation File-------------.
 
-func randUploadData(t *testing.T, schema translatev1.Schema, lang language.Tag) []byte {
+// randUploadData generates a random translation and serializes it to a po file.
+func randUploadData(t *testing.T, lang language.Tag) []byte {
 	t.Helper()
 
-	translation := rand.ModelTranslation(3, nil, rand.WithLanguage(lang))
+	translation := rand.ModelTranslation(3, nil, rand.WithLanguage(lang), rand.WithSimpleMF2Messages())
 
-	data, err := server.TranslationToData(schema, translation)
+	data, err := convert.ToPo(*translation)
 	require.NoError(t, err, "convert rand translation to serialized data")
 
 	return data
@@ -38,16 +39,14 @@ func randUploadData(t *testing.T, schema translatev1.Schema, lang language.Tag) 
 func randUploadTranslationFileReq(t *testing.T, serviceID string) *translatev1.UploadTranslationFileRequest {
 	t.Helper()
 
-	schema := translatev1.Schema(gofakeit.IntRange(1, 7))
 	lang := rand.Language()
-
-	data := randUploadData(t, schema, lang)
+	poData := randUploadData(t, lang)
 
 	return &translatev1.UploadTranslationFileRequest{
 		ServiceId: serviceID,
 		Language:  lang.String(),
-		Data:      data,
-		Schema:    schema,
+		Data:      poData,
+		Schema:    translatev1.Schema_PO,
 		Original:  ptr(false),
 	}
 }
@@ -102,7 +101,6 @@ func createTranslation(ctx context.Context, t *testing.T, serviceID string,
 }
 
 func Test_UploadTranslationFile_gRPC(t *testing.T) {
-	t.Skip() // TODO
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
@@ -121,9 +119,8 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 
 	happyRequestNoLangInReq := &translatev1.UploadTranslationFileRequest{
 		ServiceId: service.GetId(),
-		// NG Localize has language in the file.
-		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, rand.Language()),
-		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
+		Data:      randUploadData(t, rand.Language()),
+		Schema:    translatev1.Schema_PO,
 	}
 
 	invalidArgumentMissingServiceRequest := randUploadTranslationFileReq(t, service.GetId())
@@ -135,9 +132,8 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		Original:  ptr(true),
 		Language:  langs[1].String(),
 		ServiceId: serviceWithExistingOriginal.GetId(),
-		// NG Localize has language in the file.
-		Data:   randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE, langs[1]),
-		Schema: translatev1.Schema_JSON_NG_LOCALIZE,
+		Data:      randUploadData(t, langs[1]),
+		Schema:    translatev1.Schema_PO,
 	}
 
 	tests := []struct {
@@ -178,13 +174,12 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.UploadTranslationFile(ctx, tt.request)
 
-			assert.Equal(t, tt.expectedCode, status.Code(err))
+			assert.Equal(t, tt.expectedCode, status.Code(err), "want %s, got %s", tt.expectedCode, status.Code(err))
 		})
 	}
 }
 
 func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
-	t.Skip() // TODO
 	t.Parallel()
 
 	ctx, _ := testutil.Trace(t)
@@ -200,7 +195,7 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 	require.NoError(t, err, "create test translation file")
 
 	// Change translation and upload again with the same language and serviceID
-	uploadReq.Data = randUploadData(t, uploadReq.GetSchema(), language.MustParse(uploadReq.GetLanguage()))
+	uploadReq.Data = randUploadData(t, language.MustParse(uploadReq.GetLanguage()))
 
 	_, err = client.UploadTranslationFile(ctx, uploadReq)
 
@@ -216,7 +211,6 @@ func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslatio
 }
 
 func Test_DownloadTranslationFile_gRPC(t *testing.T) {
-	t.Skip() // TODO
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
@@ -526,7 +520,6 @@ func randTranslation(t *testing.T, override *translatev1.Translation) *translate
 }
 
 func Test_CreateTranslation_gRPC(t *testing.T) {
-	t.Skip() // TODO
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
@@ -632,7 +625,6 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 }
 
 func Test_ListTranslations_gRPC(t *testing.T) {
-	t.Skip() // TODO
 	t.Parallel()
 
 	ctx, subtest := testutil.Trace(t)
