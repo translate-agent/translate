@@ -23,12 +23,7 @@ func newLsCmd() *cobra.Command {
 			ctx, cancelFunc := context.WithTimeout(cmd.Context(), timeout)
 			defer cancelFunc()
 
-			client, err := newClientConn(ctx, cmd)
-			if err != nil {
-				return fmt.Errorf("list services: new GRPC client connection: %w", err)
-			}
-
-			resp, err := translatev1.NewTranslateServiceClient(client).ListServices(ctx, &translatev1.ListServicesRequest{})
+			resp, err := translatev1.NewTranslateServiceClient(conn).ListServices(ctx, &translatev1.ListServicesRequest{})
 			if err != nil {
 				return fmt.Errorf("list services: send GRPC request: %w", err)
 			}

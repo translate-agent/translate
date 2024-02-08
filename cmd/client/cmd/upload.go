@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -31,11 +30,6 @@ func newUploadCmd() *cobra.Command {
 
 			ctx, cancelFunc := context.WithTimeout(cmd.Context(), timeout)
 			defer cancelFunc()
-
-			client, err := newClientConn(ctx, cmd)
-			if err != nil {
-				return fmt.Errorf("upload file: new GRPC client connection: %w", err)
-			}
 
 			serviceID, err := cmd.Flags().GetString("service")
 			if err != nil {
@@ -85,7 +79,7 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: schema to translate schema: %w", err)
 			}
 
-			if _, err = translatev1.NewTranslateServiceClient(client).UploadTranslationFile(ctx,
+			if _, err = translatev1.NewTranslateServiceClient(conn).UploadTranslationFile(ctx,
 				&translatev1.UploadTranslationFileRequest{
 					Language:             language,
 					Data:                 data,
@@ -124,10 +118,6 @@ func newUploadCmd() *cobra.Command {
 
 	if err := uploadCmd.MarkFlagRequired("schema"); err != nil {
 		log.Panicf("upload file cmd: set field 'schema' as required: %v", err)
-	}
-
-	if err := viper.BindPFlags(uploadFlags); err != nil {
-		log.Panicf("upload file cmd: bind flags: %v", err)
 	}
 
 	return uploadCmd

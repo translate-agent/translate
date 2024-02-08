@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
@@ -36,11 +35,6 @@ func newDownloadCmd() *cobra.Command {
 			ctx, cancelFunc := context.WithTimeout(cmd.Context(), timeout)
 			defer cancelFunc()
 
-			client, err := newClientConn(ctx, cmd)
-			if err != nil {
-				return fmt.Errorf("download file: new GRPC client connection: %w", err)
-			}
-
 			serviceID, err := cmd.Flags().GetString("service")
 			if err != nil {
 				return fmt.Errorf("upload file: get cli parameter 'service': %w", err)
@@ -61,7 +55,7 @@ func newDownloadCmd() *cobra.Command {
 				return fmt.Errorf("download file: schema to translate schema: %w", err)
 			}
 
-			res, err := translatev1.NewTranslateServiceClient(client).DownloadTranslationFile(ctx,
+			res, err := translatev1.NewTranslateServiceClient(conn).DownloadTranslationFile(ctx,
 				&translatev1.DownloadTranslationFileRequest{
 					Language: language, Schema: translateSchema, ServiceId: serviceID,
 				})
@@ -84,7 +78,7 @@ func newDownloadCmd() *cobra.Command {
 				fileName += "." + xlf
 			}
 
-			if err = os.WriteFile(filepath.Join(path, fileName), res.GetData(), 0644); err != nil { //nolint:gomnd,gofumpt,gosec
+			if err = os.WriteFile(filepath.Join(path, fileName), res.GetData(), 0o644); err != nil { //nolint:gomnd,gosec
 				return fmt.Errorf("download file: write file to path: %w", err)
 			}
 
@@ -117,10 +111,6 @@ func newDownloadCmd() *cobra.Command {
 
 	if err := downloadCmd.MarkFlagRequired("schema"); err != nil {
 		log.Panicf("download file cmd: set field 'schema' as required: %v", err)
-	}
-
-	if err := viper.BindPFlags(downloadFlags); err != nil {
-		log.Panicf("download file cmd: bind flags: %v", err)
 	}
 
 	return downloadCmd

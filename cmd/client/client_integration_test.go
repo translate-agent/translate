@@ -1,6 +1,5 @@
 //go:build integration
 
-//nolint:paralleltest
 package main
 
 import (
@@ -34,15 +33,18 @@ import (
 const host = "localhost"
 
 var (
-	addr   string
+	port = mustGetFreePort()
+	addr = fmt.Sprintf("%s:%s", host, port)
+
+	// client is a gRPC client for the translate service, used in tests to create resources, before testing the CLI.
 	client translatev1.TranslateServiceClient
 )
 
 func TestMain(m *testing.M) {
-	ctx := context.Background()
-	port := mustGetFreePort()
-	addr = fmt.Sprintf("%s:%s", host, port)
+	os.Exit(testMain(m))
+}
 
+func testMain(m *testing.M) int {
 	viper.Set("service.port", port)
 	viper.Set("service.host", host)
 
@@ -55,35 +57,43 @@ func TestMain(m *testing.M) {
 		translatesrv.Serve()
 	}()
 
+	clientCloser := setUpClient()
+	defer func() {
+		if err := clientCloser(); err != nil {
+			log.Fatalf("close client connection: %v", err)
+		}
+	}()
+
+	// Run the tests.
+	code := m.Run()
+	// Send soft kill (termination) signal to process.
+	err := syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+	if err != nil {
+		log.Panicf("send termination signal: %v", err)
+	}
+
+	// Wait for grpc server to stop.
+	wg.Wait()
+
+	return code
+}
+
+// setUpClient creates a gRPC client connection to the translate service and assigns it to the client variable.
+func setUpClient() func() error {
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		grpc.WithBlock(),
 	}
-	// Wait for the server to start and establish a connection.
-	conn, err := grpc.DialContext(ctx, host+":"+port, grpcOpts...)
+
+	conn, err := grpc.DialContext(context.Background(), host+":"+port, grpcOpts...)
 	if err != nil {
 		log.Panicf("create connection to gRPC server: %v", err)
 	}
 
 	client = translatev1.NewTranslateServiceClient(conn)
 
-	// Run the tests.
-	code := m.Run()
-	// Send soft kill (termination) signal to process.
-	err = syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
-	if err != nil {
-		log.Panicf("send termination signal: %v", err)
-	}
-	// Wait for main() to finish cleanup.
-	wg.Wait()
-
-	// Close the connection and tracer.
-	if err := conn.Close(); err != nil {
-		log.Panicf("close gRPC client connection: %v", err)
-	}
-
-	os.Exit(code)
+	return conn.Close
 }
 
 func mustGetFreePort() string {
@@ -104,7 +114,10 @@ func mustGetFreePort() string {
 }
 
 func Test_ListServices_CLI(t *testing.T) {
+	t.Parallel()
+
 	t.Run("OK", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -118,6 +131,7 @@ func Test_ListServices_CLI(t *testing.T) {
 	})
 
 	t.Run("error, no transport security set", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -131,7 +145,10 @@ func Test_ListServices_CLI(t *testing.T) {
 }
 
 func Test_TranslationFileUpload_CLI(t *testing.T) {
+	t.Parallel()
+
 	t.Run("OK, file from local path", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -161,6 +178,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("OK, with local file and original flag", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -191,6 +209,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("OK, with local file, original=true populate=false", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -222,6 +241,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("OK, file from URL", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -272,6 +292,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 	// Translation has language tag, but CLI parameter 'language' is not set.
 	t.Run("OK, local without lang parameter", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -301,6 +322,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, malformed language", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
@@ -334,6 +356,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' unrecognized", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -353,6 +376,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' unspecified", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -372,6 +396,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -390,6 +415,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 	// Translation does not have language tag, and CLI parameter 'language' is not set.
 	t.Run("error, language could not be determined", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -419,6 +445,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'path' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -436,6 +463,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'service' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -454,7 +482,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 }
 
 func Test_TranslationFileDownload_CLI(t *testing.T) {
+	t.Parallel()
+
 	t.Run("OK", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
@@ -503,6 +534,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -520,6 +552,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'schema' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -537,6 +570,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'service' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
@@ -554,6 +588,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 	})
 
 	t.Run("error, path parameter 'path' missing", func(t *testing.T) {
+		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
