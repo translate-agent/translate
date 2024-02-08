@@ -109,25 +109,9 @@ func (m *mockAWSTranslateClient) TranslateText(
 
 // -----------------------Helpers and init----------------------------
 
-var mockTranslators map[string]Translator
-
-func init() {
-	mockTranslators = make(map[string]Translator, len(SupportedServices))
-
-	at, _ := NewAWSTranslate(
-		context.Background(),
-		WithAWSClient(&mockAWSTranslateClient{}),
-	)
-
-	mockTranslators["AWSTranslate"] = at
-
-	// Google Translate
-	gt, _, _ := NewGoogleTranslate(
-		context.Background(),
-		WithGoogleClient(&mockGoogleTranslateClient{}),
-	)
-
-	mockTranslators["GoogleTranslate"] = gt
+var mockTranslators = map[string]Translator{
+	"AWSTranslate":    &AWSTranslate{client: &mockAWSTranslateClient{}},
+	"GoogleTranslate": &GoogleTranslate{client: &mockGoogleTranslateClient{}},
 }
 
 // allMocks runs a test function f for each mocked translate service that is defined in the mockTranslators map.
