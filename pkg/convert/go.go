@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"go.expect.digital/mf2"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/message/pipeline"
 )
@@ -38,7 +39,12 @@ func FromGo(b []byte, original *bool) (model.Translation, error) {
 		original = ptr(false)
 	}
 
-	return translationFromPipeline(pipelineMsgs, *original), nil
+	translation, err := translationFromPipeline(pipelineMsgs, *original)
+	if err != nil {
+		return model.Translation{}, fmt.Errorf("convert a pipeline.Messages into a model.Translation")
+	}
+
+	return translation, nil
 }
 
 // translationToPipeline converts a model.Translation structure into a pipeline.Messages structure.
@@ -73,7 +79,7 @@ func translationToPipeline(t model.Translation) (pipeline.Messages, error) { //n
 }
 
 // translationFromPipeline converts a pipeline.Messages structure into a model.Translation structure.
-func translationFromPipeline(m pipeline.Messages, original bool) model.Translation {
+func translationFromPipeline(m pipeline.Messages, original bool) (model.Translation, error) {
 	translation := model.Translation{
 		Language: m.Language,
 		Messages: make([]model.Message, 0, len(m.Messages)),
@@ -95,10 +101,15 @@ func translationFromPipeline(m pipeline.Messages, original bool) model.Translati
 	}
 
 	for _, value := range m.Messages {
+		mf2Message, err := mf2.NewBuilder().Text(getMessage(value)).Build()
+		if err != nil {
+			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
+		}
+
 		msg := model.Message{
 			ID:          value.ID[0],
 			Description: value.Meaning,
-			Message:     getMessage(value), // TODO: convert value to MF2 format
+			Message:     mf2Message,
 			Status:      getStatus(value),
 		}
 
@@ -109,5 +120,5 @@ func translationFromPipeline(m pipeline.Messages, original bool) model.Translati
 		translation.Messages = append(translation.Messages, msg)
 	}
 
-	return translation
+	return translation, nil
 }
