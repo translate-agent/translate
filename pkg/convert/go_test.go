@@ -14,8 +14,6 @@ import (
 func TestToGo(t *testing.T) {
 	t.Parallel()
 
-	t.Skip() // TODO
-
 	tests := []struct {
 		name     string
 		expected []byte
@@ -28,14 +26,14 @@ func TestToGo(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "1",
-						Message:     `{message1}`,
+						Message:     `message1`,
 						Description: "description1",
 						Positions:   []string{"src/config.go:10", "src/config.go:20"},
 						Status:      model.MessageStatusFuzzy,
 					},
 					{
 						ID:          "2",
-						Message:     "{message2}",
+						Message:     "message2",
 						Description: "description2",
 					},
 				},
@@ -77,7 +75,7 @@ func TestToGo(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:          "2",
-						Message:     `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
+						Message:     `Order #\{Id\} has been canceled for \{ClientName\} | \\`,
 						Description: "description2",
 						Positions:   []string{"src/config.go:20"},
 						Status:      model.MessageStatusFuzzy,

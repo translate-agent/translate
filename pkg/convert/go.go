@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	ast "go.expect.digital/mf2/parse"
+
 	"go.expect.digital/mf2"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/message/pipeline"
@@ -48,18 +50,30 @@ func FromGo(b []byte, original *bool) (model.Translation, error) {
 }
 
 // translationToPipeline converts a model.Translation structure into a pipeline.Messages structure.
-func translationToPipeline(t model.Translation) (pipeline.Messages, error) { //nolint:unparam
+func translationToPipeline(t model.Translation) (pipeline.Messages, error) {
 	pipelineMsg := pipeline.Messages{
 		Language: t.Language,
 		Messages: make([]pipeline.Message, 0, len(t.Messages)),
 	}
 
 	for _, value := range t.Messages {
-		message := "" // TODO: convert value from MF2 format.
+		tree, err := ast.Parse(value.Message)
+		if err != nil {
+			return pipeline.Messages{}, fmt.Errorf("parse mf2 message: %w", err)
+		}
+
+		switch mf2Msg := tree.Message.(type) {
+		case nil:
+			value.Message = ""
+		case ast.SimpleMessage:
+			value.Message = patternsToMsg(mf2Msg)
+		case ast.ComplexMessage:
+			return pipeline.Messages{}, fmt.Errorf("complex message not supported")
+		}
 
 		msg := pipeline.Message{
 			ID:          pipeline.IDList{value.ID},
-			Translation: pipeline.Text{Msg: message},
+			Translation: pipeline.Text{Msg: value.Message},
 			Meaning:     value.Description,
 			Fuzzy:       value.Status == model.MessageStatusFuzzy,
 		}
