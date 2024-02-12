@@ -35,9 +35,9 @@ type AWSTranslate struct {
 type AWSTranslateOption func(*AWSTranslate) error
 
 // WithAWSClient sets the AWS Translate client.
-func WithAWSClient(awsc awsClient) AWSTranslateOption {
+func WithAWSClient(c awsClient) AWSTranslateOption {
 	return func(awst *AWSTranslate) error {
-		awst.client = awsc
+		awst.client = c
 		return nil
 	}
 }
@@ -109,84 +109,39 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 		return nil, nil //nolint:nilnil
 	}
 
-	// TODO: Implement translation of message texts.
-
-	// NOTE: temporary fix to avoid failing tests.
 	if len(translation.Messages) == 0 {
 		return &model.Translation{Language: targetLanguage, Original: translation.Original}, nil
 	}
 
-	translated := &model.Translation{
-		Language: targetLanguage,
-		Original: translation.Original,
-		Messages: make([]model.Message, len(translation.Messages)),
+	// Retrieve all translatable text from translation
+	texts, err := getTexts(translation)
+	if err != nil {
+		return nil, fmt.Errorf("aws translate: get texts: %w", err)
 	}
 
-	for i := range translation.Messages {
-		translated.Messages = append(translated.Messages, translation.Messages[i])
-		translated.Messages[i].Status = model.MessageStatusFuzzy
+	translatedTexts := make([]string, 0, len(texts))
+
+	for i := range texts {
+		// TODO: Use TranslateDocument, to minimize the number of requests?
+		// https://pkg.go.dev/github.com/aws/aws-sdk-go-v2/service/translate#Client.TranslateDocument
+		translateOutput, translateErr := a.client.TranslateText(ctx,
+			&translate.TranslateTextInput{
+				TargetLanguageCode: awsLanguage(targetLanguage),
+				SourceLanguageCode: awsLanguage(translation.Language),
+				Text:               ptr(texts[i]), // Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
+			})
+		if translateErr != nil {
+			return nil, fmt.Errorf("aws translate: translate text #%d: %w", i, translateErr)
+		}
+
+		translatedTexts = append(translatedTexts, *translateOutput.TranslatedText)
 	}
 
-	// INFO: Previous implementation of the translation of message texts, for reference!
-
-	// // Extract translatable text from translation.
-	// asts, err := mf.ParseTranslation(translation)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("AWS translate: parse translation messages: %w", err)
-	// }
-
-	// textNodes := mf.GetTextNodes(asts)
-	// texts := textNodes.GetTexts()
-	// translatedTexts := make([]string, 0, len(texts))
-
-	// for i := range texts {
-	// 	translateOutput, err := a.client.TranslateText(ctx,
-	// 		&translate.TranslateTextInput{
-	// 			// Amazon Translate supports text translation between the languages listed in the following table.
-	// 			// The language code column uses ISO 639-1 two-digit language codes.
-	// 			// For a country variant of a language, the table follows the RFC 5646 format of appending a dash
-	// 			// followed by an ISO 3166 2-digit country code.
-	// 			// For example, the language code for the Mexican variant of Spanish is es-MX.
-	// 			// List of supported languages - https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
-
-	// 			TargetLanguageCode: awsLanguage(targetLanguage),
-	// 			SourceLanguageCode: awsLanguage(translation.Language),
-	// 			// Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
-	// 			Text: ptr(texts[i]),
-	// 		})
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("AWS translate: translate text #%d: %w", i, err)
-	// 	}
-
-	// 	translatedTexts = append(translatedTexts, *translateOutput.TranslatedText)
-	// }
-
-	// // Overwrite text nodes in ASTs to include newly translated text.
-	// if err := textNodes.OverwriteTexts(translatedTexts); err != nil {
-	// 	return nil, fmt.Errorf("AWS translate: overwrite text nodes in ASTs: %w", err)
-	// }
-
-	// // create translation with newly translated messages.
-	// translated := model.Translation{
-	// 	Language: targetLanguage,
-	// 	Original: translation.Original,
-	// 	Messages: make([]model.Message, len(translation.Messages)),
-	// }
-
-	// for i := range asts {
-	// 	b, err := asts[i].MarshalText()
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf(
-	// 			"AWS translate: marshal text from AST for message ID '%s': %w", translation.Messages[i].ID, err)
-	// 	}
-
-	// 	m := translation.Messages[i]
-	// 	m.Message = string(b)
-	// 	m.Status = model.MessageStatusFuzzy
-	// 	translated.Messages[i] = m
-	// }
-
-	// return &translated, nil
+	// build translation with new translated text
+	translated, err := buildTranslated(translation, translatedTexts, targetLanguage)
+	if err != nil {
+		return nil, fmt.Errorf("aws translate: build translated: %w", err)
+	}
 
 	return translated, nil
 }
@@ -202,7 +157,7 @@ func ptr[T any](v T) *T {
 // skips locale part if region is not a country,
 // AWS only supports ISO 3166 2-digit country codes.
 // https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html
-func awsLanguage(language language.Tag) *string { //nolint:unused
+func awsLanguage(language language.Tag) *string {
 	lang := language.String()
 
 	if region, _ := language.Region(); !region.IsCountry() {

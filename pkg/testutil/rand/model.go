@@ -141,13 +141,6 @@ func WithStatus(status model.MessageStatus) ModelMessageOption {
 	}
 }
 
-// WithMessageFormat encloses the message in curly braces.
-func WithMessageFormat() ModelMessageOption {
-	return func(m *model.Message) {
-		m.Message = "{" + m.Message + "}"
-	}
-}
-
 // ------------------Translation-----------------
 
 // modelTranslation generates a random model.Translation with the given

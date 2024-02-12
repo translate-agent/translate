@@ -12,8 +12,11 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
+
+	mf2 "go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
 
@@ -22,20 +25,25 @@ import (
 func Test_Translate(t *testing.T) {
 	t.Parallel()
 
+	targetLang := language.Latvian
+
 	allTranslators(t, func(t *testing.T, translator Translator, subTest testutil.SubtestFn) {
-		subTest("Multiple translations", func(ctx context.Context, t *testing.T) {
-			translation := randTranslation(3, language.Latvian)
-			translation.Language = language.English // set original language
-			translated, err := translator.Translate(ctx, translation, language.Latvian)
+		subTest("Multiple messages", func(ctx context.Context, t *testing.T) {
+			input := rand.ModelTranslation(3, nil, rand.WithLanguage(language.English))
+
+			output, err := translator.Translate(ctx, input, targetLang)
 			require.NoError(t, err)
 
 			// Check the number of translated messages is the same as the number of input messages.
-			require.Len(t, translated.Messages, len(translation.Messages))
+			require.Len(t, output.Messages, len(input.Messages))
 
 			// Check the translated messages are not empty and are marked as fuzzy.
-			for _, m := range translated.Messages {
+			for _, m := range output.Messages {
 				require.NotEmpty(t, m.Message)
-				require.Equal(t, model.MessageStatusFuzzy, m.Status)
+				require.Equal(t, model.MessageStatusFuzzy, m.Status, "want: %s, got: %s", model.MessageStatusFuzzy, m.Status)
+
+				_, err := mf2.Parse(m.Message)
+				require.NoError(t, err, "mf2: parse translated message")
 			}
 		})
 	})
@@ -44,10 +52,7 @@ func Test_Translate(t *testing.T) {
 // ------------------Helpers and init------------------
 
 // translators is a map of all possible translation services, e.g. Google Translate, DeepL, etc.
-var translators = map[string]Translator{
-	"GoogleTranslate": nil,
-	// "AWSTranslate":    nil, // TODO
-}
+var translators = map[string]Translator{}
 
 // initAWSTranslate creates a new AWS Translate service and adds it to the translators map.
 func initAWSTranslate(ctx context.Context) error {
@@ -119,15 +124,7 @@ func allTranslators(t *testing.T, f func(t *testing.T, translator Translator, su
 	for name, translator := range translators {
 		name, translator := name, translator
 		t.Run(name, func(t *testing.T) {
-			if name == "AWSTranslate" { // TODO
-				t.Skip()
-			}
-
 			t.Parallel()
-
-			if translator == nil {
-				t.Skipf("'%s' is not initialized", name)
-			}
 
 			_, subTest := testutil.Trace(t)
 
