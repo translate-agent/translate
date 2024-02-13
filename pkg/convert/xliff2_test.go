@@ -37,9 +37,9 @@ func randXliff2(translation *model.Translation) []byte {
 
 	b.WriteString("<file>")
 
-	writeMsg := func(s string) { fmt.Fprintf(b, "<segment><target>%s</target></segment>", s[1:len(s)-1]) }
+	writeMsg := func(s string) { fmt.Fprintf(b, "<segment><target>%s</target></segment>", s) }
 	if translation.Original {
-		writeMsg = func(s string) { fmt.Fprintf(b, "<segment><source>%s</source></segment>", s[1:len(s)-1]) }
+		writeMsg = func(s string) { fmt.Fprintf(b, "<segment><source>%s</source></segment>", s) }
 	}
 
 	for _, msg := range translation.Messages {
@@ -83,18 +83,16 @@ func assertEqualXML(t *testing.T, expected, actual []byte) bool { //nolint:unpar
 func Test_FromXliff2(t *testing.T) {
 	t.Parallel()
 
-	t.Skip() // TODO
-
 	originalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
-		testutilrand.WithOriginal(true),
+		testutilrand.WithOriginal(true), testutilrand.WithSimpleMF2Messages(),
 	)
 
 	nonOriginalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusUntranslated)},
-		testutilrand.WithOriginal(false),
+		testutilrand.WithOriginal(false), testutilrand.WithSimpleMF2Messages(),
 	)
 
 	tests := []struct {
@@ -121,7 +119,7 @@ func Test_FromXliff2(t *testing.T) {
 					Messages: []model.Message{
 						{
 							ID:      "order canceled",
-							Message: `{Order #{Id} has been canceled for {ClientName} | \}`,
+							Message: `Order #{Id} has been canceled for {ClientName} | \`,
 						},
 					},
 				},
@@ -132,7 +130,7 @@ func Test_FromXliff2(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "order canceled",
-						Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
+						Message: `Order #\{Id\} has been canceled for \{ClientName\} | \\`,
 						Status:  model.MessageStatusUntranslated,
 					},
 				},
@@ -148,6 +146,8 @@ func Test_FromXliff2(t *testing.T) {
 			actual, err := FromXliff2(tt.data, &tt.expected.Original)
 			require.NoError(t, err)
 
+			t.Logf("actual: %v", actual)
+			t.Logf("expect: %v", tt.expected)
 			testutil.EqualTranslations(t, tt.expected, &actual)
 		})
 	}

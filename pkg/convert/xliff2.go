@@ -4,6 +4,8 @@ import (
 	"encoding/xml"
 	"fmt"
 
+	"go.expect.digital/mf2"
+
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -80,11 +82,14 @@ func FromXliff2(data []byte, original *bool) (model.Translation, error) {
 	}
 
 	for _, unit := range xlf.File.Units {
-		message := getMessage(unit)
+		message, err := mf2.NewBuilder().Text(getMessage(unit)).Build()
+		if err != nil {
+			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
+		}
 
 		translation.Messages = append(translation.Messages, model.Message{
 			ID:          unit.ID,
-			Message:     message, // TODO: convert message to MF2 format.
+			Message:     message,
 			Description: findDescription(unit),
 			Positions:   positionsFromXliff2(unit.Notes),
 			Status:      status,
