@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"go.expect.digital/mf2"
-
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
