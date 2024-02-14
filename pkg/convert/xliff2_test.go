@@ -154,14 +154,15 @@ func Test_FromXliff2(t *testing.T) {
 func Test_ToXliff2(t *testing.T) {
 	t.Parallel()
 
-	t.Skip() // TODO
-
 	msgOpts := []testutilrand.ModelMessageOption{
 		// Do not mark message as fuzzy, as this is not supported by XLIFF 2.0
 		testutilrand.WithStatus(model.MessageStatusUntranslated),
 	}
 
-	translation := testutilrand.ModelTranslation(4, msgOpts, testutilrand.WithOriginal(true))
+	translation := testutilrand.ModelTranslation(4,
+		msgOpts,
+		testutilrand.WithOriginal(true),
+		testutilrand.WithSimpleMF2Messages())
 
 	tests := []struct {
 		name     string
@@ -181,7 +182,7 @@ func Test_ToXliff2(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "common.welcome",
-						Message: `{User #\{ID\} \| \\}`,
+						Message: `User #\{ID\} | \\`,
 					},
 				},
 			},
@@ -212,7 +213,6 @@ func Test_ToXliff2(t *testing.T) {
 }
 
 func Test_TransformXLIFF2(t *testing.T) {
-	t.Skip() // TODO
 	t.Parallel()
 
 	msgOpts := []testutilrand.ModelMessageOption{
@@ -224,7 +224,10 @@ func Test_TransformXLIFF2(t *testing.T) {
 		MaxCount: 100,
 		Values: func(values []reflect.Value, _ *rand.Rand) {
 			values[0] = reflect.ValueOf(
-				testutilrand.ModelTranslation(3, msgOpts, testutilrand.WithOriginal(true))) // input generator
+				testutilrand.ModelTranslation(3,
+					msgOpts,
+					testutilrand.WithOriginal(true),
+					testutilrand.WithSimpleMF2Messages())) // input generator
 		},
 	}
 

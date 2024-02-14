@@ -66,7 +66,7 @@ func translationToPipeline(t model.Translation) (pipeline.Messages, error) {
 		case nil:
 			value.Message = ""
 		case ast.SimpleMessage:
-			value.Message = patternsToMsg(mf2Msg)
+			value.Message = patternsToSimpleMsg(mf2Msg)
 		case ast.ComplexMessage:
 			return pipeline.Messages{}, fmt.Errorf("complex message not supported")
 		}
