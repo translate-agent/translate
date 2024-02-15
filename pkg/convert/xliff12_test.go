@@ -33,9 +33,9 @@ func randXliff12(translation *model.Translation) []byte {
 
 	b.WriteString("<body>")
 
-	writeMsg := func(s string) { fmt.Fprintf(b, "<target>%s</target>", s[1:len(s)-1]) }
+	writeMsg := func(s string) { fmt.Fprintf(b, "<target>%s</target>", s) }
 	if translation.Original {
-		writeMsg = func(s string) { fmt.Fprintf(b, "<source>%s</source>", s[1:len(s)-1]) }
+		writeMsg = func(s string) { fmt.Fprintf(b, "<source>%s</source>", s) }
 	}
 
 	for _, msg := range translation.Messages {
@@ -74,18 +74,16 @@ func randXliff12(translation *model.Translation) []byte {
 func Test_FromXliff12(t *testing.T) {
 	t.Parallel()
 
-	t.Skip() // TODO
-
 	originalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusTranslated)},
-		testutilrand.WithOriginal(true),
+		testutilrand.WithOriginal(true), testutilrand.WithSimpleMF2Messages(),
 	)
 
 	nonOriginalTranslation := testutilrand.ModelTranslation(
 		3,
 		[]testutilrand.ModelMessageOption{testutilrand.WithStatus(model.MessageStatusUntranslated)},
-		testutilrand.WithOriginal(false),
+		testutilrand.WithOriginal(false), testutilrand.WithSimpleMF2Messages(),
 	)
 
 	tests := []struct {
@@ -112,7 +110,7 @@ func Test_FromXliff12(t *testing.T) {
 					Messages: []model.Message{
 						{
 							ID:      "order canceled",
-							Message: `{Order #{Id} has been canceled for {ClientName} | \}`,
+							Message: `Order #{Id} has been canceled for {ClientName} | \`,
 						},
 					},
 				},
@@ -123,7 +121,7 @@ func Test_FromXliff12(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "order canceled",
-						Message: `{Order #\{Id\} has been canceled for \{ClientName\} \| \\}`,
+						Message: `Order #\{Id\} has been canceled for \{ClientName\} | \\`,
 						Status:  model.MessageStatusUntranslated,
 					},
 				},
