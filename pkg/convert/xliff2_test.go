@@ -1,7 +1,7 @@
 package convert
 
 import (
-	"bytes"
+	"encoding/xml"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -19,55 +19,51 @@ import (
 )
 
 func randXliff2(translation *model.Translation) []byte {
-	b := new(bytes.Buffer)
-
-	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
-
-	if translation.Original {
-		fmt.Fprintf(
-			b,
-			"<xliff xmlns=\"urn:oasis:names:tc:xliff:document:2.0\" version=\"2.0\" srcLang=\"%s\" trgLang=\"und\">",
-			translation.Language)
-	} else {
-		fmt.Fprintf(
-			b,
-			"<xliff xmlns=\"urn:oasis:names:tc:xliff:document:2.0\" version=\"2.0\" srcLang=\"und\" trgLang=\"%s\">",
-			translation.Language)
+	xliff := xliff2{
+		Version: "2.0",
 	}
 
-	b.WriteString("<file>")
-
-	writeMsg := func(s string) { fmt.Fprintf(b, "<segment><target>%s</target></segment>", s) }
 	if translation.Original {
-		writeMsg = func(s string) { fmt.Fprintf(b, "<segment><source>%s</source></segment>", s) }
+		xliff.SrcLang = translation.Language
+	} else {
+		xliff.TrgLang = translation.Language
 	}
 
 	for _, msg := range translation.Messages {
-		fmt.Fprintf(b, "<unit id=\"%s\">", msg.ID)
+		xmlMsg := unit{
+			ID: msg.ID,
+		}
+
+		if translation.Original {
+			xmlMsg.Source = msg.Message
+		} else {
+			xmlMsg.Target = msg.Message
+		}
 
 		if msg.Description != "" || len(msg.Positions) > 0 {
-			fmt.Fprintf(b, "<notes>")
+			notes := make([]note, 0)
 
 			for _, pos := range msg.Positions {
-				fmt.Fprintf(b, "<note category=\"location\">%s</note>", pos)
+				notes = append(notes, note{Category: "location", Content: pos})
 			}
 
 			if msg.Description != "" {
-				fmt.Fprintf(b, "<note category=\"description\">%s</note>", msg.Description)
+				notes = append(notes, note{Category: "description", Content: msg.Description})
 			}
 
-			fmt.Fprintf(b, "</notes>")
+			xmlMsg.Notes = &notes
 		}
 
-		writeMsg(msg.Message)
-
-		b.WriteString("</unit>")
+		xliff.File.Units = append(xliff.File.Units, xmlMsg)
 	}
 
-	b.WriteString("</file>")
-	b.WriteString("</xliff>")
+	xmlData, err := xml.Marshal(xliff)
+	if err != nil {
+		fmt.Printf("marshaling XLIFF2.0: %v\n", err)
+		return nil
+	}
 
-	return b.Bytes()
+	return append([]byte(xml.Header), xmlData...)
 }
 
 func assertEqualXML(t *testing.T, expected, actual []byte) bool { //nolint:unparam
