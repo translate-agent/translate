@@ -25,17 +25,13 @@ func randXliff2(translation *model.Translation) []byte {
 
 	if translation.Original {
 		xliff.SrcLang = translation.Language
-		xliff.TrgLang = language.Und
 	} else {
-		xliff.SrcLang = language.Und
 		xliff.TrgLang = translation.Language
 	}
 
 	for _, msg := range translation.Messages {
 		xmlMsg := unit{
-			ID:     msg.ID,
-			Source: "",
-			Target: "",
+			ID: msg.ID,
 		}
 
 		if translation.Original {
@@ -61,15 +57,13 @@ func randXliff2(translation *model.Translation) []byte {
 		xliff.File.Units = append(xliff.File.Units, xmlMsg)
 	}
 
-	xmlData, err := xml.MarshalIndent(xliff, "", "  ")
+	xmlData, err := xml.Marshal(xliff)
 	if err != nil {
 		fmt.Printf("marshaling XLIFF2.0: %v\n", err)
 		return nil
 	}
 
-	xmlWithDeclaration := []byte(xml.Header + string(xmlData))
-
-	return xmlWithDeclaration
+	return append([]byte(xml.Header), xmlData...)
 }
 
 func assertEqualXML(t *testing.T, expected, actual []byte) bool { //nolint:unparam
