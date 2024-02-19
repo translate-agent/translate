@@ -1,7 +1,7 @@
 package convert
 
 import (
-	"bytes"
+	"encoding/xml"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -20,55 +20,58 @@ import (
 
 // randXliff12 dynamically generates a random XLIFF 1.2 file from the given translation.
 func randXliff12(translation *model.Translation) []byte {
-	b := new(bytes.Buffer)
-
-	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
-	b.WriteString("<xliff xmlns=\"urn:oasis:names:tc:xliff:document:1.2\" version=\"1.2\">")
-
-	if translation.Original {
-		fmt.Fprintf(b, "<file source-language=\"%s\" target-language=\"und\">", translation.Language)
-	} else {
-		fmt.Fprintf(b, "<file source-language=\"und\" target-language=\"%s\">", translation.Language)
+	xliff := xliff12{
+		Version: "1.2",
 	}
 
-	b.WriteString("<body>")
-
-	writeMsg := func(s string) { fmt.Fprintf(b, "<target>%s</target>", s) }
 	if translation.Original {
-		writeMsg = func(s string) { fmt.Fprintf(b, "<source>%s</source>", s) }
+		xliff.File.SourceLanguage = translation.Language
+	} else {
+		xliff.File.TargetLanguage = translation.Language
 	}
 
 	for _, msg := range translation.Messages {
-		fmt.Fprintf(b, "<trans-unit id=\"%s\">", msg.ID)
+		xmlMsg := transUnit{
+			ID:   msg.ID,
+			Note: msg.Description,
+		}
 
-		writeMsg(msg.Message)
-
-		if msg.Description != "" {
-			fmt.Fprintf(b, "<note>%s</note>", msg.Description)
+		if translation.Original {
+			xmlMsg.Source = msg.Message
+		} else {
+			xmlMsg.Target = msg.Message
 		}
 
 		for _, pos := range msg.Positions {
-			b.WriteString(`<context-group purpose="location">`)
-
 			if strings.Contains(pos, ":") {
 				p := strings.Split(pos, ":")
-				fmt.Fprintf(b, `<context context-type="sourcefile">%s</context>`, p[0])
-				fmt.Fprintf(b, `<context context-type="linenumber">%s</context>`, p[1])
+				xmlMsg.ContextGroups = append(xmlMsg.ContextGroups, contextGroup{
+					Purpose: "location",
+					Contexts: []context{
+						{Type: "sourcefile", Content: p[0]},
+						{Type: "linenumber", Content: p[1]},
+					},
+				})
 			} else {
-				fmt.Fprintf(b, `<context context-type="sourcefile">%s</context>`, pos)
+				xmlMsg.ContextGroups = append(xmlMsg.ContextGroups, contextGroup{
+					Purpose: "location",
+					Contexts: []context{
+						{Type: "sourcefile", Content: pos},
+					},
+				})
 			}
-
-			b.WriteString(`</context-group>`)
 		}
 
-		b.WriteString("</trans-unit>")
+		xliff.File.Body.TransUnits = append(xliff.File.Body.TransUnits, xmlMsg)
 	}
 
-	b.WriteString("</body>")
-	b.WriteString("</file>")
-	b.WriteString("</xliff>")
+	xmlData, err := xml.Marshal(xliff)
+	if err != nil {
+		fmt.Printf("marshaling XLIFF1.2: %v\n", err)
+		return nil
+	}
 
-	return b.Bytes()
+	return append([]byte(xml.Header), xmlData...)
 }
 
 func Test_FromXliff12(t *testing.T) {
@@ -204,7 +207,6 @@ func Test_ToXliff12(t *testing.T) {
 }
 
 func Test_TransformXLIFF12(t *testing.T) {
-	t.Skip() // TODO
 	t.Parallel()
 
 	msgOpts := []testutilrand.ModelMessageOption{
@@ -216,7 +218,10 @@ func Test_TransformXLIFF12(t *testing.T) {
 		MaxCount: 100,
 		Values: func(values []reflect.Value, _ *rand.Rand) {
 			values[0] = reflect.ValueOf(
-				testutilrand.ModelTranslation(3, msgOpts, testutilrand.WithOriginal(true))) // input generator
+				testutilrand.ModelTranslation(3,
+					msgOpts,
+					testutilrand.WithOriginal(true),
+					testutilrand.WithSimpleMF2Messages())) // input generator
 		},
 	}
 
