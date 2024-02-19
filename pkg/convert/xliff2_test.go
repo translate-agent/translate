@@ -2,7 +2,6 @@ package convert
 
 import (
 	"encoding/xml"
-	"fmt"
 	"math/rand"
 	"reflect"
 	"regexp"
@@ -18,7 +17,7 @@ import (
 	testutilrand "go.expect.digital/translate/pkg/testutil/rand"
 )
 
-func randXliff2(translation *model.Translation) []byte {
+func randXliff2(t *testing.T, translation *model.Translation) []byte {
 	xliff := xliff2{
 		Version: "2.0",
 	}
@@ -58,10 +57,7 @@ func randXliff2(translation *model.Translation) []byte {
 	}
 
 	xmlData, err := xml.Marshal(xliff)
-	if err != nil {
-		fmt.Printf("marshaling XLIFF2.0: %v\n", err)
-		return nil
-	}
+	require.NoError(t, err)
 
 	return append([]byte(xml.Header), xmlData...)
 }
@@ -98,17 +94,17 @@ func Test_FromXliff2(t *testing.T) {
 	}{
 		{
 			name:     "Original",
-			data:     randXliff2(originalTranslation),
+			data:     randXliff2(t, originalTranslation),
 			expected: originalTranslation,
 		},
 		{
 			name:     "Different language",
-			data:     randXliff2(nonOriginalTranslation),
+			data:     randXliff2(t, nonOriginalTranslation),
 			expected: nonOriginalTranslation,
 		},
 		{
 			name: "Message with special chars",
-			data: randXliff2(
+			data: randXliff2(t,
 				&model.Translation{
 					Language: language.English,
 					Original: false,
@@ -168,7 +164,7 @@ func Test_ToXliff2(t *testing.T) {
 		{
 			name:     "valid input",
 			data:     translation,
-			expected: randXliff2(translation),
+			expected: randXliff2(t, translation),
 		},
 		{
 			name: "message with special chars",
