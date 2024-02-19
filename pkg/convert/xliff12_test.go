@@ -2,7 +2,6 @@ package convert
 
 import (
 	"encoding/xml"
-	"fmt"
 	"math/rand"
 	"reflect"
 	"strings"
@@ -19,7 +18,7 @@ import (
 // TODO: XLIFF1.2 and XLIFF2.0 uses same test data and same tests, so we can merge them into one test file
 
 // randXliff12 dynamically generates a random XLIFF 1.2 file from the given translation.
-func randXliff12(translation *model.Translation) []byte {
+func randXliff12(t *testing.T, translation *model.Translation) []byte {
 	xliff := xliff12{
 		Version: "1.2",
 	}
@@ -66,10 +65,7 @@ func randXliff12(translation *model.Translation) []byte {
 	}
 
 	xmlData, err := xml.Marshal(xliff)
-	if err != nil {
-		fmt.Printf("marshaling XLIFF1.2: %v\n", err)
-		return nil
-	}
+	require.NoError(t, err)
 
 	return append([]byte(xml.Header), xmlData...)
 }
@@ -96,17 +92,17 @@ func Test_FromXliff12(t *testing.T) {
 	}{
 		{
 			name:     "Original",
-			data:     randXliff12(originalTranslation),
+			data:     randXliff12(t, originalTranslation),
 			expected: originalTranslation,
 		},
 		{
 			name:     "Different language",
-			data:     randXliff12(nonOriginalTranslation),
+			data:     randXliff12(t, nonOriginalTranslation),
 			expected: nonOriginalTranslation,
 		},
 		{
 			name: "Message with special chars {}",
-			data: randXliff12(
+			data: randXliff12(t,
 				&model.Translation{
 					Language: language.English,
 					Original: false,
@@ -166,7 +162,7 @@ func Test_ToXliff12(t *testing.T) {
 		{
 			name:     "valid input",
 			data:     translation,
-			expected: randXliff12(translation),
+			expected: randXliff12(t, translation),
 		},
 		{
 			name: "message with special chars",
