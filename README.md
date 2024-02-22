@@ -97,16 +97,16 @@ npm install @connectrpc/connect-web
 import { createPromiseClient } from "@connectrpc/connect";
 import { createGrpcWebTransport } from "@connectrpc/connect-web";
 
-import { CreateTranslationRequest, Translation } from '@buf/expectdigital_translate-agent.bufbuild_es/translate/v1/translate_pb.js';
+import { Service } from '@buf/expectdigital_translate-agent.bufbuild_es/translate/v1/translate_pb.js';
 import { TranslateService } from "@buf/expectdigital_translate-agent.connectrpc_es/translate/v1/translate_connect.js";
 
-const transport = createGrpcWebTransport({ baseUrl: "http://localhost:8080", });
+const transport = createGrpcWebTransport({
+  baseUrl: "http://localhost:8080",
+});
+
 const client = createPromiseClient(TranslateService, transport);
 
-let tr = new Translation({ language: "en" });
-let req = new CreateTranslationRequest({ translation: tr, serviceId: "UUIDv4" });
-
-client.createTranslation(req)
-  .then((res) => { console.log(res); })
-  .catch((err) => { console.error(err); });
+client.createService({
+  service: new Service({ name: "test1" })
+})
 ```
