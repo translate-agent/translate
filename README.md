@@ -95,20 +95,18 @@ npm install @connectrpc/connect-web
 
 ```typescript
 import { createPromiseClient } from "@connectrpc/connect";
-import { createConnectTransport } from "@connectrpc/connect-web";
+import { createGrpcWebTransport } from "@connectrpc/connect-web";
 
-import { TranslateService } from "@buf/expectdigital_translate-agent.connectrpc_es/translate/v1/translate_connect";
-import { CreateTranslationRequest, Translation } from '@buf/expectdigital_translate-agent.bufbuild_es/translate/v1/translate_pb';
+import { CreateTranslationRequest, Translation } from '@buf/expectdigital_translate-agent.bufbuild_es/translate/v1/translate_pb.js';
+import { TranslateService } from "@buf/expectdigital_translate-agent.connectrpc_es/translate/v1/translate_connect.js";
 
-const client = createPromiseClient(TranslateService, createConnectTransport({ baseUrl: "http://localhost:8080", }));
+const transport = createGrpcWebTransport({ baseUrl: "http://localhost:8080", });
+const client = createPromiseClient(TranslateService, transport);
 
-let tr = new Translation({ language: "en", });
-let req = new CreateTranslationRequest({ translation: tr, });
+let tr = new Translation({ language: "en" });
+let req = new CreateTranslationRequest({ translation: tr, serviceId: "UUIDv4" });
 
-client.createTranslation(req).then((res) => {
-  console.log(res);
-}).catch((err) => {
-  console.error(err);
-});
-
+client.createTranslation(req)
+  .then((res) => { console.log(res); })
+  .catch((err) => { console.error(err); });
 ```
