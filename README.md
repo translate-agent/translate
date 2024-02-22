@@ -85,9 +85,10 @@ docker run -d --name translate-all-in-one \
 ```bash
 npm config set @buf:registry  https://buf.build/gen/npm/v1/
 
-npm install @connectrpc/connect
-npm install @connectrpc/connect-web  
+npm install @buf/expectdigital_translate-agent.bufbuild_es@latest
 npm install @buf/expectdigital_translate-agent.connectrpc_es@latest
+npm install @connectrpc/connect
+npm install @connectrpc/connect-web
 ```
 
 ### Usage
