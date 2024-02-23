@@ -88,7 +88,7 @@ func FromPo(b []byte, originalOverride *bool) (model.Translation, error) {
 }
 
 // isOriginalPO function determines whether a PO file is an original or a translation.
-func isOriginalPO(file po.PO, override *bool) bool {
+func isOriginalPO(portableObject po.PO, override *bool) bool {
 	// If override is not nil, use it.
 	if override != nil {
 		return *override
@@ -97,7 +97,7 @@ func isOriginalPO(file po.PO, override *bool) bool {
 	// NOTE: Based on my research, all original PO files have empty language.
 	// So that could be a way to determine originality.
 	// Further research is needed to confirm this.
-	if file.Headers.Get("Language") == "" {
+	if portableObject.Headers.Get("Language") == "" {
 		return true
 	}
 
@@ -118,7 +118,7 @@ func isOriginalPO(file po.PO, override *bool) bool {
 	// .pot == original and .po == translation,
 	// but we don't preserve file extension, so we can't use this method for now.
 
-	return allEmpty(file.Messages)
+	return allEmpty(portableObject.Messages)
 }
 
 // TODO: Can every convert use that ?
