@@ -1,301 +1,159 @@
 package po
 
 import (
-	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/text/language"
 )
 
-func Test_TokensToPo(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name        string
-		expected    Po
-		expectedErr error
-		input       []Token
-	}{
-		{
-			name: "When all possible token values are provided",
-			input: []Token{
-				mkToken(TokenTypeMsgID, ""),
-				mkToken(TokenTypeMsgStr, ""),
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-				mkToken(TokenTypeHeaderTranslator, "John Doe"),
-				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
-				mkToken(TokenTypeTranslatorComment, "translator comment"),
-				mkToken(TokenTypeTranslatorComment, "translator comment2"),
-				mkToken(TokenTypeExtractedComment, "extracted comment"),
-				mkToken(TokenTypeExtractedComment, "extracted comment2"),
-				mkToken(TokenTypeReference, "reference1"),
-				mkToken(TokenTypeReference, "reference2"),
-				mkToken(TokenTypeReference, "reference3"),
-				mkToken(TokenTypeFlag, "fuzzy"),
-				mkToken(TokenTypeMsgCtxt, "context"),
-				mkToken(TokenTypeMsgctxtPreviousContext, "previous context"),
-				mkToken(TokenTypeMsgidPrevUntStr, "msgid prev untranslated string"),
-				mkToken(TokenTypeMsgID, "There is 1 apple"),
-				mkToken(TokenTypeMsgidPluralPrevUntStrPlural, "msgid plural prev untranslated string"),
-				mkToken(TokenTypePluralMsgID, "There is %d apples"),
-				mkToken(TokenTypePluralMsgStr, "Il y a 1 pomme", withIndex(0)),
-				mkToken(TokenTypePluralMsgStr, "Il y a %d pommes", withIndex(1)),
-				mkToken(TokenTypeMsgID, "message id"),
-				mkToken(TokenTypeMsgStr, "message"),
-			},
-			expected: Po{
-				Header: HeaderNode{
-					Language:    language.Make("en-US"),
-					Translator:  "John Doe",
-					PluralForms: PluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
-				},
-				Messages: []MessageNode{
-					{
-						TranslatorComment:     []string{"translator comment", "translator comment2"},
-						ExtractedComment:      []string{"extracted comment", "extracted comment2"},
-						References:            []string{"reference1", "reference2", "reference3"},
-						Flags:                 []string{"fuzzy"},
-						MsgCtxt:               "context",
-						MsgCtxtPrevCtxt:       "previous context",
-						MsgIDPrevUnt:          "msgid prev untranslated string",
-						MsgID:                 "There is 1 apple",
-						MsgIDPrevUntPluralStr: "msgid plural prev untranslated string",
-						MsgIDPlural:           "There is %d apples",
-						MsgStr:                []string{"Il y a 1 pomme", "Il y a %d pommes"},
-					},
-					{
-						MsgID:  "message id",
-						MsgStr: []string{"message"},
-					},
-				},
-			},
-		},
-		{
-			name: "When msgid and msgstr token values are provided",
-			input: []Token{
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-				mkToken(TokenTypeHeaderTranslator, "John Doe"),
-				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
-				mkToken(TokenTypeMsgID, "message id"),
-				mkToken(TokenTypeMsgStr, "message"),
-			},
-			expected: Po{
-				Header: HeaderNode{
-					Language:    language.Make("en-US"),
-					Translator:  "John Doe",
-					PluralForms: PluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
-				},
-				Messages: []MessageNode{
-					{
-						MsgID:  "message id",
-						MsgStr: []string{"message"},
-					},
-				},
-			},
-		},
-		{
-			name: "When plural msgid and plural msgstr token values are provided",
-			input: []Token{
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-				mkToken(TokenTypeHeaderTranslator, "John Doe"),
-				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
-				mkToken(TokenTypeMsgID, "There is 1 apple"),
-				mkToken(TokenTypePluralMsgID, "There is %d apples"),
-				mkToken(TokenTypePluralMsgStr, "Il y a 1 pomme", withIndex(0)),
-				mkToken(TokenTypePluralMsgStr, "Il y a %d pommes", withIndex(1)),
-			},
-			expected: Po{
-				Header: HeaderNode{
-					Language:    language.Make("en-US"),
-					Translator:  "John Doe",
-					PluralForms: PluralForm{Plural: "plural=(n != 1);", NPlurals: 2},
-				},
-				Messages: []MessageNode{
-					{
-						MsgID:       "There is 1 apple",
-						MsgIDPlural: "There is %d apples",
-						MsgStr:      []string{"Il y a 1 pomme", "Il y a %d pommes"},
-					},
-				},
-			},
-		},
-		{
-			name: "Invalid plural forms format is provided",
-			input: []Token{
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-				mkToken(TokenTypeHeaderTranslator, "John Doe"),
-				mkToken(TokenTypeHeaderPluralForms, "nplurals=2"),
-				mkToken(TokenTypeMsgID, "There is 1 apple"),
-				mkToken(TokenTypePluralMsgID, "There is %d apples"),
-				mkToken(TokenTypePluralMsgStr, "Il y a 1 pomme", withIndex(0)),
-				mkToken(TokenTypePluralMsgStr, "Il y a %d pommes", withIndex(1)),
-			},
-			expectedErr: errors.New("invalid plural forms format"),
-		},
-		{
-			name: "Invalid nplurals value is provided",
-			input: []Token{
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-				mkToken(TokenTypeHeaderTranslator, "John Doe"),
-				mkToken(TokenTypeHeaderPluralForms, "nplurals=part; plural=(n != 1);"),
-				mkToken(TokenTypeMsgID, "There is 1 apple"),
-				mkToken(TokenTypePluralMsgID, "There is %d apples"),
-				mkToken(TokenTypePluralMsgStr, "Il y a 1 pomme", withIndex(0)),
-				mkToken(TokenTypePluralMsgStr, "Il y a %d pommes", withIndex(1)),
-			},
-			expectedErr: errors.New("invalid nplurals value"),
-		},
-		{
-			name: "Invalid nplurals part is provided",
-			input: []Token{
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-				mkToken(TokenTypeHeaderTranslator, "John Doe"),
-				mkToken(TokenTypeHeaderPluralForms, "; plural=(n != 1);"),
-				mkToken(TokenTypeMsgID, "There is 1 apple"),
-				mkToken(TokenTypePluralMsgID, "There is %d apples"),
-				mkToken(TokenTypePluralMsgStr, "Il y a 1 pomme", withIndex(0)),
-				mkToken(TokenTypePluralMsgStr, "Il y a %d pommes", withIndex(1)),
-			},
-			expectedErr: errors.New("invalid nplurals part"),
-		},
-		{
-			name: "Invalid po file: no messages found",
-			input: []Token{
-				mkToken(TokenTypeHeaderLanguage, "en-US"),
-				mkToken(TokenTypeHeaderTranslator, "John Doe"),
-				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
-			},
-			expectedErr: errors.New("invalid po file: no messages found"),
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			result, err := tokensToPo(tt.input)
-			if tt.expectedErr != nil {
-				require.Errorf(t, err, tt.expectedErr.Error())
-			}
-
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestPo_Marshal(t *testing.T) {
+func Test_Parse(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name     string
-		expected string
-		input    Po
+		input    string
+		expected PO
 	}{
 		{
-			name: "singular",
-			input: Po{
-				Header: HeaderNode{
-					Language:   language.Und,
-					Translator: "John Doe",
-				},
-				Messages: []MessageNode{
-					{
-						MsgID:            "Hello, world!",
-						MsgStr:           []string{},
-						Flags:            []string{"fuzzy"},
-						ExtractedComment: []string{"A simple greeting"},
-						References:       []string{"main.go:1"},
-					},
+			name: "only headers",
+			input: `# Top-level comment1
+# Top-level comment2
+msgid ""
+msgstr ""
+"Project-Id-Version: Hello World 1.0\n"`,
+			expected: PO{
+				Headers: Headers{
+					{Name: "Project-Id-Version", Value: "Hello World 1.0"},
 				},
 			},
-			expected: `msgid ""
-msgstr ""
-"Last-Translator: John Doe\n"
-
+		},
+		{
+			name: "only messages",
+			input: `#, fuzzy
 #: main.go:1
-#. A simple greeting
-#, fuzzy
-msgid "Hello, world!"
-msgstr ""
-`,
-		},
-		{
-			name: "plural",
-			input: Po{
-				Header: HeaderNode{
-					Language:   language.Latvian,
-					Translator: "John Doe",
-					PluralForms: PluralForm{
-						NPlurals: 2,
-						Plural:   "n != 1",
-					},
-				},
-				Messages: []MessageNode{
+# Translator comment
+msgid "id1"
+msgstr "str1"
+
+#. Extracted comment
+msgid "id2"
+msgid_plural "id2 plural"
+msgstr[0] "str2"
+msgstr[1] "str2-1"`,
+			expected: PO{
+				Messages: []Message{
 					{
-						MsgID:       "There is 1 apple",
-						MsgIDPlural: "There is 2 apples",
-						MsgStr:      []string{"Ir 1 ābols", "Ir 2 āboli"},
+						MsgID:              "id1",
+						MsgStr:             []string{"str1"},
+						Flags:              []string{"fuzzy"},
+						References:         []string{"main.go:1"},
+						TranslatorComments: []string{"Translator comment"},
+					},
+					{
+						MsgID:             "id2",
+						MsgIDPlural:       "id2 plural",
+						MsgStr:            []string{"str2", "str2-1"},
+						ExtractedComments: []string{"Extracted comment"},
 					},
 				},
 			},
-			expected: `msgid ""
-msgstr ""
-"Language: lv\n"
-"Last-Translator: John Doe\n"
-"Plural-Forms: nplurals=2; n != 1\n"
-
-msgid "There is 1 apple"
-msgid_plural "There is 2 apples"
-msgstr[0] "Ir 1 ābols"
-msgstr[1] "Ir 2 āboli"
-`,
 		},
 		{
-			name: "multiline",
-			input: Po{
-				Header: HeaderNode{
-					Language:   language.Latvian,
-					Translator: "John Doe",
-					PluralForms: PluralForm{
-						NPlurals: 2,
-						Plural:   "n != 1",
-					},
-				},
-				Messages: []MessageNode{
-					{
-						MsgID:  "\nThere is apple",
-						MsgStr: []string{"\nIr ābols"},
-					},
-					{
-						MsgID:       "\nThere is 1 orange",
-						MsgIDPlural: "\nThere is multiple oranges",
-						MsgStr:      []string{"\nIr 1 apelsīns", "\nIr vairāki apelsīni"},
-					},
-				},
-			},
-			expected: `msgid ""
+			name: "full example",
+			input: `# Top-level comment1
+# Top-level comment2
+msgid ""
 msgstr ""
+"Project-Id-Version: Hello World 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-05-16 13:48+0000\n"
+"PO-Revision-Date: 2022-09-22 05:46+0000\n"
+"Last-Translator: Jane Doe, 2023\n"
+"Language-Team: Latvian\n"
 "Language: lv\n"
-"Last-Translator: John Doe\n"
-"Plural-Forms: nplurals=2; n != 1\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+
+msgid "id1"
+msgstr "str1"
 
 msgid ""
-"There is apple"
+"multiline id1"
 msgstr ""
-"Ir ābols"
+"multiline str1"
+
+msgid "id2"
+msgid_plural "id2 plural"
+msgstr[0] "str2"
+msgstr[1] "str2-1"
+msgstr[2] "str2-2"
 
 msgid ""
-"There is 1 orange"
+"multiline"
+"plural"
 msgid_plural ""
-"There is multiple oranges"
+"multiline"
+"plurals"
 msgstr[0] ""
-"Ir 1 apelsīns"
+"str3"
 msgstr[1] ""
-"Ir vairāki apelsīni"
-`,
+"str3-1"
+msgstr[2] ""
+"str3-2"
+
+# Translator comment
+#. Extracted comment
+#: main.go:1
+#, flag
+msgid "Hello, world!"
+msgstr "Hello, world!"`,
+			expected: PO{
+				Headers: Headers{
+					{Name: "Project-Id-Version", Value: "Hello World 1.0"},
+					{Name: "Report-Msgid-Bugs-To", Value: ""},
+					{Name: "POT-Creation-Date", Value: "2023-05-16 13:48+0000"},
+					{Name: "PO-Revision-Date", Value: "2022-09-22 05:46+0000"},
+					{Name: "Last-Translator", Value: "Jane Doe, 2023"},
+					{Name: "Language-Team", Value: "Latvian"},
+					{Name: "Language", Value: "lv"},
+					{Name: "MIME-Version", Value: "1.0"},
+					{Name: "Content-Type", Value: "text/plain; charset=UTF-8"},
+					{Name: "Content-Transfer-Encoding", Value: ""},
+					{Name: "Plural-Forms", Value: `nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n
+%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;`},
+				},
+				Messages: []Message{
+					{
+						MsgID:  "id1",
+						MsgStr: []string{"str1"},
+					},
+					{
+						MsgID:  "\nmultiline id1",
+						MsgStr: []string{"\nmultiline str1"},
+					},
+					{
+						MsgID:       "id2",
+						MsgIDPlural: "id2 plural",
+						MsgStr:      []string{"str2", "str2-1", "str2-2"},
+					},
+					{
+						MsgID:       "\nmultiline\nplural",
+						MsgIDPlural: "\nmultiline\nplurals",
+						MsgStr:      []string{"\nstr3", "\nstr3-1", "\nstr3-2"},
+					},
+					{
+						MsgID:              "Hello, world!",
+						MsgStr:             []string{"Hello, world!"},
+						TranslatorComments: []string{"Translator comment"},
+						ExtractedComments:  []string{"Extracted comment"},
+						References:         []string{"main.go:1"},
+						Flags:              []string{"flag"},
+					},
+				},
+			},
 		},
 	}
 
@@ -304,9 +162,10 @@ msgstr[1] ""
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual := tt.input.Marshal()
+			actual, err := Parse([]byte(tt.input))
+			require.NoError(t, err)
 
-			require.Equal(t, tt.expected, string(actual))
+			require.Equal(t, tt.expected, actual)
 		})
 	}
 }

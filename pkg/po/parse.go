@@ -1,275 +1,159 @@
 package po
 
 import (
-	"bytes"
-	"errors"
-	"fmt"
-	"io"
-	"strconv"
+	"regexp"
 	"strings"
-
-	"golang.org/x/text/language"
 )
 
-type HeaderNode struct {
-	Language    language.Tag
-	Translator  string
-	PluralForms PluralForm
+type parser struct {
+	lines []string
+	pos   int
 }
 
-func (h *HeaderNode) marshal(b *bytes.Buffer) {
-	b.WriteString("msgid \"\"\nmsgstr \"\"\n")
-
-	if h.Language != language.Und {
-		b.WriteString(fmt.Sprintf("\"Language: %v\\n\"\n", h.Language))
-	}
-
-	if h.Translator != "" {
-		b.WriteString(fmt.Sprintf("\"Last-Translator: %s\\n\"\n", h.Translator))
-	}
-
-	h.PluralForms.marshal(b)
-}
-
-type PluralForm struct {
-	Plural   string
-	NPlurals int
-}
-
-func (pf *PluralForm) marshal(b *bytes.Buffer) {
-	if pf.Plural == "" && pf.NPlurals == 0 {
-		return
-	}
-
-	b.WriteString(fmt.Sprintf("\"Plural-Forms: nplurals=%d; %s\\n\"\n", pf.NPlurals, pf.Plural))
-}
-
-type MessageNode struct {
-	MsgCtxt               string
-	MsgID                 string
-	MsgIDPlural           string
-	TranslatorComment     []string
-	ExtractedComment      []string
-	References            []string
-	Flags                 []string
-	MsgCtxtPrevCtxt       string
-	MsgIDPrevUntPluralStr string
-	MsgIDPrevUnt          string
-	MsgStr                []string
-}
-
-// TODO: Add support for other fields.
-func (m *MessageNode) marshal(b *bytes.Buffer) {
-	// quoteLines function splits a string into multiple lines and wraps each line in double quotes.
-	quoteLines := func(s string) string {
-		split := strings.Split(s, "\n")
-		for i, line := range split {
-			split[i] = fmt.Sprintf("\"%s\"", line)
-		}
-
-		return strings.Join(split, "\n")
-	}
-
-	b.WriteByte('\n') // empty line before each message
-
-	for _, reference := range m.References {
-		b.WriteString(fmt.Sprintf("#: %s\n", reference))
-	}
-
-	for _, ec := range m.ExtractedComment {
-		b.WriteString(fmt.Sprintf("#. %s\n", ec))
-	}
-
-	for _, flag := range m.Flags {
-		b.WriteString(fmt.Sprintf("#, %s\n", flag))
-	}
-
-	if m.MsgID != "" {
-		b.WriteString(fmt.Sprintf("msgid %s\n", quoteLines(m.MsgID)))
-	}
-
-	if m.MsgIDPlural != "" {
-		b.WriteString(fmt.Sprintf("msgid_plural %s\n", quoteLines(m.MsgIDPlural)))
-	}
-
-	switch len(m.MsgStr) {
-	case 0:
-		b.WriteString("msgstr \"\"\n")
-	case 1:
-		b.WriteString(fmt.Sprintf("msgstr %s\n", quoteLines(m.MsgStr[0])))
-	default:
-		for i, ms := range m.MsgStr {
-			b.WriteString(fmt.Sprintf("msgstr[%d] %s\n", i, quoteLines(ms)))
-		}
+func newParser(lines []string) *parser {
+	return &parser{
+		lines: lines,
+		pos:   -1,
 	}
 }
 
-type Po struct {
-	Header   HeaderNode
-	Messages []MessageNode
+const eof = "eof"
+
+func (p *parser) peek() string {
+	next := p.next()
+	p.pos--
+
+	return next
 }
 
-// Marshal serializes the Po object into a byte slice.
-func (p *Po) Marshal() []byte {
-	var b bytes.Buffer
-
-	p.Header.marshal(&b)
-
-	for _, msg := range p.Messages {
-		msg.marshal(&b)
+func (p *parser) next() string {
+	if p.pos+1 >= len(p.lines) {
+		return eof
 	}
 
-	return b.Bytes()
+	p.pos++
+
+	return strings.TrimSpace(p.lines[p.pos])
 }
 
-// Parse function takes an io.Reader object and parses the contents into a Po struct
-// which represents object representing a Portable Object file.
-func Parse(r io.Reader) (Po, error) {
-	tokens, err := lex(r)
-	if err != nil {
-		return Po{}, fmt.Errorf("lex: %w", err)
-	}
-
-	po, err := tokensToPo(tokens)
-	if err != nil {
-		return Po{}, fmt.Errorf("tokens to po: %w", err)
-	}
-
-	return po, nil
-}
-
-// tokensToPo function takes a slice of Token objects and converts them into a Po object representing
-// a PO (Portable Object) file. It returns the generated Po object and an error.
-func tokensToPo(tokens []Token) (Po, error) {
-	var messages []MessageNode
-
-	currentMessage := MessageNode{}
-
-	var header HeaderNode
-
-	for i, token := range tokens {
-		if token.Value == "" && token.Type == TokenTypeMsgStr {
-			prevToken, err := previousToken(tokens, i)
-			if err != nil {
-				return Po{}, fmt.Errorf("get previous token: %w", err)
-			}
-			// Skip an empty default msgstr in the header if it exists
-			if prevToken.Type == TokenTypeMsgID && prevToken.Value == "" {
-				continue
+func (p *parser) parseHead() Headers {
+	// hasHeaders checks if the file has headers, and if so sets pos to the first header line.
+	hasHeaders := func() bool {
+		for line := p.next(); line != eof; line = p.next() {
+			if line == `msgid ""` && p.peek() == `msgstr ""` {
+				p.pos++
+				return true
 			}
 		}
 
-		switch token.Type {
-		case TokenTypeHeaderLanguage:
-			headerLang, err := language.Parse(token.Value)
-			if err != nil {
-				return Po{}, fmt.Errorf("invalid language: %w", err)
-			}
+		p.pos = -1 // reset the position
 
-			header.Language = headerLang
-		case TokenTypeHeaderTranslator:
-			header.Translator = token.Value
-		case TokenTypeHeaderPluralForms:
-			pf, err := parsePluralForms(token.Value)
-			if err != nil {
-				return Po{}, fmt.Errorf("invalid plural forms: %w", err)
-			}
+		return false
+	}
 
-			header.PluralForms = pf
-		case TokenTypeMsgCtxt:
-			currentMessage.MsgCtxt = token.Value
-		case TokenTypeExtractedComment:
-			currentMessage.ExtractedComment = append(currentMessage.ExtractedComment, token.Value)
-		case TokenTypeReference:
-			currentMessage.References = append(currentMessage.References, token.Value)
-		case TokenTypeFlag:
-			currentMessage.Flags = append(currentMessage.Flags, token.Value)
-		case TokenTypeTranslatorComment:
-			currentMessage.TranslatorComment = append(currentMessage.TranslatorComment, token.Value)
-		case TokenTypeMsgctxtPreviousContext:
-			currentMessage.MsgCtxtPrevCtxt = token.Value
-		case TokenTypeMsgidPluralPrevUntStrPlural:
-			currentMessage.MsgIDPrevUntPluralStr = token.Value
-		case TokenTypeMsgidPrevUntStr:
-			currentMessage.MsgIDPrevUnt = token.Value
-		case TokenTypeMsgID:
-			currentMessage.MsgID = token.Value
-		case TokenTypePluralMsgID:
-			currentMessage.MsgIDPlural = token.Value
-		case TokenTypeMsgStr:
-			currentMessage.MsgStr = []string{token.Value}
-			messages = append(messages, currentMessage)
-			currentMessage = MessageNode{}
-		case TokenTypePluralMsgStr:
-			currentMessage.MsgStr = append(currentMessage.MsgStr, token.Value)
-			// if next token is not plural msgstr, then we have all the plural msgstrs
-			if i+1 >= len(tokens) || tokens[i+1].Type != TokenTypePluralMsgStr {
-				messages = append(messages, currentMessage)
-				currentMessage = MessageNode{}
+	if !hasHeaders() {
+		return nil
+	}
+
+	var buff string                                                    // buffer for headers
+	for line := p.next(); line != "" && line != eof; line = p.next() { // until next newline
+		buff += line + "\n"
+	}
+
+	return p.emitHeaders(buff)
+}
+
+func (p *parser) emitHeaders(buff string) Headers {
+	re := regexp.MustCompile(`"(?s)([A-Za-z-]+):\s(.*?)\\n"`)
+	// Explanation:
+	// "(?s)        - match the quote and enable the dot to match newlines (for multiline headers)
+	// ([A-Za-z-]+) - match the header name, which is a sequence of letters and hyphens
+	// :\s          - match the colon and the space after the header name
+	// (.*?)        - match the header value, which could be any character
+	// \\n"         - match the newline and the quote at the end of the header value
+	matches := re.FindAllStringSubmatch(buff, -1)
+
+	if matches == nil {
+		return nil
+	}
+
+	headers := make(Headers, 0, len(matches))
+	for _, match := range matches {
+		headers = append(headers, Header{
+			Name:  match[1],
+			Value: strings.NewReplacer(`"`, "").Replace(match[2]),
+		})
+	}
+
+	return headers
+}
+
+func (p *parser) parseMessages() []Message {
+	var messages []Message
+	for p.peek() != eof {
+		messages = append(messages, p.parseMessage())
+	}
+
+	return messages
+}
+
+type state int
+
+// state used to track the last state to handle multiline strings.
+const (
+	msgID state = iota
+	msgIDPlural
+	msgStr
+)
+
+func (p *parser) parseMessage() Message {
+	var (
+		msg       Message
+		lastState state // track the last state to handle multiline strings
+	)
+
+	for line := p.next(); line != "" && line != eof; line = p.next() {
+		switch {
+		case strings.HasPrefix(line, "# "):
+			msg.TranslatorComments = append(msg.TranslatorComments, line[2:])
+		case strings.HasPrefix(line, "#. "):
+			msg.ExtractedComments = append(msg.ExtractedComments, line[3:])
+		case strings.HasPrefix(line, "#: "):
+			msg.References = append(msg.References, line[3:])
+		case strings.HasPrefix(line, `#, `):
+			msg.Flags = append(msg.Flags, line[3:])
+		case strings.HasPrefix(line, `msgid "`):
+			lastState = msgID
+			msg.MsgID = line[7 : len(line)-1]
+		case strings.HasPrefix(line, `msgstr "`):
+			lastState = msgStr
+
+			msg.MsgStr = append(msg.MsgStr, line[8:len(line)-1])
+		case strings.HasPrefix(line, `msgstr[`):
+			lastState = msgStr
+			idx := strings.Index(line, `] "`)
+			msg.MsgStr = append(msg.MsgStr, line[idx+3:len(line)-1])
+		case strings.HasPrefix(line, `msgid_plural "`):
+			lastState = msgIDPlural
+			msg.MsgIDPlural = line[14 : len(line)-1]
+		case strings.HasPrefix(line, `"`):
+			switch lastState {
+			case msgID:
+				msg.MsgID += "\n" + line[1:len(line)-1]
+			case msgIDPlural:
+				msg.MsgIDPlural += "\n" + line[1:len(line)-1]
+			case msgStr:
+				msg.MsgStr[len(msg.MsgStr)-1] += "\n" + line[1:len(line)-1]
 			}
-			// In our model.Translation currently there are no place to store these headers/metadata about translation file.
-		case TokenTypeHeaderReportMsgidBugsTo,
-			TokenTypeHeaderProjectIDVersion,
-			TokenTypeHeaderPOTCreationDate,
-			TokenTypeHeaderPORevisionDate,
-			TokenTypeHeaderLanguageTeam,
-			TokenTypeHeaderLastTranslator,
-			TokenTypeHeaderXGenerator,
-			TokenTypeHeaderMIMEVersion,
-			TokenTypeHeaderContentType,
-			TokenTypeHeaderContentTransferEncoding,
-			TokenTypeHeaderGeneratedBy:
-			continue
 		}
 	}
 
-	if len(messages) == 0 {
-		return Po{}, errors.New("invalid po file: no messages found")
-	}
-
-	return Po{
-		Header:   header,
-		Messages: messages,
-	}, nil
+	return msg
 }
 
-// parsePluralForms function splits the input string into two parts using the separator "; ".
-// The first part represents the "nplurals" information and is further split using "=" as the separator.
-// The second part represents the plural expression and is trimmed of leading and trailing whitespace.
-// The function converts the parsed "nplurals" value to an integer and assigns it to the pluralForm object.
-func parsePluralForms(s string) (PluralForm, error) {
-	var pf PluralForm
+// Parse parses the input and returns a PO struct representing the gettext's Portable Object file.
+func Parse(input []byte) (PO, error) {
+	p := newParser(strings.Split(string(input), "\n"))
 
-	var err error
-
-	pfArgCount := 2
-
-	parts := strings.Split(s, "; ")
-	if len(parts) != pfArgCount {
-		return pf, errors.New("invalid plural forms format")
-	}
-
-	nPluralsParts := strings.Split(strings.TrimSpace(parts[0]), "=")
-	if len(nPluralsParts) != pfArgCount {
-		return pf, errors.New("invalid nplurals part")
-	}
-
-	pf.NPlurals, err = strconv.Atoi(nPluralsParts[1])
-	if err != nil {
-		return pf, fmt.Errorf("invalid nplurals value: %w", err)
-	}
-
-	pf.Plural = strings.TrimSpace(parts[1])
-
-	return pf, nil
-}
-
-// previousToken function takes a slice of Token objects and an index representing the current position in the slice.
-// It returns the previous Token object relative to the given index.
-func previousToken(tokens []Token, index int) (Token, error) {
-	if index == 0 {
-		return Token{}, errors.New("no previous token")
-	}
-
-	return tokens[index-1], nil
+	return PO{Headers: p.parseHead(), Messages: p.parseMessages()}, nil
 }

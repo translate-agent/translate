@@ -28,10 +28,7 @@ func Test_PoSingular(t *testing.T) {
 			name: "simple original",
 			args: args{
 				original: nil,
-				input: `msgid ""
-msgstr ""
-
-msgid "Hello, world!"
+				input: `msgid "Hello, world!"
 msgstr ""
 
 msgid "Goodbye!"
@@ -134,10 +131,7 @@ msgstr ""
 			name: "original with placeholders",
 			args: args{
 				original: nil,
-				input: `msgid ""
-msgstr ""
-
-#, python-format
+				input: `#, python-format
 msgid "Hello, {name}!"
 msgstr ""
 
@@ -277,10 +271,7 @@ func Test_PoPlural(t *testing.T) {
 			name: "simple original",
 			args: args{
 				original: nil,
-				input: `msgid ""
-msgstr ""
-
-#. Description
+				input: `#. Description
 msgid "There is one apple."
 msgid_plural "There are multiple apples."
 msgstr[0] ""
@@ -341,10 +332,7 @@ msgstr[2] "вариантов"
 			name: "original with placeholders",
 			args: args{
 				original: ptr(true),
-				input: `msgid ""
-msgstr ""
-
-#: superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88
+				input: `#: superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88
 #, python-format
 msgid "%(suggestion)s instead of \"%(undefinedParameter)s?\""
 msgid_plural ""
