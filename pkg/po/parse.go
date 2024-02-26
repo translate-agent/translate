@@ -10,13 +10,6 @@ type parser struct {
 	pos   int
 }
 
-func newParser(lines []string) *parser {
-	return &parser{
-		lines: lines,
-		pos:   -1,
-	}
-}
-
 const eof = "eof"
 
 func (p *parser) peek() string {
@@ -153,7 +146,10 @@ func (p *parser) parseMessage() Message {
 
 // Parse parses the input and returns a PO struct representing the gettext's Portable Object file.
 func Parse(input []byte) (PO, error) {
-	p := newParser(strings.Split(string(input), "\n"))
+	p := parser{
+		lines: strings.Split(string(input), "\n"),
+		pos:   -1,
+	}
 
 	return PO{Headers: p.parseHead(), Messages: p.parseMessages()}, nil
 }
