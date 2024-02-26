@@ -18,15 +18,15 @@ import (
 // FromPo converts a byte slice representing a PO file to a model.Translation structure.
 // TODO: We need to find a way to preserve Plural-Forms from PO file.
 func FromPo(b []byte, originalOverride *bool) (model.Translation, error) {
-	portableObject, err := po.Parse(b)
+	file, err := po.Parse(b)
 	if err != nil {
 		return model.Translation{}, fmt.Errorf("parse portableObject file: %w", err)
 	}
 
 	var lang language.Tag
 
-	if portableObject.Headers.Get("Language") != "" {
-		lang, err = language.Parse(portableObject.Headers.Get("Language"))
+	if langStr := file.Headers.Get("Language"); langStr != "" {
+		lang, err = language.Parse(langStr)
 		if err != nil {
 			return model.Translation{}, fmt.Errorf("parse language tag: %w", err)
 		}
@@ -34,8 +34,8 @@ func FromPo(b []byte, originalOverride *bool) (model.Translation, error) {
 
 	translation := model.Translation{
 		Language: lang,
-		Messages: make([]model.Message, 0, len(portableObject.Messages)),
-		Original: isOriginalPO(portableObject, originalOverride),
+		Messages: make([]model.Message, 0, len(file.Messages)),
+		Original: isOriginalPO(file, originalOverride),
 	}
 
 	var (
@@ -68,7 +68,7 @@ func FromPo(b []byte, originalOverride *bool) (model.Translation, error) {
 		getMessages = func(n po.Message) []string { return n.MsgStr }
 	}
 
-	for _, node := range portableObject.Messages {
+	for _, node := range file.Messages {
 		mf2Msg, err := msgNodeToMF2(node, getMessages)
 		if err != nil {
 			return model.Translation{}, fmt.Errorf("convert message node to mf2 format: %w", err)
