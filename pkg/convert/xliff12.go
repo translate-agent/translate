@@ -2,6 +2,7 @@ package convert
 
 import (
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -125,7 +126,7 @@ func ToXliff12(translation model.Translation) ([]byte, error) {
 		case ast.SimpleMessage:
 			msg.Message = patternsToSimpleMsg(mf2Msg)
 		case ast.ComplexMessage:
-			return nil, fmt.Errorf("complex message not supported")
+			return nil, errors.New("complex message not supported")
 		}
 
 		u := transUnit{

@@ -2,6 +2,7 @@ package convert
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	ast "go.expect.digital/mf2/parse"
@@ -79,7 +80,7 @@ func ToNgLocalize(translation model.Translation) ([]byte, error) {
 		case ast.SimpleMessage:
 			ng.Translations[msg.ID] = patternsToSimpleMsg(mf2Msg)
 		case ast.ComplexMessage:
-			return nil, fmt.Errorf("complex message not supported")
+			return nil, errors.New("complex message not supported")
 		}
 	}
 

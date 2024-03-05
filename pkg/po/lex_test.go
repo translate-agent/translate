@@ -318,8 +318,8 @@ displayed in the filter.`),
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			r := strings.NewReader(tt.input)
-			result, err := lex(r)
+
+			result, err := lex(strings.NewReader(tt.input))
 
 			if tt.expectedErr != nil {
 				require.ErrorContains(t, err, tt.expectedErr.Error())

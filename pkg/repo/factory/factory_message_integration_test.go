@@ -227,6 +227,7 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 			translation := rand.ModelTranslation(1, nil, rand.WithLanguage(lang))
 			err := repository.SaveTranslation(testCtx, service.ID, translation)
 			require.NoError(t, err, "Prepare test translations")
+
 			translations = append(translations, *translation)
 		}
 

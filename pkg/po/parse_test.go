@@ -1,7 +1,7 @@
 package po
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -132,7 +132,7 @@ func Test_TokensToPo(t *testing.T) {
 				mkToken(TokenTypePluralMsgStr, "Il y a 1 pomme", withIndex(0)),
 				mkToken(TokenTypePluralMsgStr, "Il y a %d pommes", withIndex(1)),
 			},
-			expectedErr: fmt.Errorf("invalid plural forms format"),
+			expectedErr: errors.New("invalid plural forms format"),
 		},
 		{
 			name: "Invalid nplurals value is provided",
@@ -145,7 +145,7 @@ func Test_TokensToPo(t *testing.T) {
 				mkToken(TokenTypePluralMsgStr, "Il y a 1 pomme", withIndex(0)),
 				mkToken(TokenTypePluralMsgStr, "Il y a %d pommes", withIndex(1)),
 			},
-			expectedErr: fmt.Errorf("invalid nplurals value"),
+			expectedErr: errors.New("invalid nplurals value"),
 		},
 		{
 			name: "Invalid nplurals part is provided",
@@ -158,7 +158,7 @@ func Test_TokensToPo(t *testing.T) {
 				mkToken(TokenTypePluralMsgStr, "Il y a 1 pomme", withIndex(0)),
 				mkToken(TokenTypePluralMsgStr, "Il y a %d pommes", withIndex(1)),
 			},
-			expectedErr: fmt.Errorf("invalid nplurals part"),
+			expectedErr: errors.New("invalid nplurals part"),
 		},
 		{
 			name: "Invalid po file: no messages found",
@@ -167,7 +167,7 @@ func Test_TokensToPo(t *testing.T) {
 				mkToken(TokenTypeHeaderTranslator, "John Doe"),
 				mkToken(TokenTypeHeaderPluralForms, "nplurals=2; plural=(n != 1);"),
 			},
-			expectedErr: fmt.Errorf("invalid po file: no messages found"),
+			expectedErr: errors.New("invalid po file: no messages found"),
 		},
 	}
 
@@ -175,6 +175,7 @@ func Test_TokensToPo(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			result, err := tokensToPo(tt.input)
 			if tt.expectedErr != nil {
 				require.Errorf(t, err, tt.expectedErr.Error())

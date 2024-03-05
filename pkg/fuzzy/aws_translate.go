@@ -2,6 +2,7 @@ package fuzzy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -47,17 +48,17 @@ func WithDefaultAWSClient(ctx context.Context) AWSTranslateOption {
 	return func(awst *AWSTranslate) error {
 		accessKey := viper.GetString("other.aws.access_key_id")
 		if accessKey == "" {
-			return fmt.Errorf("with default client: AWS access key is not set")
+			return errors.New("with default client: AWS access key is not set")
 		}
 
 		secretKey := viper.GetString("other.aws.secret_access_key")
 		if secretKey == "" {
-			return fmt.Errorf("with default client: AWS secret key is not set")
+			return errors.New("with default client: AWS secret key is not set")
 		}
 
 		region := viper.GetString("other.aws.region")
 		if region == "" {
-			return fmt.Errorf("with default client: AWS region is not set")
+			return errors.New("with default client: AWS region is not set")
 		}
 
 		// Create a new AWS SDK config

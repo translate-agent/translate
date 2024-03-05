@@ -77,6 +77,7 @@ func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
 
 		for it.Rewind(); it.Valid(); it.Next() {
 			item := it.Item()
+
 			var service model.Service
 
 			if err := getValue(item, &service); err != nil {
@@ -84,8 +85,8 @@ func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
 			}
 
 			services = append(services, service)
-
 		}
+
 		return nil
 	})
 	if err != nil {
@@ -102,11 +103,13 @@ func (r *Repo) DeleteService(ctx context.Context, serviceID uuid.UUID) error {
 		// BadgerDB does not return an error if the key does not exist on Delete.
 		// So we have to check if the key exists first.
 		_, err := txn.Get(key)
+
 		switch {
 		default:
 			if deleteErr := txn.Delete(key); deleteErr != nil {
 				return fmt.Errorf("transaction: delete service: %w", deleteErr)
 			}
+
 			return nil
 		case errors.Is(err, badger.ErrKeyNotFound):
 			return repo.ErrNotFound

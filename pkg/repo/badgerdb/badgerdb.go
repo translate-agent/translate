@@ -38,6 +38,7 @@ func getValue[T *model.Service | *model.Translation](item *badger.Item, v T) err
 		if err := json.Unmarshal(val, &v); err != nil {
 			return fmt.Errorf("unmarshal %T: %w", v, err)
 		}
+
 		return nil
 	})
 }

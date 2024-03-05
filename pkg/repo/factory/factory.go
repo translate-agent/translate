@@ -19,7 +19,7 @@ var SupportedDBs = []string{MySQL, BadgerDB}
 
 // Usage returns a string describing the supported databases for CLI.
 func Usage() string {
-	return fmt.Sprintf("database to use. Supported options: %s", strings.Join(SupportedDBs, ", "))
+	return "database to use. Supported options: " + strings.Join(SupportedDBs, ", ")
 }
 
 // NewRepo creates a new repo based on the provided database string.

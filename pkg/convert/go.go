@@ -2,6 +2,7 @@ package convert
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	ast "go.expect.digital/mf2/parse"
@@ -43,7 +44,7 @@ func FromGo(b []byte, original *bool) (model.Translation, error) {
 
 	translation, err := translationFromPipeline(pipelineMsgs, *original)
 	if err != nil {
-		return model.Translation{}, fmt.Errorf("convert a pipeline.Messages into a model.Translation")
+		return model.Translation{}, errors.New("convert a pipeline.Messages into a model.Translation")
 	}
 
 	return translation, nil
@@ -68,7 +69,7 @@ func translationToPipeline(t model.Translation) (pipeline.Messages, error) {
 		case ast.SimpleMessage:
 			value.Message = patternsToSimpleMsg(mf2Msg)
 		case ast.ComplexMessage:
-			return pipeline.Messages{}, fmt.Errorf("complex message not supported")
+			return pipeline.Messages{}, errors.New("complex message not supported")
 		}
 
 		msg := pipeline.Message{

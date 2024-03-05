@@ -34,6 +34,8 @@ func Tracer() trace.Tracer { return testTracer } //nolint:ireturn
 
 // Trace starts a new root span using the provided Tracer.
 // The span name is derived from the provided testing.T.
+//
+//nolint:spancheck
 func Trace(t *testing.T) (context.Context, SubtestFn) {
 	ctx, span := testTracer.Start(context.Background(), t.Name())
 
