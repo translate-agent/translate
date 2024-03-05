@@ -224,6 +224,7 @@ func Test_GetLanguage(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			actual, err := getLanguage(tt.args.params, tt.args.translation)
 
 			if tt.expectedErr != nil {

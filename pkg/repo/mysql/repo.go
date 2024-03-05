@@ -63,7 +63,7 @@ func WithDefaultDB(ctx context.Context) Option {
 func WithConf(ctx context.Context, conf *Conf) Option {
 	return func(r *Repo) (err error) {
 		if r.db, err = NewDB(ctx, conf); err != nil {
-			return fmt.Errorf("apply db conf to repo")
+			return errors.New("apply db conf to repo")
 		}
 
 		return nil

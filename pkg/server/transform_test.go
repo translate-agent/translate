@@ -26,8 +26,8 @@ func Test_TransformUUID(t *testing.T) {
 
 		f := func(expectedID uuid.UUID) bool {
 			restoredID, err := uuidFromProto(uuidToProto(expectedID))
-
 			require.NoError(t, err)
+
 			return assert.Equal(t, expectedID, restoredID)
 		}
 
@@ -76,6 +76,7 @@ func Test_TransformService(t *testing.T) {
 		f := func(expectedService model.Service) bool {
 			restoredService, err := serviceFromProto(serviceToProto(&expectedService))
 			require.NoError(t, err)
+
 			return assert.Equal(t, expectedService, *restoredService)
 		}
 
@@ -88,6 +89,7 @@ func Test_TransformService(t *testing.T) {
 		f := func(expectedServices []model.Service) bool {
 			restoredServices, err := servicesFromProto(servicesToProto(expectedServices))
 			require.NoError(t, err)
+
 			return assert.ElementsMatch(t, expectedServices, restoredServices)
 		}
 

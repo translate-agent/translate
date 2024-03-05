@@ -255,7 +255,7 @@ func ToPo(t model.Translation) ([]byte, error) {
 
 	// If original, msgstr are empty
 	if t.Original {
-		patternsToMsg = func(patterns []ast.Pattern) string { return "" }
+		patternsToMsg = func([]ast.Pattern) string { return "" }
 	}
 
 	unquoteLiteral := func(l ast.Literal) string { return strings.ReplaceAll(l.String(), "|", "") }

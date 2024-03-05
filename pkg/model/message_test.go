@@ -180,12 +180,11 @@ func Test_PopulateTranslations(t *testing.T) {
 				require.Len(t, translation.Messages, expectedLen)
 
 				// Check that translation has all messages from original.
+				// Status check not needed, as if translated messages
+				// are successfully populated, they will also have status Untranslated
 				for _, message := range translation.Messages {
 					require.Contains(t, expectedIds, message.ID)
 					require.Contains(t, expectedIds, message.Message)
-
-					// Status check not needed, as if translated messages
-					// are successfully populated, they will also have status Untranslated
 				}
 			}
 		})
