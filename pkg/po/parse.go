@@ -130,15 +130,25 @@ func (p *parser) parseMessage() Message {
 			lastState = msgIDPlural
 			msg.MsgIDPlural = line[14 : len(line)-1]
 		case strings.HasPrefix(line, `"`):
+			lineVal := line[1 : len(line)-1]
+			if strings.HasSuffix(line, `\n"`) {
+				lineVal = line[1:len(line)-3] + "\n"
+			}
+
 			switch lastState {
 			case msgID:
-				msg.MsgID += "\n" + line[1:len(line)-1]
+				msg.MsgID += lineVal
 			case msgIDPlural:
-				msg.MsgIDPlural += "\n" + line[1:len(line)-1]
+				msg.MsgIDPlural += lineVal
 			case msgStr:
-				msg.MsgStr[len(msg.MsgStr)-1] += "\n" + line[1:len(line)-1]
+				msg.MsgStr[len(msg.MsgStr)-1] += lineVal
 			}
 		}
+	}
+
+	// remove the empty string if it's the only element
+	if len(msg.MsgStr) == 1 && msg.MsgStr[0] == "" {
+		msg.MsgStr = []string{}
 	}
 
 	return msg

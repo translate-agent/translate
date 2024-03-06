@@ -56,7 +56,7 @@ func Test_ParseSuperset(t *testing.T) {
 	someExpectedMessages := []Message{
 		{
 			MsgID:  "STEP %(stepCurr)s OF %(stepLast)s",
-			MsgStr: []string{""},
+			MsgStr: []string{},
 			Flags:  []string{"python-format"},
 			References: []string{
 				"superset-frontend/src/features/databases/DatabaseModal/ModalHeader.tsx:93",

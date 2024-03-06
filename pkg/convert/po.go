@@ -147,6 +147,8 @@ func msgNodeToMF2(node po.Message, getMessages func(po.Message) []string) (strin
 	}
 
 	switch messages := getMessages(node); len(messages) {
+	case 0: // no messages
+		return "", nil
 	case 1: // singular message
 		if formatFlagIdx != -1 && !strings.HasPrefix(node.Flags[formatFlagIdx], "no-") { // with placeholders
 			build = textWithPlaceholders

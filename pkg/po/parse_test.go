@@ -92,10 +92,10 @@ msgstr[1] "str2-1"
 msgstr[2] "str2-2"
 
 msgid ""
-"multiline"
+"multiline \n"
 "plural"
 msgid_plural ""
-"multiline"
+"multiline \n"
 "plurals"
 msgstr[0] ""
 "str3"
@@ -131,8 +131,8 @@ msgstr "Hello, world!"`,
 						MsgStr: []string{"str1"},
 					},
 					{
-						MsgID:  "\nmultiline id1",
-						MsgStr: []string{"\nmultiline str1"},
+						MsgID:  "multiline id1",
+						MsgStr: []string{"multiline str1"},
 					},
 					{
 						MsgID:       "id2",
@@ -140,9 +140,9 @@ msgstr "Hello, world!"`,
 						MsgStr:      []string{"str2", "str2-1", "str2-2"},
 					},
 					{
-						MsgID:       "\nmultiline\nplural",
-						MsgIDPlural: "\nmultiline\nplurals",
-						MsgStr:      []string{"\nstr3", "\nstr3-1", "\nstr3-2"},
+						MsgID:       "multiline \nplural",
+						MsgIDPlural: "multiline \nplurals",
+						MsgStr:      []string{"str3", "str3-1", "str3-2"},
 					},
 					{
 						MsgID:              "Hello, world!",
@@ -151,6 +151,32 @@ msgstr "Hello, world!"`,
 						ExtractedComments:  []string{"Extracted comment"},
 						References:         []string{"main.go:1"},
 						Flags:              []string{"flag"},
+					},
+				},
+			},
+		},
+		{
+			name: "multiple lines",
+			input: `#: superset-frontend/src/explore/components/controls/DndColumnSelectControl/Option.tsx:71
+#: superset-frontend/src/explore/components/controls/OptionControls/index.tsx:326
+msgid ""
+"\n"
+"                This filter was inherited from the dashboard's context.\n"
+"                It won't be saved when saving the chart.\n"
+"              "
+msgstr ""`,
+			expected: PO{
+				Messages: []Message{
+					{
+						MsgID: `
+                This filter was inherited from the dashboard's context.
+                It won't be saved when saving the chart.
+              `,
+						MsgStr: []string{},
+						References: []string{
+							"superset-frontend/src/explore/components/controls/DndColumnSelectControl/Option.tsx:71",
+							"superset-frontend/src/explore/components/controls/OptionControls/index.tsx:326",
+						},
 					},
 				},
 			},
