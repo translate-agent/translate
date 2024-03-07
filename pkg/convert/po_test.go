@@ -10,6 +10,14 @@ import (
 	"golang.org/x/text/language"
 )
 
+// requireEqualPO is a helper function to compare two PO strings, ignoring whitespace, newlines, and quotes.
+func requireEqualPO(t *testing.T, expected, actual string, msgAndArgs ...any) {
+	t.Helper()
+
+	replace := func(s string) string { return strings.NewReplacer("\\n", "", "\n", "", "\"", "").Replace(s) }
+	require.Equal(t, replace(expected), replace(actual), msgAndArgs)
+}
+
 // Test_FromPoSingular tests the conversion from PO->Translation->PO for singular messages.
 func Test_PoSingular(t *testing.T) {
 	t.Parallel()
@@ -248,11 +256,7 @@ msgstr "Sveika, {name}!"
 			actualPo, err := ToPo(actual)
 			require.NoError(t, err)
 
-			// Replace newlines and quotes to make the comparison easier
-			replacer := strings.NewReplacer(`\n`, ``, "\n", "", `"`, "")
-			replace := func(s string) string { return replacer.Replace(s) }
-
-			require.Equal(t, replace(tt.args.input), replace(string(actualPo)), "convert back to Po")
+			requireEqualPO(t, tt.args.input, string(actualPo), "convert back to Po")
 		})
 	}
 }
@@ -432,11 +436,7 @@ msgstr[2] ""
 			actualPo, err := ToPo(actual)
 			require.NoError(t, err)
 
-			// Replace newlines and quotes to make the comparison easier
-			replacer := strings.NewReplacer(`\n`, ``, "\n", "", `"`, "")
-			replace := func(s string) string { return replacer.Replace(s) }
-
-			require.Equal(t, replace(tt.args.input), replace(string(actualPo)), "convert back to Po")
+			requireEqualPO(t, tt.args.input, string(actualPo), "convert back to Po")
 		})
 	}
 }

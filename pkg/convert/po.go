@@ -239,10 +239,10 @@ func textWithPlaceholders(mfBuilder *mf2.Builder, msg string, placeholders map[s
 
 // ToPo converts a model.Translation structure to a byte slice representing a PO file.
 func ToPo(t model.Translation) ([]byte, error) {
-	portableObject := po.PO{Messages: make([]po.Message, 0, len(t.Messages))}
+	file := po.PO{Messages: make([]po.Message, 0, len(t.Messages))}
 
 	if !t.Original {
-		portableObject.Headers = append(portableObject.Headers, po.Header{Name: "Language", Value: t.Language.String()})
+		file.Headers = append(file.Headers, po.Header{Name: "Language", Value: t.Language.String()})
 	}
 
 	var placeholders map[ast.Variable]string // MF2Variable:OriginalVariable, only for complex messages
@@ -327,8 +327,8 @@ func ToPo(t model.Translation) ([]byte, error) {
 			}
 		}
 
-		portableObject.Messages = append(portableObject.Messages, poMsg)
+		file.Messages = append(file.Messages, poMsg)
 	}
 
-	return portableObject.Marshal(), nil
+	return file.Marshal(), nil
 }
