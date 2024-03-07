@@ -1,6 +1,7 @@
 package po
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -81,13 +82,19 @@ func (p *parser) emitHeaders(buff string) Headers {
 	return headers
 }
 
-func (p *parser) parseMessages() []Message {
+func (p *parser) parseMessages() ([]Message, error) {
 	var messages []Message
+
 	for p.peek() != eof {
-		messages = append(messages, p.parseMessage())
+		msg, err := p.parseMessage()
+		if err != nil {
+			return nil, fmt.Errorf("parse message: %w", err)
+		}
+
+		messages = append(messages, msg)
 	}
 
-	return messages
+	return messages, nil
 }
 
 type state int
@@ -99,7 +106,7 @@ const (
 	msgStr
 )
 
-func (p *parser) parseMessage() Message {
+func (p *parser) parseMessage() (Message, error) {
 	var (
 		msg       Message
 		lastState state // track the last state to handle multiline strings
@@ -143,6 +150,8 @@ func (p *parser) parseMessage() Message {
 			case msgStr:
 				msg.MsgStr[len(msg.MsgStr)-1] += lineVal
 			}
+		default:
+			return Message{}, fmt.Errorf("unexpected line: %s", line)
 		}
 	}
 
@@ -151,7 +160,7 @@ func (p *parser) parseMessage() Message {
 		msg.MsgStr = []string{}
 	}
 
-	return msg
+	return msg, nil
 }
 
 // Parse parses the input and returns a PO struct representing the gettext's Portable Object file.
@@ -161,5 +170,12 @@ func Parse(input []byte) (PO, error) {
 		pos:   -1,
 	}
 
-	return PO{Headers: p.parseHead(), Messages: p.parseMessages()}, nil
+	headers := p.parseHead()
+
+	messages, err := p.parseMessages()
+	if err != nil {
+		return PO{}, fmt.Errorf("parse messages: %w", err)
+	}
+
+	return PO{Headers: headers, Messages: messages}, nil
 }
