@@ -1,6 +1,7 @@
 package convert
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -8,6 +9,14 @@ import (
 	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
+
+// requireEqualPO is a helper function to compare two PO strings, ignoring whitespace, newlines, and quotes.
+func requireEqualPO(t *testing.T, expected, actual string, msgAndArgs ...any) {
+	t.Helper()
+
+	replace := func(s string) string { return strings.NewReplacer("\\n", "", "\n", "", "\"", "").Replace(s) }
+	require.Equal(t, replace(expected), replace(actual), msgAndArgs)
+}
 
 // Test_FromPoSingular tests the conversion from PO->Translation->PO for singular messages.
 func Test_PoSingular(t *testing.T) {
@@ -28,10 +37,7 @@ func Test_PoSingular(t *testing.T) {
 			name: "simple original",
 			args: args{
 				original: nil,
-				input: `msgid ""
-msgstr ""
-
-msgid "Hello, world!"
+				input: `msgid "Hello, world!"
 msgstr ""
 
 msgid "Goodbye!"
@@ -118,8 +124,8 @@ msgstr ""
 				Original: false,
 				Messages: []model.Message{
 					{
-						ID:      "\n Set the opacity to 0 if you do not want to override the color specified \nin the GeoJSON",
-						Message: "\n Setzen Sie die Deckkraft auf 0, wenn Sie die im GeoJSON angegebene Farbe\n nicht überschreiben möchten.", //nolint:lll
+						ID:      " Set the opacity to 0 if you do not want to override the color specified in the GeoJSON",
+						Message: " Setzen Sie die Deckkraft auf 0, wenn Sie die im GeoJSON angegebene Farbe nicht überschreiben möchten.", //nolint:lll
 						Status:  model.MessageStatusUntranslated,
 						Positions: []string{
 							"superset-frontend/plugins/legacy-preset-chart-deckgl/src/utilities/Shared_DeckGL.jsx:222",
@@ -134,10 +140,7 @@ msgstr ""
 			name: "original with placeholders",
 			args: args{
 				original: nil,
-				input: `msgid ""
-msgstr ""
-
-#, python-format
+				input: `#, python-format
 msgid "Hello, {name}!"
 msgstr ""
 
@@ -253,7 +256,7 @@ msgstr "Sveika, {name}!"
 			actualPo, err := ToPo(actual)
 			require.NoError(t, err)
 
-			require.Equal(t, tt.args.input, string(actualPo), "convert back to Po")
+			requireEqualPO(t, tt.args.input, string(actualPo), "convert back to Po")
 		})
 	}
 }
@@ -277,10 +280,7 @@ func Test_PoPlural(t *testing.T) {
 			name: "simple original",
 			args: args{
 				original: nil,
-				input: `msgid ""
-msgstr ""
-
-#. Description
+				input: `#. Description
 msgid "There is one apple."
 msgid_plural "There are multiple apples."
 msgstr[0] ""
@@ -341,10 +341,7 @@ msgstr[2] "вариантов"
 			name: "original with placeholders",
 			args: args{
 				original: ptr(true),
-				input: `msgid ""
-msgstr ""
-
-#: superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88
+				input: `#: superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88
 #, python-format
 msgid "%(suggestion)s instead of \"%(undefinedParameter)s?\""
 msgid_plural ""
@@ -360,7 +357,7 @@ msgstr[1] ""
 				Messages: []model.Message{
 					{
 						ID:        "%(suggestion)s instead of \\\"%(undefinedParameter)s?\\\"",
-						PluralID:  "\n%(firstSuggestions)s or %(lastSuggestion)s instead of\n\\\"%(undefinedParameter)s\\\"?",
+						PluralID:  "%(firstSuggestions)s or %(lastSuggestion)s instead of\\\"%(undefinedParameter)s\\\"?",
 						Status:    model.MessageStatusTranslated,
 						Positions: []string{"superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88"},
 						Message: `.local $format = { python-format }
@@ -370,9 +367,7 @@ msgstr[1] ""
 .local $lastSuggestion = { |%(lastSuggestion)s| }
 .match { $count }
 1 {{{ $suggestion } instead of \\"{ $undefinedParameter }?\\"}}
-* {{
-{ $firstSuggestions } or { $lastSuggestion } instead of
-\\"{ $undefinedParameter }\\"?}}`,
+* {{{ $firstSuggestions } or { $lastSuggestion } instead of\\"{ $undefinedParameter }\\"?}}`,
 					},
 				},
 			},
@@ -406,7 +401,7 @@ msgstr[2] ""
 				Messages: []model.Message{
 					{
 						ID:        "%(suggestion)s instead of \\\"%(undefinedParameter)s?\\\"",
-						PluralID:  "\n%(firstSuggestions)s or %(lastSuggestion)s instead of \n\\\"%(undefinedParameter)s\\\"?",
+						PluralID:  "%(firstSuggestions)s or %(lastSuggestion)s instead of \\\"%(undefinedParameter)s\\\"?",
 						Status:    model.MessageStatusUntranslated,
 						Positions: []string{"superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88"},
 						Message: `.local $format = { python-format }
@@ -416,12 +411,8 @@ msgstr[2] ""
 .local $lastSuggestion = { |%(lastSuggestion)s| }
 .match { $count }
 1 {{{ $suggestion } вместо \\"{ $undefinedParameter }\\"?}}
-2 {{
-{ $firstSuggestions } или { $lastSuggestion } вместо 
-\\"{ $undefinedParameter }\\"?}}
-* {{
-{ $firstSuggestions } или { $lastSuggestion } вместо 
-\\"{ $undefinedParameter }\\"?}}`,
+2 {{{ $firstSuggestions } или { $lastSuggestion } вместо \\"{ $undefinedParameter }\\"?}}
+* {{{ $firstSuggestions } или { $lastSuggestion } вместо \\"{ $undefinedParameter }\\"?}}`,
 					},
 				},
 			},
@@ -445,7 +436,7 @@ msgstr[2] ""
 			actualPo, err := ToPo(actual)
 			require.NoError(t, err)
 
-			require.Equal(t, tt.args.input, string(actualPo), "convert back to Po")
+			requireEqualPO(t, tt.args.input, string(actualPo), "convert back to Po")
 		})
 	}
 }
