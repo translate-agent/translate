@@ -37,7 +37,6 @@ func Test_TranslateMock(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 
@@ -113,7 +112,6 @@ var mockTranslators = map[string]Translator{
 // allMocks runs a test function f for each mocked translate service that is defined in the mockTranslators map.
 func allMocks(t *testing.T, f func(t *testing.T, mock Translator)) {
 	for name, mock := range mockTranslators {
-		name, mock := name, mock
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 

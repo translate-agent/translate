@@ -169,8 +169,6 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.UploadTranslationFile(ctx, tt.request)
 
@@ -266,7 +264,6 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.DownloadTranslationFile(ctx, tt.request)
 
@@ -321,7 +318,6 @@ func Test_CreateService_gRPC(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.CreateService(ctx, tt.request)
 
@@ -376,7 +372,6 @@ func Test_UpdateService_gRPC(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			// Change the ID to the one of the service that was created in the prepare step.
 			tt.request.Service.Id = tt.serviceToUpdate.GetId()
@@ -417,7 +412,6 @@ func Test_GetService_gRPC(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.GetService(ctx, tt.request)
 
@@ -455,7 +449,6 @@ func Test_DeleteService_gRPC(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.DeleteService(ctx, tt.request)
 
@@ -499,7 +492,7 @@ func randTranslation(t *testing.T, override *translatev1.Translation) *translate
 		return translation
 	}
 
-	for i := 0; i < n; i++ {
+	for range n {
 		message := &translatev1.Message{
 			Id:          gofakeit.SentenceSimple(),
 			Message:     gofakeit.SentenceSimple(),
@@ -507,7 +500,7 @@ func randTranslation(t *testing.T, override *translatev1.Translation) *translate
 			Status:      translatev1.Message_Status(gofakeit.IntRange(0, 2)),
 		}
 
-		for j := 0; j < gofakeit.Number(0, 2); j++ {
+		for range gofakeit.Number(0, 2) {
 			v, _ := url.Parse(gofakeit.URL())
 			lineNumber := gofakeit.Number(0, 10_000)
 			message.Positions = append(message.GetPositions(), fmt.Sprintf("%s:%d", v.Path, lineNumber))
@@ -608,7 +601,6 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			translation, err := client.CreateTranslation(ctx, tt.request)
 			if err != nil {
@@ -632,7 +624,7 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 	// Prepare
 	service := createService(ctx, t)
 
-	for i := 0; i < gofakeit.IntRange(1, 5); i++ {
+	for range gofakeit.IntRange(1, 5) {
 		uploadRequest := randUploadTranslationFileReq(t, service.GetId())
 		_, err := client.UploadTranslationFile(ctx, uploadRequest)
 		require.NoError(t, err, "create test translation file")
@@ -663,7 +655,6 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			resp, err := client.ListTranslations(ctx, tt.request)
 
@@ -831,7 +822,6 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			resp, err := client.UpdateTranslation(ctx, tt.request)
 
