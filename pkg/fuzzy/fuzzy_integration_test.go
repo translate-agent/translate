@@ -122,7 +122,6 @@ func TestMain(m *testing.M) {
 // allTranslators runs a test for each translate service that is defined in the translators map.
 func allTranslators(t *testing.T, f func(t *testing.T, translator Translator, subtest testutil.SubtestFn)) {
 	for name, translator := range translators {
-		name, translator := name, translator
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 

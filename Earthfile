@@ -3,11 +3,11 @@ PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
 
-ARG --global go_version=1.22.0
-ARG --global golangci_lint_version=1.56.2
-ARG --global bufbuild_version=1.29.0
+ARG --global go_version=1.22.1
+ARG --global golangci_lint_version=1.57.2
+ARG --global bufbuild_version=1.30.0
 ARG --global migrate_version=4.17.0
-ARG --global sqlfluff_version=2.3.5
+ARG --global sqlfluff_version=3.0.3
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
 
@@ -82,7 +82,7 @@ go:
   COPY --dir cmd pkg .
   COPY --platform=linux/$USERARCH +proto/translate/v1/* pkg/pb/translate/v1
   SAVE ARTIFACT /translate
-  
+
 proto:
   FROM bufbuild/buf:$bufbuild_version
   ENV BUF_CACHE_DIR=/.cache/buf_cache
@@ -252,7 +252,7 @@ image-multiplatform:
 
 # -----------------------All-in-one image-----------------------
 
-# jeager is helper target for all-in-one image, it removes the need
+# jaeger is helper target for all-in-one image, it removes the need
 # to download the correct jaeger image on every build
 jaeger:
   FROM jaegertracing/all-in-one:1.47

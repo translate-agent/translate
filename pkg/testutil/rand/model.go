@@ -25,8 +25,9 @@ func mdl[T modelType, O ~func(*T)](randF func() *T, opts ...O) *T {
 
 // slice returns a slice of random modelType.
 func slice[T modelType, O ~func(*T)](n uint, f func(opts ...O) *T, opts ...O) []*T {
-	var s []*T
-	for i := uint(0); i < n; i++ {
+	s := make([]*T, 0, n)
+
+	for range n {
 		s = append(s, f(opts...))
 	}
 

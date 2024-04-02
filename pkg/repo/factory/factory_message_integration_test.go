@@ -58,7 +58,6 @@ func Test_SaveTranslation(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				err := repository.SaveTranslation(ctx, tt.serviceID, tt.translation)
 
@@ -199,7 +198,6 @@ func Test_LoadTranslation(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				actualTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.language}})
@@ -251,7 +249,6 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				actualTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: tt.languages})

@@ -21,7 +21,7 @@ func newRootCmd() *cobra.Command {
 		TraverseChildren:  true,
 		Short:             "Translate provides tools for interacting with translate agent service",
 		PersistentPreRunE: rootCmdPersistentPreRunE,
-		RunE:              func(cmd *cobra.Command, _ []string) error { return cmd.Help() }, //nolint:wrapcheck
+		RunE:              func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
 		// TODO: Add graceful connection close, in PersistentPostRunE
 	}
 

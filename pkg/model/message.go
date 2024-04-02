@@ -196,12 +196,12 @@ func (t Translations) PopulateTranslations() {
 }
 
 type Message struct {
-	ID          string
-	PluralID    string
-	Message     string // Message contains MessageFormat V2 formatted value
-	Description string
-	Positions   Positions
-	Status      MessageStatus
+	ID          string        `json:"id"`
+	PluralID    string        `json:"pluralId"`
+	Message     string        `json:"message"` // Message contains MessageFormat V2 formatted value
+	Description string        `json:"description"`
+	Positions   Positions     `json:"positions"`
+	Status      MessageStatus `json:"status"`
 }
 
 type MessageStatus int32

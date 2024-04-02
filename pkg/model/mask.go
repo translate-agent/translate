@@ -79,7 +79,7 @@ func updateField(src, dst reflect.Value, fields []string) {
 
 	field := fields[0]
 
-	for i := 0; i < dst.NumField(); i++ {
+	for i := range dst.NumField() {
 		// Find corresponding field in dst
 		if !strings.EqualFold(dst.Type().Field(i).Name, field) {
 			continue
@@ -134,11 +134,11 @@ func updateSliceField(srcField, dstField reflect.Value) {
 	}
 
 	// If found by id, replace the corresponding structure in the destination slice. Otherwise, append.
-	for i := 0; i < srcField.Len(); i++ {
+	for i := range srcField.Len() {
 		srcID := srcField.Index(i).FieldByName("ID").Interface()
 
 		idx := func(id interface{}) int {
-			for j := 0; j < dstField.Len(); j++ {
+			for j := range dstField.Len() {
 				if dstField.Index(j).FieldByName("ID").Interface() == id {
 					return j
 				}

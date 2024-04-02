@@ -82,7 +82,6 @@ func testMain(m *testing.M) int {
 // allRepos runs a test for each repo that is defined in the repos map.
 func allRepos(t *testing.T, f func(t *testing.T, repo repo.Repo, subtest testutil.SubtestFn)) {
 	for name, repo := range repos {
-		name, repo := name, repo
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 

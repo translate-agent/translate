@@ -2,7 +2,8 @@ run:
   build-tags:
     - integration
   timeout: 2m
-  skip-dirs:
+issues:
+  exclude-dirs:
     - pkg/pb
 linters:
   enable-all: true
@@ -56,6 +57,9 @@ linters:
 linters-settings:
   cyclop:
     max-complexity: 30
+  gosec:
+    excludes:
+      - G601 # False positive in go 1.22+. Implicit memory aliasing of items from a range statement.
   govet:
     enable-all: true
   predeclared:

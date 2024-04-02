@@ -152,7 +152,6 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, tt.request))
 			require.NoError(t, err, "do request")
@@ -250,7 +249,6 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			resp, err := otelhttp.DefaultClient.Do(gRPCDownloadFileToRESTReq(ctx, t, tt.request))
 			require.NoError(t, err, "do request")
@@ -303,7 +301,6 @@ func Test_CreateService_REST(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			body, err := json.Marshal(tt.service)
 			require.NoError(t, err, "marshal service")
@@ -432,7 +429,6 @@ func Test_GetService_REST(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
@@ -484,7 +480,6 @@ func Test_DeleteService_REST(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
@@ -607,7 +602,6 @@ func Test_CreateTranslation_REST(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			body, err := json.Marshal(tt.translation)
 			require.NoError(t, err, "marshal translation")
@@ -713,7 +707,6 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			body, err := json.Marshal(tt.request.GetTranslation())
 			require.NoError(t, err, "marshal translation")
@@ -752,7 +745,7 @@ func Test_GetTranslations_REST(t *testing.T) {
 	// Prepare
 	service := createService(ctx, t)
 
-	for i := 0; i < gofakeit.IntRange(1, 5); i++ {
+	for range gofakeit.IntRange(1, 5) {
 		uploadRequest := randUploadTranslationFileReq(t, service.GetId())
 		_, err := client.UploadTranslationFile(ctx, uploadRequest)
 		require.NoError(t, err, "create test translation file")
@@ -780,7 +773,6 @@ func Test_GetTranslations_REST(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",

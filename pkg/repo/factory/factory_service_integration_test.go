@@ -34,7 +34,6 @@ func Test_SaveService(t *testing.T) {
 			},
 		}
 		for _, tt := range tests {
-			tt := tt
 			subTest(tt.name, func(ctx context.Context, t *testing.T) {
 				err := repository.SaveService(ctx, tt.service)
 				require.NoError(t, err, "Save service")
@@ -109,7 +108,6 @@ func Test_LoadService(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				actual, err := repository.LoadService(ctx, tt.serviceID)
 				require.ErrorIs(t, err, tt.expectedErr, "Load service")
@@ -174,7 +172,6 @@ func Test_DeleteService(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			tt := tt
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				err := repository.DeleteService(ctx, tt.serviceID)
 				require.ErrorIs(t, err, tt.expectedErr, "Delete service")
