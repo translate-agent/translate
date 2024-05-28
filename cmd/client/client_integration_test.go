@@ -85,7 +85,7 @@ func setUpClient() func() error {
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	}
 
-	conn, err := grpc.NewClient(host+":"+port, opts...)
+	conn, err := grpc.NewClient(net.JoinHostPort(host, port), opts...)
 	if err != nil {
 		log.Panicf("create connection to gRPC server: %v", err)
 	}

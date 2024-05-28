@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"net/url"
 	"testing"
@@ -60,7 +61,7 @@ func gRPCUploadFileToRESTReq(
 
 	u := url.URL{
 		Scheme:   "http",
-		Host:     host + ":" + port,
+		Host:     net.JoinHostPort(host, port),
 		Path:     fmt.Sprintf("v1/services/%s/files/%s", req.GetServiceId(), req.GetLanguage()),
 		RawQuery: query.Encode(),
 	}
@@ -87,7 +88,7 @@ func gRPCDownloadFileToRESTReq(
 
 	u := url.URL{
 		Scheme:   "http",
-		Host:     host + ":" + port,
+		Host:     net.JoinHostPort(host, port),
 		Path:     fmt.Sprintf("v1/services/%s/files/%s", req.GetServiceId(), req.GetLanguage()),
 		RawQuery: query.Encode(),
 	}
@@ -307,7 +308,7 @@ func Test_CreateService_REST(t *testing.T) {
 
 			u := url.URL{
 				Scheme: "http",
-				Host:   host + ":" + port,
+				Host:   net.JoinHostPort(host, port),
 				Path:   "v1/services",
 			}
 
@@ -348,7 +349,7 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 
 	u := url.URL{
 		Scheme: "http",
-		Host:   host + ":" + port,
+		Host:   net.JoinHostPort(host, port),
 		Path:   "v1/services/" + service.GetId(),
 	}
 
@@ -383,7 +384,7 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 
 	u := url.URL{
 		Scheme: "http",
-		Host:   host + ":" + port,
+		Host:   net.JoinHostPort(host, port),
 		Path:   "v1/services/" + service.GetId(),
 	}
 
@@ -432,7 +433,7 @@ func Test_GetService_REST(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
-				Host:   host + ":" + port,
+				Host:   net.JoinHostPort(host, port),
 				Path:   "v1/services/" + tt.service.GetId(),
 			}
 
@@ -483,7 +484,7 @@ func Test_DeleteService_REST(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
-				Host:   host + ":" + port,
+				Host:   net.JoinHostPort(host, port),
 				Path:   "v1/services/" + tt.service.GetId(),
 			}
 
@@ -508,7 +509,7 @@ func Test_ListServices_REST(t *testing.T) {
 
 	u := url.URL{
 		Scheme: "http",
-		Host:   host + ":" + port,
+		Host:   net.JoinHostPort(host, port),
 		Path:   "v1/services",
 	}
 
@@ -608,7 +609,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 
 			u := url.URL{
 				Scheme: "http",
-				Host:   host + ":" + port,
+				Host:   net.JoinHostPort(host, port),
 				Path:   "v1/services/" + tt.serviceID + "/translations",
 			}
 
@@ -719,7 +720,7 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 
 			u := url.URL{
 				Scheme: "http",
-				Host:   host + ":" + port,
+				Host:   net.JoinHostPort(host, port),
 				Path:   "v1/services/" + tt.request.GetServiceId() + "/translations/" + language,
 			}
 
@@ -776,7 +777,7 @@ func Test_GetTranslations_REST(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
-				Host:   host + ":" + port,
+				Host:   net.JoinHostPort(host, port),
 				Path:   "v1/services/" + tt.serviceID + "/translations",
 			}
 
