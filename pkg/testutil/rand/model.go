@@ -116,7 +116,7 @@ func ModelMessages(n uint, opts ...ModelMessageOption) []*model.Message {
 
 // MessageStatus returns a random model.MessageStatus.
 func MessageStatus() model.MessageStatus {
-	return model.MessageStatus(gofakeit.IntRange(0, 2)) //nolint:gomnd
+	return model.MessageStatus(gofakeit.IntRange(0, 2)) //nolint:mnd
 }
 
 // ------------------Message Opts------------------

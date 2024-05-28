@@ -202,7 +202,7 @@ func positionsToXliff12(positions model.Positions) []contextGroup {
 			continue
 		case 1:
 			cg.Contexts = []context{{Type: "sourcefile", Content: parts[0]}}
-		case 2: //nolint:gomnd
+		case 2: //nolint:mnd
 			cg.Contexts = []context{
 				{Type: "sourcefile", Content: parts[0]},
 				{Type: "linenumber", Content: parts[1]},

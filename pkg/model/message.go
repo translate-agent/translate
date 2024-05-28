@@ -256,7 +256,7 @@ type Positions []string
 // Value implements driver.Valuer interface.
 func (p Positions) Value() (driver.Value, error) {
 	if len(p) == 0 {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 
 	b, err := json.Marshal(p)

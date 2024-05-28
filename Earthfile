@@ -3,8 +3,8 @@ PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
 
-ARG --global go_version=1.22.1
-ARG --global golangci_lint_version=1.57.2
+ARG --global go_version=1.22.3
+ARG --global golangci_lint_version=1.59.0
 ARG --global bufbuild_version=1.30.0
 ARG --global migrate_version=4.17.0
 ARG --global sqlfluff_version=3.0.3
