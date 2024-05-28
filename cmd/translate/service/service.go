@@ -136,7 +136,7 @@ func RootCmdRunE(cmd *cobra.Command, args []string) error {
 	httpServer := http.Server{
 		Addr:              addr,
 		Handler:           grpcHandlerFunc(grpcServer, otelhttp.NewHandler(mux, "grpc-gateway")),
-		ReadHeaderTimeout: time.Second * 5, //nolint:gomnd
+		ReadHeaderTimeout: time.Second * 5, //nolint:mnd
 	}
 
 	go func() {
@@ -161,7 +161,7 @@ func Serve() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "translate.yaml", "config file")
-	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:gomnd
+	rootCmd.PersistentFlags().Uint("port", 8080, "port to run service on") //nolint:mnd
 	rootCmd.PersistentFlags().String("host", "0.0.0.0", "host to run service on")
 	rootCmd.PersistentFlags().String("db", "badgerdb", factory.Usage())
 	rootCmd.PersistentFlags().String("translator", "", fuzzy.Usage())
