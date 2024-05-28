@@ -175,7 +175,7 @@ test-unit:
     go test ./...
 
 test-integration:
-  FROM earthly/dind:alpine-3.18
+  FROM earthly/dind:alpine-3.19
   COPY .earthly/compose.yaml compose.yaml
   COPY +go/translate /translate
   COPY --dir migrate/mysql migrate
