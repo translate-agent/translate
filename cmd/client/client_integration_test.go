@@ -80,15 +80,14 @@ func testMain(m *testing.M) int {
 
 // setUpClient creates a gRPC client connection to the translate service and assigns it to the client variable.
 func setUpClient() func() error {
-	grpcOpts := []grpc.DialOption{
+	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
-		grpc.WithBlock(),
 	}
 
-	conn, err := grpc.DialContext(context.Background(), host+":"+port, grpcOpts...)
+	conn, err := grpc.NewClient(net.JoinHostPort(host, port), opts...)
 	if err != nil {
-		log.Panicf("create connection to gRPC server: %v", err)
+		log.Panicf("create gRPC client: %v", err)
 	}
 
 	client = translatev1.NewTranslateServiceClient(conn)

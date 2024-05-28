@@ -60,7 +60,7 @@ func newDownloadCmd() *cobra.Command {
 					Language: language, Schema: translateSchema, ServiceId: serviceID,
 				})
 			if err != nil {
-				return fmt.Errorf("download file: send GRPC request: %w", err)
+				return fmt.Errorf("download file: send gRPC request: %w", err)
 			}
 
 			fileName := serviceID + "_" + language
