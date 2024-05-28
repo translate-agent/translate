@@ -88,7 +88,7 @@ func newUploadCmd() *cobra.Command {
 					Original:             original,
 					PopulateTranslations: populateTranslations,
 				}); err != nil {
-				return fmt.Errorf("upload file: send GRPC request: %w", err)
+				return fmt.Errorf("upload file: send gRPC request: %w", err)
 			}
 
 			if _, err = fmt.Fprintln(cmd.OutOrStdout(), "File uploaded successfully."); err != nil {

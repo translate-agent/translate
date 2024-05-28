@@ -49,7 +49,7 @@ func rootCmdPersistentPreRunE(cmd *cobra.Command, _ []string) error {
 
 	conn, err = grpc.NewClient(address, opts...)
 	if err != nil {
-		return fmt.Errorf("create GRPC client: %w", err)
+		return fmt.Errorf("create gRPC client: %w", err)
 	}
 
 	return nil

@@ -55,7 +55,7 @@ func testMain(m *testing.M) (code int) {
 	// Wait for the server to start and establish a connection.
 	conn, err := grpc.NewClient(net.JoinHostPort(host, port), opts...)
 	if err != nil {
-		log.Panicf("create connection to gRPC server: %v", err)
+		log.Panicf("create gRPC client: %v", err)
 	}
 
 	client = translatev1.NewTranslateServiceClient(conn)

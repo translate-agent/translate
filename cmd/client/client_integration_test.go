@@ -87,7 +87,7 @@ func setUpClient() func() error {
 
 	conn, err := grpc.NewClient(net.JoinHostPort(host, port), opts...)
 	if err != nil {
-		log.Panicf("create connection to gRPC server: %v", err)
+		log.Panicf("create gRPC client: %v", err)
 	}
 
 	client = translatev1.NewTranslateServiceClient(conn)

@@ -25,7 +25,7 @@ func newLsCmd() *cobra.Command {
 
 			resp, err := translatev1.NewTranslateServiceClient(conn).ListServices(ctx, &translatev1.ListServicesRequest{})
 			if err != nil {
-				return fmt.Errorf("list services: send GRPC request: %w", err)
+				return fmt.Errorf("list services: send gRPC request: %w", err)
 			}
 
 			headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()

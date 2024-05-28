@@ -70,7 +70,7 @@ func RootCmdRunE(cmd *cobra.Command, args []string) error {
 	}()
 
 	grpcServer := grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
-	// Gracefully stops GRPC server.
+	// Gracefully stops gRPC server.
 	defer grpcServer.GracefulStop()
 
 	mux := runtime.NewServeMux()
