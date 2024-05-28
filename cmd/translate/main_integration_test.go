@@ -3,7 +3,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net"
@@ -32,10 +31,7 @@ func TestMain(m *testing.M) {
 }
 
 func testMain(m *testing.M) (code int) {
-	ctx := context.Background()
-
 	// start the translate service
-
 	port = mustGetFreePort()
 	addr = fmt.Sprintf("%s:%s", host, port)
 
@@ -51,13 +47,13 @@ func testMain(m *testing.M) (code int) {
 		main()
 	}()
 
-	grpcOpts := []grpc.DialOption{
+	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
-		grpc.WithBlock(),
 	}
+
 	// Wait for the server to start and establish a connection.
-	conn, err := grpc.DialContext(ctx, host+":"+port, grpcOpts...)
+	conn, err := grpc.NewClient(host+":"+port, opts...)
 	if err != nil {
 		log.Panicf("create connection to gRPC server: %v", err)
 	}

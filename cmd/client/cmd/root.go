@@ -31,10 +31,6 @@ func newRootCmd() *cobra.Command {
 }
 
 func rootCmdPersistentPreRunE(cmd *cobra.Command, _ []string) error {
-	opts := []grpc.DialOption{
-		grpc.WithBlock(),
-	}
-
 	address, err := cmd.InheritedFlags().GetString("address")
 	if err != nil {
 		return fmt.Errorf("get cli parameter 'address': %w", err)
@@ -45,14 +41,15 @@ func rootCmdPersistentPreRunE(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("get cli parameter 'insecure': %w", err)
 	}
 
+	var opts []grpc.DialOption
+
 	if connIsInsecure {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	// Wait for the server to start and establish a connection.
-	conn, err = grpc.DialContext(cmd.Context(), address, opts...)
+	conn, err = grpc.NewClient(address, opts...)
 	if err != nil {
-		return fmt.Errorf("dial context: %w", err)
+		return fmt.Errorf("create GRPC client: %w", err)
 	}
 
 	return nil
