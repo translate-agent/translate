@@ -248,12 +248,12 @@ func ToPo(t model.Translation) ([]byte, error) {
 	var placeholders map[ast.Variable]string // MF2Variable:OriginalVariable, only for complex messages
 
 	// patternsToMsg function converts a slice of patterns to a PO msgstr.
-	patternsToMsg := func(patterns []ast.Pattern) string {
+	patternsToMsg := func(patterns []ast.PatternPart) string {
 		var text string
 
 		for _, p := range patterns {
 			switch p := p.(type) {
-			case ast.TextPattern:
+			case ast.Text:
 				text += string(p)
 			case ast.Expression:
 				text += placeholders[p.Operand.(ast.Variable)] //nolint:forcetypeassert // operand is always of type Variable
@@ -265,7 +265,7 @@ func ToPo(t model.Translation) ([]byte, error) {
 
 	// If original, msgstr are empty
 	if t.Original {
-		patternsToMsg = func([]ast.Pattern) string { return "" }
+		patternsToMsg = func([]ast.PatternPart) string { return "" }
 	}
 
 	unquoteLiteral := func(l ast.Literal) string { return strings.ReplaceAll(l.String(), "|", "") }
