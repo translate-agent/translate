@@ -264,12 +264,12 @@ func getTexts(translation *model.Translation) ([]string, error) {
 //
 // Output:
 // "Hello {$0} {$1}!".
-func patternToString(pattern []ast.Pattern) string {
+func patternToString(pattern []ast.PatternPart) string {
 	var text string
 
 	for i := range pattern {
 		switch v := pattern[i].(type) {
-		case ast.TextPattern:
+		case ast.Text:
 			text += string(v)
 		case ast.Expression, ast.Markup:
 			text += fmt.Sprintf("{$%d}", i)
@@ -386,10 +386,10 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 // buildTranslatedPattern constructs a slice of ast.Pattern from a given text and placeholders
 // extracted from a translated text. Placeholders are replaced with corresponding
 // ast.Pattern retrieved from the message AST. The function returns a slice of ast.Pattern and error.
-func buildTranslatedPattern(translatedText string, previousPattern []ast.Pattern) ([]ast.Pattern, error) {
+func buildTranslatedPattern(translatedText string, previousPattern []ast.PatternPart) ([]ast.PatternPart, error) {
 	re := regexp.MustCompile(`\{\$(0|[1-9]\d*)\}`)
 
-	translatedPattern := make([]ast.Pattern, 0, len(previousPattern))
+	translatedPattern := make([]ast.PatternPart, 0, len(previousPattern))
 
 	for _, v := range splitTextByPlaceholder(translatedText) {
 		if re.MatchString(v) { // simplified placeholder
@@ -400,7 +400,7 @@ func buildTranslatedPattern(translatedText string, previousPattern []ast.Pattern
 
 			translatedPattern = append(translatedPattern, previousPattern[placeholderIndex])
 		} else { // translated text
-			translatedPattern = append(translatedPattern, ast.TextPattern(v))
+			translatedPattern = append(translatedPattern, ast.Text(v))
 		}
 	}
 
