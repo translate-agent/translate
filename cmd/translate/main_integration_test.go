@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"sync"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/spf13/viper"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 func testMain(m *testing.M) (code int) {
 	// start the translate service
 	port = mustGetFreePort()
-	addr = fmt.Sprintf("%s:%s", host, port)
+	addr = net.JoinHostPort(host, port)
 
 	viper.Set("service.port", port)
 	viper.Set("service.host", host)
@@ -47,13 +47,26 @@ func testMain(m *testing.M) (code int) {
 		main()
 	}()
 
-	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	// ensure gRPC server is listening before running tests
+	// wait for 300ms (6x50ms) for successful TCP connection
+	for range 6 {
+		conn, err := net.Dial("tcp", addr)
+		if err != nil {
+			time.Sleep(time.Millisecond * 50)
+			continue
+		}
+
+		defer conn.Close()
+
+		break
 	}
 
-	// Wait for the server to start and establish a connection.
-	conn, err := grpc.NewClient(net.JoinHostPort(host, port), opts...)
+	// set up gRPC client
+	conn, err := grpc.NewClient(
+		net.JoinHostPort(host, port),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
 	if err != nil {
 		log.Panicf("create gRPC client: %v", err)
 	}

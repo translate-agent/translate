@@ -154,7 +154,7 @@ func RootCmdRunE(cmd *cobra.Command, args []string) error {
 func Serve() {
 	// Execute adds all child commands to the root command and sets flags appropriately.
 	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
+		panic(err)
 	}
 }
 

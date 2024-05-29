@@ -13,6 +13,7 @@ import (
 	"sync"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/spf13/viper"
@@ -34,7 +35,7 @@ const host = "localhost"
 
 var (
 	port = mustGetFreePort()
-	addr = fmt.Sprintf("%s:%s", host, port)
+	addr = net.JoinHostPort(host, port)
 
 	// client is a gRPC client for the translate service, used in tests to create resources, before testing the CLI.
 	client translatev1.TranslateServiceClient
@@ -57,15 +58,32 @@ func testMain(m *testing.M) int {
 		translatesrv.Serve()
 	}()
 
-	clientCloser := setUpClient()
+	// ensure gRPC server is listening before running tests
+	// wait for 300ms (6x50ms) for successful TCP connection
+	for range 6 {
+		conn, err := net.Dial("tcp", addr)
+		if err != nil {
+			time.Sleep(time.Millisecond * 50)
+			continue
+		}
+
+		defer conn.Close()
+
+		break
+	}
+
+	// set up gRPC client
+	closeConn := setUpClient()
+
 	defer func() {
-		if err := clientCloser(); err != nil {
-			log.Fatalf("close client connection: %v", err)
+		if err := closeConn(); err != nil {
+			log.Panicf("close client connection: %v", err)
 		}
 	}()
 
 	// Run the tests.
 	code := m.Run()
+
 	// Send soft kill (termination) signal to process.
 	err := syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 	if err != nil {
@@ -79,13 +97,12 @@ func testMain(m *testing.M) int {
 }
 
 // setUpClient creates a gRPC client connection to the translate service and assigns it to the client variable.
-func setUpClient() func() error {
-	opts := []grpc.DialOption{
+func setUpClient() (closeConn func() error) {
+	conn, err := grpc.NewClient(
+		net.JoinHostPort(host, port),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
-	}
-
-	conn, err := grpc.NewClient(net.JoinHostPort(host, port), opts...)
+	)
 	if err != nil {
 		log.Panicf("create gRPC client: %v", err)
 	}
