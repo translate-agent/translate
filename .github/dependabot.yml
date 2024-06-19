@@ -4,5 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    reviewers:
+      - "janishorsts"
     allow:
       - dependency-type: "all"
