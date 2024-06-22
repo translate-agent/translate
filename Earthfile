@@ -5,7 +5,7 @@ ARG --global USERARCH # Arch of the user running the build
 
 ARG --global go_version=1.22.3
 ARG --global golangci_lint_version=1.59.0
-ARG --global bufbuild_version=1.30.0
+ARG --global bufbuild_version=1.34.0
 ARG --global migrate_version=4.17.0
 ARG --global sqlfluff_version=3.0.3
 
@@ -90,7 +90,7 @@ proto:
   WORKDIR proto
   RUN \
     --mount=type=cache,target=$BUF_CACHE_DIR,mode=0700 \
-      buf mod update && buf build && buf generate
+      buf dep update && buf build && buf generate
 
   RUN sed -i'.bak' '/client.UploadTranslationFile/i \
   \\tfile, _, err := req.FormFile("file")\n\

@@ -14,7 +14,7 @@ jobs:
         with:
           version: ${{ env.EARTHLY_VERSION }}
           use-cache: true
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       # Check if Generated Go files are up to date
       - name: GO proto up-to-date
         run: |

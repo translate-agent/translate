@@ -6,13 +6,13 @@ managed:
     except:
       - buf.build/googleapis/googleapis
 plugins:
-  - plugin: buf.build/protocolbuffers/go:v1.33.0
+  - plugin: buf.build/protocolbuffers/go:v1.34.2
     out: gen/proto/go
     opt: paths=source_relative
-  - plugin: buf.build/grpc/go:v1.3.0
+  - plugin: buf.build/grpc/go:v1.4.0
     out: gen/proto/go
     opt: paths=source_relative
-  - plugin: buf.build/grpc-ecosystem/gateway:v2.19.1
+  - plugin: buf.build/grpc-ecosystem/gateway:v2.20.0
     out: gen/proto/go
     opt:
       - paths=source_relative
