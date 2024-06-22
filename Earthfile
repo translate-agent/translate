@@ -2,17 +2,13 @@ VERSION 0.8
 PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
-
 ARG --global go_version=1.22.3
-ARG --global golangci_lint_version=1.59.0
-ARG --global bufbuild_version=1.34.0
-ARG --global migrate_version=4.17.0
-ARG --global sqlfluff_version=3.0.3
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
 
 # Local dev flow
 
+# init sets up the project for local development.
 init:
   LOCALLY
   RUN earthly secret --org expect.digital --project translate-agent get google_account_key > google_account_key.json
@@ -57,12 +53,14 @@ init:
     echo "db_schema=translate" >> .arg
   RUN echo "db_password=" >> .secret
 
+# up installs the project to local docker instance.
 up:
   LOCALLY
   RUN docker compose --project-name=translate --project-directory=.earthly up --detach --wait --timeout 60
   RUN docker exec mysql sh -c 'mysqladmin ping -h 127.0.0.1 -u root --wait=30 --silent'
   BUILD +migrate --db=mysql
 
+# down uninstalls the project from local docker instance.
 down:
   LOCALLY
   RUN docker compose --project-name=translate --project-directory=.earthly down -v --remove-orphans
@@ -83,7 +81,9 @@ go:
   COPY --platform=linux/$USERARCH +proto/translate/v1/* pkg/pb/translate/v1
   SAVE ARTIFACT /translate
 
+# proto generates gRPC server.
 proto:
+  ARG bufbuild_version=1.34.0
   FROM bufbuild/buf:$bufbuild_version
   ENV BUF_CACHE_DIR=/.cache/buf_cache
   COPY --dir proto .
@@ -111,6 +111,7 @@ proto:
 
 # buf-registry pushes BUF modules to the registry.
 buf-registry:
+  ARG bufbuild_version=1.34.0
   FROM bufbuild/buf:$bufbuild_version
   WORKDIR proto
   COPY +proto/proto .
@@ -119,6 +120,7 @@ buf-registry:
 
 # migrate runs DDL migration scripts against the given database.
 migrate:
+  ARG migrate_version=4.17.0
   FROM migrate/migrate:v$migrate_version
   ARG --required db # supported databases: mysql
   ARG --required db_user
@@ -131,19 +133,24 @@ migrate:
   RUN --push --secret=db_password \
     if [[ $db = "mysql" ]]; then yes | migrate -path=. -database "$db://$db_user:$db_password@tcp($db_host:$db_port)/$db_schema" $cmd; fi
 
+# check verifies code quality by running linters and tests.
 check:
   BUILD +lint
   BUILD +test
 
 # -----------------------Linting-----------------------
 
+# lint-migrate analyses migrate scripts for stylistic issues.
 lint-migrate:
+  ARG sqlfluff_version=3.0.3
   FROM sqlfluff/sqlfluff:$sqlfluff_version
   WORKDIR migrate
   COPY migrate .sqlfluff .
   RUN sqlfluff lint
 
+# lint-go analyses golang code for errors, bugs and stylistic issues (golangci-lint).
 lint-go:
+  ARG golangci_lint_version=1.59.0
   FROM golangci/golangci-lint:v$golangci_lint_version-alpine
   WORKDIR translate
   COPY +go/translate .
@@ -154,12 +161,15 @@ lint-go:
     --mount=type=cache,target=/root/.cache/golangci_lint \
     golangci-lint run --timeout 3m
 
+# lint-proto analyses proto for stylistic issues.
 lint-proto:
+  ARG bufbuild_version=1.34.0
   FROM bufbuild/buf:$bufbuild_version
   WORKDIR proto
   COPY +proto/proto .
   RUN buf lint
 
+# lint runs all linters for golang, proto and migrate scripts.
 lint:
   BUILD +lint-go
   BUILD +lint-proto
@@ -167,6 +177,7 @@ lint:
 
 # -----------------------Testing-----------------------
 
+# test-unit runs unit tests.
 test-unit:
   FROM +go
   RUN \
@@ -174,8 +185,10 @@ test-unit:
     --mount=type=cache,id=go-build,target=/root/.cache/go-build \
     go test ./...
 
+# test-integration runs integration tests.
 test-integration:
   FROM earthly/dind:alpine-3.19
+  ARG migrate_version=4.17.0
   COPY .earthly/compose.yaml compose.yaml
   COPY +go/translate /translate
   COPY --dir migrate/mysql migrate
@@ -215,12 +228,14 @@ test-integration:
         golang:$go_version-alpine go test -C /translate --tags=integration -count=1 ./...
   END
 
+# test runs unit and integration tests.
 test:
   BUILD +test-unit
   BUILD +test-integration
 
 # -----------------------Building-----------------------
 
+# build compiles translate service and client and saves them to ./bin.
 build:
   ARG GOARCH=$USERARCH
   ENV CGO_ENABLED=0
@@ -234,6 +249,7 @@ build:
   SAVE ARTIFACT translate-service bin/translate-service # service
   SAVE ARTIFACT translate bin/translate # client
 
+# image builds translate service image.
 image:
   ARG TARGETARCH
   ARG --required registry
@@ -243,6 +259,7 @@ image:
   ENTRYPOINT ["/translate-service"]
   SAVE IMAGE --push $registry/translate:$tag
 
+# image-multiplatform builds translate service image for all platforms.
 image-multiplatform:
   ARG --required registry
   BUILD \
@@ -258,6 +275,7 @@ jaeger:
   FROM jaegertracing/all-in-one:1.47
   SAVE ARTIFACT /go/bin/all-in-one-linux jaeger
 
+# image-all-in-one builds all-in-one image.
 image-all-in-one:
   ARG TARGETARCH
   ARG --required registry
@@ -287,6 +305,7 @@ image-all-in-one:
   ENTRYPOINT ["supervisord","-c","/app/supervisord.conf"]
   SAVE IMAGE --push $registry/translate-agent-all-in-one:$tag
 
+# image-all-in-one-multiplatform builds all-in-one multiplatform images.
 image-all-in-one-multiplatform:
   ARG --required registry
   ARG tag=latest
