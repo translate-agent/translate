@@ -4,12 +4,12 @@ go 1.22
 
 // Direct
 require (
-	cloud.google.com/go/translate v1.10.3
+	cloud.google.com/go/translate v1.10.4
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/XSAM/otelsql v0.31.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.20
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.20
-	github.com/aws/aws-sdk-go-v2/service/translate v1.24.8
+	github.com/aws/aws-sdk-go-v2/service/translate v1.26.1
 	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/dgraph-io/badger/v4 v4.2.0
 	github.com/fatih/color v1.17.0
@@ -19,7 +19,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rodaine/table v1.2.0
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
 	go.expect.digital/mf2 v0.0.0-20240528101611-8700042124e0
@@ -32,9 +32,9 @@ require (
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/net v0.26.0
 	golang.org/x/text v0.16.0
-	google.golang.org/api v0.185.0
+	google.golang.org/api v0.186.0
 	google.golang.org/genproto v0.0.0-20240617180043-68d350f18fd4
-	google.golang.org/genproto/googleapis/api v0.0.0-20240610135401-a8a62080eff3
+	google.golang.org/genproto/googleapis/api v0.0.0-20240617180043-68d350f18fd4
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.2
 )
@@ -109,7 +109,7 @@ require (
 )
 
 require (
-	cloud.google.com/go/auth v0.5.1 // indirect
+	cloud.google.com/go/auth v0.6.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 )
