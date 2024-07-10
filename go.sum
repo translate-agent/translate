@@ -9,8 +9,8 @@ cloud.google.com/go/compute/metadata v0.5.0 h1:Zr0eK8JbFv6+Wi4ilXAR8FJ3wyNdpxHKJ
 cloud.google.com/go/compute/metadata v0.5.0/go.mod h1:aHnloV2TPI38yx4s9+wAZhHykWvVCfu7hQbF+9CWoiY=
 cloud.google.com/go/longrunning v0.5.10 h1:eB/BniENNRKhjz/xgiillrdcH3G74TGSl3BXinGlI7E=
 cloud.google.com/go/longrunning v0.5.10/go.mod h1:tljz5guTr5oc/qhlUjBlk7UAIFMOGuPNxkNDZXlLics=
-cloud.google.com/go/translate v1.10.5 h1:HGFw8dhEp6xYCDWG5fRNwZHfY6MiyCh97RHBBkzsuNM=
-cloud.google.com/go/translate v1.10.5/go.mod h1:n9fFca4U/EKr2GzJKrnQXemlYhfo1mT1nSt7Rt4l/VA=
+cloud.google.com/go/translate v1.10.6 h1:qei5yunwHM3jDMwaisWeLs6CFMIK2rYJ6+OQBf6nrwI=
+cloud.google.com/go/translate v1.10.6/go.mod h1:vqZOHurggOqpssx/agK9S21UdStpwugMOhlHvWEGAdw=
 filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=

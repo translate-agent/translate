@@ -4,7 +4,7 @@ go 1.22
 
 // Direct
 require (
-	cloud.google.com/go/translate v1.10.5
+	cloud.google.com/go/translate v1.10.6
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/XSAM/otelsql v0.32.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.24
