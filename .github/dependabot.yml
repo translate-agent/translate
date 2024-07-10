@@ -3,8 +3,19 @@ updates:
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     reviewers:
       - "janishorsts"
     allow:
       - dependency-type: "all"
+    groups:
+      aws:
+        patterns:
+          - "github.com/aws/*"
+      grpc:
+        patterns:
+          - "google.golang.org/*"
+      otel:
+        patterns:
+          - "go.opentelemetry.io/*"
+
