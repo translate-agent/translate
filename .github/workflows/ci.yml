@@ -3,22 +3,21 @@ name: CI
 on:
   push:
 
-env:
-  EARTHLY_VERSION: 0.8.15
-
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      FORCE_COLOR: 1
     steps:
       - uses: earthly/actions-setup@v1
         with:
-          version: ${{ env.EARTHLY_VERSION }}
+          version: 0.8.15
           use-cache: true
       - uses: actions/checkout@v4
       # Check if Generated Go files are up to date
       - name: GO proto up-to-date
         run: |
-          earthly +proto
+          earthly --ci +proto
           if ! git diff --quiet; then
             echo "Generated Go files are not up to date"
             git diff --stat
@@ -38,6 +37,4 @@ jobs:
         if: ${{ github.actor != 'dependabot[bot]' }}
         env:
           EARTHLY_ACCOUNT_TOKEN: ${{ secrets.EARTHLY_ACCOUNT_TOKEN }}
-        run: |
-          earthly account login --token "$EARTHLY_ACCOUNT_TOKEN"
-          earthly --ci --allow-privileged +test-integration
+        run: earthly --ci --allow-privileged +test-integration
