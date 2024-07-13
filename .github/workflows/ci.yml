@@ -4,7 +4,7 @@ on:
   push:
 
 env:
-  EARTHLY_VERSION: 0.8.14
+  EARTHLY_VERSION: 0.8.15
 
 jobs:
   check:
