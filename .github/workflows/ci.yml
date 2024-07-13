@@ -36,7 +36,5 @@ jobs:
       - name: Test Integration
         if: ${{ github.actor != 'dependabot[bot]' }}
         env:
-          EARTHLY_ACCOUNT_TOKEN: ${{ secrets.EARTHLY_ACCOUNT_TOKEN }}
-        run: |
-          earthly account login --token "$EARTHLY_ACCOUNT_TOKEN"
-          earthly --ci --allow-privileged +test-integration
+          EARTHLY_TOKEN: ${{ secrets.EARTHLY_TOKEN }}
+        run: earthly --ci --allow-privileged +test-integration
