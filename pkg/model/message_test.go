@@ -88,12 +88,12 @@ func Test_MarkUntranslated(t *testing.T) {
 				}
 
 				for _, message := range translation.Messages {
-					expectedStatus := MessageStatusTranslated
+					wantStatus := MessageStatusTranslated
 					if slices.Contains(tt.untranslatedIds, message.ID) {
-						expectedStatus = MessageStatusUntranslated
+						wantStatus = MessageStatusUntranslated
 					}
 
-					require.Equal(t, expectedStatus.String(), message.Status.String())
+					require.Equal(t, wantStatus.String(), message.Status.String())
 				}
 			}
 		})
@@ -149,8 +149,8 @@ func Test_PopulateTranslations(t *testing.T) {
 		},
 	}
 
-	expectedLen := len(onlyOriginal[0].Messages)
-	expectedIds := []string{"0", "1", "2"}
+	wantLen := len(onlyOriginal[0].Messages)
+	wantIds := []string{"0", "1", "2"}
 
 	tests := []struct {
 		name         string
@@ -175,14 +175,14 @@ func Test_PopulateTranslations(t *testing.T) {
 			tt.translations.PopulateTranslations()
 
 			for _, translation := range tt.translations {
-				require.Len(t, translation.Messages, expectedLen)
+				require.Len(t, translation.Messages, wantLen)
 
 				// Check that translation has all messages from original.
 				// Status check not needed, as if translated messages
 				// are successfully populated, they will also have status Untranslated
 				for _, message := range translation.Messages {
-					require.Contains(t, expectedIds, message.ID)
-					require.Contains(t, expectedIds, message.Message)
+					require.Contains(t, wantIds, message.ID)
+					require.Contains(t, wantIds, message.Message)
 				}
 			}
 		})

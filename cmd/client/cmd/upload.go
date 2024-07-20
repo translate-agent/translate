@@ -144,7 +144,7 @@ func readFileFromURL(ctx context.Context, filePath string) ([]byte, error) {
 
 	// Check server response
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("fetch file status: got %s, expected 200", resp.Status)
+		return nil, fmt.Errorf("fetch file status: got %s, want 200", resp.Status)
 	}
 
 	data, err := io.ReadAll(resp.Body)

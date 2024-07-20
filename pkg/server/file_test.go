@@ -38,25 +38,25 @@ func Test_ParseUploadParams(t *testing.T) {
 	malformedServiceIDReq.ServiceId += "_FAIL"
 
 	tests := []struct {
-		request     *translatev1.UploadTranslationFileRequest
-		expectedErr error
-		name        string
+		request *translatev1.UploadTranslationFileRequest
+		wantErr error
+		name    string
 	}{
 		{
-			name:        "Happy Path With File ID",
-			request:     happyWithFileIDReq,
-			expectedErr: nil,
+			name:    "Happy Path With File ID",
+			request: happyWithFileIDReq,
+			wantErr: nil,
 		},
 		{
-			name:        "Malformed language",
-			request:     malformedLangReq,
-			expectedErr: errors.New("parse language"),
+			name:    "Malformed language",
+			request: malformedLangReq,
+			wantErr: errors.New("parse language"),
 		},
 
 		{
-			name:        "Malformed service ID",
-			request:     malformedServiceIDReq,
-			expectedErr: errors.New("parse service_id"),
+			name:    "Malformed service ID",
+			request: malformedServiceIDReq,
+			wantErr: errors.New("parse service_id"),
 		},
 	}
 
@@ -66,8 +66,8 @@ func Test_ParseUploadParams(t *testing.T) {
 
 			params, err := parseUploadTranslationFileRequestParams(tt.request)
 
-			if tt.expectedErr != nil {
-				require.ErrorContains(t, err, tt.expectedErr.Error())
+			if tt.wantErr != nil {
+				require.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
@@ -104,29 +104,29 @@ func Test_ValidateUploadParams(t *testing.T) {
 	unspecifiedServiceIDParams.serviceID = uuid.Nil
 
 	tests := []struct {
-		params      *uploadParams
-		expectedErr error
-		name        string
+		params  *uploadParams
+		wantErr error
+		name    string
 	}{
 		{
-			name:        "Happy Path",
-			params:      happyParams,
-			expectedErr: nil,
+			name:    "Happy Path",
+			params:  happyParams,
+			wantErr: nil,
 		},
 		{
-			name:        "Empty data",
-			params:      emptyDataParams,
-			expectedErr: errors.New("'data' is required"),
+			name:    "Empty data",
+			params:  emptyDataParams,
+			wantErr: errors.New("'data' is required"),
 		},
 		{
-			name:        "Unspecified schema",
-			params:      unspecifiedSchemaParams,
-			expectedErr: errors.New("'schema' is required"),
+			name:    "Unspecified schema",
+			params:  unspecifiedSchemaParams,
+			wantErr: errors.New("'schema' is required"),
 		},
 		{
-			name:        "Unspecified service ID",
-			params:      unspecifiedServiceIDParams,
-			expectedErr: errors.New("'service_id' is required"),
+			name:    "Unspecified service ID",
+			params:  unspecifiedServiceIDParams,
+			wantErr: errors.New("'service_id' is required"),
 		},
 	}
 	for _, tt := range tests {
@@ -135,8 +135,8 @@ func Test_ValidateUploadParams(t *testing.T) {
 
 			err := tt.params.validate()
 
-			if tt.expectedErr != nil {
-				require.ErrorContains(t, err, tt.expectedErr.Error())
+			if tt.wantErr != nil {
+				require.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
@@ -183,38 +183,38 @@ func Test_GetLanguage(t *testing.T) {
 	}
 
 	tests := []struct {
-		expectedErr error
-		args        args
-		expected    language.Tag
-		name        string
+		wantErr error
+		args    args
+		want    language.Tag
+		name    string
 	}{
 		{
-			name:        "Translation language is defined/params undefined",
-			args:        translationDefinedParamsUndefined,
-			expected:    translationDefinedParamsUndefined.translation.Language,
-			expectedErr: nil,
+			name:    "Translation language is defined/params undefined",
+			args:    translationDefinedParamsUndefined,
+			want:    translationDefinedParamsUndefined.translation.Language,
+			wantErr: nil,
 		},
 		{
-			name:        "Translation language is undefined/params defined",
-			args:        translationUndefinedParamsDefined,
-			expected:    translationUndefinedParamsDefined.params.languageTag,
-			expectedErr: nil,
+			name:    "Translation language is undefined/params defined",
+			args:    translationUndefinedParamsDefined,
+			want:    translationUndefinedParamsDefined.params.languageTag,
+			wantErr: nil,
 		},
 		{
-			name:        "Both defined, same language",
-			args:        bothDefinedSameLang,
-			expected:    bothDefinedSameLang.translation.Language,
-			expectedErr: nil,
+			name:    "Both defined, same language",
+			args:    bothDefinedSameLang,
+			want:    bothDefinedSameLang.translation.Language,
+			wantErr: nil,
 		},
 		{
-			name:        "Both undefined",
-			args:        undefinedBoth,
-			expectedErr: errors.New("no language is set"),
+			name:    "Both undefined",
+			args:    undefinedBoth,
+			wantErr: errors.New("no language is set"),
 		},
 		{
-			name:        "Language mismatch",
-			args:        langMismatch,
-			expectedErr: errors.New("languages are mismatched"),
+			name:    "Language mismatch",
+			args:    langMismatch,
+			wantErr: errors.New("languages are mismatched"),
 		},
 	}
 
@@ -222,15 +222,15 @@ func Test_GetLanguage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := getLanguage(tt.args.params, tt.args.translation)
+			got, err := getLanguage(tt.args.params, tt.args.translation)
 
-			if tt.expectedErr != nil {
-				require.ErrorContains(t, err, tt.expectedErr.Error())
+			if tt.wantErr != nil {
+				require.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
 			require.NoError(t, err)
-			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -260,24 +260,24 @@ func Test_ParseDownloadParams(t *testing.T) {
 	malformedLangTagReq.Language += "_FAIL"
 
 	tests := []struct {
-		expectedErr error
-		request     *translatev1.DownloadTranslationFileRequest
-		name        string
+		wantErr error
+		request *translatev1.DownloadTranslationFileRequest
+		name    string
 	}{
 		{
-			name:        "Happy Path",
-			request:     happyReq,
-			expectedErr: nil,
+			name:    "Happy Path",
+			request: happyReq,
+			wantErr: nil,
 		},
 		{
-			name:        "Malformed service ID",
-			request:     malformedServiceIDReq,
-			expectedErr: errors.New("parse service_id"),
+			name:    "Malformed service ID",
+			request: malformedServiceIDReq,
+			wantErr: errors.New("parse service_id"),
 		},
 		{
-			name:        "Malformed language",
-			request:     malformedLangTagReq,
-			expectedErr: errors.New("parse language"),
+			name:    "Malformed language",
+			request: malformedLangTagReq,
+			wantErr: errors.New("parse language"),
 		},
 	}
 	for _, tt := range tests {
@@ -286,8 +286,8 @@ func Test_ParseDownloadParams(t *testing.T) {
 
 			params, err := parseDownloadTranslationFileRequestParams(tt.request)
 
-			if tt.expectedErr != nil {
-				require.ErrorContains(t, err, tt.expectedErr.Error())
+			if tt.wantErr != nil {
+				require.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
@@ -321,29 +321,29 @@ func Test_ValidateDownloadParams(t *testing.T) {
 	unspecifiedLanguageTagReq.languageTag = language.Und
 
 	tests := []struct {
-		params      *downloadParams
-		expectedErr error
-		name        string
+		params  *downloadParams
+		wantErr error
+		name    string
 	}{
 		{
-			name:        "Happy Path",
-			params:      happyParams,
-			expectedErr: nil,
+			name:    "Happy Path",
+			params:  happyParams,
+			wantErr: nil,
 		},
 		{
-			name:        "Unspecified schema",
-			params:      unspecifiedSchemaParams,
-			expectedErr: errors.New("'schema' is required"),
+			name:    "Unspecified schema",
+			params:  unspecifiedSchemaParams,
+			wantErr: errors.New("'schema' is required"),
 		},
 		{
-			name:        "Unspecified service ID",
-			params:      unspecifiedServiceIDParams,
-			expectedErr: errors.New("'service_id' is required"),
+			name:    "Unspecified service ID",
+			params:  unspecifiedServiceIDParams,
+			wantErr: errors.New("'service_id' is required"),
 		},
 		{
-			name:        "Unspecified language",
-			params:      unspecifiedLanguageTagReq,
-			expectedErr: errors.New("'language' is required"),
+			name:    "Unspecified language",
+			params:  unspecifiedLanguageTagReq,
+			wantErr: errors.New("'language' is required"),
 		},
 	}
 	for _, tt := range tests {
@@ -352,8 +352,8 @@ func Test_ValidateDownloadParams(t *testing.T) {
 
 			err := tt.params.validate()
 
-			if tt.expectedErr != nil {
-				require.ErrorContains(t, err, tt.expectedErr.Error())
+			if tt.wantErr != nil {
+				require.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 

@@ -20,7 +20,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-// ---–––--------------Actual Tests------------------–––---
+// ---–––-------------- Tests------------------–––---
 
 func Test_Translate(t *testing.T) {
 	t.Parallel()

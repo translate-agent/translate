@@ -39,7 +39,7 @@ func Test_SaveTranslation(t *testing.T) {
 
 		tests := []struct {
 			translation *model.Translation
-			expectedErr error
+			wantErr     error
 			name        string
 			serviceID   uuid.UUID
 		}{
@@ -47,13 +47,13 @@ func Test_SaveTranslation(t *testing.T) {
 				name:        "Happy path",
 				serviceID:   service.ID,
 				translation: rand.ModelTranslation(3, nil),
-				expectedErr: nil,
+				wantErr:     nil,
 			},
 			{
 				name:        "Missing service",
 				serviceID:   uuid.New(),
 				translation: rand.ModelTranslation(3, nil),
-				expectedErr: repo.ErrNotFound,
+				wantErr:     repo.ErrNotFound,
 			},
 		}
 
@@ -61,8 +61,8 @@ func Test_SaveTranslation(t *testing.T) {
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				err := repository.SaveTranslation(ctx, tt.serviceID, tt.translation)
 
-				if tt.expectedErr != nil {
-					require.ErrorIs(t, err, tt.expectedErr)
+				if tt.wantErr != nil {
+					require.ErrorIs(t, err, tt.wantErr)
 					return
 				}
 
@@ -70,11 +70,11 @@ func Test_SaveTranslation(t *testing.T) {
 
 				// Assure that the translations were saved correctly.
 
-				actualTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
+				gotTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.translation.Language}})
 				require.NoError(t, err, "Load saved translations")
 
-				testutil.EqualTranslations(t, tt.translation, &actualTranslations[0])
+				testutil.EqualTranslations(t, tt.translation, &gotTranslations[0])
 			})
 		}
 	})
@@ -106,11 +106,11 @@ func Test_SaveTranslationsMultipleLangOneService(t *testing.T) {
 
 		// Assure that all translations are saved
 		for _, translation := range translations {
-			actualTranslations, err := repository.LoadTranslations(testCtx, service.ID,
+			gotTranslations, err := repository.LoadTranslations(testCtx, service.ID,
 				repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{translation.Language}})
 			require.NoError(t, err, "Load saved translations")
 
-			testutil.EqualTranslations(t, translation, &actualTranslations[0])
+			testutil.EqualTranslations(t, translation, &gotTranslations[0])
 		}
 	})
 }
@@ -123,30 +123,30 @@ func Test_SaveTranslationUpdate(t *testing.T) {
 
 		// Prepare
 		service := prepareService(testCtx, t, repository)
-		expectedTranslations := rand.ModelTranslation(3, nil)
+		wantTranslations := rand.ModelTranslation(3, nil)
 
-		err := repository.SaveTranslation(testCtx, service.ID, expectedTranslations)
+		err := repository.SaveTranslation(testCtx, service.ID, wantTranslations)
 		require.NoError(t, err, "Save translation")
 
 		// Update Message, Description and Status values, while keeping the ID
-		for i := range expectedTranslations.Messages {
-			expectedTranslations.Messages[i].Message = gofakeit.SentenceSimple()
-			expectedTranslations.Messages[i].Description = gofakeit.SentenceSimple()
-			expectedTranslations.Messages[i].Status = rand.MessageStatus()
+		for i := range wantTranslations.Messages {
+			wantTranslations.Messages[i].Message = gofakeit.SentenceSimple()
+			wantTranslations.Messages[i].Description = gofakeit.SentenceSimple()
+			wantTranslations.Messages[i].Status = rand.MessageStatus()
 		}
 
 		// Save updated translations
 
-		err = repository.SaveTranslation(testCtx, service.ID, expectedTranslations)
+		err = repository.SaveTranslation(testCtx, service.ID, wantTranslations)
 		require.NoError(t, err, "Update Translation")
 
 		// Assure that translations are updated
 
-		actualTranslation, err := repository.LoadTranslations(testCtx, service.ID,
-			repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{expectedTranslations.Language}})
+		gotTranslation, err := repository.LoadTranslations(testCtx, service.ID,
+			repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{wantTranslations.Language}})
 		require.NoError(t, err, "Load updated translations")
 
-		testutil.EqualTranslations(t, expectedTranslations, &actualTranslation[0])
+		testutil.EqualTranslations(t, wantTranslations, &gotTranslation[0])
 	})
 }
 
@@ -174,36 +174,36 @@ func Test_LoadTranslation(t *testing.T) {
 		tests := []struct {
 			language  language.Tag
 			name      string
-			expected  []model.Translation
+			want      []model.Translation
 			serviceID uuid.UUID
 		}{
 			{
 				language:  translations.Language,
 				name:      "Happy Path",
-				expected:  []model.Translation{*translations},
+				want:      []model.Translation{*translations},
 				serviceID: service.ID,
 			},
 			{
 				language:  translations.Language,
 				name:      "No translations with service",
-				expected:  []model.Translation{},
+				want:      []model.Translation{},
 				serviceID: uuid.New(),
 			},
 			{
 				language:  langWithNoTranslations,
 				name:      "No translations with language",
-				expected:  []model.Translation{},
+				want:      []model.Translation{},
 				serviceID: service.ID,
 			},
 		}
 
 		for _, tt := range tests {
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				actualTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
+				gotTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.language}})
 				require.NoError(t, err, "Load translations")
 
-				assert.ElementsMatch(t, tt.expected, actualTranslations)
+				assert.ElementsMatch(t, tt.want, gotTranslations)
 			})
 		}
 	})
@@ -230,31 +230,31 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 		}
 
 		tests := []struct {
-			name                 string
-			expectedTranslations []model.Translation
-			languages            []language.Tag
-			serviceID            uuid.UUID
+			name             string
+			wantTranslations []model.Translation
+			languages        []language.Tag
+			serviceID        uuid.UUID
 		}{
 			{
-				name:                 "Happy Path, all service translations",
-				expectedTranslations: translations,
-				serviceID:            service.ID,
+				name:             "Happy Path, all service translations",
+				wantTranslations: translations,
+				serviceID:        service.ID,
 			},
 			{
-				name:                 "Happy Path, filter by existing languages",
-				expectedTranslations: translations,
-				serviceID:            service.ID,
-				languages:            languages,
+				name:             "Happy Path, filter by existing languages",
+				wantTranslations: translations,
+				serviceID:        service.ID,
+				languages:        languages,
 			},
 		}
 
 		for _, tt := range tests {
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				actualTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
+				gotTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: tt.languages})
 
 				require.NoError(t, err, "Load translations")
-				assert.ElementsMatch(t, actualTranslations, tt.expectedTranslations)
+				assert.ElementsMatch(t, gotTranslations, tt.wantTranslations)
 			})
 		}
 	})

@@ -14,16 +14,16 @@ func Test_FromNgxTranslate(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name        string
-		input       []byte
-		expectedErr error
-		expected    model.Translation
+		name    string
+		input   []byte
+		wantErr error
+		want    model.Translation
 	}{
 		// Positive tests
 		{
 			name:  "Not nested",
 			input: []byte(`{"message":"example"}`),
-			expected: model.Translation{
+			want: model.Translation{
 				Original: true,
 				Messages: []model.Message{
 					{
@@ -37,7 +37,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 		{
 			name:  "Message with special chars",
 			input: []byte(`{"message":"Order #{Id} has been canceled for {ClientName} | \\"}`),
-			expected: model.Translation{
+			want: model.Translation{
 				Original: true,
 				Messages: []model.Message{
 					{
@@ -51,7 +51,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 		{
 			name:  "Nested normally",
 			input: []byte(`{"message":{"example":"message1"}}`),
-			expected: model.Translation{
+			want: model.Translation{
 				Original: false,
 				Messages: []model.Message{
 					{
@@ -65,7 +65,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 		{
 			name:  "Nested with dot",
 			input: []byte(`{"message.example":""}`),
-			expected: model.Translation{
+			want: model.Translation{
 				Original: false,
 				Messages: []model.Message{
 					{
@@ -79,7 +79,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 		{
 			name:  "Nested mixed",
 			input: []byte(`{"message.example":"message1","msg":{"example":"message2"}}`),
-			expected: model.Translation{
+			want: model.Translation{
 				Original: true,
 				Messages: []model.Message{
 					{
@@ -97,14 +97,14 @@ func Test_FromNgxTranslate(t *testing.T) {
 		},
 		// Negative tests
 		{
-			name:        "Unsupported value type",
-			input:       []byte(`{"message": 1.0}`),
-			expectedErr: errors.New("unsupported value type"),
+			name:    "Unsupported value type",
+			input:   []byte(`{"message": 1.0}`),
+			wantErr: errors.New("unsupported value type"),
 		},
 		{
-			name:        "Invalid JSON",
-			input:       []byte(`{"message": "example"`),
-			expectedErr: errors.New("unmarshal"),
+			name:    "Invalid JSON",
+			input:   []byte(`{"message": "example"`),
+			wantErr: errors.New("unmarshal"),
 		},
 	}
 
@@ -112,14 +112,14 @@ func Test_FromNgxTranslate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromNgxTranslate(tt.input, &tt.expected.Original)
-			if tt.expectedErr != nil {
-				require.ErrorContains(t, err, tt.expectedErr.Error())
+			got, err := FromNgxTranslate(tt.input, &tt.want.Original)
+			if tt.wantErr != nil {
+				require.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
 			require.NoError(t, err)
-			testutil.EqualTranslations(t, &tt.expected, &actual)
+			testutil.EqualTranslations(t, &tt.want, &got)
 		})
 	}
 }
@@ -128,9 +128,9 @@ func Test_ToNgxTranslate(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		expected []byte
-		name     string
-		input    model.Translation
+		want  []byte
+		name  string
+		input model.Translation
 	}{
 		{
 			name: "valid input",
@@ -146,7 +146,7 @@ func Test_ToNgxTranslate(t *testing.T) {
 					},
 				},
 			},
-			expected: []byte(`{"message":"example","message.example":"message1"}`),
+			want: []byte(`{"message":"example","message.example":"message1"}`),
 		},
 		{
 			name: "message with special chars",
@@ -158,7 +158,7 @@ func Test_ToNgxTranslate(t *testing.T) {
 					},
 				},
 			},
-			expected: []byte(`{"message":"Welcome {user} | \\ !"}`),
+			want: []byte(`{"message":"Welcome {user} | \\ !"}`),
 		},
 	}
 
@@ -166,11 +166,11 @@ func Test_ToNgxTranslate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := ToNgxTranslate(tt.input)
+			got, err := ToNgxTranslate(tt.input)
 
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

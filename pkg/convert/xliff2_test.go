@@ -62,14 +62,14 @@ func randXliff2(t *testing.T, translation *model.Translation) []byte {
 	return append([]byte(xml.Header), xmlData...)
 }
 
-func assertEqualXML(t *testing.T, expected, actual []byte) bool { //nolint:unparam
+func assertEqualXML(t *testing.T, want, got []byte) bool { //nolint:unparam
 	t.Helper()
 	// Matches a substring that starts with > and ends with < with zero or more whitespace in between.
 	re := regexp.MustCompile(`>(\s*)<`)
-	expectedTrimmed := re.ReplaceAllString(string(expected), "><")
-	actualTrimmed := re.ReplaceAllString(string(actual), "><")
+	wantTrimmed := re.ReplaceAllString(string(want), "><")
+	gotTrimmed := re.ReplaceAllString(string(got), "><")
 
-	return assert.Equal(t, expectedTrimmed, actualTrimmed)
+	return assert.Equal(t, wantTrimmed, gotTrimmed)
 }
 
 func Test_FromXliff2(t *testing.T) {
@@ -88,19 +88,19 @@ func Test_FromXliff2(t *testing.T) {
 	)
 
 	tests := []struct {
-		name     string
-		expected *model.Translation
-		data     []byte
+		name string
+		want *model.Translation
+		data []byte
 	}{
 		{
-			name:     "Original",
-			data:     randXliff2(t, originalTranslation),
-			expected: originalTranslation,
+			name: "Original",
+			data: randXliff2(t, originalTranslation),
+			want: originalTranslation,
 		},
 		{
-			name:     "Different language",
-			data:     randXliff2(t, nonOriginalTranslation),
-			expected: nonOriginalTranslation,
+			name: "Different language",
+			data: randXliff2(t, nonOriginalTranslation),
+			want: nonOriginalTranslation,
 		},
 		{
 			name: "Message with special chars",
@@ -116,7 +116,7 @@ func Test_FromXliff2(t *testing.T) {
 					},
 				},
 			),
-			expected: &model.Translation{
+			want: &model.Translation{
 				Original: false,
 				Language: language.English,
 				Messages: []model.Message{
@@ -134,10 +134,10 @@ func Test_FromXliff2(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromXliff2(tt.data, &tt.expected.Original)
+			got, err := FromXliff2(tt.data, &tt.want.Original)
 			require.NoError(t, err)
 
-			testutil.EqualTranslations(t, tt.expected, &actual)
+			testutil.EqualTranslations(t, tt.want, &got)
 		})
 	}
 }
@@ -156,14 +156,14 @@ func Test_ToXliff2(t *testing.T) {
 		testutilrand.WithSimpleMF2Messages())
 
 	tests := []struct {
-		name     string
-		data     *model.Translation
-		expected []byte
+		name string
+		data *model.Translation
+		want []byte
 	}{
 		{
-			name:     "valid input",
-			data:     translation,
-			expected: randXliff2(t, translation),
+			name: "valid input",
+			data: translation,
+			want: randXliff2(t, translation),
 		},
 		{
 			name: "message with special chars",
@@ -177,7 +177,7 @@ func Test_ToXliff2(t *testing.T) {
 					},
 				},
 			},
-			expected: []byte(`<?xml version="1.0" encoding="UTF-8"?>
+			want: []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en" trgLang="und">
   <file>
     <unit id="common.welcome">
@@ -194,10 +194,10 @@ func Test_ToXliff2(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := ToXliff2(*tt.data)
+			got, err := ToXliff2(*tt.data)
 			require.NoError(t, err)
 
-			assertEqualXML(t, tt.expected, actual)
+			assertEqualXML(t, tt.want, got)
 		})
 	}
 }
@@ -221,14 +221,14 @@ func Test_TransformXLIFF2(t *testing.T) {
 		},
 	}
 
-	f := func(expected *model.Translation) bool {
-		serialized, err := ToXliff2(*expected)
+	f := func(want *model.Translation) bool {
+		serialized, err := ToXliff2(*want)
 		require.NoError(t, err)
 
-		parsed, err := FromXliff2(serialized, &expected.Original)
+		parsed, err := FromXliff2(serialized, &want.Original)
 		require.NoError(t, err)
 
-		testutil.EqualTranslations(t, expected, &parsed)
+		testutil.EqualTranslations(t, want, &parsed)
 
 		return true
 	}
