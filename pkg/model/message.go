@@ -234,7 +234,7 @@ func (s MessageStatus) Value() (driver.Value, error) {
 func (s *MessageStatus) Scan(value interface{}) error {
 	switch v := value.(type) {
 	default:
-		return fmt.Errorf("unknown type %+v, expected string", v)
+		return fmt.Errorf("unknown type %+v, want string", v)
 	case []byte:
 		switch string(v) {
 		case MessageStatusTranslated.String():
@@ -271,7 +271,7 @@ func (p Positions) Value() (driver.Value, error) {
 func (p *Positions) Scan(value interface{}) error {
 	switch v := value.(type) {
 	default:
-		return fmt.Errorf("unknown type %+v, expected []byte", v)
+		return fmt.Errorf("unknown type %+v, want []byte", v)
 	case nil:
 		*p = nil
 		return nil

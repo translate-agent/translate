@@ -34,9 +34,9 @@ func Test_ParseSuperset(t *testing.T) {
 
 	defer resp.Body.Close()
 
-	actual := parseFile(t, resp.Body)
+	got := parseFile(t, resp.Body)
 
-	expectedHeaders := Headers{
+	wantHeaders := Headers{
 		{Name: "Project-Id-Version", Value: "Superset VERSION"},
 		{Name: "Report-Msgid-Bugs-To", Value: "EMAIL@ADDRESS"},
 		{Name: "POT-Creation-Date", Value: "2024-02-16 13:50-0500"},
@@ -51,9 +51,9 @@ func Test_ParseSuperset(t *testing.T) {
 		{Name: "Generated-By", Value: "Babel 2.9.1"},
 	}
 
-	require.Equal(t, expectedHeaders, actual.Headers)
+	require.Equal(t, wantHeaders, got.Headers)
 
-	someExpectedMessages := []Message{
+	someWantMessages := []Message{
 		{
 			MsgID:  "STEP %(stepCurr)s OF %(stepLast)s",
 			MsgStr: []string{},
@@ -88,7 +88,7 @@ func Test_ParseSuperset(t *testing.T) {
 		},
 	}
 
-	for _, expected := range someExpectedMessages {
-		require.Contains(t, actual.Messages, expected)
+	for _, want := range someWantMessages {
+		require.Contains(t, got.Messages, want)
 	}
 }

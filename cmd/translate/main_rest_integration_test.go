@@ -126,29 +126,29 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	notFoundServiceIDRequest := randUploadTranslationFileReq(t, gofakeit.UUID())
 
 	tests := []struct {
-		request      *translatev1.UploadTranslationFileRequest
-		name         string
-		expectedCode int
+		request  *translatev1.UploadTranslationFileRequest
+		name     string
+		wantCode int
 	}{
 		{
-			name:         "Happy Path",
-			request:      happyRequest,
-			expectedCode: http.StatusOK,
+			name:     "Happy Path",
+			request:  happyRequest,
+			wantCode: http.StatusOK,
 		},
 		{
-			name:         "Happy Path no language in path",
-			request:      happyRequestNoLang,
-			expectedCode: http.StatusOK,
+			name:     "Happy Path no language in path",
+			request:  happyRequestNoLang,
+			wantCode: http.StatusOK,
 		},
 		{
-			name:         "Bad request missing service_id",
-			request:      invalidArgumentMissingServiceRequest,
-			expectedCode: http.StatusBadRequest,
+			name:     "Bad request missing service_id",
+			request:  invalidArgumentMissingServiceRequest,
+			wantCode: http.StatusBadRequest,
 		},
 		{
-			name:         "Not found service ID",
-			request:      notFoundServiceIDRequest,
-			expectedCode: http.StatusNotFound,
+			name:     "Not found service ID",
+			request:  notFoundServiceIDRequest,
+			wantCode: http.StatusNotFound,
 		},
 	}
 
@@ -162,7 +162,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			// Read the response to give error message on failure
 			respBody, _ := io.ReadAll(resp.Body)
 
-			assert.Equal(t, tt.expectedCode, resp.StatusCode, "body: %s", string(respBody))
+			assert.Equal(t, tt.wantCode, resp.StatusCode, "body: %s", string(respBody))
 		})
 	}
 }
@@ -222,30 +222,30 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 	unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
 
 	tests := []struct {
-		request      *translatev1.DownloadTranslationFileRequest
-		name         string
-		expectedCode int
+		request  *translatev1.DownloadTranslationFileRequest
+		name     string
+		wantcode int
 	}{
 		{
-			name:         "Happy path",
-			request:      happyRequest,
-			expectedCode: http.StatusOK,
+			name:     "Happy path",
+			request:  happyRequest,
+			wantcode: http.StatusOK,
 		},
 
 		{
-			name:         "Happy path no translation with language",
-			request:      happyReqNoTranslationLanguage,
-			expectedCode: http.StatusOK,
+			name:     "Happy path no translation with language",
+			request:  happyReqNoTranslationLanguage,
+			wantcode: http.StatusOK,
 		},
 		{
-			name:         "Happy path no translation with Service ID",
-			request:      happyReqNoTranslationServiceID,
-			expectedCode: http.StatusOK,
+			name:     "Happy path no translation with Service ID",
+			request:  happyReqNoTranslationServiceID,
+			wantcode: http.StatusOK,
 		},
 		{
-			name:         "Bad request unspecified schema",
-			request:      unspecifiedSchemaRequest,
-			expectedCode: http.StatusBadRequest,
+			name:     "Bad request unspecified schema",
+			request:  unspecifiedSchemaRequest,
+			wantcode: http.StatusBadRequest,
 		},
 	}
 
@@ -257,7 +257,7 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			defer resp.Body.Close()
 			respBody, _ := io.ReadAll(resp.Body)
 
-			assert.Equal(t, tt.expectedCode, resp.StatusCode, "body: %s", string(respBody))
+			assert.Equal(t, tt.wantcode, resp.StatusCode, "body: %s", string(respBody))
 		})
 	}
 }
@@ -280,24 +280,24 @@ func Test_CreateService_REST(t *testing.T) {
 	serviceMalformedID.Id += "_FAIL"
 
 	tests := []struct {
-		service      *translatev1.Service
-		name         string
-		expectedCode int
+		service  *translatev1.Service
+		name     string
+		wantCode int
 	}{
 		{
-			name:         "Happy path With ID",
-			service:      serviceWithID,
-			expectedCode: http.StatusOK,
+			name:     "Happy path With ID",
+			service:  serviceWithID,
+			wantCode: http.StatusOK,
 		},
 		{
-			name:         "Happy path Without ID",
-			service:      serviceWithoutID,
-			expectedCode: http.StatusOK,
+			name:     "Happy path Without ID",
+			service:  serviceWithoutID,
+			wantCode: http.StatusOK,
 		},
 		{
-			name:         "Invalid argument malformed ID",
-			service:      serviceMalformedID,
-			expectedCode: http.StatusBadRequest,
+			name:     "Invalid argument malformed ID",
+			service:  serviceMalformedID,
+			wantCode: http.StatusBadRequest,
 		},
 	}
 
@@ -320,7 +320,7 @@ func Test_CreateService_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+			assert.Equal(t, tt.wantCode, resp.StatusCode)
 		})
 	}
 }
@@ -413,19 +413,19 @@ func Test_GetService_REST(t *testing.T) {
 	require.NoError(t, err, "Prepare test service")
 
 	tests := []struct {
-		service      *translatev1.Service
-		name         string
-		expectedCode int
+		service  *translatev1.Service
+		name     string
+		wantCode int
 	}{
 		{
-			service:      service,
-			name:         "Happy Path",
-			expectedCode: http.StatusOK,
+			service:  service,
+			name:     "Happy Path",
+			wantCode: http.StatusOK,
 		},
 		{
-			service:      randService(),
-			name:         "Not Found",
-			expectedCode: http.StatusNotFound,
+			service:  randService(),
+			name:     "Not Found",
+			wantCode: http.StatusNotFound,
 		},
 	}
 
@@ -445,7 +445,7 @@ func Test_GetService_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+			assert.Equal(t, tt.wantCode, resp.StatusCode)
 		})
 	}
 }
@@ -464,19 +464,19 @@ func Test_DeleteService_REST(t *testing.T) {
 	require.NoError(t, err, "Prepare test service")
 
 	tests := []struct {
-		service      *translatev1.Service
-		name         string
-		expectedCode int
+		service  *translatev1.Service
+		name     string
+		wantCode int
 	}{
 		{
-			service:      service,
-			name:         "Happy Path",
-			expectedCode: http.StatusOK,
+			service:  service,
+			name:     "Happy Path",
+			wantCode: http.StatusOK,
 		},
 		{
-			service:      randService(),
-			name:         "Not Found",
-			expectedCode: http.StatusNotFound,
+			service:  randService(),
+			name:     "Not Found",
+			wantCode: http.StatusNotFound,
 		},
 	}
 
@@ -496,7 +496,7 @@ func Test_DeleteService_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+			assert.Equal(t, tt.wantCode, resp.StatusCode)
 		})
 	}
 }
@@ -545,16 +545,16 @@ func Test_CreateTranslation_REST(t *testing.T) {
 	require.NoError(t, err, "create test translation file")
 
 	tests := []struct {
-		translation  *translatev1.Translation
-		name         string
-		serviceID    string
-		expectedCode int
+		translation *translatev1.Translation
+		name        string
+		serviceID   string
+		wantCode    int
 	}{
 		{
-			name:         "Happy path, create translation",
-			serviceID:    service.GetId(),
-			translation:  randTranslation(t, &translatev1.Translation{Language: langs[1].String()}),
-			expectedCode: http.StatusOK,
+			name:        "Happy path, create translation",
+			serviceID:   service.GetId(),
+			translation: randTranslation(t, &translatev1.Translation{Language: langs[1].String()}),
+			wantCode:    http.StatusOK,
 		},
 		{
 			name:      "Happy path, empty translation.messages",
@@ -562,18 +562,18 @@ func Test_CreateTranslation_REST(t *testing.T) {
 			translation: &translatev1.Translation{
 				Language: langs[2].String(),
 			},
-			expectedCode: http.StatusOK,
+			wantCode: http.StatusOK,
 		},
 		{
-			name:         "Not found, service not found",
-			serviceID:    gofakeit.UUID(),
-			translation:  randTranslation(t, nil),
-			expectedCode: http.StatusNotFound,
+			name:        "Not found, service not found",
+			serviceID:   gofakeit.UUID(),
+			translation: randTranslation(t, nil),
+			wantCode:    http.StatusNotFound,
 		},
 		{
-			name:         "Bad request, translation not provided",
-			serviceID:    service.GetId(),
-			expectedCode: http.StatusBadRequest,
+			name:      "Bad request, translation not provided",
+			serviceID: service.GetId(),
+			wantCode:  http.StatusBadRequest,
 		},
 		{
 			name:      "Bad request, translation.language not provided",
@@ -581,7 +581,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 			translation: &translatev1.Translation{
 				Language: "",
 			},
-			expectedCode: http.StatusBadRequest,
+			wantCode: http.StatusBadRequest,
 		},
 		{
 			name:      "Status conflict, service already has translation for specified language",
@@ -589,7 +589,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 			translation: &translatev1.Translation{
 				Language: uploadReq.GetLanguage(),
 			},
-			expectedCode: http.StatusConflict,
+			wantCode: http.StatusConflict,
 		},
 		{
 			name:      "Bad request, service already has original translation",
@@ -598,7 +598,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 				Original: true,
 				Language: langs[3].String(),
 			},
-			expectedCode: http.StatusBadRequest,
+			wantCode: http.StatusBadRequest,
 		},
 	}
 
@@ -621,7 +621,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+			assert.Equal(t, tt.wantCode, resp.StatusCode)
 		})
 	}
 }
@@ -666,44 +666,44 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 		service.GetId(), &translatev1.Translation{Language: langs[1].String(), Original: true}, nil)
 
 	tests := []struct {
-		request      *translatev1.UpdateTranslationRequest
-		name         string
-		expectedCode uint
+		request  *translatev1.UpdateTranslationRequest
+		name     string
+		wantCode uint
 	}{
 		{
-			name:         "Happy Path",
-			request:      happyReq,
-			expectedCode: http.StatusOK,
+			name:     "Happy Path",
+			request:  happyReq,
+			wantCode: http.StatusOK,
 		},
 		{
-			name:         "Happy path update messages field",
-			request:      req,
-			expectedCode: http.StatusOK,
+			name:     "Happy path update messages field",
+			request:  req,
+			wantCode: http.StatusOK,
 		},
 		{
-			name:         "Message does not exists",
-			request:      notFoundTranslationReq,
-			expectedCode: http.StatusNotFound,
+			name:     "Message does not exists",
+			request:  notFoundTranslationReq,
+			wantCode: http.StatusNotFound,
 		},
 		{
-			name:         "Service does not exists",
-			request:      notFoundServiceID,
-			expectedCode: http.StatusNotFound,
+			name:     "Service does not exists",
+			request:  notFoundServiceID,
+			wantCode: http.StatusNotFound,
 		},
 		{
-			name:         "Invalid argument nil translation",
-			request:      invalidArgumentNilTranslationReq,
-			expectedCode: http.StatusBadRequest,
+			name:     "Invalid argument nil translation",
+			request:  invalidArgumentNilTranslationReq,
+			wantCode: http.StatusBadRequest,
 		},
 		{
-			name:         "Invalid argument und translation.language",
-			request:      invalidArgumentUndTranslationLanguageReq,
-			expectedCode: http.StatusBadRequest,
+			name:     "Invalid argument und translation.language",
+			request:  invalidArgumentUndTranslationLanguageReq,
+			wantCode: http.StatusBadRequest,
 		},
 		{
-			name:         "Bad request, service already has original translation",
-			request:      originalAlreadyExistsReq,
-			expectedCode: http.StatusBadRequest,
+			name:     "Bad request, service already has original translation",
+			request:  originalAlreadyExistsReq,
+			wantCode: http.StatusBadRequest,
 		},
 	}
 
@@ -732,7 +732,7 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, int(tt.expectedCode), resp.StatusCode)
+			assert.Equal(t, int(tt.wantCode), resp.StatusCode)
 		})
 	}
 }
@@ -753,23 +753,23 @@ func Test_GetTranslations_REST(t *testing.T) {
 	}
 
 	tests := []struct {
-		serviceID    string
-		name         string
-		expectedCode int
+		serviceID string
+		name      string
+		wantCode  int
 	}{
 		{
-			serviceID:    service.GetId(),
-			name:         "Happy Path, get all translations",
-			expectedCode: http.StatusOK,
+			serviceID: service.GetId(),
+			name:      "Happy Path, get all translations",
+			wantCode:  http.StatusOK,
 		},
 		{
-			serviceID:    gofakeit.UUID(),
-			name:         "Happy path, service doesn't exist",
-			expectedCode: http.StatusOK,
+			serviceID: gofakeit.UUID(),
+			name:      "Happy path, service doesn't exist",
+			wantCode:  http.StatusOK,
 		},
 		{
-			name:         "Bad request, ServiceID not provided",
-			expectedCode: http.StatusBadRequest,
+			name:     "Bad request, ServiceID not provided",
+			wantCode: http.StatusBadRequest,
 		},
 	}
 
@@ -793,7 +793,7 @@ func Test_GetTranslations_REST(t *testing.T) {
 				require.NotEmpty(t, resp.Body)
 			}
 
-			assert.Equal(t, tt.expectedCode, resp.StatusCode)
+			assert.Equal(t, tt.wantCode, resp.StatusCode)
 		})
 	}
 }

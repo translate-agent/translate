@@ -24,11 +24,11 @@ func Test_TransformUUID(t *testing.T) {
 	t.Run("UUID to string to UUID", func(t *testing.T) {
 		t.Parallel()
 
-		f := func(expectedID uuid.UUID) bool {
-			restoredID, err := uuidFromProto(uuidToProto(expectedID))
+		f := func(wantID uuid.UUID) bool {
+			restoredID, err := uuidFromProto(uuidToProto(wantID))
 			require.NoError(t, err)
 
-			return assert.Equal(t, expectedID, restoredID)
+			return assert.Equal(t, wantID, restoredID)
 		}
 
 		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
@@ -38,12 +38,12 @@ func Test_TransformUUID(t *testing.T) {
 	t.Run("Nil UUID to string to UUID", func(t *testing.T) {
 		t.Parallel()
 
-		expectedID := uuid.Nil
+		wantID := uuid.Nil
 
-		restoredID, err := uuidFromProto(uuidToProto(expectedID))
+		restoredID, err := uuidFromProto(uuidToProto(wantID))
 		require.NoError(t, err)
 
-		assert.Equal(t, expectedID, restoredID)
+		assert.Equal(t, wantID, restoredID)
 	})
 }
 
@@ -57,11 +57,11 @@ func Test_TransformLanguage(t *testing.T) {
 		},
 	}
 
-	f := func(expectedLangTag language.Tag) bool {
-		restoredLangTag, err := languageFromProto(languageToProto(expectedLangTag))
+	f := func(wantLangTag language.Tag) bool {
+		restoredLangTag, err := languageFromProto(languageToProto(wantLangTag))
 		require.NoError(t, err)
 
-		return assert.Equal(t, expectedLangTag, restoredLangTag)
+		return assert.Equal(t, wantLangTag, restoredLangTag)
 	}
 
 	require.NoError(t, quick.Check(f, conf))
@@ -73,11 +73,11 @@ func Test_TransformService(t *testing.T) {
 	t.Run("Service to proto to Service", func(t *testing.T) {
 		t.Parallel()
 
-		f := func(expectedService model.Service) bool {
-			restoredService, err := serviceFromProto(serviceToProto(&expectedService))
+		f := func(wantService model.Service) bool {
+			restoredService, err := serviceFromProto(serviceToProto(&wantService))
 			require.NoError(t, err)
 
-			return assert.Equal(t, expectedService, *restoredService)
+			return assert.Equal(t, wantService, *restoredService)
 		}
 
 		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
@@ -86,11 +86,11 @@ func Test_TransformService(t *testing.T) {
 	t.Run("Services to proto to services", func(t *testing.T) {
 		t.Parallel()
 
-		f := func(expectedServices []model.Service) bool {
-			restoredServices, err := servicesFromProto(servicesToProto(expectedServices))
+		f := func(wantServices []model.Service) bool {
+			restoredServices, err := servicesFromProto(servicesToProto(wantServices))
 			require.NoError(t, err)
 
-			return assert.ElementsMatch(t, expectedServices, restoredServices)
+			return assert.ElementsMatch(t, wantServices, restoredServices)
 		}
 
 		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 100}))
@@ -104,7 +104,7 @@ func Test_maskFromProto(t *testing.T) {
 		name         string
 		protoMessage proto.Message          // proto message type
 		protoMask    *fieldmaskpb.FieldMask // mask as received from the request
-		expectedErr  error
+		wantErr      error
 		modelMask    model.Mask // parsed mask with correct model paths
 	}{
 		// positive tests
@@ -138,28 +138,28 @@ func Test_maskFromProto(t *testing.T) {
 			protoMessage: new(translatev1.Service),
 			protoMask:    &fieldmaskpb.FieldMask{},
 			modelMask:    model.Mask{},
-			expectedErr:  errors.New("field mask must contain at least 1 path"),
+			wantErr:      errors.New("field mask must contain at least 1 path"),
 		},
 		{
 			name:         "mask not nil, message nil",
 			protoMessage: nil,
 			protoMask:    &fieldmaskpb.FieldMask{Paths: []string{"name"}},
 			modelMask:    nil,
-			expectedErr:  errors.New("message cannot be nil"),
+			wantErr:      errors.New("message cannot be nil"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := maskFromProto(tt.protoMessage, tt.protoMask)
-			if tt.expectedErr != nil {
-				require.EqualError(t, err, tt.expectedErr.Error())
+			got, err := maskFromProto(tt.protoMessage, tt.protoMask)
+			if tt.wantErr != nil {
+				require.EqualError(t, err, tt.wantErr.Error())
 				return
 			}
 
 			require.NoError(t, err)
-			assert.ElementsMatch(t, tt.modelMask, actual)
+			assert.ElementsMatch(t, tt.modelMask, got)
 		})
 	}
 }

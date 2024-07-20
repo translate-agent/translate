@@ -86,19 +86,19 @@ func Test_FromXliff12(t *testing.T) {
 	)
 
 	tests := []struct {
-		name     string
-		expected *model.Translation
-		data     []byte
+		name string
+		want *model.Translation
+		data []byte
 	}{
 		{
-			name:     "Original",
-			data:     randXliff12(t, originalTranslation),
-			expected: originalTranslation,
+			name: "Original",
+			data: randXliff12(t, originalTranslation),
+			want: originalTranslation,
 		},
 		{
-			name:     "Different language",
-			data:     randXliff12(t, nonOriginalTranslation),
-			expected: nonOriginalTranslation,
+			name: "Different language",
+			data: randXliff12(t, nonOriginalTranslation),
+			want: nonOriginalTranslation,
 		},
 		{
 			name: "Message with special chars {}",
@@ -114,7 +114,7 @@ func Test_FromXliff12(t *testing.T) {
 					},
 				},
 			),
-			expected: &model.Translation{
+			want: &model.Translation{
 				Original: false,
 				Language: language.English,
 				Messages: []model.Message{
@@ -132,10 +132,10 @@ func Test_FromXliff12(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromXliff12(tt.data, &tt.expected.Original)
+			got, err := FromXliff12(tt.data, &tt.want.Original)
 			require.NoError(t, err)
 
-			testutil.EqualTranslations(t, tt.expected, &actual)
+			testutil.EqualTranslations(t, tt.want, &got)
 		})
 	}
 }
@@ -154,14 +154,14 @@ func Test_ToXliff12(t *testing.T) {
 		testutilrand.WithSimpleMF2Messages())
 
 	tests := []struct {
-		name     string
-		data     *model.Translation
-		expected []byte
+		name string
+		data *model.Translation
+		want []byte
 	}{
 		{
-			name:     "valid input",
-			data:     translation,
-			expected: randXliff12(t, translation),
+			name: "valid input",
+			data: translation,
+			want: randXliff12(t, translation),
 		},
 		{
 			name: "message with special chars",
@@ -175,7 +175,7 @@ func Test_ToXliff12(t *testing.T) {
 					},
 				},
 			},
-			expected: []byte(`<?xml version="1.0" encoding="UTF-8"?>
+			want: []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
   <file source-language="en" target-language="und">
     <body>
@@ -192,10 +192,10 @@ func Test_ToXliff12(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := ToXliff12(*tt.data)
+			got, err := ToXliff12(*tt.data)
 			require.NoError(t, err)
 
-			assertEqualXML(t, tt.expected, actual)
+			assertEqualXML(t, tt.want, got)
 		})
 	}
 }
@@ -219,14 +219,14 @@ func Test_TransformXLIFF12(t *testing.T) {
 		},
 	}
 
-	f := func(expected *model.Translation) bool {
-		serialized, err := ToXliff12(*expected)
+	f := func(want *model.Translation) bool {
+		serialized, err := ToXliff12(*want)
 		require.NoError(t, err)
 
-		parsed, err := FromXliff12(serialized, &expected.Original)
+		parsed, err := FromXliff12(serialized, &want.Original)
 		require.NoError(t, err)
 
-		testutil.EqualTranslations(t, expected, &parsed)
+		testutil.EqualTranslations(t, want, &parsed)
 
 		return true
 	}

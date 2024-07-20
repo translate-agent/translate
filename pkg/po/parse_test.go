@@ -10,9 +10,9 @@ func Test_Parse(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		input    string
-		expected PO
+		name  string
+		input string
+		want  PO
 	}{
 		{
 			name: "only headers",
@@ -21,7 +21,7 @@ func Test_Parse(t *testing.T) {
 msgid ""
 msgstr ""
 "Project-Id-Version: Hello World 1.0\n"`,
-			expected: PO{
+			want: PO{
 				Headers: Headers{
 					{Name: "Project-Id-Version", Value: "Hello World 1.0"},
 				},
@@ -40,7 +40,7 @@ msgid "id2"
 msgid_plural "id2 plural"
 msgstr[0] "str2"
 msgstr[1] "str2-1"`,
-			expected: PO{
+			want: PO{
 				Messages: []Message{
 					{
 						MsgID:              "id1",
@@ -110,7 +110,7 @@ msgstr[2] ""
 #, flag
 msgid "Hello, world!"
 msgstr "Hello, world!"`,
-			expected: PO{
+			want: PO{
 				Headers: Headers{
 					{Name: "Project-Id-Version", Value: "Hello World 1.0"},
 					{Name: "Report-Msgid-Bugs-To", Value: ""},
@@ -165,7 +165,7 @@ msgid ""
 "                It won't be saved when saving the chart.\n"
 "              "
 msgstr ""`,
-			expected: PO{
+			want: PO{
 				Messages: []Message{
 					{
 						MsgID: `
@@ -187,10 +187,10 @@ msgstr ""`,
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := Parse([]byte(tt.input))
+			got, err := Parse([]byte(tt.input))
 			require.NoError(t, err)
 
-			require.Equal(t, tt.expected, actual)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

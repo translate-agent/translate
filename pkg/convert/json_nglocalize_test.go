@@ -15,10 +15,10 @@ func Test_FromNgLocalize(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		expectedErr error
-		input       []byte
-		name        string
-		expected    model.Translation
+		wanterr error
+		input   []byte
+		name    string
+		want    model.Translation
 	}{
 		// Positive tests
 		{
@@ -31,7 +31,7 @@ func Test_FromNgLocalize(t *testing.T) {
           "Welcome": "Bienvenue"
         }
       }`),
-			expected: model.Translation{
+			want: model.Translation{
 				Language: language.French,
 				Original: true,
 				Messages: []model.Message{
@@ -58,7 +58,7 @@ func Test_FromNgLocalize(t *testing.T) {
           "Welcome": "Bienvenue"
         }
       }`),
-			expected: model.Translation{
+			want: model.Translation{
 				Language: language.French,
 				Original: true,
 				Messages: []model.Message{
@@ -86,23 +86,23 @@ func Test_FromNgLocalize(t *testing.T) {
           "Welcome": "Bienvenue"
         }
       }`),
-			expectedErr: errors.New("language: subtag \"xyz\" is well-formed but unknown"),
+			wanterr: errors.New("language: subtag \"xyz\" is well-formed but unknown"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromNgLocalize(tt.input, &tt.expected.Original)
+			got, err := FromNgLocalize(tt.input, &tt.want.Original)
 
-			if tt.expectedErr != nil {
-				require.ErrorContains(t, err, tt.expectedErr.Error())
+			if tt.wanterr != nil {
+				require.ErrorContains(t, err, tt.wanterr.Error())
 				return
 			}
 
 			require.NoError(t, err)
 
-			testutil.EqualTranslations(t, &tt.expected, &actual)
+			testutil.EqualTranslations(t, &tt.want, &got)
 		})
 	}
 }
@@ -113,14 +113,14 @@ func Test_ToNgLocalize(t *testing.T) {
 	t.Skip() // TODO
 
 	tests := []struct {
-		name        string
-		expected    []byte
-		expectedErr error
-		input       model.Translation
+		name    string
+		want    []byte
+		wantErr error
+		input   model.Translation
 	}{
 		{
 			name: "All OK",
-			expected: []byte(`
+			want: []byte(`
       {
         "locale": "en",
         "translations": {
@@ -148,7 +148,7 @@ func Test_ToNgLocalize(t *testing.T) {
 					},
 				},
 			},
-			expectedErr: nil,
+			wantErr: nil,
 		},
 		{
 			name: "Message with special chars",
@@ -162,24 +162,24 @@ func Test_ToNgLocalize(t *testing.T) {
 					},
 				},
 			},
-			expected:    []byte(`{"locale": "en","translations": {"Welcome": "Welcome to our website {user} 99|100 \\"}}`),
-			expectedErr: nil,
+			want:    []byte(`{"locale": "en","translations": {"Welcome": "Welcome to our website {user} 99|100 \\"}}`),
+			wantErr: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := ToNgLocalize(tt.input)
+			got, err := ToNgLocalize(tt.input)
 
-			if tt.expectedErr != nil {
-				require.ErrorContains(t, err, tt.expectedErr.Error())
+			if tt.wantErr != nil {
+				require.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
 			require.NoError(t, err)
 
-			assert.JSONEq(t, string(tt.expected), string(actual))
+			assert.JSONEq(t, string(tt.want), string(got))
 		})
 	}
 }

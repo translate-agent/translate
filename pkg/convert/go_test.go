@@ -15,9 +15,9 @@ func TestToGo(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		expected []byte
-		input    model.Translation
+		name  string
+		want  []byte
+		input model.Translation
 	}{
 		{
 			name: "valid input",
@@ -38,7 +38,7 @@ func TestToGo(t *testing.T) {
 					},
 				},
 			},
-			expected: []byte(`
+			want: []byte(`
 	{
 		"language":"en",
 		"messages":[
@@ -82,7 +82,7 @@ func TestToGo(t *testing.T) {
 					},
 				},
 			},
-			expected: []byte(`
+			want: []byte(`
 	{
 		"language": "en",
 		"messages": [
@@ -104,10 +104,10 @@ func TestToGo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := ToGo(tt.input)
+			got, err := ToGo(tt.input)
 			require.NoError(t, err)
 
-			assert.JSONEq(t, string(tt.expected), string(actual))
+			assert.JSONEq(t, string(tt.want), string(got))
 		})
 	}
 }
@@ -116,9 +116,9 @@ func TestFromGo(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		input    []byte
-		expected model.Translation
+		name  string
+		input []byte
+		want  model.Translation
 	}{
 		{
 			name: "Valid input",
@@ -151,7 +151,7 @@ func TestFromGo(t *testing.T) {
 		]
 	}
 	`),
-			expected: model.Translation{
+			want: model.Translation{
 				Language: language.English,
 				Original: false,
 				Messages: []model.Message{
@@ -203,7 +203,7 @@ func TestFromGo(t *testing.T) {
 		]
 	}
 	`),
-			expected: model.Translation{
+			want: model.Translation{
 				Language: language.English,
 				Original: false,
 				Messages: []model.Message{
@@ -230,11 +230,11 @@ func TestFromGo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromGo(tt.input, &tt.expected.Original)
+			actual, err := FromGo(tt.input, &tt.want.Original)
 
 			require.NoError(t, err)
 
-			testutil.EqualTranslations(t, &tt.expected, &actual)
+			testutil.EqualTranslations(t, &tt.want, &actual)
 		})
 	}
 }

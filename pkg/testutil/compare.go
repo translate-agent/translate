@@ -8,27 +8,27 @@ import (
 	"go.expect.digital/translate/pkg/model"
 )
 
-func EqualTranslations(t *testing.T, expected, actual *model.Translation) {
+func EqualTranslations(t *testing.T, want, got *model.Translation) {
 	t.Helper()
 
-	if expected == nil {
-		require.Equal(t, expected, actual)
+	if want == nil {
+		require.Equal(t, want, got)
 	}
 
-	require.Equal(t, expected.Language, actual.Language, "translation.language = %s, but want %s", actual.Language, expected.Language) //nolint:lll
-	require.Equal(t, expected.Original, actual.Original, "translation.original = %t, but want %t", actual.Original, expected.Original) //nolint:lll
-	require.ElementsMatch(t, expected.Messages, actual.Messages)
+	require.Equal(t, want.Language, got.Language, "translation.language = %s, but want %s", got.Language, want.Language) //nolint:lll
+	require.Equal(t, want.Original, got.Original, "translation.original = %t, but want %t", got.Original, want.Original) //nolint:lll
+	require.ElementsMatch(t, want.Messages, got.Messages)
 }
 
 // EqualMF2Message compares two MessageFormat2 message ASTs.
-func EqualMF2Message(t *testing.T, expected, actual string) {
+func EqualMF2Message(t *testing.T, want, got string) {
 	t.Helper()
 
-	expectedAST, err := mf2.Parse(expected)
+	wantAST, err := mf2.Parse(want)
 	require.NoError(t, err)
 
-	actualAST, err := mf2.Parse(actual)
+	gotAST, err := mf2.Parse(got)
 	require.NoError(t, err)
 
-	require.Equal(t, expectedAST, actualAST)
+	require.Equal(t, wantAST, gotAST)
 }

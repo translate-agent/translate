@@ -11,11 +11,11 @@ import (
 )
 
 // requireEqualPO is a helper function to compare two PO strings, ignoring whitespace, newlines, and quotes.
-func requireEqualPO(t *testing.T, expected, actual string, msgAndArgs ...any) {
+func requireEqualPO(t *testing.T, want, got string, msgAndArgs ...any) {
 	t.Helper()
 
 	replace := func(s string) string { return strings.NewReplacer("\\n", "", "\n", "", "\"", "").Replace(s) }
-	require.Equal(t, replace(expected), replace(actual), msgAndArgs)
+	require.Equal(t, replace(want), replace(got), msgAndArgs)
 }
 
 // Test_FromPoSingular tests the conversion from PO->Translation->PO for singular messages.
@@ -28,9 +28,9 @@ func Test_PoSingular(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		args     args
-		expected model.Translation
+		name string
+		args args
+		want model.Translation
 	}{
 		// Without placeholders
 		{
@@ -44,7 +44,7 @@ msgid "Goodbye!"
 msgstr ""
 `,
 			},
-			expected: model.Translation{
+			want: model.Translation{
 				Original: true,
 				Messages: []model.Message{
 					{
@@ -79,7 +79,7 @@ msgid "Dinosaurs"
 msgstr "Dinozauri"
 `,
 			},
-			expected: model.Translation{
+			want: model.Translation{
 				Language: language.Latvian,
 				Original: false,
 				Messages: []model.Message{
@@ -119,7 +119,7 @@ msgstr ""
 " nicht überschreiben möchten."
 `,
 			},
-			expected: model.Translation{
+			want: model.Translation{
 				Language: language.German,
 				Original: false,
 				Messages: []model.Message{
@@ -164,7 +164,7 @@ msgid "Hello, %s!"
 msgstr ""
 `,
 			},
-			expected: model.Translation{
+			want: model.Translation{
 				Language: language.Und,
 				Original: true,
 				Messages: []model.Message{
@@ -223,7 +223,7 @@ msgid "Hello, {name}!"
 msgstr "Sveika, {name}!"
 `,
 			},
-			expected: model.Translation{
+			want: model.Translation{
 				Language: language.Latvian,
 				Original: false,
 				Messages: []model.Message{
@@ -245,17 +245,17 @@ msgstr "Sveika, {name}!"
 
 			// Test: PO -> Translation
 
-			actual, err := FromPo([]byte(tt.args.input), tt.args.original)
+			got, err := FromPo([]byte(tt.args.input), tt.args.original)
 			require.NoError(t, err)
 
-			testutil.EqualTranslations(t, &tt.expected, &actual)
+			testutil.EqualTranslations(t, &tt.want, &got)
 
 			// Test: Translation -> PO
 
-			actualPo, err := ToPo(actual)
+			gotPo, err := ToPo(got)
 			require.NoError(t, err)
 
-			requireEqualPO(t, tt.args.input, string(actualPo), "convert back to Po")
+			requireEqualPO(t, tt.args.input, string(gotPo), "convert back to Po")
 		})
 	}
 }
@@ -270,9 +270,9 @@ func Test_PoPlural(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		args     args
-		expected model.Translation
+		name string
+		args args
+		want model.Translation
 	}{
 		// Without placeholders
 		{
@@ -286,7 +286,7 @@ msgstr[0] ""
 msgstr[1] ""
 `,
 			},
-			expected: model.Translation{
+			want: model.Translation{
 				Language: language.Und,
 				Original: true,
 				Messages: []model.Message{
@@ -316,7 +316,7 @@ msgstr[1] "варианта"
 msgstr[2] "вариантов"
 `,
 			},
-			expected: model.Translation{
+			want: model.Translation{
 				Language: language.Russian,
 				Original: false,
 				Messages: []model.Message{
@@ -350,7 +350,7 @@ msgstr[0] ""
 msgstr[1] ""
 `,
 			},
-			expected: model.Translation{
+			want: model.Translation{
 				Language: language.Und,
 				Original: true,
 				Messages: []model.Message{
@@ -394,7 +394,7 @@ msgstr[2] ""
 "\"%(undefinedParameter)s\"?"
 `,
 			},
-			expected: model.Translation{
+			want: model.Translation{
 				Language: language.Russian,
 				Original: false,
 				Messages: []model.Message{
@@ -424,17 +424,17 @@ msgstr[2] ""
 
 			// Test: PO -> Translation
 
-			actual, err := FromPo([]byte(tt.args.input), tt.args.original)
+			got, err := FromPo([]byte(tt.args.input), tt.args.original)
 			require.NoError(t, err)
 
-			testutil.EqualTranslations(t, &tt.expected, &actual)
+			testutil.EqualTranslations(t, &tt.want, &got)
 
 			// Test: Translation -> PO
 
-			actualPo, err := ToPo(actual)
+			gotPo, err := ToPo(got)
 			require.NoError(t, err)
 
-			requireEqualPO(t, tt.args.input, string(actualPo), "convert back to Po")
+			requireEqualPO(t, tt.args.input, string(gotPo), "convert back to Po")
 		})
 	}
 }

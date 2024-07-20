@@ -230,10 +230,10 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 	require.NoError(t, gofakeit.Struct(&dstService))
 
 	tests := []struct {
-		assertFunc  func(t *testing.T, srcService, dstService, original Service)
-		name        string
-		expectedErr error
-		fieldMask   Mask
+		assertFunc func(t *testing.T, srcService, dstService, original Service)
+		name       string
+		wantErr    error
+		fieldMask  Mask
 	}{
 		// positive tests
 		{
@@ -272,9 +272,9 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 		},
 		// negative tests
 		{
-			name:        "Try to update ID",
-			fieldMask:   Mask{"ID"},
-			expectedErr: errors.New("\"id\" is not allowed in field mask"),
+			name:      "Try to update ID",
+			fieldMask: Mask{"ID"},
+			wantErr:   errors.New("\"id\" is not allowed in field mask"),
 		},
 	}
 
@@ -288,8 +288,8 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 
 			err := UpdateService(&srcCopy, &dstCopy, tt.fieldMask)
 
-			if tt.expectedErr != nil {
-				require.EqualError(t, err, tt.expectedErr.Error())
+			if tt.wantErr != nil {
+				require.EqualError(t, err, tt.wantErr.Error())
 				return
 			}
 
@@ -308,28 +308,28 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 		fieldMask      Mask
 		srcTranslation Translation
 		dstTranslation Translation
-		expected       Translation
+		want           Translation
 	}{
 		{
 			name:           "Update Original",
 			fieldMask:      Mask{"Original"},
 			dstTranslation: Translation{Original: true, Language: language.English},
 			srcTranslation: Translation{Original: false, Language: language.Latvian},
-			expected:       Translation{Original: false, Language: language.English},
+			want:           Translation{Original: false, Language: language.English},
 		},
 		{
 			name:           "Update Original and Messages",
 			fieldMask:      Mask{"Original", "Messages"},
 			dstTranslation: Translation{Original: true, Language: language.English, Messages: []Message{{ID: "1", Message: "Hello"}}},  //nolint:lll
 			srcTranslation: Translation{Original: false, Language: language.Latvian, Messages: []Message{{ID: "1", Message: "World"}}}, //nolint:lll
-			expected:       Translation{Original: false, Language: language.English, Messages: []Message{{ID: "1", Message: "World"}}}, //nolint:lll
+			want:           Translation{Original: false, Language: language.English, Messages: []Message{{ID: "1", Message: "World"}}}, //nolint:lll
 		},
 		{
 			name:           "Update Messages",
 			fieldMask:      Mask{"Messages"},
 			dstTranslation: Translation{Messages: []Message{{ID: "1", Message: "Hello", Status: MessageStatusUntranslated}}},
 			srcTranslation: Translation{Messages: []Message{{ID: "1", Message: "World", Status: MessageStatusTranslated}}},
-			expected:       Translation{Messages: []Message{{ID: "1", Message: "World", Status: MessageStatusTranslated}}},
+			want:           Translation{Messages: []Message{{ID: "1", Message: "World", Status: MessageStatusTranslated}}},
 		},
 		{
 			name:      "Update multiple Messages",
@@ -342,7 +342,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
 				{ID: "1", Message: "World", Status: MessageStatusTranslated},
 			}},
-			expected: Translation{Messages: []Message{
+			want: Translation{Messages: []Message{
 				{ID: "1", Message: "World", Status: MessageStatusTranslated},
 				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
 			}},
@@ -352,7 +352,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 			fieldMask:      Mask{"Messages"},
 			dstTranslation: Translation{Messages: []Message{{ID: "1", Message: "Hello"}}},
 			srcTranslation: Translation{Messages: []Message{{ID: "2", Message: "World"}}},
-			expected:       Translation{Messages: []Message{{ID: "1", Message: "Hello"}, {ID: "2", Message: "World"}}},
+			want:           Translation{Messages: []Message{{ID: "1", Message: "Hello"}, {ID: "2", Message: "World"}}},
 		},
 		{
 			name:      "Update Messages, add multiple Messages",
@@ -365,7 +365,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 				{ID: "3", Message: "Sun"},
 				{ID: "4", Message: "Bye"},
 			}},
-			expected: Translation{Messages: []Message{
+			want: Translation{Messages: []Message{
 				{ID: "1", Message: "Hello"},
 				{ID: "2", Message: "World"},
 				{ID: "3", Message: "Sun"},
@@ -384,7 +384,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 				{ID: "4", Message: "Bye"},
 				{ID: "1", Message: "World"},
 			}},
-			expected: Translation{Messages: []Message{
+			want: Translation{Messages: []Message{
 				{ID: "1", Message: "World"},
 				{ID: "2", Message: "World"},
 				{ID: "3", Message: "Sun"},
@@ -403,7 +403,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
 				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
 			}},
-			expected: Translation{Messages: []Message{
+			want: Translation{Messages: []Message{
 				{ID: "1", Message: "World", Status: MessageStatusTranslated},
 				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
 				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
@@ -421,7 +421,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 				{ID: "1", Message: "World", Status: MessageStatusTranslated},
 				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
 			}},
-			expected: Translation{Messages: []Message{
+			want: Translation{Messages: []Message{
 				{ID: "1", Message: "World", Status: MessageStatusTranslated},
 				{ID: "2", Message: "Bonjour2", Status: MessageStatusUntranslated},
 				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
@@ -437,7 +437,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 			srcTranslation: Translation{Messages: []Message{
 				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
 			}},
-			expected: Translation{Messages: []Message{
+			want: Translation{Messages: []Message{
 				{ID: "1", Message: "Hello", Status: MessageStatusUntranslated},
 				{ID: "2", Message: "Bonjour", Status: MessageStatusTranslated},
 				{ID: "3", Message: "Bye", Status: MessageStatusUntranslated},
@@ -452,7 +452,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 			srcTranslation: Translation{Original: true, Messages: []Message{
 				{ID: "1", Message: "Hello", Description: "hi"},
 			}},
-			expected: Translation{Original: true, Messages: []Message{
+			want: Translation{Original: true, Messages: []Message{
 				{ID: "1", Message: "Hello", Description: "hi"},
 			}},
 		},
@@ -464,7 +464,7 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 
 			Update(&tt.srcTranslation, &tt.dstTranslation, tt.fieldMask)
 
-			assert.Equal(t, tt.expected, tt.dstTranslation)
+			assert.Equal(t, tt.want, tt.dstTranslation)
 		})
 	}
 }

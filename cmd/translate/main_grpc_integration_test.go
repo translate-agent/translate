@@ -137,34 +137,34 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	}
 
 	tests := []struct {
-		request      *translatev1.UploadTranslationFileRequest
-		name         string
-		expectedCode codes.Code
+		request  *translatev1.UploadTranslationFileRequest
+		name     string
+		wantcode codes.Code
 	}{
 		{
-			name:         "Happy path",
-			request:      happyRequest,
-			expectedCode: codes.OK,
+			name:     "Happy path",
+			request:  happyRequest,
+			wantcode: codes.OK,
 		},
 		{
-			name:         "Happy path no language in request",
-			request:      happyRequestNoLangInReq,
-			expectedCode: codes.OK,
+			name:     "Happy path no language in request",
+			request:  happyRequestNoLangInReq,
+			wantcode: codes.OK,
 		},
 		{
-			name:         "Invalid argument missing service_id",
-			request:      invalidArgumentMissingServiceRequest,
-			expectedCode: codes.InvalidArgument,
+			name:     "Invalid argument missing service_id",
+			request:  invalidArgumentMissingServiceRequest,
+			wantcode: codes.InvalidArgument,
 		},
 		{
-			name:         "Not found service ID",
-			request:      notFoundServiceIDRequest,
-			expectedCode: codes.NotFound,
+			name:     "Not found service ID",
+			request:  notFoundServiceIDRequest,
+			wantcode: codes.NotFound,
 		},
 		{
-			name:         "Invalid argument, service already has original translation",
-			request:      originalAlreadyExistsReq,
-			expectedCode: codes.InvalidArgument,
+			name:     "Invalid argument, service already has original translation",
+			request:  originalAlreadyExistsReq,
+			wantcode: codes.InvalidArgument,
 		},
 	}
 
@@ -172,7 +172,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.UploadTranslationFile(ctx, tt.request)
 
-			assert.Equal(t, tt.expectedCode, status.Code(err), "want %s, got %s", tt.expectedCode, status.Code(err))
+			assert.Equal(t, tt.wantcode, status.Code(err), "want %s, got %s", tt.wantcode, status.Code(err))
 		})
 	}
 }
@@ -237,29 +237,29 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	unspecifiedSchemaRequest.Schema = translatev1.Schema_UNSPECIFIED
 
 	tests := []struct {
-		request      *translatev1.DownloadTranslationFileRequest
-		name         string
-		expectedCode codes.Code
+		request  *translatev1.DownloadTranslationFileRequest
+		name     string
+		wantCode codes.Code
 	}{
 		{
-			name:         "Happy path",
-			request:      happyRequest,
-			expectedCode: codes.OK,
+			name:     "Happy path",
+			request:  happyRequest,
+			wantCode: codes.OK,
 		},
 		{
-			name:         "Happy path no translation with language",
-			request:      happyReqNoTranslationLanguage,
-			expectedCode: codes.OK,
+			name:     "Happy path no translation with language",
+			request:  happyReqNoTranslationLanguage,
+			wantCode: codes.OK,
 		},
 		{
-			name:         "Happy path no translation with Service ID",
-			request:      happyReqNoTranslationServiceID,
-			expectedCode: codes.OK,
+			name:     "Happy path no translation with Service ID",
+			request:  happyReqNoTranslationServiceID,
+			wantCode: codes.OK,
 		},
 		{
-			name:         "Invalid argument unspecified schema",
-			request:      unspecifiedSchemaRequest,
-			expectedCode: codes.InvalidArgument,
+			name:     "Invalid argument unspecified schema",
+			request:  unspecifiedSchemaRequest,
+			wantCode: codes.InvalidArgument,
 		},
 	}
 
@@ -267,7 +267,7 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.DownloadTranslationFile(ctx, tt.request)
 
-			assert.Equal(t, tt.expectedCode, status.Code(err))
+			assert.Equal(t, tt.wantCode, status.Code(err))
 		})
 	}
 }
@@ -296,24 +296,24 @@ func Test_CreateService_gRPC(t *testing.T) {
 	serviceMalformedID.Id += "_FAIL"
 
 	tests := []struct {
-		request      *translatev1.CreateServiceRequest
-		name         string
-		expectedCode codes.Code
+		request  *translatev1.CreateServiceRequest
+		name     string
+		wantCode codes.Code
 	}{
 		{
-			name:         "Happy path With ID",
-			request:      &translatev1.CreateServiceRequest{Service: serviceWithID},
-			expectedCode: codes.OK,
+			name:     "Happy path With ID",
+			request:  &translatev1.CreateServiceRequest{Service: serviceWithID},
+			wantCode: codes.OK,
 		},
 		{
-			name:         "Happy path Without ID",
-			request:      &translatev1.CreateServiceRequest{Service: serviceWithoutID},
-			expectedCode: codes.OK,
+			name:     "Happy path Without ID",
+			request:  &translatev1.CreateServiceRequest{Service: serviceWithoutID},
+			wantCode: codes.OK,
 		},
 		{
-			name:         "Invalid argument malformed ID",
-			request:      &translatev1.CreateServiceRequest{Service: serviceMalformedID},
-			expectedCode: codes.InvalidArgument,
+			name:     "Invalid argument malformed ID",
+			request:  &translatev1.CreateServiceRequest{Service: serviceMalformedID},
+			wantCode: codes.InvalidArgument,
 		},
 	}
 
@@ -321,7 +321,7 @@ func Test_CreateService_gRPC(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.CreateService(ctx, tt.request)
 
-			assert.Equal(t, tt.expectedCode, status.Code(err))
+			assert.Equal(t, tt.wantCode, status.Code(err))
 		})
 	}
 }
@@ -336,11 +336,11 @@ func Test_UpdateService_gRPC(t *testing.T) {
 		request         *translatev1.UpdateServiceRequest
 		serviceToUpdate *translatev1.Service
 		name            string
-		expectedCode    codes.Code
+		wantCode        codes.Code
 	}{
 		{
 			name:            "Happy path all fields",
-			expectedCode:    codes.OK,
+			wantCode:        codes.OK,
 			serviceToUpdate: createService(ctx, t),
 			request: &translatev1.UpdateServiceRequest{
 				Service:    randService(),
@@ -349,7 +349,7 @@ func Test_UpdateService_gRPC(t *testing.T) {
 		},
 		{
 			name:            "Happy path one field",
-			expectedCode:    codes.OK,
+			wantCode:        codes.OK,
 			serviceToUpdate: createService(ctx, t),
 			request: &translatev1.UpdateServiceRequest{
 				Service: randService(),
@@ -360,7 +360,7 @@ func Test_UpdateService_gRPC(t *testing.T) {
 		},
 		{
 			name:            "Invalid field in update mask",
-			expectedCode:    codes.InvalidArgument,
+			wantCode:        codes.InvalidArgument,
 			serviceToUpdate: createService(ctx, t),
 			request: &translatev1.UpdateServiceRequest{
 				Service: randService(),
@@ -378,7 +378,7 @@ func Test_UpdateService_gRPC(t *testing.T) {
 
 			_, err := client.UpdateService(ctx, tt.request)
 
-			assert.Equal(t, tt.expectedCode, status.Code(err))
+			assert.Equal(t, tt.wantCode, status.Code(err))
 		})
 	}
 }
@@ -395,19 +395,19 @@ func Test_GetService_gRPC(t *testing.T) {
 	require.NoError(t, err, "Prepare test service")
 
 	tests := []struct {
-		request      *translatev1.GetServiceRequest
-		name         string
-		expectedCode codes.Code
+		request  *translatev1.GetServiceRequest
+		name     string
+		wantCode codes.Code
 	}{
 		{
-			name:         "Happy Path",
-			request:      &translatev1.GetServiceRequest{Id: service.GetId()},
-			expectedCode: codes.OK,
+			name:     "Happy Path",
+			request:  &translatev1.GetServiceRequest{Id: service.GetId()},
+			wantCode: codes.OK,
 		},
 		{
-			name:         "Not found",
-			request:      &translatev1.GetServiceRequest{Id: gofakeit.UUID()},
-			expectedCode: codes.NotFound,
+			name:     "Not found",
+			request:  &translatev1.GetServiceRequest{Id: gofakeit.UUID()},
+			wantCode: codes.NotFound,
 		},
 	}
 
@@ -415,7 +415,7 @@ func Test_GetService_gRPC(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.GetService(ctx, tt.request)
 
-			assert.Equal(t, tt.expectedCode, status.Code(err))
+			assert.Equal(t, tt.wantCode, status.Code(err))
 		})
 	}
 }
@@ -432,19 +432,19 @@ func Test_DeleteService_gRPC(t *testing.T) {
 	require.NoError(t, err, "Prepare test service")
 
 	tests := []struct {
-		request      *translatev1.DeleteServiceRequest
-		name         string
-		expectedCode codes.Code
+		request  *translatev1.DeleteServiceRequest
+		name     string
+		wantCode codes.Code
 	}{
 		{
-			request:      &translatev1.DeleteServiceRequest{Id: service.GetId()},
-			name:         "Happy Path",
-			expectedCode: codes.OK,
+			request:  &translatev1.DeleteServiceRequest{Id: service.GetId()},
+			name:     "Happy Path",
+			wantCode: codes.OK,
 		},
 		{
-			request:      &translatev1.DeleteServiceRequest{Id: gofakeit.UUID()},
-			name:         "Not found",
-			expectedCode: codes.NotFound,
+			request:  &translatev1.DeleteServiceRequest{Id: gofakeit.UUID()},
+			name:     "Not found",
+			wantCode: codes.NotFound,
 		},
 	}
 
@@ -452,7 +452,7 @@ func Test_DeleteService_gRPC(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.DeleteService(ctx, tt.request)
 
-			assert.Equal(t, tt.expectedCode, status.Code(err))
+			assert.Equal(t, tt.wantCode, status.Code(err))
 		})
 	}
 }
@@ -530,9 +530,9 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 	require.NoError(t, err, "create test translation file")
 
 	tests := []struct {
-		request      *translatev1.CreateTranslationRequest
-		name         string
-		expectedCode codes.Code
+		request  *translatev1.CreateTranslationRequest
+		name     string
+		wantCode codes.Code
 	}{
 		{
 			name: "Happy path, create translation",
@@ -540,7 +540,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 				ServiceId:   service.GetId(),
 				Translation: randTranslation(t, &translatev1.Translation{Language: langs[1].String()}),
 			},
-			expectedCode: codes.OK,
+			wantCode: codes.OK,
 		},
 		{
 			name: "Happy path, empty translation.messages",
@@ -550,7 +550,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 					Language: langs[2].String(),
 				},
 			},
-			expectedCode: codes.OK,
+			wantCode: codes.OK,
 		},
 		{
 			name: "Not found, service not found",
@@ -558,14 +558,14 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 				ServiceId:   gofakeit.UUID(),
 				Translation: randTranslation(t, nil),
 			},
-			expectedCode: codes.NotFound,
+			wantCode: codes.NotFound,
 		},
 		{
 			name: "Invalid argument, translation not provided",
 			request: &translatev1.CreateTranslationRequest{
 				ServiceId: service.GetId(),
 			},
-			expectedCode: codes.InvalidArgument,
+			wantCode: codes.InvalidArgument,
 		},
 		{
 			name: "Invalid argument, translation.language not provided",
@@ -575,7 +575,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 					Language: "",
 				},
 			},
-			expectedCode: codes.InvalidArgument,
+			wantCode: codes.InvalidArgument,
 		},
 		{
 			name: "Already exists, service already has translation for specified language",
@@ -585,7 +585,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 					Language: uploadReq.GetLanguage(),
 				},
 			},
-			expectedCode: codes.AlreadyExists,
+			wantCode: codes.AlreadyExists,
 		},
 		{
 			name: "Invalid argument, service already has original translation",
@@ -596,7 +596,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 					Original: true,
 				},
 			},
-			expectedCode: codes.InvalidArgument,
+			wantCode: codes.InvalidArgument,
 		},
 	}
 
@@ -607,7 +607,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 				require.Nil(t, translation)
 			}
 
-			assert.Equal(t, tt.expectedCode, status.Code(err))
+			assert.Equal(t, tt.wantCode, status.Code(err))
 
 			if status.Code(err) == codes.OK {
 				require.Equal(t, tt.request.GetTranslation().GetLanguage(), translation.GetLanguage())
@@ -633,24 +633,24 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 	// Requests
 
 	tests := []struct {
-		request      *translatev1.ListTranslationsRequest
-		name         string
-		expectedCode codes.Code
+		request  *translatev1.ListTranslationsRequest
+		name     string
+		wantCode codes.Code
 	}{
 		{
-			name:         "Happy path, get all translations",
-			request:      &translatev1.ListTranslationsRequest{ServiceId: service.GetId()},
-			expectedCode: codes.OK,
+			name:     "Happy path, get all translations",
+			request:  &translatev1.ListTranslationsRequest{ServiceId: service.GetId()},
+			wantCode: codes.OK,
 		},
 		{
-			name:         "Happy path, service doesn't exist",
-			request:      &translatev1.ListTranslationsRequest{ServiceId: uuid.New().String()},
-			expectedCode: codes.OK,
+			name:     "Happy path, service doesn't exist",
+			request:  &translatev1.ListTranslationsRequest{ServiceId: uuid.New().String()},
+			wantCode: codes.OK,
 		},
 		{
-			name:         "Invalid argument, ServiceID not provided",
-			request:      &translatev1.ListTranslationsRequest{},
-			expectedCode: codes.InvalidArgument,
+			name:     "Invalid argument, ServiceID not provided",
+			request:  &translatev1.ListTranslationsRequest{},
+			wantCode: codes.InvalidArgument,
 		},
 	}
 
@@ -662,7 +662,7 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 				require.NotNil(t, resp)
 			}
 
-			assert.Equal(t, tt.expectedCode, status.Code(err))
+			assert.Equal(t, tt.wantCode, status.Code(err))
 		})
 	}
 }
@@ -712,7 +712,7 @@ func Test_UpdateTranslationFromMask_gRPC(t *testing.T) {
 		},
 	}, &field_mask.FieldMask{Paths: []string{"messages"}})
 
-	expected := &translatev1.ListTranslationsResponse{
+	want := &translatev1.ListTranslationsResponse{
 		Translations: []*translatev1.Translation{
 			{
 				Language: lang.String(),
@@ -746,13 +746,13 @@ func Test_UpdateTranslationFromMask_gRPC(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
-	actual, err := client.ListTranslations(ctx, &translatev1.ListTranslationsRequest{
+	got, err := client.ListTranslations(ctx, &translatev1.ListTranslationsRequest{
 		ServiceId: service.GetId(),
 	})
 
 	require.NoError(t, err)
 
-	assert.ElementsMatch(t, expected.GetTranslations(), actual.GetTranslations())
+	assert.ElementsMatch(t, want.GetTranslations(), got.GetTranslations())
 }
 
 func Test_UpdateTranslation_gRPC(t *testing.T) {
@@ -785,39 +785,39 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 		service.GetId(), &translatev1.Translation{Language: langs[1].String(), Original: true}, nil)
 
 	tests := []struct {
-		request      *translatev1.UpdateTranslationRequest
-		name         string
-		expectedCode codes.Code
+		request  *translatev1.UpdateTranslationRequest
+		name     string
+		wantCode codes.Code
 	}{
 		{
-			name:         "Happy Path update all",
-			request:      happyReq,
-			expectedCode: codes.OK,
+			name:     "Happy Path update all",
+			request:  happyReq,
+			wantCode: codes.OK,
 		},
 		{
-			name:         "Translation does not exists",
-			request:      notFoundTranslationReq,
-			expectedCode: codes.NotFound,
+			name:     "Translation does not exists",
+			request:  notFoundTranslationReq,
+			wantCode: codes.NotFound,
 		},
 		{
-			name:         "Service does not exists",
-			request:      notFoundServiceID,
-			expectedCode: codes.NotFound,
+			name:     "Service does not exists",
+			request:  notFoundServiceID,
+			wantCode: codes.NotFound,
 		},
 		{
-			name:         "Invalid argument nil translation",
-			request:      invalidArgumentNilTranslationReq,
-			expectedCode: codes.InvalidArgument,
+			name:     "Invalid argument nil translation",
+			request:  invalidArgumentNilTranslationReq,
+			wantCode: codes.InvalidArgument,
 		},
 		{
-			name:         "Invalid argument und translation.language",
-			request:      invalidArgumentUndTranslationLanguageReq,
-			expectedCode: codes.InvalidArgument,
+			name:     "Invalid argument und translation.language",
+			request:  invalidArgumentUndTranslationLanguageReq,
+			wantCode: codes.InvalidArgument,
 		},
 		{
-			name:         "Invalid argument, service already has original translation",
-			request:      originalAlreadyExistsReq,
-			expectedCode: codes.InvalidArgument,
+			name:     "Invalid argument, service already has original translation",
+			request:  originalAlreadyExistsReq,
+			wantCode: codes.InvalidArgument,
 		},
 	}
 
@@ -829,7 +829,7 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 				require.NotNil(t, resp)
 			}
 
-			assert.Equal(t, tt.expectedCode, status.Code(err))
+			assert.Equal(t, tt.wantCode, status.Code(err))
 
 			if tt.request == happyReq {
 				matchingTranslationExistsInService(ctx, t, tt.request.GetServiceId(), resp)

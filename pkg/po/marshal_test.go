@@ -10,9 +10,9 @@ func TestPo_Marshal(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		expected string
-		input    PO
+		name  string
+		want  string
+		input PO
 	}{
 		{
 			name: "singular",
@@ -31,7 +31,7 @@ func TestPo_Marshal(t *testing.T) {
 					},
 				},
 			},
-			expected: `msgid ""
+			want: `msgid ""
 msgstr ""
 "Language: \n"
 "Last-Translator: John Doe\n"
@@ -59,7 +59,7 @@ msgstr ""
 					},
 				},
 			},
-			expected: `msgid ""
+			want: `msgid ""
 msgstr ""
 "Language: lv\n"
 "Last-Translator: John Doe\n"
@@ -91,7 +91,7 @@ msgstr[1] "Ir 2 āboli"
 					},
 				},
 			},
-			expected: `msgid ""
+			want: `msgid ""
 msgstr ""
 "Language: lv\n"
 "Last-Translator: John Doe\n"
@@ -118,9 +118,9 @@ msgstr[1] ""
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual := tt.input.Marshal()
+			got := tt.input.Marshal()
 
-			require.Equal(t, tt.expected, string(actual))
+			require.Equal(t, tt.want, string(got))
 		})
 	}
 }

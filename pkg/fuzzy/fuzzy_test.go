@@ -14,7 +14,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-// ---–––--------------Actual Tests------------------–––---
+// ---–––-------------- Tests------------------–––---
 
 func Test_TranslateMock(t *testing.T) {
 	t.Parallel()
