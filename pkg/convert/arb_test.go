@@ -3,6 +3,7 @@ package convert
 import (
 	"errors"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -157,6 +158,20 @@ func Test_FromArb(t *testing.T) {
 			}
 
 			expect.NoError(t, err)
+
+			cmp := func(a, b model.Message) int {
+				switch {
+				case a.ID < b.ID:
+					return -1
+				case a.ID > b.ID:
+					return 1
+				default:
+					return 0
+				}
+			}
+
+			slices.SortFunc(tt.want.Messages, cmp)
+			slices.SortFunc(got.Messages, cmp)
 
 			if !reflect.DeepEqual(tt.want, got) {
 				t.Errorf("\nwant %v\ngot  %v", tt.want, got)
