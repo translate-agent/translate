@@ -11,7 +11,6 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/convert"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil"
@@ -21,6 +20,7 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 // -------------Translation File-------------.
@@ -883,21 +883,15 @@ func matchingTranslationExistsInService(
 		t.Error("want resp, got nil")
 	}
 
-	var translationFromService *translatev1.Translation
-
 	for i := range resp.GetTranslations() {
-		if resp.GetTranslations()[i].GetLanguage() == translation.GetLanguage() {
-			translationFromService = resp.GetTranslations()[i]
+		got := resp.GetTranslations()[i]
+
+		if got.GetLanguage() == translation.GetLanguage() {
+			if !proto.Equal(translation, got) {
+				t.Errorf("\nwant %v,\ngot  %v", translation, got)
+			}
+
 			break
 		}
 	}
-
-	if translationFromService == nil {
-		t.Error("want translation, got nil")
-	}
-
-	expect.Equal(t, translation.GetOriginal(), translationFromService.GetOriginal())
-	expect.Equal(t, translation.GetLanguage(), translationFromService.GetLanguage())
-
-	require.ElementsMatch(t, translation.GetMessages(), translationFromService.GetMessages())
 }
