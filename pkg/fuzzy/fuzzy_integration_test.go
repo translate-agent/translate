@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/spf13/viper"
-	"github.com/stretchr/testify/require"
 
 	mf2 "go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
@@ -40,7 +39,10 @@ func Test_Translate(t *testing.T) {
 
 			// Check the translated messages are not empty and are marked as fuzzy.
 			for _, m := range output.Messages {
-				require.NotEmpty(t, m.Message)
+				if len(m.Message) == 0 {
+					t.Errorf("want message, got empty")
+				}
+
 				expect.Equal(t, model.MessageStatusFuzzy, m.Status)
 
 				_, err := mf2.Parse(m.Message)

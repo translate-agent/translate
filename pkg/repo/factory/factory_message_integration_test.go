@@ -75,7 +75,9 @@ func Test_SaveTranslation(t *testing.T) {
 					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.translation.Language}})
 				expect.NoError(t, err)
 
-				testutil.EqualTranslations(t, tt.translation, &gotTranslations[0])
+				if !reflect.DeepEqual(*tt.translation, gotTranslations[0]) {
+					t.Errorf("\nwant %v\ngot  %v", *tt.translation, gotTranslations[0])
+				}
 			})
 		}
 	})
@@ -111,7 +113,9 @@ func Test_SaveTranslationsMultipleLangOneService(t *testing.T) {
 				repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{translation.Language}})
 			expect.NoError(t, err)
 
-			testutil.EqualTranslations(t, translation, &gotTranslations[0])
+			if !reflect.DeepEqual(*translation, gotTranslations[0]) {
+				t.Errorf("\nwant %v\ngot  %v", *translation, gotTranslations[0])
+			}
 		}
 	})
 }
@@ -147,7 +151,9 @@ func Test_SaveTranslationUpdate(t *testing.T) {
 			repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{wantTranslations.Language}})
 		expect.NoError(t, err)
 
-		testutil.EqualTranslations(t, wantTranslations, &gotTranslation[0])
+		if !reflect.DeepEqual(*wantTranslations, gotTranslation[0]) {
+			t.Errorf("\nwant %v\ngot  %v", *wantTranslations, gotTranslation[0])
+		}
 	})
 }
 

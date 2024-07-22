@@ -16,7 +16,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/expect"
@@ -790,8 +789,14 @@ func Test_GetTranslations_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			if err == nil {
-				require.NotEmpty(t, resp.Body)
+			n, err := io.Copy(io.Discard, resp.Body)
+			if err != nil {
+				t.Errorf("want no error, got %s", err)
+				return
+			}
+
+			if n == 0 {
+				t.Errorf("want response body, got empty")
 			}
 
 			assert.Equal(t, tt.wantCode, resp.StatusCode)

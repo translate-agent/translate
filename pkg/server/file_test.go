@@ -73,7 +73,9 @@ func Test_ParseUploadParams(t *testing.T) {
 
 			expect.NoError(t, err)
 
-			assert.NotEmpty(t, params)
+			if params == nil {
+				t.Errorf("want params, got nil")
+			}
 		})
 	}
 }
@@ -293,7 +295,9 @@ func Test_ParseDownloadParams(t *testing.T) {
 
 			expect.NoError(t, err)
 
-			assert.NotEmpty(t, params)
+			if params == nil {
+				t.Errorf("want params, got nil")
+			}
 		})
 	}
 }
