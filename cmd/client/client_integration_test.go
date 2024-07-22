@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"testing"
@@ -17,7 +19,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/cmd/client/cmd"
 	translatesrv "go.expect.digital/translate/cmd/translate/service"
@@ -141,9 +142,14 @@ func Test_ListServices_CLI(t *testing.T) {
 			"--address", addr,
 			"--insecure", "true",
 		})
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
-		require.NoError(t, err)
-		assert.Contains(t, string(res), "ID")
+		if !bytes.Contains(res, []byte("ID")) {
+			t.Errorf("want res to contain 'ID', got '%s'", string(res))
+		}
 	})
 
 	t.Run("error, no transport security set", func(t *testing.T) {
@@ -155,8 +161,13 @@ func Test_ListServices_CLI(t *testing.T) {
 			"--address", addr,
 		})
 
-		require.ErrorContains(t, err, "no transport security set")
-		assert.Nil(t, res)
+		if !strings.Contains(err.Error(), "no transport security set") {
+			t.Errorf("want error to contain 'no transport security set', got %s", err)
+		}
+
+		if res != nil {
+			t.Errorf("want nil res, got %v", res)
+		}
 	})
 }
 
@@ -190,7 +201,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Equal(t, "File uploaded successfully.\n", string(res))
+
+		if string(res) != "File uploaded successfully.\n" {
+			t.Errorf("want 'File uploaded successfully.\n', got '%s'", string(res))
+		}
 	})
 
 	t.Run("OK, with local file and original flag", func(t *testing.T) {
@@ -221,7 +235,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Equal(t, "File uploaded successfully.\n", string(res))
+
+		if string(res) != "File uploaded successfully.\n" {
+			t.Errorf("want 'File uploaded successfully.\n', got %s", string(res))
+		}
 	})
 
 	t.Run("OK, with local file, original=true populate=false", func(t *testing.T) {
@@ -253,7 +270,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Equal(t, "File uploaded successfully.\n", string(res))
+
+		if string(res) != "File uploaded successfully.\n" {
+			t.Errorf("want 'File uploaded successfully.\n', got %s", string(res))
+		}
 	})
 
 	t.Run("OK, file from URL", func(t *testing.T) {
@@ -303,7 +323,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Equal(t, "File uploaded successfully.\n", string(res))
+
+		if string(res) != "File uploaded successfully.\n" {
+			t.Errorf("want 'File uploaded successfully.\n', got %s", string(res))
+		}
 	})
 
 	// Translation has language tag, but CLI parameter 'language' is not set.
@@ -334,7 +357,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		assert.Equal(t, "File uploaded successfully.\n", string(res))
+
+		if string(res) != "File uploaded successfully.\n" {
+			t.Errorf("want 'File uploaded successfully.\n', got %s", string(res))
+		}
 	})
 
 	t.Run("error, malformed language", func(t *testing.T) {
@@ -368,7 +394,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		require.ErrorContains(t, err, "well-formed but unknown")
-		assert.Nil(t, res)
+
+		if res != nil {
+			t.Errorf("want nil res, got %v", res)
+		}
 	})
 
 	t.Run("error, path parameter 'schema' unrecognized", func(t *testing.T) {
@@ -388,7 +417,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 		require.ErrorContains(t, err,
 			"must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2")
-		assert.Nil(t, res)
+
+		if res != nil {
+			t.Errorf("want nil res, got %v", res)
+		}
 	})
 
 	t.Run("error, path parameter 'schema' unspecified", func(t *testing.T) {
@@ -408,7 +440,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 		require.ErrorContains(t, err,
 			"must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2")
-		assert.Nil(t, res)
+
+		if res != nil {
+			t.Errorf("want nil res, got %v", res)
+		}
 	})
 
 	t.Run("error, path parameter 'schema' missing", func(t *testing.T) {
@@ -426,7 +461,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		require.ErrorContains(t, err, "required flag(s) \"schema\" not set")
-		assert.Nil(t, res)
+
+		if res != nil {
+			t.Errorf("want nil res, got %v", res)
+		}
 	})
 
 	// Translation does not have language tag, and CLI parameter 'language' is not set.
@@ -457,7 +495,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		require.ErrorContains(t, err, "no language is set")
-		assert.Nil(t, res)
+
+		if res != nil {
+			t.Errorf("want nil res, got %v", res)
+		}
 	})
 
 	t.Run("error, path parameter 'path' missing", func(t *testing.T) {
@@ -475,7 +516,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		require.ErrorContains(t, err, "required flag(s) \"file\" not set")
-		assert.Nil(t, res)
+
+		if res != nil {
+			t.Errorf("want nil res, got %v", res)
+		}
 	})
 
 	t.Run("error, path parameter 'service' missing", func(t *testing.T) {
@@ -493,7 +537,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		require.ErrorContains(t, err, "required flag(s) \"service\" not set")
-		assert.Nil(t, res)
+
+		if res != nil {
+			t.Errorf("want nil res, got %v", res)
+		}
 	})
 }
 
@@ -564,7 +611,10 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		})
 
 		require.ErrorContains(t, err, "required flag(s) \"language\" not set")
-		assert.Nil(t, res)
+
+		if res != nil {
+			t.Errorf("want nil res, got %v", res)
+		}
 	})
 
 	t.Run("error, path parameter 'schema' missing", func(t *testing.T) {
@@ -582,7 +632,10 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		})
 
 		require.ErrorContains(t, err, "required flag(s) \"schema\" not set")
-		assert.Nil(t, res)
+
+		if res != nil {
+			t.Errorf("want nil res, got %v", res)
+		}
 	})
 
 	t.Run("error, path parameter 'service' missing", func(t *testing.T) {
@@ -600,7 +653,10 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		})
 
 		require.ErrorContains(t, err, "required flag(s) \"service\" not set")
-		assert.Nil(t, res)
+
+		if res != nil {
+			t.Errorf("want nil res, got %v", res)
+		}
 	})
 
 	t.Run("error, path parameter 'path' missing", func(t *testing.T) {
@@ -618,7 +674,10 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		})
 
 		require.ErrorContains(t, err, "required flag(s) \"path\" not set")
-		assert.Nil(t, res)
+
+		if res != nil {
+			t.Errorf("want nil res, got %v", res)
+		}
 	})
 }
 

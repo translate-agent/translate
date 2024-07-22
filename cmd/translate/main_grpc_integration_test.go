@@ -139,32 +139,32 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	tests := []struct {
 		request  *translatev1.UploadTranslationFileRequest
 		name     string
-		wantcode codes.Code
+		wantCode codes.Code
 	}{
 		{
 			name:     "Happy path",
 			request:  happyRequest,
-			wantcode: codes.OK,
+			wantCode: codes.OK,
 		},
 		{
 			name:     "Happy path no language in request",
 			request:  happyRequestNoLangInReq,
-			wantcode: codes.OK,
+			wantCode: codes.OK,
 		},
 		{
 			name:     "Invalid argument missing service_id",
 			request:  invalidArgumentMissingServiceRequest,
-			wantcode: codes.InvalidArgument,
+			wantCode: codes.InvalidArgument,
 		},
 		{
 			name:     "Not found service ID",
 			request:  notFoundServiceIDRequest,
-			wantcode: codes.NotFound,
+			wantCode: codes.NotFound,
 		},
 		{
 			name:     "Invalid argument, service already has original translation",
 			request:  originalAlreadyExistsReq,
-			wantcode: codes.InvalidArgument,
+			wantCode: codes.InvalidArgument,
 		},
 	}
 
@@ -172,7 +172,9 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.UploadTranslationFile(ctx, tt.request)
 
-			assert.Equal(t, tt.wantcode, status.Code(err), "want %s, got %s", tt.wantcode, status.Code(err))
+			if tt.wantCode != status.Code(err) {
+				t.Errorf("want '%s', got '%s'", tt.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -197,7 +199,9 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 
 	_, err = client.UploadTranslationFile(ctx, uploadReq)
 
-	assert.Equal(t, codes.OK, status.Code(err))
+	if status.Code(err) != codes.OK {
+		t.Errorf("want '%s', got '%s'", codes.OK, status.Code(err))
+	}
 }
 
 func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslationFileRequest {
@@ -267,7 +271,9 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.DownloadTranslationFile(ctx, tt.request)
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			if status.Code(err) != tt.wantCode {
+				t.Errorf("want '%s', got '%s'", tt.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -321,7 +327,9 @@ func Test_CreateService_gRPC(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.CreateService(ctx, tt.request)
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			if status.Code(err) != tt.wantCode {
+				t.Errorf("want '%s', got '%s'", tt.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -378,7 +386,9 @@ func Test_UpdateService_gRPC(t *testing.T) {
 
 			_, err := client.UpdateService(ctx, tt.request)
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			if status.Code(err) != tt.wantCode {
+				t.Errorf("want '%s', got '%s'", tt.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -415,7 +425,9 @@ func Test_GetService_gRPC(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.GetService(ctx, tt.request)
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			if status.Code(err) != tt.wantCode {
+				t.Errorf("want '%s', got '%s'", tt.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -452,7 +464,9 @@ func Test_DeleteService_gRPC(t *testing.T) {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.DeleteService(ctx, tt.request)
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			if status.Code(err) != tt.wantCode {
+				t.Errorf("want '%s', got '%s'", tt.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -464,7 +478,9 @@ func Test_ListServices_gRPC(t *testing.T) {
 
 	_, err := client.ListServices(ctx, &translatev1.ListServicesRequest{})
 
-	assert.Equal(t, codes.OK, status.Code(err))
+	if status.Code(err) != codes.OK {
+		t.Errorf("want '%s', got '%s'", codes.OK, status.Code(err))
+	}
 }
 
 // ------------------Translation------------------
@@ -607,7 +623,9 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 				require.Nil(t, translation)
 			}
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			if status.Code(err) != tt.wantCode {
+				t.Errorf("want '%s', got '%s'", tt.wantCode, status.Code(err))
+			}
 
 			if status.Code(err) == codes.OK {
 				require.Equal(t, tt.request.GetTranslation().GetLanguage(), translation.GetLanguage())
@@ -662,7 +680,9 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 				require.NotNil(t, resp)
 			}
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			if status.Code(err) != tt.wantCode {
+				t.Errorf("want '%s', got '%s'", tt.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -829,7 +849,9 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 				require.NotNil(t, resp)
 			}
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			if status.Code(err) != tt.wantCode {
+				t.Errorf("want '%s', got '%s'", tt.wantCode, status.Code(err))
+			}
 
 			if tt.request == happyReq {
 				matchingTranslationExistsInService(ctx, t, tt.request.GetServiceId(), resp)
