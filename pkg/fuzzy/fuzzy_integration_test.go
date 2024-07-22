@@ -16,6 +16,7 @@ import (
 	mf2 "go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
@@ -32,18 +33,18 @@ func Test_Translate(t *testing.T) {
 			input := rand.ModelTranslation(3, nil, rand.WithLanguage(language.English))
 
 			output, err := translator.Translate(ctx, input, targetLang)
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			// Check the number of translated messages is the same as the number of input messages.
-			require.Len(t, output.Messages, len(input.Messages))
+			expect.Equal(t, len(output.Messages), len(input.Messages))
 
 			// Check the translated messages are not empty and are marked as fuzzy.
 			for _, m := range output.Messages {
 				require.NotEmpty(t, m.Message)
-				require.Equal(t, model.MessageStatusFuzzy, m.Status, "want: %s, got: %s", model.MessageStatusFuzzy, m.Status)
+				expect.Equal(t, model.MessageStatusFuzzy, m.Status)
 
 				_, err := mf2.Parse(m.Message)
-				require.NoError(t, err, "mf2: parse translated message")
+				expect.NoError(t, err)
 			}
 		})
 	})

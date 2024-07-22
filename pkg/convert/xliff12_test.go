@@ -8,9 +8,9 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	testutilrand "go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
@@ -65,7 +65,7 @@ func randXliff12(t *testing.T, translation *model.Translation) []byte {
 	}
 
 	xmlData, err := xml.Marshal(xliff)
-	require.NoError(t, err)
+	expect.NoError(t, err)
 
 	return append([]byte(xml.Header), xmlData...)
 }
@@ -133,7 +133,7 @@ func Test_FromXliff12(t *testing.T) {
 			t.Parallel()
 
 			got, err := FromXliff12(tt.data, &tt.want.Original)
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			testutil.EqualTranslations(t, tt.want, &got)
 		})
@@ -193,7 +193,7 @@ func Test_ToXliff12(t *testing.T) {
 			t.Parallel()
 
 			got, err := ToXliff12(*tt.data)
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			assertEqualXML(t, tt.want, got)
 		})
@@ -221,15 +221,15 @@ func Test_TransformXLIFF12(t *testing.T) {
 
 	f := func(want *model.Translation) bool {
 		serialized, err := ToXliff12(*want)
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		parsed, err := FromXliff12(serialized, &want.Original)
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		testutil.EqualTranslations(t, want, &parsed)
 
 		return true
 	}
 
-	require.NoError(t, quick.Check(f, conf))
+	expect.NoError(t, quick.Check(f, conf))
 }

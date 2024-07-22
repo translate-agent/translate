@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 )
 
@@ -152,11 +152,11 @@ func Test_FromArb(t *testing.T) {
 
 			got, err := FromArb(tt.input, &tt.want.Original)
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			testutil.EqualTranslations(t, &tt.want, &got)
 		})
@@ -231,7 +231,7 @@ func Test_ToArb(t *testing.T) {
 			t.Parallel()
 
 			actual, err := ToArb(tt.input)
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			assert.JSONEq(t, string(tt.want), string(actual))
 		})

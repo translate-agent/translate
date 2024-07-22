@@ -7,9 +7,9 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
@@ -67,11 +67,11 @@ func Test_ParseGetServiceParams(t *testing.T) {
 			got, err := parseGetServiceRequestParams(tt.request)
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -104,11 +104,11 @@ func Test_ValidateGetServiceParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 		})
 	}
 }
@@ -218,11 +218,11 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			got, err := parseUpdateServiceParams(tt.request)
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			assert.Equal(t, tt.want, got)
 		})
@@ -285,11 +285,11 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 		})
 	}
 }
@@ -345,11 +345,11 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 			got, err := parseDeleteServiceRequest(tt.request)
 
 			if tt.wanterr != nil {
-				require.ErrorContains(t, err, tt.wanterr.Error())
+				expect.ErrorContains(t, err, tt.wanterr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			assert.Equal(t, tt.want, got)
 		})
@@ -392,11 +392,11 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 		})
 	}
 }
@@ -473,11 +473,11 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 			got, err := parseCreateServiceParams(tt.request)
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -528,11 +528,11 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 		})
 	}
 }

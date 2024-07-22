@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
@@ -41,16 +42,16 @@ func Test_TranslateMock(t *testing.T) {
 				t.Parallel()
 
 				output, err := mock.Translate(context.Background(), tt.input, targetLang)
-				require.NoError(t, err)
+				expect.NoError(t, err)
 
 				// Check the that the translated translation have the correct language.
-				require.Equal(t, targetLang, output.Language)
+				expect.Equal(t, targetLang, output.Language)
 
 				// Check that length matches.
-				require.Len(t, output.Messages, len(tt.input.Messages))
+				expect.Equal(t, len(output.Messages), len(tt.input.Messages))
 
 				for i, m := range output.Messages {
-					require.Equal(t, model.MessageStatusFuzzy, m.Status)
+					expect.Equal(t, model.MessageStatusFuzzy, m.Status)
 					testutil.EqualMF2Message(t, tt.input.Messages[i].Message, m.Message)
 
 					// Reset the message to empty and fuzzy to original values, for the last check for side effects.

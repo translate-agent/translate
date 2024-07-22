@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/expect"
 )
 
 func Test_FromNgxTranslate(t *testing.T) {
@@ -114,11 +114,11 @@ func Test_FromNgxTranslate(t *testing.T) {
 
 			got, err := FromNgxTranslate(tt.input, &tt.want.Original)
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 			testutil.EqualTranslations(t, &tt.want, &got)
 		})
 	}
@@ -168,7 +168,7 @@ func Test_ToNgxTranslate(t *testing.T) {
 
 			got, err := ToNgxTranslate(tt.input)
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			assert.Equal(t, tt.want, got)
 		})

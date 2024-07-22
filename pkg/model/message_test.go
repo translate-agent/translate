@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.expect.digital/translate/pkg/testutil/expect"
 )
 
 func Test_MarkUntranslated(t *testing.T) {
@@ -75,7 +76,7 @@ func Test_MarkUntranslated(t *testing.T) {
 			// all messages should be with status translated.
 			if origIdx != -1 {
 				for _, msg := range tt.translations[origIdx].Messages {
-					require.Equal(t, MessageStatusTranslated.String(), msg.Status.String())
+					expect.Equal(t, MessageStatusTranslated.String(), msg.Status.String())
 				}
 			}
 
@@ -93,7 +94,7 @@ func Test_MarkUntranslated(t *testing.T) {
 						wantStatus = MessageStatusUntranslated
 					}
 
-					require.Equal(t, wantStatus.String(), message.Status.String())
+					expect.Equal(t, wantStatus.String(), message.Status.String())
 				}
 			}
 		})
@@ -175,7 +176,7 @@ func Test_PopulateTranslations(t *testing.T) {
 			tt.translations.PopulateTranslations()
 
 			for _, translation := range tt.translations {
-				require.Len(t, translation.Messages, wantLen)
+				expect.Equal(t, len(translation.Messages), wantLen)
 
 				// Check that translation has all messages from original.
 				// Status check not needed, as if translated messages

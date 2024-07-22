@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.expect.digital/translate/pkg/testutil/expect"
 )
 
 func Test_Parse(t *testing.T) {
@@ -188,7 +189,7 @@ msgstr ""`,
 			t.Parallel()
 
 			got, err := Parse([]byte(tt.input))
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			require.Equal(t, tt.want, got)
 		})

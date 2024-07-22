@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -26,12 +27,12 @@ func Test_TransformUUID(t *testing.T) {
 
 		f := func(wantID uuid.UUID) bool {
 			restoredID, err := uuidFromProto(uuidToProto(wantID))
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			return assert.Equal(t, wantID, restoredID)
 		}
 
-		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
+		expect.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
 	})
 
 	// Separate check with Nil UUID.
@@ -41,7 +42,7 @@ func Test_TransformUUID(t *testing.T) {
 		wantID := uuid.Nil
 
 		restoredID, err := uuidFromProto(uuidToProto(wantID))
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		assert.Equal(t, wantID, restoredID)
 	})
@@ -59,12 +60,12 @@ func Test_TransformLanguage(t *testing.T) {
 
 	f := func(wantLangTag language.Tag) bool {
 		restoredLangTag, err := languageFromProto(languageToProto(wantLangTag))
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		return assert.Equal(t, wantLangTag, restoredLangTag)
 	}
 
-	require.NoError(t, quick.Check(f, conf))
+	expect.NoError(t, quick.Check(f, conf))
 }
 
 func Test_TransformService(t *testing.T) {
@@ -75,12 +76,12 @@ func Test_TransformService(t *testing.T) {
 
 		f := func(wantService model.Service) bool {
 			restoredService, err := serviceFromProto(serviceToProto(&wantService))
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			return assert.Equal(t, wantService, *restoredService)
 		}
 
-		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
+		expect.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
 	})
 
 	t.Run("Services to proto to services", func(t *testing.T) {
@@ -88,12 +89,12 @@ func Test_TransformService(t *testing.T) {
 
 		f := func(wantServices []model.Service) bool {
 			restoredServices, err := servicesFromProto(servicesToProto(wantServices))
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			return assert.ElementsMatch(t, wantServices, restoredServices)
 		}
 
-		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 100}))
+		expect.NoError(t, quick.Check(f, &quick.Config{MaxCount: 100}))
 	})
 }
 
@@ -158,7 +159,7 @@ func Test_maskFromProto(t *testing.T) {
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 			assert.ElementsMatch(t, tt.modelMask, got)
 		})
 	}

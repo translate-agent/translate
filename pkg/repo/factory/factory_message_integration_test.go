@@ -13,6 +13,7 @@ import (
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
@@ -23,7 +24,7 @@ func prepareService(ctx context.Context, t *testing.T, repository repo.Repo) *mo
 	service := rand.ModelService()
 
 	err := repository.SaveService(ctx, service)
-	require.NoError(t, err, "Prepare test service")
+	expect.NoError(t, err)
 
 	return service
 }
@@ -66,13 +67,13 @@ func Test_SaveTranslation(t *testing.T) {
 					return
 				}
 
-				require.NoError(t, err, "Save Translation")
+				expect.NoError(t, err)
 
 				// Assure that the translations were saved correctly.
 
 				gotTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.translation.Language}})
-				require.NoError(t, err, "Load saved translations")
+				expect.NoError(t, err)
 
 				testutil.EqualTranslations(t, tt.translation, &gotTranslations[0])
 			})
@@ -101,14 +102,14 @@ func Test_SaveTranslationsMultipleLangOneService(t *testing.T) {
 		// Save translation
 		for _, translation := range translations {
 			err := repository.SaveTranslation(testCtx, service.ID, translation)
-			require.NoError(t, err, "Save translation")
+			expect.NoError(t, err)
 		}
 
 		// Assure that all translations are saved
 		for _, translation := range translations {
 			gotTranslations, err := repository.LoadTranslations(testCtx, service.ID,
 				repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{translation.Language}})
-			require.NoError(t, err, "Load saved translations")
+			expect.NoError(t, err)
 
 			testutil.EqualTranslations(t, translation, &gotTranslations[0])
 		}
@@ -126,7 +127,7 @@ func Test_SaveTranslationUpdate(t *testing.T) {
 		wantTranslations := rand.ModelTranslation(3, nil)
 
 		err := repository.SaveTranslation(testCtx, service.ID, wantTranslations)
-		require.NoError(t, err, "Save translation")
+		expect.NoError(t, err)
 
 		// Update Message, Description and Status values, while keeping the ID
 		for i := range wantTranslations.Messages {
@@ -138,13 +139,13 @@ func Test_SaveTranslationUpdate(t *testing.T) {
 		// Save updated translations
 
 		err = repository.SaveTranslation(testCtx, service.ID, wantTranslations)
-		require.NoError(t, err, "Update Translation")
+		expect.NoError(t, err)
 
 		// Assure that translations are updated
 
 		gotTranslation, err := repository.LoadTranslations(testCtx, service.ID,
 			repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{wantTranslations.Language}})
-		require.NoError(t, err, "Load updated translations")
+		expect.NoError(t, err)
 
 		testutil.EqualTranslations(t, wantTranslations, &gotTranslation[0])
 	})
@@ -169,7 +170,7 @@ func Test_LoadTranslation(t *testing.T) {
 		translations := rand.ModelTranslation(3, nil, rand.WithLanguage(translationLang))
 
 		err := repository.SaveTranslation(testCtx, service.ID, translations)
-		require.NoError(t, err, "Prepare test translation")
+		expect.NoError(t, err)
 
 		tests := []struct {
 			language  language.Tag
@@ -201,7 +202,7 @@ func Test_LoadTranslation(t *testing.T) {
 			subtest(tt.name, func(ctx context.Context, t *testing.T) {
 				gotTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.language}})
-				require.NoError(t, err, "Load translations")
+				expect.NoError(t, err)
 
 				assert.ElementsMatch(t, tt.want, gotTranslations)
 			})
@@ -224,7 +225,7 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 		for _, lang := range languages {
 			translation := rand.ModelTranslation(1, nil, rand.WithLanguage(lang))
 			err := repository.SaveTranslation(testCtx, service.ID, translation)
-			require.NoError(t, err, "Prepare test translations")
+			expect.NoError(t, err)
 
 			translations = append(translations, *translation)
 		}
@@ -253,7 +254,7 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 				gotTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: tt.languages})
 
-				require.NoError(t, err, "Load translations")
+				expect.NoError(t, err)
 				assert.ElementsMatch(t, gotTranslations, tt.wantTranslations)
 			})
 		}

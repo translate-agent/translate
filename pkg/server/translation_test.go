@@ -7,6 +7,7 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
@@ -66,7 +67,7 @@ func Test_fuzzyTranslate(t *testing.T) {
 			allTranslations := append(model.Translations{*tt.originalTranslation}, tt.translations...)
 			untranslatedMessageIDLookup := randomUntranslatedMessageStatus(t, allTranslations)
 
-			require.NoError(t, translateSrv.fuzzyTranslate(context.Background(), allTranslations))
+			expect.NoError(t, translateSrv.fuzzyTranslate(context.Background(), allTranslations))
 
 			// Check that untranslated messages have been translated and marked as fuzzy for all translations.
 			for _, translation := range allTranslations {
@@ -77,10 +78,10 @@ func Test_fuzzyTranslate(t *testing.T) {
 
 				for _, message := range translation.Messages {
 					if _, ok := untranslatedMessageIDLookup[message.ID]; ok {
-						require.Equal(t, mockTranslation, message.Message)
-						require.Equal(t, model.MessageStatusFuzzy.String(), message.Status.String())
+						expect.Equal(t, mockTranslation, message.Message)
+						expect.Equal(t, model.MessageStatusFuzzy.String(), message.Status.String())
 					} else {
-						require.Equal(t, model.MessageStatusTranslated.String(), message.Status.String())
+						expect.Equal(t, model.MessageStatusTranslated.String(), message.Status.String())
 					}
 				}
 			}

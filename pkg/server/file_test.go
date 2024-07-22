@@ -7,9 +7,9 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
@@ -67,11 +67,11 @@ func Test_ParseUploadParams(t *testing.T) {
 			params, err := parseUploadTranslationFileRequestParams(tt.request)
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			assert.NotEmpty(t, params)
 		})
@@ -136,11 +136,11 @@ func Test_ValidateUploadParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 		})
 	}
 }
@@ -225,11 +225,11 @@ func Test_GetLanguage(t *testing.T) {
 			got, err := getLanguage(tt.args.params, tt.args.translation)
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -287,11 +287,11 @@ func Test_ParseDownloadParams(t *testing.T) {
 			params, err := parseDownloadTranslationFileRequestParams(tt.request)
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			assert.NotEmpty(t, params)
 		})
@@ -353,11 +353,11 @@ func Test_ValidateDownloadParams(t *testing.T) {
 			err := tt.params.validate()
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 		})
 	}
 }

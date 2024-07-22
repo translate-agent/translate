@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 )
 
@@ -105,7 +105,7 @@ func TestToGo(t *testing.T) {
 			t.Parallel()
 
 			got, err := ToGo(tt.input)
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			assert.JSONEq(t, string(tt.want), string(got))
 		})
@@ -232,7 +232,7 @@ func TestFromGo(t *testing.T) {
 
 			actual, err := FromGo(tt.input, &tt.want.Original)
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			testutil.EqualTranslations(t, &tt.want, &actual)
 		})

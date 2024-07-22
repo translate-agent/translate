@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 )
 
@@ -96,11 +96,11 @@ func Test_FromNgLocalize(t *testing.T) {
 			got, err := FromNgLocalize(tt.input, &tt.want.Original)
 
 			if tt.wanterr != nil {
-				require.ErrorContains(t, err, tt.wanterr.Error())
+				expect.ErrorContains(t, err, tt.wanterr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			testutil.EqualTranslations(t, &tt.want, &got)
 		})
@@ -173,11 +173,11 @@ func Test_ToNgLocalize(t *testing.T) {
 			got, err := ToNgLocalize(tt.input)
 
 			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+				expect.ErrorContains(t, err, tt.wantErr.Error())
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			assert.JSONEq(t, string(tt.want), string(got))
 		})

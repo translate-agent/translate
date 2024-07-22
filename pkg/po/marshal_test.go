@@ -3,7 +3,7 @@ package po
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"go.expect.digital/translate/pkg/testutil/expect"
 )
 
 func TestPo_Marshal(t *testing.T) {
@@ -120,7 +120,7 @@ msgstr[1] ""
 
 			got := tt.input.Marshal()
 
-			require.Equal(t, tt.want, string(got))
+			expect.Equal(t, tt.want, string(got))
 		})
 	}
 }

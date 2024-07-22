@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"testing"
@@ -19,12 +18,12 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/spf13/viper"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/cmd/client/cmd"
 	translatesrv "go.expect.digital/translate/cmd/translate/service"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/server"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/text/language"
@@ -142,10 +141,7 @@ func Test_ListServices_CLI(t *testing.T) {
 			"--address", addr,
 			"--insecure", "true",
 		})
-		if err != nil {
-			t.Error(err)
-			return
-		}
+		expect.NoError(t, err)
 
 		if !bytes.Contains(res, []byte("ID")) {
 			t.Errorf("want res to contain 'ID', got '%s'", string(res))
@@ -160,10 +156,7 @@ func Test_ListServices_CLI(t *testing.T) {
 			"service", "ls",
 			"--address", addr,
 		})
-
-		if !strings.Contains(err.Error(), "no transport security set") {
-			t.Errorf("want error to contain 'no transport security set', got %s", err)
-		}
+		expect.ErrorContains(t, err, "no transport security set")
 
 		if res != nil {
 			t.Errorf("want nil res, got %v", res)
@@ -179,15 +172,15 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		require.NotNil(t, service)
+		expect.Service(t, service)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -199,12 +192,9 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
+		expect.NoError(t, err)
 
-		require.NoError(t, err)
-
-		if string(res) != "File uploaded successfully.\n" {
-			t.Errorf("want 'File uploaded successfully.\n', got '%s'", string(res))
-		}
+		expect.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
 	t.Run("OK, with local file and original flag", func(t *testing.T) {
@@ -212,15 +202,15 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		require.NotNil(t, service)
+		expect.Service(t, service)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -233,12 +223,9 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
+		expect.NoError(t, err)
 
-		require.NoError(t, err)
-
-		if string(res) != "File uploaded successfully.\n" {
-			t.Errorf("want 'File uploaded successfully.\n', got %s", string(res))
-		}
+		expect.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
 	t.Run("OK, with local file, original=true populate=false", func(t *testing.T) {
@@ -246,15 +233,15 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		require.NotNil(t, service)
+		expect.Service(t, service)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -268,12 +255,9 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--service", service.GetId(),
 			"--populate_translations", "false",
 		})
+		expect.NoError(t, err)
 
-		require.NoError(t, err)
-
-		if string(res) != "File uploaded successfully.\n" {
-			t.Errorf("want 'File uploaded successfully.\n', got %s", string(res))
-		}
+		expect.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
 	t.Run("OK, file from URL", func(t *testing.T) {
@@ -281,17 +265,17 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		require.NotNil(t, service)
+		expect.Service(t, service)
 
 		tempDir := t.TempDir()
 
 		file, err := os.CreateTemp(tempDir, "test")
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -303,12 +287,11 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
+		expect.NoError(t, err)
 
-		require.NoError(t, err)
-		require.Equal(t, "File uploaded successfully.\n", string(res))
+		expect.Equal(t, "File uploaded successfully.\n", string(res))
 
 		// upload file using link to previously uploaded translation file.
-
 		res, err = cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
@@ -321,12 +304,9 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
+		expect.NoError(t, err)
 
-		require.NoError(t, err)
-
-		if string(res) != "File uploaded successfully.\n" {
-			t.Errorf("want 'File uploaded successfully.\n', got %s", string(res))
-		}
+		expect.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
 	// Translation has language tag, but CLI parameter 'language' is not set.
@@ -335,16 +315,16 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		require.NotNil(t, service)
+		expect.Service(t, service)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		// Ng localise schema has language tag in the file.
 		data, _ := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -355,12 +335,9 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
+		expect.NoError(t, err)
 
-		require.NoError(t, err)
-
-		if string(res) != "File uploaded successfully.\n" {
-			t.Errorf("want 'File uploaded successfully.\n', got %s", string(res))
-		}
+		expect.Equal(t, "File uploaded successfully.\n", string(res))
 	})
 
 	t.Run("error, malformed language", func(t *testing.T) {
@@ -368,8 +345,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
-
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		_, err = file.WriteString(`
 		{
@@ -379,8 +355,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"Welcome": "Bienvenue"
 			}
 		}`)
-
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -392,8 +367,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", gofakeit.UUID(),
 		})
-
-		require.ErrorContains(t, err, "well-formed but unknown")
+		expect.ErrorContains(t, err, "well-formed but unknown")
 
 		if res != nil {
 			t.Errorf("want nil res, got %v", res)
@@ -414,9 +388,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "unrecognized",
 			"--service", gofakeit.UUID(),
 		})
-
-		require.ErrorContains(t, err,
-			"must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2")
+		expect.ErrorContains(t, err, "must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2")
 
 		if res != nil {
 			t.Errorf("want nil res, got %v", res)
@@ -438,8 +410,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--service", gofakeit.UUID(),
 		})
 
-		require.ErrorContains(t, err,
-			"must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2")
+		expect.ErrorContains(t, err, "must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2")
 
 		if res != nil {
 			t.Errorf("want nil res, got %v", res)
@@ -460,7 +431,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--service", gofakeit.UUID(),
 		})
 
-		require.ErrorContains(t, err, "required flag(s) \"schema\" not set")
+		expect.ErrorContains(t, err, "required flag(s) \"schema\" not set")
 
 		if res != nil {
 			t.Errorf("want nil res, got %v", res)
@@ -473,16 +444,16 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		require.NotNil(t, service)
+		expect.Service(t, service)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		// ngx translate schema does not have language tag in the file.
 		data, _ := randUploadData(t, translatev1.Schema_JSON_NGX_TRANSLATE)
 
 		_, err = file.Write(data)
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -493,8 +464,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
-
-		require.ErrorContains(t, err, "no language is set")
+		expect.ErrorContains(t, err, "no language is set")
 
 		if res != nil {
 			t.Errorf("want nil res, got %v", res)
@@ -514,8 +484,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", gofakeit.UUID(),
 		})
-
-		require.ErrorContains(t, err, "required flag(s) \"file\" not set")
+		expect.ErrorContains(t, err, "required flag(s) \"file\" not set")
 
 		if res != nil {
 			t.Errorf("want nil res, got %v", res)
@@ -535,8 +504,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--language", "xyz-ZY-Latn",
 			"--schema", "json_ng_localize",
 		})
-
-		require.ErrorContains(t, err, "required flag(s) \"service\" not set")
+		expect.ErrorContains(t, err, "required flag(s) \"service\" not set")
 
 		if res != nil {
 			t.Errorf("want nil res, got %v", res)
@@ -552,17 +520,17 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		require.NotNil(t, service)
+		expect.Service(t, service)
 
 		tempDir := t.TempDir()
 
 		file, err := os.CreateTemp(tempDir, "test")
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
-		require.NoError(t, err)
+		expect.NoError(t, err)
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -574,9 +542,9 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
+		expect.NoError(t, err)
 
-		require.NoError(t, err)
-		require.Equal(t, "File uploaded successfully.\n", string(res))
+		expect.Equal(t, "File uploaded successfully.\n", string(res))
 
 		res, err = cmd.ExecuteWithParams(ctx, []string{
 			"service", "download",
@@ -588,12 +556,12 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--service", service.GetId(),
 			"--path", tempDir,
 		})
+		expect.NoError(t, err)
 
-		require.NoError(t, err)
-		require.Equal(t, "File downloaded successfully.\n", string(res))
+		expect.Equal(t, "File downloaded successfully.\n", string(res))
 
 		_, err = os.Stat(filepath.Join(tempDir, service.GetId()+"_"+lang.String()+".xlf"))
-		require.NoError(t, err)
+		expect.NoError(t, err)
 	})
 
 	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
@@ -609,8 +577,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--service", gofakeit.UUID(),
 			"--path", t.TempDir(),
 		})
-
-		require.ErrorContains(t, err, "required flag(s) \"language\" not set")
+		expect.ErrorContains(t, err, "required flag(s) \"language\" not set")
 
 		if res != nil {
 			t.Errorf("want nil res, got %v", res)
@@ -630,8 +597,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--service", gofakeit.UUID(),
 			"--path", t.TempDir(),
 		})
-
-		require.ErrorContains(t, err, "required flag(s) \"schema\" not set")
+		expect.ErrorContains(t, err, "required flag(s) \"schema\" not set")
 
 		if res != nil {
 			t.Errorf("want nil res, got %v", res)
@@ -651,8 +617,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--schema", "xliff_12",
 			"--path", t.TempDir(),
 		})
-
-		require.ErrorContains(t, err, "required flag(s) \"service\" not set")
+		expect.ErrorContains(t, err, "required flag(s) \"service\" not set")
 
 		if res != nil {
 			t.Errorf("want nil res, got %v", res)
@@ -672,8 +637,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--schema", "xliff_12",
 			"--service", gofakeit.UUID(),
 		})
-
-		require.ErrorContains(t, err, "required flag(s) \"path\" not set")
+		expect.ErrorContains(t, err, "required flag(s) \"path\" not set")
 
 		if res != nil {
 			t.Errorf("want nil res, got %v", res)
@@ -702,7 +666,7 @@ func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 	service := randService(t)
 
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	require.NoError(t, err, "create test service")
+	expect.NoError(t, err)
 
 	return service
 }
@@ -713,7 +677,7 @@ func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.T
 	translation := rand.ModelTranslation(3, nil, rand.WithSimpleMF2Messages())
 
 	data, err := server.TranslationToData(schema, translation)
-	require.NoError(t, err, "convert rand translation to serialized data")
+	expect.NoError(t, err)
 
 	return data, translation.Language
 }

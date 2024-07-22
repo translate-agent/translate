@@ -13,6 +13,7 @@ import (
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 )
 
@@ -36,11 +37,11 @@ func Test_SaveService(t *testing.T) {
 		for _, tt := range tests {
 			subTest(tt.name, func(ctx context.Context, t *testing.T) {
 				err := repository.SaveService(ctx, tt.service)
-				require.NoError(t, err, "Save service")
+				expect.NoError(t, err)
 
 				// check if really saved
 				gotService, err := repository.LoadService(ctx, tt.service.ID)
-				require.NoError(t, err, "Load service saved service")
+				expect.NoError(t, err)
 
 				assert.Equal(t, tt.service, gotService)
 			})
@@ -58,7 +59,7 @@ func Test_UpdateService(t *testing.T) {
 		wantService := rand.ModelService()
 
 		err := repository.SaveService(testCtx, wantService)
-		require.NoError(t, err, "Prepare test service")
+		expect.NoError(t, err)
 
 		// Test
 
@@ -66,11 +67,11 @@ func Test_UpdateService(t *testing.T) {
 		wantService.Name = gofakeit.FirstName()
 
 		err = repository.SaveService(testCtx, wantService)
-		require.NoError(t, err, "Update test service name")
+		expect.NoError(t, err)
 
 		// check if really updated
 		gotService, err := repository.LoadService(testCtx, wantService.ID)
-		require.NoError(t, err, "Load updated service")
+		expect.NoError(t, err)
 
 		assert.Equal(t, wantService, gotService)
 	})
@@ -85,7 +86,7 @@ func Test_LoadService(t *testing.T) {
 		service := rand.ModelService()
 
 		err := repository.SaveService(testCtx, service)
-		require.NoError(t, err, "Prepare test service")
+		expect.NoError(t, err)
 
 		tests := []struct {
 			want      *model.Service
@@ -128,11 +129,11 @@ func Test_LoadServices(t *testing.T) {
 		wantServices := rand.ModelServices(3)
 		for _, service := range wantServices {
 			err := repository.SaveService(testCtx, service)
-			require.NoError(t, err, "Insert test service")
+			expect.NoError(t, err)
 		}
 
 		got, err := repository.LoadServices(testCtx)
-		require.NoError(t, err, "Load saved services")
+		expect.NoError(t, err)
 
 		require.GreaterOrEqual(t, len(got), len(wantServices))
 
@@ -152,7 +153,7 @@ func Test_DeleteService(t *testing.T) {
 		service := rand.ModelService()
 
 		err := repository.SaveService(testCtx, service)
-		require.NoError(t, err, "Prepare test service")
+		expect.NoError(t, err)
 
 		tests := []struct {
 			wantErr   error

@@ -8,6 +8,7 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.expect.digital/translate/pkg/testutil/expect"
 
 	"golang.org/x/text/language"
 )
@@ -17,9 +18,9 @@ func deepCopy[T any](t *testing.T, src T) (dst T) { //nolint:ireturn
 	t.Helper()
 
 	data, err := json.Marshal(src)
-	require.NoError(t, err)
+	expect.NoError(t, err)
 
-	require.NoError(t, json.Unmarshal(data, &dst))
+	expect.NoError(t, json.Unmarshal(data, &dst))
 
 	return
 }
@@ -50,8 +51,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 	// Generate random source and destination structs
 	var src, dst nestedStruct
 
-	require.NoError(t, gofakeit.Struct(&src))
-	require.NoError(t, gofakeit.Struct(&dst))
+	expect.NoError(t, gofakeit.Struct(&src))
+	expect.NoError(t, gofakeit.Struct(&dst))
 
 	tests := []struct {
 		assertFunc func(t *testing.T, src, dst, original nestedStruct)
@@ -64,7 +65,7 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			mask: []string{"A"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
 				// Check if field is updated
-				require.Equal(t, src.A, dst.A)
+				expect.Equal(t, src.A, dst.A)
 
 				// Reset field to original value, and perform full check, to ensure that nothing else was changed
 				dst.A = original.A
@@ -76,7 +77,7 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update A and B int and string",
 			mask: []string{"A", "B"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
-				require.Equal(t, src.A, dst.A)
+				expect.Equal(t, src.A, dst.A)
 
 				dst.A, dst.B = original.A, original.B
 				assert.Equal(t, original, dst)
@@ -174,7 +175,7 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update L *string",
 			mask: []string{"L"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
-				require.Equal(t, src.L, dst.L)
+				expect.Equal(t, src.L, dst.L)
 
 				dst.L = original.L
 				assert.Equal(t, original, dst)
@@ -226,8 +227,8 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 	// Generate random source and destination structs
 	var srcService, dstService Service
 
-	require.NoError(t, gofakeit.Struct(&srcService))
-	require.NoError(t, gofakeit.Struct(&dstService))
+	expect.NoError(t, gofakeit.Struct(&srcService))
+	expect.NoError(t, gofakeit.Struct(&dstService))
 
 	tests := []struct {
 		assertFunc func(t *testing.T, srcService, dstService, original Service)
@@ -241,7 +242,7 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			fieldMask: Mask{"Name"},
 			assertFunc: func(t *testing.T, srcService, dstService, original Service) {
 				// Same ID updated name
-				require.Equal(t, original.ID, dstService.ID)
+				expect.Equal(t, original.ID, dstService.ID)
 				assert.Equal(t, srcService.Name, dstService.Name)
 			},
 		},
@@ -250,7 +251,7 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			fieldMask: nil,
 			assertFunc: func(t *testing.T, srcService, dstService, original Service) {
 				// Same ID updated name, as ID cannot be updated, and service has only two fields.
-				require.Equal(t, original.ID, dstService.ID)
+				expect.Equal(t, original.ID, dstService.ID)
 				assert.Equal(t, srcService.Name, dstService.Name)
 			},
 		},
@@ -293,7 +294,7 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 				return
 			}
 
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			tt.assertFunc(t, srcCopy, dstCopy, original)
 		})

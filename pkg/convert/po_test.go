@@ -4,18 +4,18 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
+	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 )
 
 // requireEqualPO is a helper function to compare two PO strings, ignoring whitespace, newlines, and quotes.
-func requireEqualPO(t *testing.T, want, got string, msgAndArgs ...any) {
+func requireEqualPO(t *testing.T, want, got string) {
 	t.Helper()
 
 	replace := func(s string) string { return strings.NewReplacer("\\n", "", "\n", "", "\"", "").Replace(s) }
-	require.Equal(t, replace(want), replace(got), msgAndArgs)
+	expect.Equal(t, replace(want), replace(got))
 }
 
 // Test_FromPoSingular tests the conversion from PO->Translation->PO for singular messages.
@@ -246,16 +246,16 @@ msgstr "Sveika, {name}!"
 			// Test: PO -> Translation
 
 			got, err := FromPo([]byte(tt.args.input), tt.args.original)
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			testutil.EqualTranslations(t, &tt.want, &got)
 
 			// Test: Translation -> PO
 
 			gotPo, err := ToPo(got)
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
-			requireEqualPO(t, tt.args.input, string(gotPo), "convert back to Po")
+			requireEqualPO(t, tt.args.input, string(gotPo))
 		})
 	}
 }
@@ -425,16 +425,16 @@ msgstr[2] ""
 			// Test: PO -> Translation
 
 			got, err := FromPo([]byte(tt.args.input), tt.args.original)
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
 			testutil.EqualTranslations(t, &tt.want, &got)
 
 			// Test: Translation -> PO
 
 			gotPo, err := ToPo(got)
-			require.NoError(t, err)
+			expect.NoError(t, err)
 
-			requireEqualPO(t, tt.args.input, string(gotPo), "convert back to Po")
+			requireEqualPO(t, tt.args.input, string(gotPo))
 		})
 	}
 }
