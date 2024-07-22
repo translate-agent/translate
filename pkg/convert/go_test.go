@@ -1,12 +1,12 @@
 package convert
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 )
@@ -234,7 +234,9 @@ func TestFromGo(t *testing.T) {
 
 			expect.NoError(t, err)
 
-			testutil.EqualTranslations(t, &tt.want, &actual)
+			if !reflect.DeepEqual(tt.want, actual) {
+				t.Errorf("want %v, got %v", tt.want, actual)
+			}
 		})
 	}
 }

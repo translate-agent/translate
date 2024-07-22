@@ -12,7 +12,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/expect"
 	testutilrand "go.expect.digital/translate/pkg/testutil/rand"
 )
@@ -137,7 +136,9 @@ func Test_FromXliff2(t *testing.T) {
 			got, err := FromXliff2(tt.data, &tt.want.Original)
 			expect.NoError(t, err)
 
-			testutil.EqualTranslations(t, tt.want, &got)
+			if !reflect.DeepEqual(*tt.want, got) {
+				t.Errorf("\nwant %v\ngot  %v", tt.want, got)
+			}
 		})
 	}
 }
@@ -228,7 +229,9 @@ func Test_TransformXLIFF2(t *testing.T) {
 		parsed, err := FromXliff2(serialized, &want.Original)
 		expect.NoError(t, err)
 
-		testutil.EqualTranslations(t, want, &parsed)
+		if !reflect.DeepEqual(*want, parsed) {
+			t.Errorf("\nwant %v\ngot  %v", want, parsed)
+		}
 
 		return true
 	}

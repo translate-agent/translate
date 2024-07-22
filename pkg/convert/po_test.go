@@ -1,11 +1,11 @@
 package convert
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 )
@@ -248,7 +248,9 @@ msgstr "Sveika, {name}!"
 			got, err := FromPo([]byte(tt.args.input), tt.args.original)
 			expect.NoError(t, err)
 
-			testutil.EqualTranslations(t, &tt.want, &got)
+			if !reflect.DeepEqual(tt.want, got) {
+				t.Errorf("want %v, got %v", tt.want, got)
+			}
 
 			// Test: Translation -> PO
 
@@ -427,7 +429,9 @@ msgstr[2] ""
 			got, err := FromPo([]byte(tt.args.input), tt.args.original)
 			expect.NoError(t, err)
 
-			testutil.EqualTranslations(t, &tt.want, &got)
+			if !reflect.DeepEqual(tt.want, got) {
+				t.Errorf("want %v, got %v", tt.want, got)
+			}
 
 			// Test: Translation -> PO
 

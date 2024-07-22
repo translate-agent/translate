@@ -4,11 +4,11 @@ package factory
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
@@ -204,7 +204,9 @@ func Test_LoadTranslation(t *testing.T) {
 					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.language}})
 				expect.NoError(t, err)
 
-				assert.ElementsMatch(t, tt.want, gotTranslations)
+				if !reflect.DeepEqual(tt.want, gotTranslations) {
+					t.Errorf("\nwant %v\ngot  %v", tt.want, gotTranslations)
+				}
 			})
 		}
 	})
@@ -255,7 +257,10 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 					repo.LoadTranslationsOpts{FilterLanguages: tt.languages})
 
 				expect.NoError(t, err)
-				assert.ElementsMatch(t, gotTranslations, tt.wantTranslations)
+
+				if !reflect.DeepEqual(tt.wantTranslations, gotTranslations) {
+					t.Errorf("\nwant %v\ngot  %v", tt.wantTranslations, gotTranslations)
+				}
 			})
 		}
 	})

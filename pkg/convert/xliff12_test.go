@@ -9,7 +9,6 @@ import (
 	"testing/quick"
 
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/expect"
 	testutilrand "go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
@@ -135,7 +134,9 @@ func Test_FromXliff12(t *testing.T) {
 			got, err := FromXliff12(tt.data, &tt.want.Original)
 			expect.NoError(t, err)
 
-			testutil.EqualTranslations(t, tt.want, &got)
+			if !reflect.DeepEqual(*tt.want, got) {
+				t.Errorf("\nwant %v\ngot  %v", tt.want, got)
+			}
 		})
 	}
 }
@@ -226,7 +227,9 @@ func Test_TransformXLIFF12(t *testing.T) {
 		parsed, err := FromXliff12(serialized, &want.Original)
 		expect.NoError(t, err)
 
-		testutil.EqualTranslations(t, want, &parsed)
+		if !reflect.DeepEqual(*want, parsed) {
+			t.Errorf("\nwant %v\ngot  %v", want, parsed)
+		}
 
 		return true
 	}

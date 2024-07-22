@@ -2,12 +2,12 @@ package fuzzy
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"cloud.google.com/go/translate/apiv3/translatepb"
 	awst "github.com/aws/aws-sdk-go-v2/service/translate"
 	"github.com/googleapis/gax-go/v2"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/expect"
@@ -60,7 +60,9 @@ func Test_TranslateMock(t *testing.T) {
 				}
 
 				// Check the translated translation.messages are the same as the input messages. (Check for side effects)
-				require.ElementsMatch(t, tt.input.Messages, output.Messages)
+				if !reflect.DeepEqual(tt.input.Messages, output.Messages) {
+					t.Errorf("\nwant %v\ngot  %v", tt.input.Messages, output.Messages)
+				}
 			})
 		}
 	})

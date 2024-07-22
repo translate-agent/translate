@@ -10,7 +10,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/convert"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil"
@@ -776,7 +775,9 @@ func Test_UpdateTranslationFromMask_gRPC(t *testing.T) {
 	})
 	expect.NoError(t, err)
 
-	assert.ElementsMatch(t, want.GetTranslations(), got.GetTranslations())
+	if !proto.Equal(want, got) {
+		t.Errorf("\nwant %v\ngot  %v\n", want, got)
+	}
 }
 
 func Test_UpdateTranslation_gRPC(t *testing.T) {
@@ -888,7 +889,7 @@ func matchingTranslationExistsInService(
 
 		if got.GetLanguage() == translation.GetLanguage() {
 			if !proto.Equal(translation, got) {
-				t.Errorf("\nwant %v,\ngot  %v", translation, got)
+				t.Errorf("\nwant %v\ngot  %v\n", translation, got)
 			}
 
 			break

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/rand"
 	"reflect"
+	"slices"
 	"testing"
 	"testing/quick"
 
@@ -91,7 +92,13 @@ func Test_TransformService(t *testing.T) {
 			restoredServices, err := servicesFromProto(servicesToProto(wantServices))
 			expect.NoError(t, err)
 
-			return assert.ElementsMatch(t, wantServices, restoredServices)
+			if len(wantServices) != 0 && len(restoredServices) != 0 && !reflect.DeepEqual(wantServices, restoredServices) {
+				t.Logf("\nwant %v\ngot  %v", wantServices, restoredServices)
+
+				return false
+			}
+
+			return true
 		}
 
 		expect.NoError(t, quick.Check(f, &quick.Config{MaxCount: 100}))
@@ -160,7 +167,10 @@ func Test_maskFromProto(t *testing.T) {
 			}
 
 			expect.NoError(t, err)
-			assert.ElementsMatch(t, tt.modelMask, got)
+
+			if !slices.Equal(tt.modelMask, got) {
+				t.Errorf("want %v, got %v", tt.modelMask, got)
+			}
 		})
 	}
 }
