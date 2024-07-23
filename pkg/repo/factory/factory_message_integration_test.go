@@ -4,13 +4,13 @@ package factory
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"slices"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/testutil"
@@ -66,7 +66,10 @@ func Test_SaveTranslation(t *testing.T) {
 				err := repository.SaveTranslation(ctx, test.serviceID, test.translation)
 
 				if test.wantErr != nil {
-					require.ErrorIs(t, err, test.wantErr)
+					if !errors.Is(err, test.wantErr) {
+						t.Errorf("want %s, got %s", test.wantErr, err)
+					}
+
 					return
 				}
 

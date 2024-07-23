@@ -4,7 +4,6 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/testutil/expect"
 )
 
@@ -182,8 +181,14 @@ func Test_PopulateTranslations(t *testing.T) {
 				// Status check not needed, as if translated messages
 				// are successfully populated, they will also have status Untranslated
 				for _, message := range translation.Messages {
-					require.Contains(t, wantIds, message.ID)
-					require.Contains(t, wantIds, message.Message)
+					if !slices.Contains(wantIds, message.ID) {
+						t.Errorf("want %v to contain %s", wantIds, message.ID)
+						return
+					}
+
+					if !slices.Contains(wantIds, message.Message) {
+						t.Errorf("want %v to contain %s", wantIds, message.Message)
+					}
 				}
 			}
 		})
@@ -212,5 +217,7 @@ func Test_FindChangedMessageIDs(t *testing.T) {
 	// ID:1 -> Are the same (Should not be included)
 	// ID:2 -> Messages has been changed (Should be included)
 	// ID:3 -> Is new (Should be included)
-	require.Equal(t, []string{"2", "3"}, changedIDs)
+	if !slices.Equal([]string{"2", "3"}, changedIDs) {
+		t.Errorf("want %v, got %v", []string{"2", "3"}, changedIDs)
+	}
 }

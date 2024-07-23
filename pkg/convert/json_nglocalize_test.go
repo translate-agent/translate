@@ -16,7 +16,7 @@ func Test_FromNgLocalize(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		wanterr error
+		wantErr error
 		input   []byte
 		name    string
 		want    model.Translation
@@ -87,7 +87,7 @@ func Test_FromNgLocalize(t *testing.T) {
           "Welcome": "Bienvenue"
         }
       }`),
-			wanterr: errors.New("language: subtag \"xyz\" is well-formed but unknown"),
+			wantErr: errors.New("language: subtag \"xyz\" is well-formed but unknown"),
 		},
 	}
 	for _, test := range tests {
@@ -96,8 +96,8 @@ func Test_FromNgLocalize(t *testing.T) {
 
 			got, err := FromNgLocalize(test.input, &test.want.Original)
 
-			if test.wanterr != nil {
-				expect.ErrorContains(t, err, test.wanterr.Error())
+			if test.wantErr != nil {
+				expect.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 

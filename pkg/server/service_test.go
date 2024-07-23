@@ -332,25 +332,25 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 	tests := []struct {
 		want    *deleteServiceParams
 		request *translatev1.DeleteServiceRequest
-		wanterr error
+		wantErr error
 		name    string
 	}{
 		{
 			name:    "Happy Path With ID",
 			request: happyReqWithID,
 			want:    &deleteServiceParams{id: uuid.MustParse(happyReqWithID.GetId())},
-			wanterr: nil,
+			wantErr: nil,
 		},
 		{
 			name:    "Happy Path Without ID",
 			request: happyReqWithoutID,
 			want:    &deleteServiceParams{id: uuid.Nil},
-			wanterr: nil,
+			wantErr: nil,
 		},
 		{
 			name:    "Malformed UUID",
 			request: malformedIDReq,
-			wanterr: errors.New("invalid UUID length"),
+			wantErr: errors.New("invalid UUID length"),
 		},
 	}
 
@@ -360,8 +360,8 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 
 			got, err := parseDeleteServiceRequest(test.request)
 
-			if test.wanterr != nil {
-				expect.ErrorContains(t, err, test.wanterr.Error())
+			if test.wantErr != nil {
+				expect.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 

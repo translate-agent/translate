@@ -4,12 +4,13 @@ package factory
 
 import (
 	"context"
+	"errors"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/testutil"
@@ -132,7 +133,10 @@ func Test_LoadService(t *testing.T) {
 		for _, test := range tests {
 			subtest(test.name, func(ctx context.Context, t *testing.T) {
 				got, err := repository.LoadService(ctx, test.serviceID)
-				require.ErrorIs(t, err, test.wantErr, "Load service")
+				if !errors.Is(err, test.wantErr) {
+					t.Errorf("want %s, got %s", test.wantErr, err)
+					return
+				}
 
 				if !reflect.DeepEqual(test.want, got) {
 					t.Errorf("want %v, got %v", test.want, got)
@@ -164,10 +168,17 @@ func Test_LoadServices(t *testing.T) {
 			return
 		}
 
-		require.GreaterOrEqual(t, len(got), len(wantServices))
+		if len(got) < len(wantServices) {
+			t.Errorf("want %d greater than %d", len(got), len(wantServices))
+		}
 
 		for _, want := range wantServices {
-			require.Contains(t, got, *want)
+			if !slices.ContainsFunc(got, func(service model.Service) bool {
+				return reflect.DeepEqual(service, *want)
+			}) {
+				t.Errorf("want %v to contain %v", got, *want)
+			}
+
 		}
 	})
 }
@@ -207,11 +218,16 @@ func Test_DeleteService(t *testing.T) {
 		for _, test := range tests {
 			subtest(test.name, func(ctx context.Context, t *testing.T) {
 				err := repository.DeleteService(ctx, test.serviceID)
-				require.ErrorIs(t, err, test.wantErr, "Delete service")
+				if !errors.Is(err, test.wantErr) {
+					t.Errorf("want %s, got %s", test.wantErr, err)
+					return
+				}
 
 				// check if really is deleted
 				_, err = repository.LoadService(ctx, test.serviceID)
-				require.ErrorIs(t, err, repo.ErrNotFound)
+				if !errors.Is(err, repo.ErrNotFound) {
+					t.Errorf("want %s, got %s", repo.ErrNotFound, err)
+				}
 			})
 		}
 	})

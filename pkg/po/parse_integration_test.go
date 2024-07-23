@@ -6,9 +6,9 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"reflect"
+	"slices"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 const link = "https://raw.githubusercontent.com/apache/superset/cc2f6f1ed962ae1886c4eb5c4ce1b094ddc7fe9c/superset/translations/nl/LC_MESSAGES/messages.po" //nolint:lll
@@ -60,7 +60,9 @@ func Test_ParseSuperset(t *testing.T) {
 		{Name: "Generated-By", Value: "Babel 2.9.1"},
 	}
 
-	require.Equal(t, wantHeaders, got.Headers)
+	if !slices.Equal(wantHeaders, got.Headers) {
+		t.Errorf("want %v, got %v", wantHeaders, got.Headers)
+	}
 
 	someWantMessages := []Message{
 		{
@@ -98,6 +100,10 @@ func Test_ParseSuperset(t *testing.T) {
 	}
 
 	for _, want := range someWantMessages {
-		require.Contains(t, got.Messages, want)
+		if !slices.ContainsFunc(got.Messages, func(message Message) bool {
+			return reflect.DeepEqual(message, want)
+		}) {
+			t.Errorf("want %v to contain %s", got.Messages, want)
+		}
 	}
 }

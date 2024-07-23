@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/testutil/expect"
 
 	"golang.org/x/text/language"
@@ -98,7 +98,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update C struct",
 			mask: []string{"C"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
-				require.Equal(t, src.C, dst.C)
+				if !reflect.DeepEqual(src.C, dst.C) {
+					t.Errorf("want %v, got %v", src.C, dst.C)
+					return
+				}
 
 				dst.C = original.C
 
@@ -112,7 +115,9 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update C.D struct.float",
 			mask: []string{"C.D"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
-				require.InDelta(t, src.C.D, dst.C.D, 0.01)
+				if dst.C.D-src.C.D >= 0.01 {
+					t.Errorf("want %f, got %f", src.C.D, dst.C.D)
+				}
 
 				dst.C.D = original.C.D
 
@@ -126,7 +131,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update C.F struct.struct",
 			mask: []string{"C.F"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
-				require.Equal(t, src.C.F, dst.C.F)
+				if !reflect.DeepEqual(src.C.F, dst.C.F) {
+					t.Errorf("want %v, got %v", src.C.F, dst.C.F)
+					return
+				}
 
 				dst.C.F = original.C.F
 
@@ -141,12 +149,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			mask: []string{"C.F.G"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
 				// Check if all elements from src and dst are in result
-				for _, srcElem := range src.C.F.G {
-					require.Contains(t, dst.C.F.G, srcElem)
-				}
-
-				for _, dstElem := range dst.C.F.G {
-					require.Contains(t, dst.C.F.G, dstElem)
+				for _, v := range src.C.F.G {
+					if !slices.Contains(dst.C.F.G, v) {
+						t.Errorf("want %v to contain %s", dst.C.F.G, v)
+					}
 				}
 
 				dst.C.F.G = original.C.F.G
@@ -163,11 +169,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
 				// Check if all elements from src and dst are in result
 				for _, srcElem := range src.C.H {
-					require.Contains(t, dst.C.H, srcElem)
-				}
-
-				for _, dstElem := range dst.C.H {
-					require.Contains(t, dst.C.H, dstElem)
+					if !slices.Contains(dst.C.H, srcElem) {
+						t.Errorf("want %v to contain %v", dst.C.H, srcElem)
+						return
+					}
 				}
 
 				dst.C.H = original.C.H
@@ -184,11 +189,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
 				// Check if all keys from src and dst are in result
 				for srcKey := range src.J.K {
-					require.Contains(t, dst.J.K, srcKey)
-				}
-
-				for dstKey := range dst.J.K {
-					require.Contains(t, dst.J.K, dstKey)
+					if _, ok := dst.J.K[srcKey]; !ok {
+						t.Errorf("want %v to contain %s", dst.J.K, srcKey)
+						return
+					}
 				}
 
 				dst.J.K = original.J.K
@@ -341,7 +345,10 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			err := UpdateService(&srcCopy, &dstCopy, test.fieldMask)
 
 			if test.wantErr != nil {
-				require.EqualError(t, err, test.wantErr.Error())
+				if err == nil || err.Error() != test.wantErr.Error() {
+					t.Errorf("want %s, got %s", test.wantErr, err)
+				}
+
 				return
 			}
 

@@ -2,10 +2,10 @@ package server
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
@@ -72,7 +72,10 @@ func Test_fuzzyTranslate(t *testing.T) {
 			// Check that untranslated messages have been translated and marked as fuzzy for all translations.
 			for _, translation := range allTranslations {
 				if translation.Original {
-					require.Equal(t, *test.originalTranslation, translation)
+					if !reflect.DeepEqual(*test.originalTranslation, translation) {
+						t.Errorf("\nwant %v\ngot  %v", *test.originalTranslation, translation)
+					}
+
 					continue
 				}
 

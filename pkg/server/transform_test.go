@@ -10,7 +10,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil/expect"
@@ -188,7 +187,10 @@ func Test_maskFromProto(t *testing.T) {
 
 			got, err := maskFromProto(test.protoMessage, test.protoMask)
 			if test.wantErr != nil {
-				require.EqualError(t, err, test.wantErr.Error())
+				if test.wantErr.Error() != err.Error() {
+					t.Errorf("want %s, got %s", test.wantErr, err)
+				}
+
 				return
 			}
 

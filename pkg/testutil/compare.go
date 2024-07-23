@@ -1,9 +1,9 @@
 package testutil
 
 import (
+	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	mf2 "go.expect.digital/mf2/parse"
 )
 
@@ -23,5 +23,7 @@ func EqualMF2Message(t *testing.T, want, got string) {
 		return
 	}
 
-	require.Equal(t, wantAST, gotAST)
+	if !reflect.DeepEqual(wantAST, gotAST) {
+		t.Errorf("\nwant %v\ngot  %v", wantAST, gotAST)
+	}
 }
