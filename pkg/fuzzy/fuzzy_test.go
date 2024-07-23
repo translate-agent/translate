@@ -37,11 +37,11 @@ func Test_TranslateMock(t *testing.T) {
 			},
 		}
 
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
 				t.Parallel()
 
-				output, err := mock.Translate(context.Background(), tt.input, targetLang)
+				output, err := mock.Translate(context.Background(), test.input, targetLang)
 				if err != nil {
 					t.Error(err)
 					return
@@ -51,20 +51,20 @@ func Test_TranslateMock(t *testing.T) {
 				expect.Equal(t, targetLang, output.Language)
 
 				// Check that length matches.
-				expect.Equal(t, len(output.Messages), len(tt.input.Messages))
+				expect.Equal(t, len(output.Messages), len(test.input.Messages))
 
 				for i, m := range output.Messages {
 					expect.Equal(t, model.MessageStatusFuzzy, m.Status)
-					testutil.EqualMF2Message(t, tt.input.Messages[i].Message, m.Message)
+					testutil.EqualMF2Message(t, test.input.Messages[i].Message, m.Message)
 
 					// Reset the message to empty and fuzzy to original values, for the last check for side effects.
-					output.Messages[i].Status = tt.input.Messages[i].Status
-					output.Messages[i].Message = tt.input.Messages[i].Message
+					output.Messages[i].Status = test.input.Messages[i].Status
+					output.Messages[i].Message = test.input.Messages[i].Message
 				}
 
 				// Check the translated translation.messages are the same as the input messages. (Check for side effects)
-				if !reflect.DeepEqual(tt.input.Messages, output.Messages) {
-					t.Errorf("\nwant %v\ngot  %v", tt.input.Messages, output.Messages)
+				if !reflect.DeepEqual(test.input.Messages, output.Messages) {
+					t.Errorf("\nwant %v\ngot  %v", test.input.Messages, output.Messages)
 				}
 			})
 		}

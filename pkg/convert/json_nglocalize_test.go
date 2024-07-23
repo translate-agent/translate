@@ -90,14 +90,14 @@ func Test_FromNgLocalize(t *testing.T) {
 			wanterr: errors.New("language: subtag \"xyz\" is well-formed but unknown"),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := FromNgLocalize(tt.input, &tt.want.Original)
+			got, err := FromNgLocalize(test.input, &test.want.Original)
 
-			if tt.wanterr != nil {
-				expect.ErrorContains(t, err, tt.wanterr.Error())
+			if test.wanterr != nil {
+				expect.ErrorContains(t, err, test.wanterr.Error())
 				return
 			}
 
@@ -117,11 +117,11 @@ func Test_FromNgLocalize(t *testing.T) {
 				}
 			}
 
-			slices.SortFunc(tt.want.Messages, cmp)
+			slices.SortFunc(test.want.Messages, cmp)
 			slices.SortFunc(got.Messages, cmp)
 
-			if !reflect.DeepEqual(tt.want, got) {
-				t.Errorf("\nwant %v\ngot  %v", tt.want, got)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("\nwant %v\ngot  %v", test.want, got)
 			}
 		})
 	}
@@ -186,14 +186,14 @@ func Test_ToNgLocalize(t *testing.T) {
 			wantErr: nil,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := ToNgLocalize(tt.input)
+			got, err := ToNgLocalize(test.input)
 
-			if tt.wantErr != nil {
-				expect.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				expect.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -202,8 +202,8 @@ func Test_ToNgLocalize(t *testing.T) {
 				return
 			}
 
-			if bytes.Equal(tt.want, got) {
-				t.Errorf("want %s, got %s", tt.want, got)
+			if bytes.Equal(test.want, got) {
+				t.Errorf("want %s, got %s", test.want, got)
 			}
 		})
 	}

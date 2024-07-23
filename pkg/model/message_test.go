@@ -65,17 +65,17 @@ func Test_MarkUntranslated(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			origIdx := tt.translations.OriginalIndex()
-			tt.translations.MarkUntranslated(tt.untranslatedIds)
+			origIdx := test.translations.OriginalIndex()
+			test.translations.MarkUntranslated(test.untranslatedIds)
 
 			// For original translations, no translation.messages should be altered, e.g.
 			// all messages should be with status translated.
 			if origIdx != -1 {
-				for _, msg := range tt.translations[origIdx].Messages {
+				for _, msg := range test.translations[origIdx].Messages {
 					expect.Equal(t, MessageStatusTranslated.String(), msg.Status.String())
 				}
 			}
@@ -83,14 +83,14 @@ func Test_MarkUntranslated(t *testing.T) {
 			// For non original translations:
 			// 1. if it's ID is in untranslated IDs then it's status should be changed to untranslated.
 			// 2. if it's ID is not in untranslated IDs, it's status should be left as is, e.g. translated.
-			for _, translation := range tt.translations {
+			for _, translation := range test.translations {
 				if translation.Original {
 					continue
 				}
 
 				for _, message := range translation.Messages {
 					wantStatus := MessageStatusTranslated
-					if slices.Contains(tt.untranslatedIds, message.ID) {
+					if slices.Contains(test.untranslatedIds, message.ID) {
 						wantStatus = MessageStatusUntranslated
 					}
 
@@ -169,13 +169,13 @@ func Test_PopulateTranslations(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			tt.translations.PopulateTranslations()
+			test.translations.PopulateTranslations()
 
-			for _, translation := range tt.translations {
+			for _, translation := range test.translations {
 				expect.Equal(t, len(translation.Messages), wantLen)
 
 				// Check that translation has all messages from original.

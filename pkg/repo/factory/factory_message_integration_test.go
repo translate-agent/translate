@@ -61,12 +61,12 @@ func Test_SaveTranslation(t *testing.T) {
 			},
 		}
 
-		for _, tt := range tests {
-			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				err := repository.SaveTranslation(ctx, tt.serviceID, tt.translation)
+		for _, test := range tests {
+			subtest(test.name, func(ctx context.Context, t *testing.T) {
+				err := repository.SaveTranslation(ctx, test.serviceID, test.translation)
 
-				if tt.wantErr != nil {
-					require.ErrorIs(t, err, tt.wantErr)
+				if test.wantErr != nil {
+					require.ErrorIs(t, err, test.wantErr)
 					return
 				}
 
@@ -77,15 +77,15 @@ func Test_SaveTranslation(t *testing.T) {
 
 				// Assure that the translations were saved correctly.
 
-				gotTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
-					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.translation.Language}})
+				gotTranslations, err := repository.LoadTranslations(ctx, test.serviceID,
+					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{test.translation.Language}})
 				if err != nil {
 					t.Error(err)
 					return
 				}
 
-				if !reflect.DeepEqual(*tt.translation, gotTranslations[0]) {
-					t.Errorf("\nwant %v\ngot  %v", *tt.translation, gotTranslations[0])
+				if !reflect.DeepEqual(*test.translation, gotTranslations[0]) {
+					t.Errorf("\nwant %v\ngot  %v", *test.translation, gotTranslations[0])
 				}
 			})
 		}
@@ -231,17 +231,17 @@ func Test_LoadTranslation(t *testing.T) {
 			},
 		}
 
-		for _, tt := range tests {
-			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				gotTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
-					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.language}})
+		for _, test := range tests {
+			subtest(test.name, func(ctx context.Context, t *testing.T) {
+				gotTranslations, err := repository.LoadTranslations(ctx, test.serviceID,
+					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{test.language}})
 				if err != nil {
 					t.Error(err)
 					return
 				}
 
-				if len(tt.want) != 0 && len(gotTranslations) != 0 && !reflect.DeepEqual(tt.want, gotTranslations) {
-					t.Errorf("\nwant %v\ngot  %v", tt.want, gotTranslations)
+				if len(test.want) != 0 && len(gotTranslations) != 0 && !reflect.DeepEqual(test.want, gotTranslations) {
+					t.Errorf("\nwant %v\ngot  %v", test.want, gotTranslations)
 				}
 			})
 		}
@@ -291,10 +291,10 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 			},
 		}
 
-		for _, tt := range tests {
-			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				gotTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
-					repo.LoadTranslationsOpts{FilterLanguages: tt.languages})
+		for _, test := range tests {
+			subtest(test.name, func(ctx context.Context, t *testing.T) {
+				gotTranslations, err := repository.LoadTranslations(ctx, test.serviceID,
+					repo.LoadTranslationsOpts{FilterLanguages: test.languages})
 				if err != nil {
 					t.Error(err)
 					return
@@ -311,11 +311,11 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 					}
 				}
 
-				slices.SortFunc(tt.wantTranslations, cmp)
+				slices.SortFunc(test.wantTranslations, cmp)
 				slices.SortFunc(gotTranslations, cmp)
 
-				if !reflect.DeepEqual(tt.wantTranslations, gotTranslations) {
-					t.Errorf("\nwant %v\ngot  %v", tt.wantTranslations, gotTranslations)
+				if !reflect.DeepEqual(test.wantTranslations, gotTranslations) {
+					t.Errorf("\nwant %v\ngot  %v", test.wantTranslations, gotTranslations)
 				}
 			})
 		}

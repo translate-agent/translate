@@ -109,13 +109,13 @@ func Test_FromNgxTranslate(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := FromNgxTranslate(tt.input, &tt.want.Original)
-			if tt.wantErr != nil {
-				expect.ErrorContains(t, err, tt.wantErr.Error())
+			got, err := FromNgxTranslate(test.input, &test.want.Original)
+			if test.wantErr != nil {
+				expect.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -135,11 +135,11 @@ func Test_FromNgxTranslate(t *testing.T) {
 				}
 			}
 
-			slices.SortFunc(tt.want.Messages, cmp)
+			slices.SortFunc(test.want.Messages, cmp)
 			slices.SortFunc(got.Messages, cmp)
 
-			if !reflect.DeepEqual(tt.want, got) {
-				t.Errorf("\nwant %v\ngot  %v", tt.want, got)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("\nwant %v\ngot  %v", test.want, got)
 			}
 		})
 	}
@@ -183,18 +183,18 @@ func Test_ToNgxTranslate(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := ToNgxTranslate(tt.input)
+			got, err := ToNgxTranslate(test.input)
 			if err != nil {
 				t.Error(err)
 				return
 			}
 
-			if !bytes.Equal(tt.want, got) {
-				t.Errorf("want '%s', got '%s'", string(tt.want), string(got))
+			if !bytes.Equal(test.want, got) {
+				t.Errorf("want '%s', got '%s'", string(test.want), string(got))
 			}
 		})
 	}

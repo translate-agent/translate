@@ -244,16 +244,16 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
 			// Make deep copies of structs for deterministic tests
 			original := deepCopy(t, dst)
 			dstCopy, srcCopy := deepCopy(t, dst), deepCopy(t, src)
 
-			Update(&srcCopy, &dstCopy, tt.mask)
-			tt.assertFunc(t, srcCopy, dstCopy, original)
+			Update(&srcCopy, &dstCopy, test.mask)
+			test.assertFunc(t, srcCopy, dstCopy, original)
 		})
 	}
 }
@@ -330,18 +330,18 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
 			// Make deep copies of structs for deterministic tests
 			original := deepCopy(t, dstService)
 			dstCopy, srcCopy := deepCopy(t, dstService), deepCopy(t, srcService)
 
-			err := UpdateService(&srcCopy, &dstCopy, tt.fieldMask)
+			err := UpdateService(&srcCopy, &dstCopy, test.fieldMask)
 
-			if tt.wantErr != nil {
-				require.EqualError(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				require.EqualError(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -350,7 +350,7 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 				return
 			}
 
-			tt.assertFunc(t, srcCopy, dstCopy, original)
+			test.assertFunc(t, srcCopy, dstCopy, original)
 		})
 	}
 }

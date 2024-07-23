@@ -239,20 +239,20 @@ msgstr "Sveika, {name}!"
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
 			// Test: PO -> Translation
 
-			got, err := FromPo([]byte(tt.args.input), tt.args.original)
+			got, err := FromPo([]byte(test.args.input), test.args.original)
 			if err != nil {
 				t.Error(err)
 				return
 			}
 
-			if !reflect.DeepEqual(tt.want, got) {
-				t.Errorf("want %v, got %v", tt.want, got)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("want %v, got %v", test.want, got)
 			}
 
 			// Test: Translation -> PO
@@ -263,7 +263,7 @@ msgstr "Sveika, {name}!"
 				return
 			}
 
-			requireEqualPO(t, tt.args.input, string(gotPo))
+			requireEqualPO(t, test.args.input, string(gotPo))
 		})
 	}
 }
@@ -426,20 +426,20 @@ msgstr[2] ""
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
 			// Test: PO -> Translation
 
-			got, err := FromPo([]byte(tt.args.input), tt.args.original)
+			got, err := FromPo([]byte(test.args.input), test.args.original)
 			if err != nil {
 				t.Error(err)
 				return
 			}
 
-			if !reflect.DeepEqual(tt.want, got) {
-				t.Errorf("want %v, got %v", tt.want, got)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("want %v, got %v", test.want, got)
 			}
 
 			// Test: Translation -> PO
@@ -450,7 +450,7 @@ msgstr[2] ""
 				return
 			}
 
-			requireEqualPO(t, tt.args.input, string(gotPo))
+			requireEqualPO(t, test.args.input, string(gotPo))
 		})
 	}
 }

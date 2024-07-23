@@ -114,13 +114,13 @@ msgstr[1] ""
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := tt.input.Marshal()
+			got := test.input.Marshal()
 
-			expect.Equal(t, tt.want, string(got))
+			expect.Equal(t, test.want, string(got))
 		})
 	}
 }

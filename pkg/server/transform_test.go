@@ -182,13 +182,13 @@ func Test_maskFromProto(t *testing.T) {
 			wantErr:      errors.New("message cannot be nil"),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := maskFromProto(tt.protoMessage, tt.protoMask)
-			if tt.wantErr != nil {
-				require.EqualError(t, err, tt.wantErr.Error())
+			got, err := maskFromProto(test.protoMessage, test.protoMask)
+			if test.wantErr != nil {
+				require.EqualError(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -197,8 +197,8 @@ func Test_maskFromProto(t *testing.T) {
 				return
 			}
 
-			if !slices.Equal(tt.modelMask, got) {
-				t.Errorf("want %v, got %v", tt.modelMask, got)
+			if !slices.Equal(test.modelMask, got) {
+				t.Errorf("want %v, got %v", test.modelMask, got)
 			}
 		})
 	}

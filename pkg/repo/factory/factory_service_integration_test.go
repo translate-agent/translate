@@ -33,23 +33,23 @@ func Test_SaveService(t *testing.T) {
 				service: rand.ModelService(rand.WithID(uuid.Nil)),
 			},
 		}
-		for _, tt := range tests {
-			subTest(tt.name, func(ctx context.Context, t *testing.T) {
-				err := repository.SaveService(ctx, tt.service)
+		for _, test := range tests {
+			subTest(test.name, func(ctx context.Context, t *testing.T) {
+				err := repository.SaveService(ctx, test.service)
 				if err != nil {
 					t.Error(err)
 					return
 				}
 
 				// check if really saved
-				gotService, err := repository.LoadService(ctx, tt.service.ID)
+				gotService, err := repository.LoadService(ctx, test.service.ID)
 				if err != nil {
 					t.Error(err)
 					return
 				}
 
-				if !reflect.DeepEqual(tt.service, gotService) {
-					t.Errorf("want %v, got %v", tt.service, gotService)
+				if !reflect.DeepEqual(test.service, gotService) {
+					t.Errorf("want %v, got %v", test.service, gotService)
 				}
 			})
 		}
@@ -204,13 +204,13 @@ func Test_DeleteService(t *testing.T) {
 			},
 		}
 
-		for _, tt := range tests {
-			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				err := repository.DeleteService(ctx, tt.serviceID)
-				require.ErrorIs(t, err, tt.wantErr, "Delete service")
+		for _, test := range tests {
+			subtest(test.name, func(ctx context.Context, t *testing.T) {
+				err := repository.DeleteService(ctx, test.serviceID)
+				require.ErrorIs(t, err, test.wantErr, "Delete service")
 
 				// check if really is deleted
-				_, err = repository.LoadService(ctx, tt.serviceID)
+				_, err = repository.LoadService(ctx, test.serviceID)
 				require.ErrorIs(t, err, repo.ErrNotFound)
 			})
 		}

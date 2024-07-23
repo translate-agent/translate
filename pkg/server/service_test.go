@@ -60,14 +60,14 @@ func Test_ParseGetServiceParams(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := parseGetServiceRequestParams(tt.request)
+			got, err := parseGetServiceRequestParams(test.request)
 
-			if tt.wantErr != nil {
-				expect.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				expect.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -76,8 +76,8 @@ func Test_ParseGetServiceParams(t *testing.T) {
 				return
 			}
 
-			if *tt.want != *got {
-				t.Errorf("want %v, got %v", tt.want, got)
+			if *test.want != *got {
+				t.Errorf("want %v, got %v", test.want, got)
 			}
 		})
 	}
@@ -103,14 +103,14 @@ func Test_ValidateGetServiceParams(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.params.validate()
+			err := test.params.validate()
 
-			if tt.wantErr != nil {
-				expect.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				expect.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -220,14 +220,14 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := parseUpdateServiceParams(tt.request)
+			got, err := parseUpdateServiceParams(test.request)
 
-			if tt.wantErr != nil {
-				expect.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				expect.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -236,8 +236,8 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 				return
 			}
 
-			if !reflect.DeepEqual(tt.want, got) {
-				t.Errorf("want %v, got %v", tt.want, got)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("want %v, got %v", test.want, got)
 			}
 		})
 	}
@@ -292,14 +292,14 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.params.validate()
+			err := test.params.validate()
 
-			if tt.wantErr != nil {
-				expect.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				expect.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -354,14 +354,14 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := parseDeleteServiceRequest(tt.request)
+			got, err := parseDeleteServiceRequest(test.request)
 
-			if tt.wanterr != nil {
-				expect.ErrorContains(t, err, tt.wanterr.Error())
+			if test.wanterr != nil {
+				expect.ErrorContains(t, err, test.wanterr.Error())
 				return
 			}
 
@@ -370,8 +370,8 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 				return
 			}
 
-			if !reflect.DeepEqual(tt.want, got) {
-				t.Errorf("want %v, got %v", tt.want, got)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("want %v, got %v", test.want, got)
 			}
 		})
 	}
@@ -406,14 +406,14 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.params.validate()
+			err := test.params.validate()
 
-			if tt.wantErr != nil {
-				expect.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				expect.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -489,14 +489,14 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := parseCreateServiceParams(tt.request)
+			got, err := parseCreateServiceParams(test.request)
 
-			if tt.wantErr != nil {
-				expect.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				expect.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -505,8 +505,8 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 				return
 			}
 
-			if !reflect.DeepEqual(tt.want, got) {
-				t.Errorf("want %v, got %v", tt.want, got)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("want %v, got %v", test.want, got)
 			}
 		})
 	}
@@ -550,14 +550,14 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.params.validate()
+			err := test.params.validate()
 
-			if tt.wantErr != nil {
-				expect.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				expect.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 

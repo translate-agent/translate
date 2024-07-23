@@ -147,13 +147,13 @@ func Test_FromArb(t *testing.T) {
 			wantErr: errors.New("unsupported value type 'map[string]interface {}' for key '@@locale'"),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := FromArb(tt.input, &tt.want.Original)
-			if tt.wantErr != nil {
-				expect.ErrorContains(t, err, tt.wantErr.Error())
+			got, err := FromArb(test.input, &test.want.Original)
+			if test.wantErr != nil {
+				expect.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -173,11 +173,11 @@ func Test_FromArb(t *testing.T) {
 				}
 			}
 
-			slices.SortFunc(tt.want.Messages, cmp)
+			slices.SortFunc(test.want.Messages, cmp)
 			slices.SortFunc(got.Messages, cmp)
 
-			if !reflect.DeepEqual(tt.want, got) {
-				t.Errorf("\nwant %v\ngot  %v", tt.want, got)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("\nwant %v\ngot  %v", test.want, got)
 			}
 		})
 	}
@@ -246,11 +246,11 @@ func Test_ToArb(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := ToArb(tt.input)
+			actual, err := ToArb(test.input)
 			if err != nil {
 				t.Error(err)
 				return
@@ -263,13 +263,13 @@ func Test_ToArb(t *testing.T) {
 				return
 			}
 
-			if err = json.Unmarshal(tt.want, &want); err != nil {
+			if err = json.Unmarshal(test.want, &want); err != nil {
 				t.Error(err)
 				return
 			}
 
 			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want %s, got %s", tt.want, actual)
+				t.Errorf("want %s, got %s", test.want, actual)
 			}
 		})
 	}

@@ -130,18 +130,18 @@ func Test_FromXliff12(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := FromXliff12(tt.data, &tt.want.Original)
+			got, err := FromXliff12(test.data, &test.want.Original)
 			if err != nil {
 				t.Error(err)
 				return
 			}
 
-			if !reflect.DeepEqual(*tt.want, got) {
-				t.Errorf("\nwant %v\ngot  %v", tt.want, got)
+			if !reflect.DeepEqual(*test.want, got) {
+				t.Errorf("\nwant %v\ngot  %v", test.want, got)
 			}
 		})
 	}
@@ -195,17 +195,17 @@ func Test_ToXliff12(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := ToXliff12(*tt.data)
+			got, err := ToXliff12(*test.data)
 			if err != nil {
 				t.Error(err)
 				return
 			}
 
-			assertEqualXML(t, tt.want, got)
+			assertEqualXML(t, test.want, got)
 		})
 	}
 }

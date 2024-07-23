@@ -98,18 +98,18 @@ func TestToGo(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := ToGo(tt.input)
+			got, err := ToGo(test.input)
 			if err != nil {
 				t.Error(err)
 				return
 			}
 
-			if bytes.Equal(tt.want, got) {
-				t.Errorf("want %s, got %s", tt.want, got)
+			if bytes.Equal(test.want, got) {
+				t.Errorf("want %s, got %s", test.want, got)
 			}
 		})
 	}
@@ -229,18 +229,18 @@ func TestFromGo(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromGo(tt.input, &tt.want.Original)
+			actual, err := FromGo(test.input, &test.want.Original)
 			if err != nil {
 				t.Error(err)
 				return
 			}
 
-			if !reflect.DeepEqual(tt.want, actual) {
-				t.Errorf("want %v, got %v", tt.want, actual)
+			if !reflect.DeepEqual(test.want, actual) {
+				t.Errorf("want %v, got %v", test.want, actual)
 			}
 		})
 	}

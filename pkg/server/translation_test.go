@@ -60,11 +60,11 @@ func Test_fuzzyTranslate(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			allTranslations := append(model.Translations{*tt.originalTranslation}, tt.translations...)
+			allTranslations := append(model.Translations{*test.originalTranslation}, test.translations...)
 			untranslatedMessageIDLookup := randomUntranslatedMessageStatus(t, allTranslations)
 
 			expect.NoError(t, translateSrv.fuzzyTranslate(context.Background(), allTranslations))
@@ -72,7 +72,7 @@ func Test_fuzzyTranslate(t *testing.T) {
 			// Check that untranslated messages have been translated and marked as fuzzy for all translations.
 			for _, translation := range allTranslations {
 				if translation.Original {
-					require.Equal(t, *tt.originalTranslation, translation)
+					require.Equal(t, *test.originalTranslation, translation)
 					continue
 				}
 
