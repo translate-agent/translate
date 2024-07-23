@@ -2,13 +2,11 @@ package convert
 
 import (
 	"bytes"
-	"errors"
 	"reflect"
 	"slices"
 	"testing"
 
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil/expect"
 )
 
 func Test_FromNgxTranslate(t *testing.T) {
@@ -16,8 +14,8 @@ func Test_FromNgxTranslate(t *testing.T) {
 
 	tests := []struct {
 		name    string
+		wantErr string
 		input   []byte
-		wantErr error
 		want    model.Translation
 	}{
 		// Positive tests
@@ -100,12 +98,12 @@ func Test_FromNgxTranslate(t *testing.T) {
 		{
 			name:    "Unsupported value type",
 			input:   []byte(`{"message": 1.0}`),
-			wantErr: errors.New("unsupported value type"),
+			wantErr: "traverse ngx-translate: unsupported value type float64 for key message",
 		},
 		{
 			name:    "Invalid JSON",
 			input:   []byte(`{"message": "example"`),
-			wantErr: errors.New("unmarshal"),
+			wantErr: "unmarshal from ngx-translate to model.Translation: unexpected end of JSON input",
 		},
 	}
 
@@ -114,8 +112,11 @@ func Test_FromNgxTranslate(t *testing.T) {
 			t.Parallel()
 
 			got, err := FromNgxTranslate(test.input, &test.want.Original)
-			if test.wantErr != nil {
-				expect.ErrorContains(t, err, test.wantErr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 

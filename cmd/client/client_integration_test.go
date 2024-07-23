@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"testing"
@@ -159,7 +160,10 @@ func Test_ListServices_CLI(t *testing.T) {
 			"service", "ls",
 			"--address", addr,
 		})
-		expect.ErrorContains(t, err, "no transport security set")
+
+		if want := "no transport security set"; !strings.Contains(err.Error(), want) {
+			t.Errorf("want '%s' to contain '%s'", err, want)
+		}
 
 		if len(output) > 0 {
 			t.Errorf("want empty output, got %v", output)
@@ -167,7 +171,7 @@ func Test_ListServices_CLI(t *testing.T) {
 	})
 }
 
-//nolint:gocognit
+//nolint:gocognit,cyclop
 func Test_TranslationFileUpload_CLI(t *testing.T) {
 	t.Parallel()
 
@@ -425,7 +429,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", gofakeit.UUID(),
 		})
-		expect.ErrorContains(t, err, "well-formed but unknown")
+
+		if want := "well-formed but unknown"; !strings.Contains(err.Error(), want) {
+			t.Errorf("want '%s' to contain '%s'", err, want)
+		}
 
 		if len(output) > 0 {
 			t.Errorf("want empty output, got %v", output)
@@ -446,7 +453,11 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "unrecognized",
 			"--service", gofakeit.UUID(),
 		})
-		expect.ErrorContains(t, err, "must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2")
+
+		want := "must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2"
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("want '%s' to contain '%s'", err, want)
+		}
 
 		if len(output) > 0 {
 			t.Errorf("want empty output, got %v", output)
@@ -468,7 +479,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--service", gofakeit.UUID(),
 		})
 
-		expect.ErrorContains(t, err, "must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2")
+		want := "must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2"
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("want '%s' to contain '%s'", err, want)
+		}
 
 		if len(output) > 0 {
 			t.Errorf("want empty output, got %v", output)
@@ -488,8 +502,9 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--file", "test.json",
 			"--service", gofakeit.UUID(),
 		})
-
-		expect.ErrorContains(t, err, "required flag(s) \"schema\" not set")
+		if want := "required flag(s) \"schema\" not set"; !strings.Contains(err.Error(), want) {
+			t.Errorf("want '%s' to contain '%s'", err, want)
+		}
 
 		if len(output) > 0 {
 			t.Errorf("want empty output, got %v", output)
@@ -528,7 +543,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
-		expect.ErrorContains(t, err, "no language is set")
+
+		if want := "no language is set"; !strings.Contains(err.Error(), want) {
+			t.Errorf("want '%s' to contain '%s'", err, want)
+		}
 
 		if len(output) > 0 {
 			t.Errorf("want empty output, got %v", output)
@@ -548,7 +566,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", gofakeit.UUID(),
 		})
-		expect.ErrorContains(t, err, "required flag(s) \"file\" not set")
+
+		if want := "required flag(s) \"file\" not set"; !strings.Contains(err.Error(), want) {
+			t.Errorf("want '%s' to contain '%s'", err, want)
+		}
 
 		if len(output) > 0 {
 			t.Errorf("want empty output, got %v", output)
@@ -568,7 +589,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--language", "xyz-ZY-Latn",
 			"--schema", "json_ng_localize",
 		})
-		expect.ErrorContains(t, err, "required flag(s) \"service\" not set")
+
+		if want := "required flag(s) \"service\" not set"; !strings.Contains(err.Error(), want) {
+			t.Errorf("want '%s' to contain '%s'", err, want)
+		}
 
 		if len(output) > 0 {
 			t.Errorf("want empty output, got %v", output)
@@ -656,7 +680,10 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--service", gofakeit.UUID(),
 			"--path", t.TempDir(),
 		})
-		expect.ErrorContains(t, err, "required flag(s) \"language\" not set")
+
+		if want := "required flag(s) \"language\" not set"; !strings.Contains(err.Error(), want) {
+			t.Errorf("want '%s' to contain '%s'", err, want)
+		}
 
 		if len(output) > 0 {
 			t.Errorf("want empty output, got %v", output)
@@ -676,7 +703,10 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--service", gofakeit.UUID(),
 			"--path", t.TempDir(),
 		})
-		expect.ErrorContains(t, err, "required flag(s) \"schema\" not set")
+
+		if want := "required flag(s) \"schema\" not set"; !strings.Contains(err.Error(), want) {
+			t.Errorf("want '%s' to contain '%s'", err, want)
+		}
 
 		if len(output) > 0 {
 			t.Errorf("want empty output, got %v", output)
@@ -696,7 +726,10 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--schema", "xliff_12",
 			"--path", t.TempDir(),
 		})
-		expect.ErrorContains(t, err, "required flag(s) \"service\" not set")
+
+		if want := "required flag(s) \"service\" not set"; !strings.Contains(err.Error(), want) {
+			t.Errorf("want '%s' to contain '%s'", err, want)
+		}
 
 		if len(output) > 0 {
 			t.Errorf("want empty output, got %v", output)
@@ -716,7 +749,10 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--schema", "xliff_12",
 			"--service", gofakeit.UUID(),
 		})
-		expect.ErrorContains(t, err, "required flag(s) \"path\" not set")
+
+		if want := "required flag(s) \"path\" not set"; !strings.Contains(err.Error(), want) {
+			t.Errorf("want '%s' to contain '%s'", err, want)
+		}
 
 		if len(output) > 0 {
 			t.Errorf("want empty output, got %v", output)

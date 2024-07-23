@@ -2,13 +2,11 @@ package convert
 
 import (
 	"bytes"
-	"errors"
 	"reflect"
 	"slices"
 	"testing"
 
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 )
 
@@ -16,7 +14,7 @@ func Test_FromNgLocalize(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		wantErr error
+		wantErr string
 		input   []byte
 		name    string
 		want    model.Translation
@@ -87,7 +85,7 @@ func Test_FromNgLocalize(t *testing.T) {
           "Welcome": "Bienvenue"
         }
       }`),
-			wantErr: errors.New("language: subtag \"xyz\" is well-formed but unknown"),
+			wantErr: `unmarshal @angular/localize JSON into ngJSON struct: language: subtag "xyz" is well-formed but unknown`,
 		},
 	}
 	for _, test := range tests {
@@ -96,8 +94,11 @@ func Test_FromNgLocalize(t *testing.T) {
 
 			got, err := FromNgLocalize(test.input, &test.want.Original)
 
-			if test.wantErr != nil {
-				expect.ErrorContains(t, err, test.wantErr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 
@@ -191,9 +192,11 @@ func Test_ToNgLocalize(t *testing.T) {
 			t.Parallel()
 
 			got, err := ToNgLocalize(test.input)
-
 			if test.wantErr != nil {
-				expect.ErrorContains(t, err, test.wantErr.Error())
+				if err.Error() != test.wantErr.Error() {
+					t.Errorf("want '%s', got '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 

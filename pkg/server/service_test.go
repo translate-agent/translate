@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"reflect"
 	"testing"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
@@ -35,7 +33,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 	tests := []struct {
 		want    *getServiceParams
 		request *translatev1.GetServiceRequest
-		wantErr error
+		wantErr string
 		name    string
 	}{
 		{
@@ -44,7 +42,6 @@ func Test_ParseGetServiceParams(t *testing.T) {
 			want: &getServiceParams{
 				id: uuid.MustParse(happyReqWithID.GetId()),
 			},
-			wantErr: nil,
 		},
 		{
 			name:    "Happy Path Empty ID",
@@ -56,7 +53,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 		{
 			name:    "Malformed UUID",
 			request: malformedIDReq,
-			wantErr: errors.New("invalid UUID length"),
+			wantErr: "parse id: parse uuid: invalid UUID length: 41",
 		},
 	}
 
@@ -66,8 +63,11 @@ func Test_ParseGetServiceParams(t *testing.T) {
 
 			got, err := parseGetServiceRequestParams(test.request)
 
-			if test.wantErr != nil {
-				expect.ErrorContains(t, err, test.wantErr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 
@@ -88,18 +88,17 @@ func Test_ValidateGetServiceParams(t *testing.T) {
 
 	tests := []struct {
 		params  *getServiceParams
-		wantErr error
+		wantErr string
 		name    string
 	}{
 		{
-			name:    "Happy Path",
-			wantErr: nil,
-			params:  &getServiceParams{id: uuid.New()},
+			name:   "Happy Path",
+			params: &getServiceParams{id: uuid.New()},
 		},
 		{
 			name:    "Empty ID",
 			params:  &getServiceParams{id: uuid.Nil},
-			wantErr: errors.New("'id' is required"),
+			wantErr: "'id' is required",
 		},
 	}
 
@@ -109,8 +108,11 @@ func Test_ValidateGetServiceParams(t *testing.T) {
 
 			err := test.params.validate()
 
-			if test.wantErr != nil {
-				expect.ErrorContains(t, err, test.wantErr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 
@@ -156,11 +158,11 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 	malformedIDReq.Service.Id += "_FAIL"
 
 	invalidUpdateMaskPathParams := randReq()
-	invalidUpdateMaskPathParams.UpdateMask.Paths = gofakeit.NiceColors()
+	invalidUpdateMaskPathParams.UpdateMask.Paths = []string{"invalid"}
 
 	tests := []struct {
 		want    *updateServiceParams
-		wantErr error
+		wantErr string
 		request *translatev1.UpdateServiceRequest
 		name    string
 	}{
@@ -174,7 +176,6 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 					Name: happyReq.GetService().GetName(),
 				},
 			},
-			wantErr: nil,
 		},
 		{
 			name:    "Happy Path Without Service ID",
@@ -186,7 +187,6 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 					Name: happyReqWithoutServiceID.GetService().GetName(),
 				},
 			},
-			wantErr: nil,
 		},
 
 		{
@@ -211,12 +211,12 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 		{
 			name:    "Malformed Service ID",
 			request: malformedIDReq,
-			wantErr: errors.New("invalid UUID length"),
+			wantErr: "parse service: transform id: parse uuid: invalid UUID length: 41",
 		},
 		{
 			name:    "Invalid Update Mask Path",
 			request: invalidUpdateMaskPathParams,
-			wantErr: errors.New("invalid path"),
+			wantErr: `parse field mask: new fieldmaskpb: proto: invalid path "invalid" for message "translate.v1.Service"`,
 		},
 	}
 
@@ -226,8 +226,11 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 
 			got, err := parseUpdateServiceParams(test.request)
 
-			if test.wantErr != nil {
-				expect.ErrorContains(t, err, test.wantErr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 
@@ -267,28 +270,26 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 
 	tests := []struct {
 		params  *updateServiceParams
-		wantErr error
+		wantErr string
 		name    string
 	}{
 		{
-			name:    "Happy Path",
-			params:  happyParams,
-			wantErr: nil,
+			name:   "Happy Path",
+			params: happyParams,
 		},
 		{
-			name:    "Happy Path Missing Update Mask",
-			params:  happyParamsMissingUpdateMask,
-			wantErr: nil,
+			name:   "Happy Path Missing Update Mask",
+			params: happyParamsMissingUpdateMask,
 		},
 		{
 			name:    "Missing Service",
 			params:  missingServiceParams,
-			wantErr: errors.New("'service' is required"),
+			wantErr: "'service' is required",
 		},
 		{
 			name:    "Missing Service ID",
 			params:  missingServiceIDParams,
-			wantErr: errors.New("'service.id' is required"),
+			wantErr: "'service.id' is required",
 		},
 	}
 
@@ -298,8 +299,11 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 
 			err := test.params.validate()
 
-			if test.wantErr != nil {
-				expect.ErrorContains(t, err, test.wantErr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 
@@ -332,25 +336,23 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 	tests := []struct {
 		want    *deleteServiceParams
 		request *translatev1.DeleteServiceRequest
-		wantErr error
+		wantErr string
 		name    string
 	}{
 		{
 			name:    "Happy Path With ID",
 			request: happyReqWithID,
 			want:    &deleteServiceParams{id: uuid.MustParse(happyReqWithID.GetId())},
-			wantErr: nil,
 		},
 		{
 			name:    "Happy Path Without ID",
 			request: happyReqWithoutID,
 			want:    &deleteServiceParams{id: uuid.Nil},
-			wantErr: nil,
 		},
 		{
 			name:    "Malformed UUID",
 			request: malformedIDReq,
-			wantErr: errors.New("invalid UUID length"),
+			wantErr: "parse id: parse uuid: invalid UUID length: 41",
 		},
 	}
 
@@ -360,8 +362,11 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 
 			got, err := parseDeleteServiceRequest(test.request)
 
-			if test.wantErr != nil {
-				expect.ErrorContains(t, err, test.wantErr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 
@@ -391,18 +396,17 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 
 	tests := []struct {
 		params  *deleteServiceParams
-		wantErr error
+		wantErr string
 		name    string
 	}{
 		{
-			name:    "Happy Path",
-			params:  happyParams,
-			wantErr: nil,
+			name:   "Happy Path",
+			params: happyParams,
 		},
 		{
 			name:    "Empty ID",
 			params:  emptyIDParams,
-			wantErr: errors.New("'id' is required"),
+			wantErr: "'id' is required",
 		},
 	}
 
@@ -412,8 +416,11 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 
 			err := test.params.validate()
 
-			if test.wantErr != nil {
-				expect.ErrorContains(t, err, test.wantErr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 
@@ -448,14 +455,13 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 
 	tests := []struct {
 		request *translatev1.CreateServiceRequest
-		wantErr error
+		wantErr string
 		want    *createServiceParams
 		name    string
 	}{
 		{
 			name:    "Happy Path With Service ID",
 			request: happyReqWithServiceID,
-			wantErr: nil,
 			want: &createServiceParams{
 				service: &model.Service{
 					ID:   uuid.MustParse(happyReqWithServiceID.GetService().GetId()),
@@ -466,7 +472,6 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 		{
 			name:    "Happy Path Without Service ID",
 			request: happyReqWithoutServiceID,
-			wantErr: nil,
 			want: &createServiceParams{
 				service: &model.Service{
 					ID:   uuid.Nil,
@@ -477,7 +482,6 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 		{
 			name:    "Happy Path Without Service",
 			request: happyReqWithoutService,
-			wantErr: nil,
 			want: &createServiceParams{
 				service: nil,
 			},
@@ -485,7 +489,7 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 		{
 			name:    "Malformed Service ID",
 			request: malformedServiceIDReq,
-			wantErr: errors.New("invalid UUID length"),
+			wantErr: "parse service: transform id: parse uuid: invalid UUID length: 41",
 		},
 	}
 
@@ -495,8 +499,11 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 
 			got, err := parseCreateServiceParams(test.request)
 
-			if test.wantErr != nil {
-				expect.ErrorContains(t, err, test.wantErr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 
@@ -530,23 +537,21 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 
 	tests := []struct {
 		params  *createServiceParams
-		wantErr error
+		wantErr string
 		name    string
 	}{
 		{
-			name:    "Happy Path",
-			params:  happyParams,
-			wantErr: nil,
+			name:   "Happy Path",
+			params: happyParams,
 		},
 		{
-			name:    "Happy Path Empty Service ID",
-			params:  happyParamsEmptyServiceID,
-			wantErr: nil,
+			name:   "Happy Path Empty Service ID",
+			params: happyParamsEmptyServiceID,
 		},
 		{
 			name:    "Empty Service",
 			params:  emptyServiceParams,
-			wantErr: errors.New("'service' is required"),
+			wantErr: "'service' is required",
 		},
 	}
 
@@ -556,8 +561,11 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 
 			err := test.params.validate()
 
-			if test.wantErr != nil {
-				expect.ErrorContains(t, err, test.wantErr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 

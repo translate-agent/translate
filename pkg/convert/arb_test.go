@@ -2,13 +2,11 @@ package convert
 
 import (
 	"encoding/json"
-	"errors"
 	"reflect"
 	"slices"
 	"testing"
 
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 )
 
@@ -16,7 +14,7 @@ func Test_FromArb(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		wantErr error
+		wantErr string
 		name    string
 		input   []byte
 		want    model.Translation
@@ -94,7 +92,7 @@ func Test_FromArb(t *testing.T) {
 				"title": "Hello World!",
 				"@title": "Message to greet the World"
 			}`),
-			wantErr: errors.New("expected a map, got 'string'"),
+			wantErr: `find description of "title": decode metadata map: '' expected a map, got 'string'`,
 		},
 		{
 			name: "Wrong value type for greeting key",
@@ -105,7 +103,7 @@ func Test_FromArb(t *testing.T) {
 					"description": "Needed for greeting"
 				}
 			}`),
-			wantErr: errors.New("unsupported value type 'map[string]interface {}' for key 'greeting'"),
+			wantErr: "unsupported value type 'map[string]interface {}' for key 'greeting'",
 		},
 		{
 			name: "Wrong value type for description key",
@@ -118,7 +116,9 @@ func Test_FromArb(t *testing.T) {
 					}
 				}
 			}`),
-			wantErr: errors.New("'description' expected type 'string', got unconvertible type 'map[string]interface {}', value: 'map[meaning:When you greet someone]'"), //nolint:lll
+			wantErr: `find description of "title": decode metadata map: 1 error(s) decoding:
+
+* 'description' expected type 'string', got unconvertible type 'map[string]interface {}', value: 'map[meaning:When you greet someone]'`, //nolint:lll
 		},
 		{
 			name: "With malformed locale",
@@ -130,7 +130,7 @@ func Test_FromArb(t *testing.T) {
           "description": "Message to greet the World"
         }
       }`),
-			wantErr: errors.New("language: tag is not well-formed"),
+			wantErr: "find locale: parse language: language: tag is not well-formed", //nolint:dupword
 		},
 		{
 			name: "With wrong value type for locale",
@@ -144,7 +144,7 @@ func Test_FromArb(t *testing.T) {
           "description": "Message to greet the World"
         }
       }`),
-			wantErr: errors.New("unsupported value type 'map[string]interface {}' for key '@@locale'"),
+			wantErr: `find locale: unsupported value type "map[string]interface {}" for key "@@locale"`,
 		},
 	}
 	for _, test := range tests {
@@ -152,8 +152,11 @@ func Test_FromArb(t *testing.T) {
 			t.Parallel()
 
 			got, err := FromArb(test.input, &test.want.Original)
-			if test.wantErr != nil {
-				expect.ErrorContains(t, err, test.wantErr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 

@@ -1,19 +1,10 @@
 package expect
 
 import (
-	"strings"
 	"testing"
 
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
-
-func ErrorContains(t *testing.T, err error, str string) {
-	t.Helper()
-
-	if !strings.Contains(err.Error(), str) {
-		t.Errorf("want error to contain '%s', got '%s'", str, err)
-	}
-}
 
 func Service(t *testing.T, service *translatev1.Service) {
 	t.Helper()

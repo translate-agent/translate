@@ -87,7 +87,7 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 		// Check if @@locale key's value type is string.
 		langString, ok := locale.(string)
 		if !ok {
-			return language.Tag{}, fmt.Errorf("unsupported value type '%T' for key '@@locale'", locale)
+			return language.Tag{}, fmt.Errorf(`unsupported value type "%T" for key "@@locale"`, locale)
 		}
 
 		lang, err := language.Parse(langString)
@@ -129,7 +129,7 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 		}
 
 		if msg.Description, err = findDescription(key); err != nil {
-			return model.Translation{}, fmt.Errorf("find description of '%s': %w", key, err)
+			return model.Translation{}, fmt.Errorf(`find description of "%s": %w`, key, err)
 		}
 
 		translation.Messages = append(translation.Messages, msg)
