@@ -7,14 +7,6 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
-func NoError(t *testing.T, got error) {
-	t.Helper()
-
-	if got != nil {
-		t.Errorf("want no error, got %s", got)
-	}
-}
-
 func ErrorContains(t *testing.T, err error, str string) {
 	t.Helper()
 

@@ -25,7 +25,10 @@ func deepCopy[T any](t *testing.T, src T) (dst T) {
 		return
 	}
 
-	expect.NoError(t, json.Unmarshal(data, &dst))
+	err = json.Unmarshal(data, &dst)
+	if err != nil {
+		t.Error(err)
+	}
 
 	return
 }
@@ -57,8 +60,15 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 	// Generate random source and destination structs
 	var src, dst nestedStruct
 
-	expect.NoError(t, gofakeit.Struct(&src))
-	expect.NoError(t, gofakeit.Struct(&dst))
+	err := gofakeit.Struct(&src)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = gofakeit.Struct(&dst)
+	if err != nil {
+		t.Error(err)
+	}
 
 	tests := []struct {
 		assertFunc func(t *testing.T, src, dst, original nestedStruct)
@@ -270,8 +280,15 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 	// Generate random source and destination structs
 	var srcService, dstService Service
 
-	expect.NoError(t, gofakeit.Struct(&srcService))
-	expect.NoError(t, gofakeit.Struct(&dstService))
+	err := gofakeit.Struct(&srcService)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = gofakeit.Struct(&dstService)
+	if err != nil {
+		t.Error(err)
+	}
 
 	tests := []struct {
 		assertFunc func(t *testing.T, srcService, dstService, original Service)

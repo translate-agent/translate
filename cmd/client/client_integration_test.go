@@ -136,7 +136,7 @@ func Test_ListServices_CLI(t *testing.T) {
 		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "ls",
 			"--address", addr,
 			"--insecure", "true",
@@ -146,8 +146,8 @@ func Test_ListServices_CLI(t *testing.T) {
 			return
 		}
 
-		if !bytes.Contains(res, []byte("ID")) {
-			t.Errorf("want res to contain 'ID', got '%s'", string(res))
+		if !bytes.Contains(output, []byte("ID")) {
+			t.Errorf("want output to contain 'ID', got '%s'", string(output))
 		}
 	})
 
@@ -155,14 +155,14 @@ func Test_ListServices_CLI(t *testing.T) {
 		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "ls",
 			"--address", addr,
 		})
 		expect.ErrorContains(t, err, "no transport security set")
 
-		if res != nil {
-			t.Errorf("want nil res, got %v", res)
+		if len(output) > 0 {
+			t.Errorf("want empty output, got %v", output)
 		}
 	})
 }
@@ -192,7 +192,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -207,7 +207,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(res))
+		expect.Equal(t, "File uploaded successfully.\n", string(output))
 	})
 
 	t.Run("OK, with local file and original flag", func(t *testing.T) {
@@ -231,7 +231,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -247,7 +247,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(res))
+		expect.Equal(t, "File uploaded successfully.\n", string(output))
 	})
 
 	t.Run("OK, with local file, original=true populate=false", func(t *testing.T) {
@@ -271,7 +271,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -288,7 +288,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(res))
+		expect.Equal(t, "File uploaded successfully.\n", string(output))
 	})
 
 	t.Run("OK, file from URL", func(t *testing.T) {
@@ -314,7 +314,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -329,10 +329,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(res))
+		expect.Equal(t, "File uploaded successfully.\n", string(output))
 
 		// upload file using link to previously uploaded translation file.
-		res, err = cmd.ExecuteWithParams(ctx, []string{
+		output, err = cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -349,7 +349,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(res))
+		expect.Equal(t, "File uploaded successfully.\n", string(output))
 	})
 
 	// Translation has language tag, but CLI parameter 'language' is not set.
@@ -375,7 +375,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -389,7 +389,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(res))
+		expect.Equal(t, "File uploaded successfully.\n", string(output))
 	})
 
 	t.Run("error, malformed language", func(t *testing.T) {
@@ -415,7 +415,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -427,8 +427,8 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 		expect.ErrorContains(t, err, "well-formed but unknown")
 
-		if res != nil {
-			t.Errorf("want nil res, got %v", res)
+		if len(output) > 0 {
+			t.Errorf("want empty output, got %v", output)
 		}
 	})
 
@@ -436,7 +436,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -448,8 +448,8 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 		expect.ErrorContains(t, err, "must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2")
 
-		if res != nil {
-			t.Errorf("want nil res, got %v", res)
+		if len(output) > 0 {
+			t.Errorf("want empty output, got %v", output)
 		}
 	})
 
@@ -457,7 +457,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -470,8 +470,8 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 		expect.ErrorContains(t, err, "must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2")
 
-		if res != nil {
-			t.Errorf("want nil res, got %v", res)
+		if len(output) > 0 {
+			t.Errorf("want empty output, got %v", output)
 		}
 	})
 
@@ -479,7 +479,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -491,8 +491,8 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 		expect.ErrorContains(t, err, "required flag(s) \"schema\" not set")
 
-		if res != nil {
-			t.Errorf("want nil res, got %v", res)
+		if len(output) > 0 {
+			t.Errorf("want empty output, got %v", output)
 		}
 	})
 
@@ -519,7 +519,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -530,8 +530,8 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 		expect.ErrorContains(t, err, "no language is set")
 
-		if res != nil {
-			t.Errorf("want nil res, got %v", res)
+		if len(output) > 0 {
+			t.Errorf("want empty output, got %v", output)
 		}
 	})
 
@@ -539,7 +539,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -550,8 +550,8 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 		expect.ErrorContains(t, err, "required flag(s) \"file\" not set")
 
-		if res != nil {
-			t.Errorf("want nil res, got %v", res)
+		if len(output) > 0 {
+			t.Errorf("want empty output, got %v", output)
 		}
 	})
 
@@ -559,7 +559,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -570,8 +570,8 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 		expect.ErrorContains(t, err, "required flag(s) \"service\" not set")
 
-		if res != nil {
-			t.Errorf("want nil res, got %v", res)
+		if len(output) > 0 {
+			t.Errorf("want empty output, got %v", output)
 		}
 	})
 }
@@ -602,7 +602,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			return
 		}
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
 			"--address", addr,
 			"--insecure", "true",
@@ -617,9 +617,9 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(res))
+		expect.Equal(t, "File uploaded successfully.\n", string(output))
 
-		res, err = cmd.ExecuteWithParams(ctx, []string{
+		output, err = cmd.ExecuteWithParams(ctx, []string{
 			"service", "download",
 			"--address", addr,
 			"--insecure", "true",
@@ -634,7 +634,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File downloaded successfully.\n", string(res))
+		expect.Equal(t, "File downloaded successfully.\n", string(output))
 
 		_, err = os.Stat(filepath.Join(tempDir, service.GetId()+"_"+lang.String()+".xlf"))
 		if err != nil {
@@ -647,7 +647,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "download",
 			"--address", addr,
 			"--insecure", "true",
@@ -658,8 +658,8 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		})
 		expect.ErrorContains(t, err, "required flag(s) \"language\" not set")
 
-		if res != nil {
-			t.Errorf("want nil res, got %v", res)
+		if len(output) > 0 {
+			t.Errorf("want empty output, got %v", output)
 		}
 	})
 
@@ -667,7 +667,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "download",
 			"--address", addr,
 			"--insecure", "true",
@@ -678,8 +678,8 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		})
 		expect.ErrorContains(t, err, "required flag(s) \"schema\" not set")
 
-		if res != nil {
-			t.Errorf("want nil res, got %v", res)
+		if len(output) > 0 {
+			t.Errorf("want empty output, got %v", output)
 		}
 	})
 
@@ -687,7 +687,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "download",
 			"--address", addr,
 			"--insecure", "true",
@@ -698,8 +698,8 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		})
 		expect.ErrorContains(t, err, "required flag(s) \"service\" not set")
 
-		if res != nil {
-			t.Errorf("want nil res, got %v", res)
+		if len(output) > 0 {
+			t.Errorf("want empty output, got %v", output)
 		}
 	})
 
@@ -707,7 +707,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		t.Parallel()
 		ctx, _ := testutil.Trace(t)
 
-		res, err := cmd.ExecuteWithParams(ctx, []string{
+		output, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "download",
 			"--address", addr,
 			"--insecure", "true",
@@ -718,8 +718,8 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		})
 		expect.ErrorContains(t, err, "required flag(s) \"path\" not set")
 
-		if res != nil {
-			t.Errorf("want nil res, got %v", res)
+		if len(output) > 0 {
+			t.Errorf("want empty output, got %v", output)
 		}
 	})
 }

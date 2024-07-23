@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -39,7 +38,10 @@ func Test_TransformUUID(t *testing.T) {
 			return true
 		}
 
-		expect.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
+		err := quick.Check(f, &quick.Config{MaxCount: 1000})
+		if err != nil {
+			t.Error(err)
+		}
 	})
 
 	// Separate check with Nil UUID.
@@ -85,7 +87,10 @@ func Test_TransformLanguage(t *testing.T) {
 		return true
 	}
 
-	expect.NoError(t, quick.Check(f, conf))
+	err := quick.Check(f, conf)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func Test_TransformService(t *testing.T) {
@@ -104,7 +109,10 @@ func Test_TransformService(t *testing.T) {
 			return wantService == *restoredService
 		}
 
-		expect.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
+		err := quick.Check(f, &quick.Config{MaxCount: 1000})
+		if err != nil {
+			t.Error(err)
+		}
 	})
 
 	t.Run("Services to proto to services", func(t *testing.T) {
@@ -126,7 +134,10 @@ func Test_TransformService(t *testing.T) {
 			return true
 		}
 
-		expect.NoError(t, quick.Check(f, &quick.Config{MaxCount: 100}))
+		err := quick.Check(f, &quick.Config{MaxCount: 100})
+		if err != nil {
+			t.Error(err)
+		}
 	})
 }
 

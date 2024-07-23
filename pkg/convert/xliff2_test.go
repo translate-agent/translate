@@ -11,7 +11,6 @@ import (
 	"golang.org/x/text/language"
 
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	testutilrand "go.expect.digital/translate/pkg/testutil/rand"
 )
 
@@ -255,5 +254,8 @@ func Test_TransformXLIFF2(t *testing.T) {
 		return true
 	}
 
-	expect.NoError(t, quick.Check(f, conf))
+	err := quick.Check(f, conf)
+	if err != nil {
+		t.Error(err)
+	}
 }

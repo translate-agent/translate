@@ -67,7 +67,11 @@ func Test_fuzzyTranslate(t *testing.T) {
 			allTranslations := append(model.Translations{*test.originalTranslation}, test.translations...)
 			untranslatedMessageIDLookup := randomUntranslatedMessageStatus(t, allTranslations)
 
-			expect.NoError(t, translateSrv.fuzzyTranslate(context.Background(), allTranslations))
+			err := translateSrv.fuzzyTranslate(context.Background(), allTranslations)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			// Check that untranslated messages have been translated and marked as fuzzy for all translations.
 			for _, translation := range allTranslations {
