@@ -15,7 +15,7 @@ require (
 	github.com/fatih/color v1.17.0
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/uuid v1.6.0
-	github.com/googleapis/gax-go/v2 v2.12.5
+	github.com/googleapis/gax-go/v2 v2.13.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rodaine/table v1.2.0
@@ -34,7 +34,7 @@ require (
 	golang.org/x/text v0.16.0
 	google.golang.org/api v0.188.0
 	google.golang.org/genproto v0.0.0-20240708141625-4ad9e859172b
-	google.golang.org/genproto/googleapis/api v0.0.0-20240701130421-f6361c86f094
+	google.golang.org/genproto/googleapis/api v0.0.0-20240711142825-46eb208f015d
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 )
@@ -106,7 +106,7 @@ require (
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.23.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240708141625-4ad9e859172b // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240711142825-46eb208f015d // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
