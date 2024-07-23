@@ -178,7 +178,6 @@ func Test_LoadServices(t *testing.T) {
 			}) {
 				t.Errorf("want %v to contain %v", got, *want)
 			}
-
 		}
 	})
 }
