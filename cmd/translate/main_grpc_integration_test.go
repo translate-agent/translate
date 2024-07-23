@@ -168,11 +168,11 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			_, err := client.UploadTranslationFile(ctx, tt.request)
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			_, err := client.UploadTranslationFile(ctx, test.request)
 
-			assert.Equal(t, tt.wantcode, status.Code(err), "want %s, got %s", tt.wantcode, status.Code(err))
+			assert.Equal(t, test.wantcode, status.Code(err), "want %s, got %s", test.wantcode, status.Code(err))
 		})
 	}
 }
@@ -263,11 +263,11 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			_, err := client.DownloadTranslationFile(ctx, tt.request)
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			_, err := client.DownloadTranslationFile(ctx, test.request)
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			assert.Equal(t, test.wantCode, status.Code(err))
 		})
 	}
 }
@@ -317,11 +317,11 @@ func Test_CreateService_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			_, err := client.CreateService(ctx, tt.request)
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			_, err := client.CreateService(ctx, test.request)
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			assert.Equal(t, test.wantCode, status.Code(err))
 		})
 	}
 }
@@ -371,14 +371,14 @@ func Test_UpdateService_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
 			// Change the ID to the one of the service that was created in the prepare step.
-			tt.request.Service.Id = tt.serviceToUpdate.GetId()
+			test.request.Service.Id = test.serviceToUpdate.GetId()
 
-			_, err := client.UpdateService(ctx, tt.request)
+			_, err := client.UpdateService(ctx, test.request)
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			assert.Equal(t, test.wantCode, status.Code(err))
 		})
 	}
 }
@@ -411,11 +411,11 @@ func Test_GetService_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			_, err := client.GetService(ctx, tt.request)
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			_, err := client.GetService(ctx, test.request)
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			assert.Equal(t, test.wantCode, status.Code(err))
 		})
 	}
 }
@@ -448,11 +448,11 @@ func Test_DeleteService_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			_, err := client.DeleteService(ctx, tt.request)
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			_, err := client.DeleteService(ctx, test.request)
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			assert.Equal(t, test.wantCode, status.Code(err))
 		})
 	}
 }
@@ -600,17 +600,17 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			translation, err := client.CreateTranslation(ctx, tt.request)
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			translation, err := client.CreateTranslation(ctx, test.request)
 			if err != nil {
 				require.Nil(t, translation)
 			}
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			assert.Equal(t, test.wantCode, status.Code(err))
 
 			if status.Code(err) == codes.OK {
-				require.Equal(t, tt.request.GetTranslation().GetLanguage(), translation.GetLanguage())
+				require.Equal(t, test.request.GetTranslation().GetLanguage(), translation.GetLanguage())
 			}
 		})
 	}
@@ -654,15 +654,15 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			resp, err := client.ListTranslations(ctx, tt.request)
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			resp, err := client.ListTranslations(ctx, test.request)
 
 			if err == nil {
 				require.NotNil(t, resp)
 			}
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			assert.Equal(t, test.wantCode, status.Code(err))
 		})
 	}
 }
@@ -821,18 +821,18 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			resp, err := client.UpdateTranslation(ctx, tt.request)
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			resp, err := client.UpdateTranslation(ctx, test.request)
 
 			if err == nil {
 				require.NotNil(t, resp)
 			}
 
-			assert.Equal(t, tt.wantCode, status.Code(err))
+			assert.Equal(t, test.wantCode, status.Code(err))
 
-			if tt.request == happyReq {
-				matchingTranslationExistsInService(ctx, t, tt.request.GetServiceId(), resp)
+			if test.request == happyReq {
+				matchingTranslationExistsInService(ctx, t, test.request.GetServiceId(), resp)
 			}
 		})
 	}

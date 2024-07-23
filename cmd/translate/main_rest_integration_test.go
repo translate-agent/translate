@@ -152,9 +152,9 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, tt.request))
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, test.request))
 			require.NoError(t, err, "do request")
 
 			defer resp.Body.Close()
@@ -162,7 +162,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			// Read the response to give error message on failure
 			respBody, _ := io.ReadAll(resp.Body)
 
-			assert.Equal(t, tt.wantCode, resp.StatusCode, "body: %s", string(respBody))
+			assert.Equal(t, test.wantCode, resp.StatusCode, "body: %s", string(respBody))
 		})
 	}
 }
@@ -249,15 +249,15 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			resp, err := otelhttp.DefaultClient.Do(gRPCDownloadFileToRESTReq(ctx, t, tt.request))
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			resp, err := otelhttp.DefaultClient.Do(gRPCDownloadFileToRESTReq(ctx, t, test.request))
 			require.NoError(t, err, "do request")
 
 			defer resp.Body.Close()
 			respBody, _ := io.ReadAll(resp.Body)
 
-			assert.Equal(t, tt.wantcode, resp.StatusCode, "body: %s", string(respBody))
+			assert.Equal(t, test.wantcode, resp.StatusCode, "body: %s", string(respBody))
 		})
 	}
 }
@@ -301,9 +301,9 @@ func Test_CreateService_REST(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			body, err := json.Marshal(tt.service)
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			body, err := json.Marshal(test.service)
 			require.NoError(t, err, "marshal service")
 
 			u := url.URL{
@@ -320,7 +320,7 @@ func Test_CreateService_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.wantCode, resp.StatusCode)
+			assert.Equal(t, test.wantCode, resp.StatusCode)
 		})
 	}
 }
@@ -429,12 +429,12 @@ func Test_GetService_REST(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   net.JoinHostPort(host, port),
-				Path:   "v1/services/" + tt.service.GetId(),
+				Path:   "v1/services/" + test.service.GetId(),
 			}
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
@@ -445,7 +445,7 @@ func Test_GetService_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.wantCode, resp.StatusCode)
+			assert.Equal(t, test.wantCode, resp.StatusCode)
 		})
 	}
 }
@@ -480,12 +480,12 @@ func Test_DeleteService_REST(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   net.JoinHostPort(host, port),
-				Path:   "v1/services/" + tt.service.GetId(),
+				Path:   "v1/services/" + test.service.GetId(),
 			}
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodDelete, u.String(), nil)
@@ -496,7 +496,7 @@ func Test_DeleteService_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.wantCode, resp.StatusCode)
+			assert.Equal(t, test.wantCode, resp.StatusCode)
 		})
 	}
 }
@@ -602,15 +602,15 @@ func Test_CreateTranslation_REST(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			body, err := json.Marshal(tt.translation)
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			body, err := json.Marshal(test.translation)
 			require.NoError(t, err, "marshal translation")
 
 			u := url.URL{
 				Scheme: "http",
 				Host:   net.JoinHostPort(host, port),
-				Path:   "v1/services/" + tt.serviceID + "/translations",
+				Path:   "v1/services/" + test.serviceID + "/translations",
 			}
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewBuffer(body))
@@ -621,7 +621,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.wantCode, resp.StatusCode)
+			assert.Equal(t, test.wantCode, resp.StatusCode)
 		})
 	}
 }
@@ -707,21 +707,21 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
-			body, err := json.Marshal(tt.request.GetTranslation())
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
+			body, err := json.Marshal(test.request.GetTranslation())
 			require.NoError(t, err, "marshal translation")
 
 			language := langs[0].String()
 
-			if tt.request.GetTranslation() != nil {
-				language = tt.request.GetTranslation().GetLanguage()
+			if test.request.GetTranslation() != nil {
+				language = test.request.GetTranslation().GetLanguage()
 			}
 
 			u := url.URL{
 				Scheme: "http",
 				Host:   net.JoinHostPort(host, port),
-				Path:   "v1/services/" + tt.request.GetServiceId() + "/translations/" + language,
+				Path:   "v1/services/" + test.request.GetServiceId() + "/translations/" + language,
 			}
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodPut, u.String(), bytes.NewBuffer(body))
@@ -732,7 +732,7 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, int(tt.wantCode), resp.StatusCode)
+			assert.Equal(t, int(test.wantCode), resp.StatusCode)
 		})
 	}
 }
@@ -773,12 +773,12 @@ func Test_GetTranslations_REST(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		subtest(tt.name, func(ctx context.Context, t *testing.T) {
+	for _, test := range tests {
+		subtest(test.name, func(ctx context.Context, t *testing.T) {
 			u := url.URL{
 				Scheme: "http",
 				Host:   net.JoinHostPort(host, port),
-				Path:   "v1/services/" + tt.serviceID + "/translations",
+				Path:   "v1/services/" + test.serviceID + "/translations",
 			}
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
@@ -793,7 +793,7 @@ func Test_GetTranslations_REST(t *testing.T) {
 				require.NotEmpty(t, resp.Body)
 			}
 
-			assert.Equal(t, tt.wantCode, resp.StatusCode)
+			assert.Equal(t, test.wantCode, resp.StatusCode)
 		})
 	}
 }

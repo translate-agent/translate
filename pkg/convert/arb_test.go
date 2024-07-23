@@ -146,19 +146,19 @@ func Test_FromArb(t *testing.T) {
 			wantErr: errors.New("unsupported value type 'map[string]interface {}' for key '@@locale'"),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := FromArb(tt.input, &tt.want.Original)
-			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+			got, err := FromArb(test.input, &test.want.Original)
+			if test.wantErr != nil {
+				require.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
 			require.NoError(t, err)
 
-			testutil.EqualTranslations(t, &tt.want, &got)
+			testutil.EqualTranslations(t, &test.want, &got)
 		})
 	}
 }
@@ -226,14 +226,14 @@ func Test_ToArb(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := ToArb(tt.input)
+			actual, err := ToArb(test.input)
 			require.NoError(t, err)
 
-			assert.JSONEq(t, string(tt.want), string(actual))
+			assert.JSONEq(t, string(test.want), string(actual))
 		})
 	}
 }

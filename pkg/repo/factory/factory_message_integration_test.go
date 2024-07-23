@@ -57,12 +57,12 @@ func Test_SaveTranslation(t *testing.T) {
 			},
 		}
 
-		for _, tt := range tests {
-			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				err := repository.SaveTranslation(ctx, tt.serviceID, tt.translation)
+		for _, test := range tests {
+			subtest(test.name, func(ctx context.Context, t *testing.T) {
+				err := repository.SaveTranslation(ctx, test.serviceID, test.translation)
 
-				if tt.wantErr != nil {
-					require.ErrorIs(t, err, tt.wantErr)
+				if test.wantErr != nil {
+					require.ErrorIs(t, err, test.wantErr)
 					return
 				}
 
@@ -70,11 +70,11 @@ func Test_SaveTranslation(t *testing.T) {
 
 				// Assure that the translations were saved correctly.
 
-				gotTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
-					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.translation.Language}})
+				gotTranslations, err := repository.LoadTranslations(ctx, test.serviceID,
+					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{test.translation.Language}})
 				require.NoError(t, err, "Load saved translations")
 
-				testutil.EqualTranslations(t, tt.translation, &gotTranslations[0])
+				testutil.EqualTranslations(t, test.translation, &gotTranslations[0])
 			})
 		}
 	})
@@ -197,13 +197,13 @@ func Test_LoadTranslation(t *testing.T) {
 			},
 		}
 
-		for _, tt := range tests {
-			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				gotTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
-					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{tt.language}})
+		for _, test := range tests {
+			subtest(test.name, func(ctx context.Context, t *testing.T) {
+				gotTranslations, err := repository.LoadTranslations(ctx, test.serviceID,
+					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{test.language}})
 				require.NoError(t, err, "Load translations")
 
-				assert.ElementsMatch(t, tt.want, gotTranslations)
+				assert.ElementsMatch(t, test.want, gotTranslations)
 			})
 		}
 	})
@@ -248,13 +248,13 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 			},
 		}
 
-		for _, tt := range tests {
-			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				gotTranslations, err := repository.LoadTranslations(ctx, tt.serviceID,
-					repo.LoadTranslationsOpts{FilterLanguages: tt.languages})
+		for _, test := range tests {
+			subtest(test.name, func(ctx context.Context, t *testing.T) {
+				gotTranslations, err := repository.LoadTranslations(ctx, test.serviceID,
+					repo.LoadTranslationsOpts{FilterLanguages: test.languages})
 
 				require.NoError(t, err, "Load translations")
-				assert.ElementsMatch(t, gotTranslations, tt.wantTranslations)
+				assert.ElementsMatch(t, gotTranslations, test.wantTranslations)
 			})
 		}
 	})

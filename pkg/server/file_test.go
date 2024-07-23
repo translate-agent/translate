@@ -60,14 +60,14 @@ func Test_ParseUploadParams(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			params, err := parseUploadTranslationFileRequestParams(tt.request)
+			params, err := parseUploadTranslationFileRequestParams(test.request)
 
-			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				require.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -129,14 +129,14 @@ func Test_ValidateUploadParams(t *testing.T) {
 			wantErr: errors.New("'service_id' is required"),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.params.validate()
+			err := test.params.validate()
 
-			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				require.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -218,19 +218,19 @@ func Test_GetLanguage(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := getLanguage(tt.args.params, tt.args.translation)
+			got, err := getLanguage(test.args.params, test.args.translation)
 
-			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				require.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
 			require.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, test.want, got)
 		})
 	}
 }
@@ -280,14 +280,14 @@ func Test_ParseDownloadParams(t *testing.T) {
 			wantErr: errors.New("parse language"),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			params, err := parseDownloadTranslationFileRequestParams(tt.request)
+			params, err := parseDownloadTranslationFileRequestParams(test.request)
 
-			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				require.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
@@ -346,14 +346,14 @@ func Test_ValidateDownloadParams(t *testing.T) {
 			wantErr: errors.New("'language' is required"),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			err := tt.params.validate()
+			err := test.params.validate()
 
-			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				require.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
