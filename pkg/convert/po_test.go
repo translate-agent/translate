@@ -239,23 +239,23 @@ msgstr "Sveika, {name}!"
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
 			// Test: PO -> Translation
 
-			got, err := FromPo([]byte(tt.args.input), tt.args.original)
+			got, err := FromPo([]byte(test.args.input), test.args.original)
 			require.NoError(t, err)
 
-			testutil.EqualTranslations(t, &tt.want, &got)
+			testutil.EqualTranslations(t, &test.want, &got)
 
 			// Test: Translation -> PO
 
 			gotPo, err := ToPo(got)
 			require.NoError(t, err)
 
-			requireEqualPO(t, tt.args.input, string(gotPo), "convert back to Po")
+			requireEqualPO(t, test.args.input, string(gotPo), "convert back to Po")
 		})
 	}
 }
@@ -418,23 +418,23 @@ msgstr[2] ""
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
 			// Test: PO -> Translation
 
-			got, err := FromPo([]byte(tt.args.input), tt.args.original)
+			got, err := FromPo([]byte(test.args.input), test.args.original)
 			require.NoError(t, err)
 
-			testutil.EqualTranslations(t, &tt.want, &got)
+			testutil.EqualTranslations(t, &test.want, &got)
 
 			// Test: Translation -> PO
 
 			gotPo, err := ToPo(got)
 			require.NoError(t, err)
 
-			requireEqualPO(t, tt.args.input, string(gotPo), "convert back to Po")
+			requireEqualPO(t, test.args.input, string(gotPo), "convert back to Po")
 		})
 	}
 }

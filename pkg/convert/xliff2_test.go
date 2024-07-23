@@ -130,14 +130,14 @@ func Test_FromXliff2(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := FromXliff2(tt.data, &tt.want.Original)
+			got, err := FromXliff2(test.data, &test.want.Original)
 			require.NoError(t, err)
 
-			testutil.EqualTranslations(t, tt.want, &got)
+			testutil.EqualTranslations(t, test.want, &got)
 		})
 	}
 }
@@ -190,14 +190,14 @@ func Test_ToXliff2(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := ToXliff2(*tt.data)
+			got, err := ToXliff2(*test.data)
 			require.NoError(t, err)
 
-			assertEqualXML(t, tt.want, got)
+			assertEqualXML(t, test.want, got)
 		})
 	}
 }

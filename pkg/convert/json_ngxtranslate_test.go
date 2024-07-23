@@ -108,18 +108,18 @@ func Test_FromNgxTranslate(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := FromNgxTranslate(tt.input, &tt.want.Original)
-			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+			got, err := FromNgxTranslate(test.input, &test.want.Original)
+			if test.wantErr != nil {
+				require.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
 			require.NoError(t, err)
-			testutil.EqualTranslations(t, &tt.want, &got)
+			testutil.EqualTranslations(t, &test.want, &got)
 		})
 	}
 }
@@ -162,15 +162,15 @@ func Test_ToNgxTranslate(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := ToNgxTranslate(tt.input)
+			got, err := ToNgxTranslate(test.input)
 
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, test.want, got)
 		})
 	}
 }

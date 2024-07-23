@@ -100,14 +100,14 @@ func TestToGo(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := ToGo(tt.input)
+			got, err := ToGo(test.input)
 			require.NoError(t, err)
 
-			assert.JSONEq(t, string(tt.want), string(got))
+			assert.JSONEq(t, string(test.want), string(got))
 		})
 	}
 }
@@ -226,15 +226,15 @@ func TestFromGo(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual, err := FromGo(tt.input, &tt.want.Original)
+			actual, err := FromGo(test.input, &test.want.Original)
 
 			require.NoError(t, err)
 
-			testutil.EqualTranslations(t, &tt.want, &actual)
+			testutil.EqualTranslations(t, &test.want, &actual)
 		})
 	}
 }

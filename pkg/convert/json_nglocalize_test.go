@@ -89,20 +89,20 @@ func Test_FromNgLocalize(t *testing.T) {
 			wanterr: errors.New("language: subtag \"xyz\" is well-formed but unknown"),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := FromNgLocalize(tt.input, &tt.want.Original)
+			got, err := FromNgLocalize(test.input, &test.want.Original)
 
-			if tt.wanterr != nil {
-				require.ErrorContains(t, err, tt.wanterr.Error())
+			if test.wanterr != nil {
+				require.ErrorContains(t, err, test.wanterr.Error())
 				return
 			}
 
 			require.NoError(t, err)
 
-			testutil.EqualTranslations(t, &tt.want, &got)
+			testutil.EqualTranslations(t, &test.want, &got)
 		})
 	}
 }
@@ -166,20 +166,20 @@ func Test_ToNgLocalize(t *testing.T) {
 			wantErr: nil,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := ToNgLocalize(tt.input)
+			got, err := ToNgLocalize(test.input)
 
-			if tt.wantErr != nil {
-				require.ErrorContains(t, err, tt.wantErr.Error())
+			if test.wantErr != nil {
+				require.ErrorContains(t, err, test.wantErr.Error())
 				return
 			}
 
 			require.NoError(t, err)
 
-			assert.JSONEq(t, string(tt.want), string(got))
+			assert.JSONEq(t, string(test.want), string(got))
 		})
 	}
 }
