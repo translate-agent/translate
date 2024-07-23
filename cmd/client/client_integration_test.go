@@ -180,7 +180,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		expect.Service(t, service)
+		if service == nil {
+			t.Error("want service, got nil")
+			return
+		}
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
 		if err != nil {
@@ -219,7 +222,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		expect.Service(t, service)
+		if service == nil {
+			t.Error("want service, got nil")
+			return
+		}
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
 		if err != nil {
@@ -259,7 +265,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		expect.Service(t, service)
+		if service == nil {
+			t.Error("want service, got nil")
+			return
+		}
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
 		if err != nil {
@@ -300,7 +309,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		expect.Service(t, service)
+		if service == nil {
+			t.Error("want service, got nil")
+			return
+		}
 
 		tempDir := t.TempDir()
 
@@ -362,7 +374,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		expect.Service(t, service)
+		if service == nil {
+			t.Error("want service, got nil")
+			return
+		}
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
 		if err != nil {
@@ -517,7 +532,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		expect.Service(t, service)
+		if service == nil {
+			t.Error("want service, got nil")
+			return
+		}
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
 		if err != nil {
@@ -608,7 +626,10 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		service := createService(ctx, t)
-		expect.Service(t, service)
+		if service == nil {
+			t.Error("want service, got nil")
+			return
+		}
 
 		tempDir := t.TempDir()
 
