@@ -246,7 +246,10 @@ msgstr "Sveika, {name}!"
 			// Test: PO -> Translation
 
 			got, err := FromPo([]byte(tt.args.input), tt.args.original)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			if !reflect.DeepEqual(tt.want, got) {
 				t.Errorf("want %v, got %v", tt.want, got)
@@ -255,7 +258,10 @@ msgstr "Sveika, {name}!"
 			// Test: Translation -> PO
 
 			gotPo, err := ToPo(got)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			requireEqualPO(t, tt.args.input, string(gotPo))
 		})
@@ -427,7 +433,10 @@ msgstr[2] ""
 			// Test: PO -> Translation
 
 			got, err := FromPo([]byte(tt.args.input), tt.args.original)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			if !reflect.DeepEqual(tt.want, got) {
 				t.Errorf("want %v, got %v", tt.want, got)
@@ -436,7 +445,10 @@ msgstr[2] ""
 			// Test: Translation -> PO
 
 			gotPo, err := ToPo(got)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			requireEqualPO(t, tt.args.input, string(gotPo))
 		})

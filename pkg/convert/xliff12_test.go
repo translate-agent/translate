@@ -64,7 +64,10 @@ func randXliff12(t *testing.T, translation *model.Translation) []byte {
 	}
 
 	xmlData, err := xml.Marshal(xliff)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
 
 	return append([]byte(xml.Header), xmlData...)
 }
@@ -132,7 +135,10 @@ func Test_FromXliff12(t *testing.T) {
 			t.Parallel()
 
 			got, err := FromXliff12(tt.data, &tt.want.Original)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			if !reflect.DeepEqual(*tt.want, got) {
 				t.Errorf("\nwant %v\ngot  %v", tt.want, got)
@@ -194,7 +200,10 @@ func Test_ToXliff12(t *testing.T) {
 			t.Parallel()
 
 			got, err := ToXliff12(*tt.data)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			assertEqualXML(t, tt.want, got)
 		})
@@ -222,10 +231,16 @@ func Test_TransformXLIFF12(t *testing.T) {
 
 	f := func(want *model.Translation) bool {
 		serialized, err := ToXliff12(*want)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return false
+		}
 
 		parsed, err := FromXliff12(serialized, &want.Original)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return false
+		}
 
 		if !reflect.DeepEqual(*want, parsed) {
 			t.Errorf("\nwant %v\ngot  %v", want, parsed)

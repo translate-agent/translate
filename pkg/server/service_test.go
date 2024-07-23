@@ -2,11 +2,11 @@ package server
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil/expect"
@@ -71,8 +71,14 @@ func Test_ParseGetServiceParams(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			if *tt.want != *got {
+				t.Errorf("want %v, got %v", tt.want, got)
+			}
 		})
 	}
 }
@@ -108,7 +114,10 @@ func Test_ValidateGetServiceParams(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 		})
 	}
 }
@@ -222,9 +231,14 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			assert.Equal(t, tt.want, got)
+			if !reflect.DeepEqual(tt.want, got) {
+				t.Errorf("want %v, got %v", tt.want, got)
+			}
 		})
 	}
 }
@@ -289,7 +303,9 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+			}
 		})
 	}
 }
@@ -349,9 +365,14 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			assert.Equal(t, tt.want, got)
+			if !reflect.DeepEqual(tt.want, got) {
+				t.Errorf("want %v, got %v", tt.want, got)
+			}
 		})
 	}
 }
@@ -396,7 +417,9 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+			}
 		})
 	}
 }
@@ -477,8 +500,14 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			if !reflect.DeepEqual(tt.want, got) {
+				t.Errorf("want %v, got %v", tt.want, got)
+			}
 		})
 	}
 }
@@ -532,7 +561,9 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+			}
 		})
 	}
 }

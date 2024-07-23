@@ -1,11 +1,12 @@
 package convert
 
 import (
+	"bytes"
 	"errors"
 	"reflect"
+	"slices"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil/expect"
 )
@@ -118,7 +119,24 @@ func Test_FromNgxTranslate(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			cmp := func(a, b model.Message) int {
+				switch {
+				default:
+					return 0
+				case a.ID < b.ID:
+					return -1
+				case b.ID < a.ID:
+					return 1
+				}
+			}
+
+			slices.SortFunc(tt.want.Messages, cmp)
+			slices.SortFunc(got.Messages, cmp)
 
 			if !reflect.DeepEqual(tt.want, got) {
 				t.Errorf("\nwant %v\ngot  %v", tt.want, got)
@@ -170,10 +188,14 @@ func Test_ToNgxTranslate(t *testing.T) {
 			t.Parallel()
 
 			got, err := ToNgxTranslate(tt.input)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			expect.NoError(t, err)
-
-			assert.Equal(t, tt.want, got)
+			if !bytes.Equal(tt.want, got) {
+				t.Errorf("want '%s', got '%s'", string(tt.want), string(got))
+			}
 		})
 	}
 }

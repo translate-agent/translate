@@ -141,7 +141,10 @@ func Test_ListServices_CLI(t *testing.T) {
 			"--address", addr,
 			"--insecure", "true",
 		})
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		if !bytes.Contains(res, []byte("ID")) {
 			t.Errorf("want res to contain 'ID', got '%s'", string(res))
@@ -164,6 +167,7 @@ func Test_ListServices_CLI(t *testing.T) {
 	})
 }
 
+//nolint:gocognit
 func Test_TranslationFileUpload_CLI(t *testing.T) {
 	t.Parallel()
 
@@ -175,12 +179,18 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		expect.Service(t, service)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -192,7 +202,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		expect.Equal(t, "File uploaded successfully.\n", string(res))
 	})
@@ -205,12 +218,18 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		expect.Service(t, service)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -223,7 +242,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		expect.Equal(t, "File uploaded successfully.\n", string(res))
 	})
@@ -236,12 +258,18 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		expect.Service(t, service)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -255,7 +283,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--service", service.GetId(),
 			"--populate_translations", "false",
 		})
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		expect.Equal(t, "File uploaded successfully.\n", string(res))
 	})
@@ -270,12 +301,18 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		tempDir := t.TempDir()
 
 		file, err := os.CreateTemp(tempDir, "test")
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -287,7 +324,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		expect.Equal(t, "File uploaded successfully.\n", string(res))
 
@@ -304,7 +344,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		expect.Equal(t, "File uploaded successfully.\n", string(res))
 	})
@@ -318,13 +361,19 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		expect.Service(t, service)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		// Ng localise schema has language tag in the file.
 		data, _ := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -335,7 +384,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		expect.Equal(t, "File uploaded successfully.\n", string(res))
 	})
@@ -345,7 +397,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		ctx, _ := testutil.Trace(t)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		_, err = file.WriteString(`
 		{
@@ -355,7 +410,10 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"Welcome": "Bienvenue"
 			}
 		}`)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -447,13 +505,19 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		expect.Service(t, service)
 
 		file, err := os.CreateTemp(t.TempDir(), "test")
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		// ngx translate schema does not have language tag in the file.
 		data, _ := randUploadData(t, translatev1.Schema_JSON_NGX_TRANSLATE)
 
 		_, err = file.Write(data)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -525,12 +589,18 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		tempDir := t.TempDir()
 
 		file, err := os.CreateTemp(tempDir, "test")
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		data, lang := randUploadData(t, translatev1.Schema_JSON_NG_LOCALIZE)
 
 		_, err = file.Write(data)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		res, err := cmd.ExecuteWithParams(ctx, []string{
 			"service", "upload",
@@ -542,7 +612,10 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--schema", "json_ng_localize",
 			"--service", service.GetId(),
 		})
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		expect.Equal(t, "File uploaded successfully.\n", string(res))
 
@@ -556,12 +629,18 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			"--service", service.GetId(),
 			"--path", tempDir,
 		})
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		expect.Equal(t, "File downloaded successfully.\n", string(res))
 
 		_, err = os.Stat(filepath.Join(tempDir, service.GetId()+"_"+lang.String()+".xlf"))
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 	})
 
 	t.Run("error, path parameter 'language' missing", func(t *testing.T) {
@@ -666,7 +745,10 @@ func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 	service := randService(t)
 
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
 
 	return service
 }
@@ -677,7 +759,10 @@ func randUploadData(t *testing.T, schema translatev1.Schema) ([]byte, language.T
 	translation := rand.ModelTranslation(3, nil, rand.WithSimpleMF2Messages())
 
 	data, err := server.TranslationToData(schema, translation)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return nil, language.Und
+	}
 
 	return data, translation.Language
 }

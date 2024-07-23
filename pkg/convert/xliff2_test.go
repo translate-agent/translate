@@ -10,7 +10,6 @@ import (
 
 	"golang.org/x/text/language"
 
-	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil/expect"
 	testutilrand "go.expect.digital/translate/pkg/testutil/rand"
@@ -56,7 +55,10 @@ func randXliff2(t *testing.T, translation *model.Translation) []byte {
 	}
 
 	xmlData, err := xml.Marshal(xliff)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
 
 	return append([]byte(xml.Header), xmlData...)
 }
@@ -68,7 +70,12 @@ func assertEqualXML(t *testing.T, want, got []byte) bool { //nolint:unparam
 	wantTrimmed := re.ReplaceAllString(string(want), "><")
 	gotTrimmed := re.ReplaceAllString(string(got), "><")
 
-	return assert.Equal(t, wantTrimmed, gotTrimmed)
+	if wantTrimmed != gotTrimmed {
+		t.Errorf("want '%s', got '%s'", wantTrimmed, gotTrimmed)
+		return false
+	}
+
+	return true
 }
 
 func Test_FromXliff2(t *testing.T) {
@@ -134,7 +141,10 @@ func Test_FromXliff2(t *testing.T) {
 			t.Parallel()
 
 			got, err := FromXliff2(tt.data, &tt.want.Original)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			if !reflect.DeepEqual(*tt.want, got) {
 				t.Errorf("\nwant %v\ngot  %v", tt.want, got)
@@ -196,7 +206,10 @@ func Test_ToXliff2(t *testing.T) {
 			t.Parallel()
 
 			got, err := ToXliff2(*tt.data)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			assertEqualXML(t, tt.want, got)
 		})
@@ -224,10 +237,16 @@ func Test_TransformXLIFF2(t *testing.T) {
 
 	f := func(want *model.Translation) bool {
 		serialized, err := ToXliff2(*want)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return false
+		}
 
 		parsed, err := FromXliff2(serialized, &want.Original)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return false
+		}
 
 		if !reflect.DeepEqual(*want, parsed) {
 			t.Errorf("\nwant %v\ngot  %v", want, parsed)

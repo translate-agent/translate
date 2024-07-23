@@ -15,10 +15,8 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/stretchr/testify/assert"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/text/language"
@@ -41,10 +39,16 @@ func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string) {
 	defer writer.Close()
 
 	part, err := writer.CreateFormFile("file", "test.json")
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return nil, ""
+	}
 
 	_, err = part.Write(text)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return nil, ""
+	}
 
 	return &body, writer.FormDataContentType()
 }
@@ -69,7 +73,10 @@ func gRPCUploadFileToRESTReq(
 	body, contentType := attachFile(req.GetData(), t)
 
 	r, err := http.NewRequestWithContext(ctx, http.MethodPut, u.String(), body)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
 
 	r.Header.Add("Content-Type", contentType)
 
@@ -94,7 +101,10 @@ func gRPCDownloadFileToRESTReq(
 	}
 
 	r, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
 
 	return r
 }
@@ -155,14 +165,23 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	for _, tt := range tests {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, tt.request))
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			defer resp.Body.Close()
 
 			// Read the response to give error message on failure
-			respBody, _ := io.ReadAll(resp.Body)
+			_, err = io.ReadAll(resp.Body)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			assert.Equal(t, tt.wantCode, resp.StatusCode, "body: %s", string(respBody))
+			if tt.wantCode != resp.StatusCode {
+				t.Errorf("want %d status code, got %d", tt.wantCode, resp.StatusCode)
+			}
 		})
 	}
 }
@@ -179,18 +198,25 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	uploadReq := randUploadTranslationFileReq(t, service.GetId())
 
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	// Change translation and upload again with the same language and serviceID
 	uploadReq.Data = randUploadData(t, language.MustParse(uploadReq.GetLanguage()))
 
 	resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, uploadReq))
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	defer resp.Body.Close()
-	respBody, _ := io.ReadAll(resp.Body)
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode, "body: %s", string(respBody))
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("want %d status code, got %d", http.StatusOK, resp.StatusCode)
+	}
 }
 
 func Test_DownloadTranslationFile_REST(t *testing.T) {
@@ -204,7 +230,10 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 	uploadRequest := randUploadTranslationFileReq(t, service.GetId())
 
 	_, err := client.UploadTranslationFile(ctx, uploadRequest)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	// Requests
 
@@ -224,40 +253,44 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 	tests := []struct {
 		request  *translatev1.DownloadTranslationFileRequest
 		name     string
-		wantcode int
+		wantCode int
 	}{
 		{
 			name:     "Happy path",
 			request:  happyRequest,
-			wantcode: http.StatusOK,
+			wantCode: http.StatusOK,
 		},
 
 		{
 			name:     "Happy path no translation with language",
 			request:  happyReqNoTranslationLanguage,
-			wantcode: http.StatusOK,
+			wantCode: http.StatusOK,
 		},
 		{
 			name:     "Happy path no translation with Service ID",
 			request:  happyReqNoTranslationServiceID,
-			wantcode: http.StatusOK,
+			wantCode: http.StatusOK,
 		},
 		{
 			name:     "Bad request unspecified schema",
 			request:  unspecifiedSchemaRequest,
-			wantcode: http.StatusBadRequest,
+			wantCode: http.StatusBadRequest,
 		},
 	}
 
 	for _, tt := range tests {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			resp, err := otelhttp.DefaultClient.Do(gRPCDownloadFileToRESTReq(ctx, t, tt.request))
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			defer resp.Body.Close()
-			respBody, _ := io.ReadAll(resp.Body)
 
-			assert.Equal(t, tt.wantcode, resp.StatusCode, "body: %s", string(respBody))
+			if tt.wantCode != resp.StatusCode {
+				t.Errorf("want %d status code, got %d", tt.wantCode, resp.StatusCode)
+			}
 		})
 	}
 }
@@ -304,7 +337,10 @@ func Test_CreateService_REST(t *testing.T) {
 	for _, tt := range tests {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			body, err := json.Marshal(tt.service)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			u := url.URL{
 				Scheme: "http",
@@ -313,14 +349,22 @@ func Test_CreateService_REST(t *testing.T) {
 			}
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewBuffer(body))
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			resp, err := otelhttp.DefaultClient.Do(req)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.wantCode, resp.StatusCode)
+			if tt.wantCode != resp.StatusCode {
+				t.Errorf("want %d status code, got %d", tt.wantCode, resp.StatusCode)
+			}
 		})
 	}
 }
@@ -340,12 +384,18 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 
 	// Using gRPC client to create service
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	putBody := restUpdateBody{Name: gofakeit.FirstName()}
 
 	putBodyBytes, err := json.Marshal(putBody)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	u := url.URL{
 		Scheme: "http",
@@ -354,14 +404,22 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, u.String(), bytes.NewBuffer(putBodyBytes))
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	resp, err := otelhttp.DefaultClient.Do(req)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	defer resp.Body.Close()
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("want %d status code, got %d", http.StatusOK, resp.StatusCode)
+	}
 }
 
 // PATCH.
@@ -375,12 +433,18 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 
 	// Using gRPC client to create service
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	patchBody := restUpdateBody{Name: gofakeit.FirstName()}
 
 	patchBodyBytes, err := json.Marshal(patchBody)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	u := url.URL{
 		Scheme: "http",
@@ -389,14 +453,22 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, u.String(), bytes.NewReader(patchBodyBytes))
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	resp, err := otelhttp.DefaultClient.Do(req)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	defer resp.Body.Close()
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("want %d status code, got %d", http.StatusOK, resp.StatusCode)
+	}
 }
 
 // GET.
@@ -410,7 +482,10 @@ func Test_GetService_REST(t *testing.T) {
 
 	// Using gRPC client to create service
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	tests := []struct {
 		service  *translatev1.Service
@@ -438,14 +513,22 @@ func Test_GetService_REST(t *testing.T) {
 			}
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			resp, err := otelhttp.DefaultClient.Do(req)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.wantCode, resp.StatusCode)
+			if tt.wantCode != resp.StatusCode {
+				t.Errorf("want %d status code, got %d", tt.wantCode, resp.StatusCode)
+			}
 		})
 	}
 }
@@ -461,7 +544,10 @@ func Test_DeleteService_REST(t *testing.T) {
 
 	// Using gRPC client to create service
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	tests := []struct {
 		service  *translatev1.Service
@@ -489,14 +575,22 @@ func Test_DeleteService_REST(t *testing.T) {
 			}
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodDelete, u.String(), nil)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			resp, err := otelhttp.DefaultClient.Do(req)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.wantCode, resp.StatusCode)
+			if tt.wantCode != resp.StatusCode {
+				t.Errorf("want %d status code, got %d", tt.wantCode, resp.StatusCode)
+			}
 		})
 	}
 }
@@ -514,14 +608,22 @@ func Test_ListServices_REST(t *testing.T) {
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	resp, err := otelhttp.DefaultClient.Do(req)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	defer resp.Body.Close()
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("want %d status code, got %d", http.StatusOK, resp.StatusCode)
+	}
 }
 
 // ------------------Translation------------------
@@ -541,8 +643,12 @@ func Test_CreateTranslation_REST(t *testing.T) {
 
 	serviceWithTranslations := createService(ctx, t)
 	uploadReq := randUploadTranslationFileReq(t, serviceWithTranslations.GetId())
+
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	tests := []struct {
 		translation *translatev1.Translation
@@ -605,7 +711,10 @@ func Test_CreateTranslation_REST(t *testing.T) {
 	for _, tt := range tests {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			body, err := json.Marshal(tt.translation)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			u := url.URL{
 				Scheme: "http",
@@ -614,14 +723,22 @@ func Test_CreateTranslation_REST(t *testing.T) {
 			}
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewBuffer(body))
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			resp, err := otelhttp.DefaultClient.Do(req)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.wantCode, resp.StatusCode)
+			if tt.wantCode != resp.StatusCode {
+				t.Errorf("want %d status code, got %d", tt.wantCode, resp.StatusCode)
+			}
 		})
 	}
 }
@@ -668,7 +785,7 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 	tests := []struct {
 		request  *translatev1.UpdateTranslationRequest
 		name     string
-		wantCode uint
+		wantCode int
 	}{
 		{
 			name:     "Happy Path",
@@ -710,7 +827,10 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 	for _, tt := range tests {
 		subtest(tt.name, func(ctx context.Context, t *testing.T) {
 			body, err := json.Marshal(tt.request.GetTranslation())
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			language := langs[0].String()
 
@@ -725,14 +845,22 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 			}
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodPut, u.String(), bytes.NewBuffer(body))
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			resp, err := otelhttp.DefaultClient.Do(req)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			defer resp.Body.Close()
 
-			assert.Equal(t, int(tt.wantCode), resp.StatusCode)
+			if tt.wantCode != resp.StatusCode {
+				t.Errorf("want %d status code, got %d", tt.wantCode, resp.StatusCode)
+			}
 		})
 	}
 }
@@ -748,8 +876,12 @@ func Test_GetTranslations_REST(t *testing.T) {
 
 	for range gofakeit.IntRange(1, 5) {
 		uploadRequest := randUploadTranslationFileReq(t, service.GetId())
+
 		_, err := client.UploadTranslationFile(ctx, uploadRequest)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 	}
 
 	tests := []struct {
@@ -782,10 +914,16 @@ func Test_GetTranslations_REST(t *testing.T) {
 			}
 
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			resp, err := otelhttp.DefaultClient.Do(req)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			defer resp.Body.Close()
 
@@ -799,7 +937,9 @@ func Test_GetTranslations_REST(t *testing.T) {
 				t.Errorf("want response body, got empty")
 			}
 
-			assert.Equal(t, tt.wantCode, resp.StatusCode)
+			if tt.wantCode != resp.StatusCode {
+				t.Errorf("want %d status code, got %d", tt.wantCode, resp.StatusCode)
+			}
 		})
 	}
 }

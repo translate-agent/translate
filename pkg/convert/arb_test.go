@@ -1,12 +1,12 @@
 package convert
 
 import (
+	"encoding/json"
 	"errors"
 	"reflect"
 	"slices"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
@@ -157,16 +157,19 @@ func Test_FromArb(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			cmp := func(a, b model.Message) int {
 				switch {
-				case a.ID < b.ID:
-					return -1
-				case a.ID > b.ID:
-					return 1
 				default:
 					return 0
+				case a.ID < b.ID:
+					return -1
+				case b.ID < a.ID:
+					return 1
 				}
 			}
 
@@ -248,9 +251,26 @@ func Test_ToArb(t *testing.T) {
 			t.Parallel()
 
 			actual, err := ToArb(tt.input)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			assert.JSONEq(t, string(tt.want), string(actual))
+			var want, got any
+
+			if err = json.Unmarshal(actual, &got); err != nil {
+				t.Error(err)
+				return
+			}
+
+			if err = json.Unmarshal(tt.want, &want); err != nil {
+				t.Error(err)
+				return
+			}
+
+			if !reflect.DeepEqual(want, got) {
+				t.Errorf("want %s, got %s", tt.want, actual)
+			}
 		})
 	}
 }

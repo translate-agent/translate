@@ -3,10 +3,10 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/testutil/expect"
 
@@ -18,13 +18,17 @@ func deepCopy[T any](t *testing.T, src T) (dst T) { //nolint:ireturn
 	t.Helper()
 
 	data, err := json.Marshal(src)
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	expect.NoError(t, json.Unmarshal(data, &dst))
 
 	return
 }
 
+//nolint:gocognit
 func Test_UpdateNestedStructFromMask(t *testing.T) {
 	t.Parallel()
 
@@ -69,7 +73,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 
 				// Reset field to original value, and perform full check, to ensure that nothing else was changed
 				dst.A = original.A
-				assert.Equal(t, original, dst)
+
+				if !reflect.DeepEqual(original, dst) {
+					t.Errorf("want %v, got %v", original, dst)
+				}
 			},
 		},
 		{
@@ -80,7 +87,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 				expect.Equal(t, src.A, dst.A)
 
 				dst.A, dst.B = original.A, original.B
-				assert.Equal(t, original, dst)
+
+				if !reflect.DeepEqual(original, dst) {
+					t.Errorf("\nwant %v\ngot  %v", original, dst)
+				}
 			},
 		},
 		{
@@ -91,7 +101,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 				require.Equal(t, src.C, dst.C)
 
 				dst.C = original.C
-				assert.Equal(t, original, dst)
+
+				if !reflect.DeepEqual(original, dst) {
+					t.Errorf("\nwant %v\ngot  %v", original, dst)
+				}
 			},
 		},
 		{
@@ -102,7 +115,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 				require.InDelta(t, src.C.D, dst.C.D, 0.01)
 
 				dst.C.D = original.C.D
-				assert.Equal(t, original, dst)
+
+				if !reflect.DeepEqual(original, dst) {
+					t.Errorf("\nwant %v\ngot  %v", original, dst)
+				}
 			},
 		},
 		{
@@ -113,7 +129,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 				require.Equal(t, src.C.F, dst.C.F)
 
 				dst.C.F = original.C.F
-				assert.Equal(t, original, dst)
+
+				if !reflect.DeepEqual(original, dst) {
+					t.Errorf("\nwant %v\ngot  %v", original, dst)
+				}
 			},
 		},
 		{
@@ -131,7 +150,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 				}
 
 				dst.C.F.G = original.C.F.G
-				assert.Equal(t, original, dst)
+
+				if !reflect.DeepEqual(original, dst) {
+					t.Errorf("\nwant %v\ngot  %v", original, dst)
+				}
 			},
 		},
 		{
@@ -149,7 +171,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 				}
 
 				dst.C.H = original.C.H
-				assert.Equal(t, original, dst)
+
+				if !reflect.DeepEqual(original, dst) {
+					t.Errorf("\nwant %v\ngot  %v", original, dst)
+				}
 			},
 		},
 		{
@@ -167,7 +192,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 				}
 
 				dst.J.K = original.J.K
-				assert.Equal(t, original, dst)
+
+				if !reflect.DeepEqual(original, dst) {
+					t.Errorf("\nwant %v\ngot  %v", original, dst)
+				}
 			},
 		},
 		{
@@ -178,7 +206,10 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 				expect.Equal(t, src.L, dst.L)
 
 				dst.L = original.L
-				assert.Equal(t, original, dst)
+
+				if !reflect.DeepEqual(original, dst) {
+					t.Errorf("\nwant %v\ngot  %v", original, dst)
+				}
 			},
 		},
 		{
@@ -186,7 +217,9 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update All",
 			mask: nil,
 			assertFunc: func(t *testing.T, src, dst, _ nestedStruct) {
-				assert.Equal(t, src, dst)
+				if !reflect.DeepEqual(src, dst) {
+					t.Errorf("\nwant %v\ngot  %v", src, dst)
+				}
 			},
 		},
 		{
@@ -194,7 +227,9 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update Nothing Empty Paths",
 			mask: Mask{},
 			assertFunc: func(t *testing.T, _, dst, original nestedStruct) {
-				assert.Equal(t, original, dst)
+				if !reflect.DeepEqual(original, dst) {
+					t.Errorf("want %v, got %v", original, dst)
+				}
 			},
 		},
 		{
@@ -202,7 +237,9 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update Nothing Random Path",
 			mask: Mask{"random_path"},
 			assertFunc: func(t *testing.T, _, dst, original nestedStruct) {
-				assert.Equal(t, original, dst)
+				if !reflect.DeepEqual(original, dst) {
+					t.Errorf("want %v, got %v", original, dst)
+				}
 			},
 		},
 	}
@@ -242,8 +279,13 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			fieldMask: Mask{"Name"},
 			assertFunc: func(t *testing.T, srcService, dstService, original Service) {
 				// Same ID updated name
-				expect.Equal(t, original.ID, dstService.ID)
-				assert.Equal(t, srcService.Name, dstService.Name)
+				if original.ID != dstService.ID {
+					t.Errorf("want id '%s', got '%s'", original.ID, dstService.ID)
+				}
+
+				if srcService.Name != dstService.Name {
+					t.Errorf("want name '%s', got '%s'", srcService.Name, dstService.Name)
+				}
 			},
 		},
 		{
@@ -251,8 +293,13 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			fieldMask: nil,
 			assertFunc: func(t *testing.T, srcService, dstService, original Service) {
 				// Same ID updated name, as ID cannot be updated, and service has only two fields.
-				expect.Equal(t, original.ID, dstService.ID)
-				assert.Equal(t, srcService.Name, dstService.Name)
+				if original.ID != dstService.ID {
+					t.Errorf("want %s, got %s", original.ID, dstService.ID)
+				}
+
+				if srcService.Name != dstService.Name {
+					t.Errorf("want %s, got %s", srcService.Name, dstService.Name)
+				}
 			},
 		},
 		{
@@ -260,7 +307,9 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			fieldMask: Mask{},
 			assertFunc: func(t *testing.T, _, dstService, original Service) {
 				// Same ID and name, as nothing was updated
-				assert.Equal(t, dstService, original)
+				if !reflect.DeepEqual(dstService, original) {
+					t.Errorf("want %v, got %v", dstService, original)
+				}
 			},
 		},
 		{
@@ -268,7 +317,9 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			fieldMask: Mask{"random_path"},
 			assertFunc: func(t *testing.T, _, dstService, original Service) {
 				// Same ID and name, as nothing was updated
-				assert.Equal(t, dstService, original)
+				if !reflect.DeepEqual(dstService, original) {
+					t.Errorf("want %v, got %v", dstService, original)
+				}
 			},
 		},
 		// negative tests
@@ -294,7 +345,10 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			tt.assertFunc(t, srcCopy, dstCopy, original)
 		})
@@ -459,13 +513,15 @@ func Test_UpdateTranslationFromMask(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			Update(&tt.srcTranslation, &tt.dstTranslation, tt.fieldMask)
+			Update(&test.srcTranslation, &test.dstTranslation, test.fieldMask)
 
-			assert.Equal(t, tt.want, tt.dstTranslation)
+			if !reflect.DeepEqual(test.want, test.dstTranslation) {
+				t.Errorf("want %v, got %v", test.want, test.dstTranslation)
+			}
 		})
 	}
 }

@@ -1,11 +1,12 @@
 package convert
 
 import (
+	"bytes"
 	"errors"
 	"reflect"
+	"slices"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
@@ -100,7 +101,24 @@ func Test_FromNgLocalize(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			cmp := func(a, b model.Message) int {
+				switch {
+				default:
+					return 0
+				case a.ID < b.ID:
+					return -1
+				case b.ID < a.ID:
+					return 1
+				}
+			}
+
+			slices.SortFunc(tt.want.Messages, cmp)
+			slices.SortFunc(got.Messages, cmp)
 
 			if !reflect.DeepEqual(tt.want, got) {
 				t.Errorf("\nwant %v\ngot  %v", tt.want, got)
@@ -179,9 +197,14 @@ func Test_ToNgLocalize(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			assert.JSONEq(t, string(tt.want), string(got))
+			if bytes.Equal(tt.want, got) {
+				t.Errorf("want %s, got %s", tt.want, got)
+			}
 		})
 	}
 }

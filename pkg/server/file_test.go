@@ -6,7 +6,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil/expect"
@@ -71,7 +70,10 @@ func Test_ParseUploadParams(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			if params == nil {
 				t.Errorf("want params, got nil")
@@ -142,7 +144,10 @@ func Test_ValidateUploadParams(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 		})
 	}
 }
@@ -231,8 +236,14 @@ func Test_GetLanguage(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			if tt.want != got {
+				t.Errorf("want %s, got %s", tt.want, got)
+			}
 		})
 	}
 }
@@ -293,7 +304,10 @@ func Test_ParseDownloadParams(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			if params == nil {
 				t.Errorf("want params, got nil")
@@ -361,7 +375,9 @@ func Test_ValidateDownloadParams(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+			}
 		})
 	}
 }

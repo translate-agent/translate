@@ -4,16 +4,15 @@ package factory
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/testutil"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 )
 
@@ -37,13 +36,21 @@ func Test_SaveService(t *testing.T) {
 		for _, tt := range tests {
 			subTest(tt.name, func(ctx context.Context, t *testing.T) {
 				err := repository.SaveService(ctx, tt.service)
-				expect.NoError(t, err)
+				if err != nil {
+					t.Error(err)
+					return
+				}
 
 				// check if really saved
 				gotService, err := repository.LoadService(ctx, tt.service.ID)
-				expect.NoError(t, err)
+				if err != nil {
+					t.Error(err)
+					return
+				}
 
-				assert.Equal(t, tt.service, gotService)
+				if !reflect.DeepEqual(tt.service, gotService) {
+					t.Errorf("want %v, got %v", tt.service, gotService)
+				}
 			})
 		}
 	})
@@ -59,7 +66,10 @@ func Test_UpdateService(t *testing.T) {
 		wantService := rand.ModelService()
 
 		err := repository.SaveService(testCtx, wantService)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		// Test
 
@@ -67,13 +77,21 @@ func Test_UpdateService(t *testing.T) {
 		wantService.Name = gofakeit.FirstName()
 
 		err = repository.SaveService(testCtx, wantService)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		// check if really updated
 		gotService, err := repository.LoadService(testCtx, wantService.ID)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
-		assert.Equal(t, wantService, gotService)
+		if !reflect.DeepEqual(wantService, gotService) {
+			t.Errorf("want %v, got %v", wantService, gotService)
+		}
 	})
 }
 
@@ -86,7 +104,10 @@ func Test_LoadService(t *testing.T) {
 		service := rand.ModelService()
 
 		err := repository.SaveService(testCtx, service)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		tests := []struct {
 			want      *model.Service
@@ -108,12 +129,14 @@ func Test_LoadService(t *testing.T) {
 			},
 		}
 
-		for _, tt := range tests {
-			subtest(tt.name, func(ctx context.Context, t *testing.T) {
-				got, err := repository.LoadService(ctx, tt.serviceID)
-				require.ErrorIs(t, err, tt.wantErr, "Load service")
+		for _, test := range tests {
+			subtest(test.name, func(ctx context.Context, t *testing.T) {
+				got, err := repository.LoadService(ctx, test.serviceID)
+				require.ErrorIs(t, err, test.wantErr, "Load service")
 
-				assert.Equal(t, tt.want, got)
+				if !reflect.DeepEqual(test.want, got) {
+					t.Errorf("want %v, got %v", test.want, got)
+				}
 			})
 		}
 	})
@@ -129,11 +152,17 @@ func Test_LoadServices(t *testing.T) {
 		wantServices := rand.ModelServices(3)
 		for _, service := range wantServices {
 			err := repository.SaveService(testCtx, service)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 		}
 
 		got, err := repository.LoadServices(testCtx)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		require.GreaterOrEqual(t, len(got), len(wantServices))
 
@@ -153,7 +182,10 @@ func Test_DeleteService(t *testing.T) {
 		service := rand.ModelService()
 
 		err := repository.SaveService(testCtx, service)
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		tests := []struct {
 			wantErr   error

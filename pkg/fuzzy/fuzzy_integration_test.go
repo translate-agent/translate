@@ -32,7 +32,10 @@ func Test_Translate(t *testing.T) {
 			input := rand.ModelTranslation(3, nil, rand.WithLanguage(language.English))
 
 			output, err := translator.Translate(ctx, input, targetLang)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			// Check the number of translated messages is the same as the number of input messages.
 			expect.Equal(t, len(output.Messages), len(input.Messages))
@@ -46,7 +49,10 @@ func Test_Translate(t *testing.T) {
 				expect.Equal(t, model.MessageStatusFuzzy, m.Status)
 
 				_, err := mf2.Parse(m.Message)
-				expect.NoError(t, err)
+				if err != nil {
+					t.Error(err)
+					return
+				}
 			}
 		})
 	})

@@ -10,7 +10,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
@@ -28,9 +27,17 @@ func Test_TransformUUID(t *testing.T) {
 
 		f := func(wantID uuid.UUID) bool {
 			restoredID, err := uuidFromProto(uuidToProto(wantID))
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return false
+			}
 
-			return assert.Equal(t, wantID, restoredID)
+			if wantID != restoredID {
+				t.Errorf("want UUID %s, got %s", wantID, restoredID)
+				return false
+			}
+
+			return true
 		}
 
 		expect.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
@@ -43,9 +50,14 @@ func Test_TransformUUID(t *testing.T) {
 		wantID := uuid.Nil
 
 		restoredID, err := uuidFromProto(uuidToProto(wantID))
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
-		assert.Equal(t, wantID, restoredID)
+		if wantID != restoredID {
+			t.Errorf("want UUID %s, got %s", wantID, restoredID)
+		}
 	})
 }
 
@@ -61,9 +73,17 @@ func Test_TransformLanguage(t *testing.T) {
 
 	f := func(wantLangTag language.Tag) bool {
 		restoredLangTag, err := languageFromProto(languageToProto(wantLangTag))
-		expect.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return false
+		}
 
-		return assert.Equal(t, wantLangTag, restoredLangTag)
+		if wantLangTag != restoredLangTag {
+			t.Errorf("want %s, got %s", wantLangTag, restoredLangTag)
+			return false
+		}
+
+		return true
 	}
 
 	expect.NoError(t, quick.Check(f, conf))
@@ -77,9 +97,12 @@ func Test_TransformService(t *testing.T) {
 
 		f := func(wantService model.Service) bool {
 			restoredService, err := serviceFromProto(serviceToProto(&wantService))
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return false
+			}
 
-			return assert.Equal(t, wantService, *restoredService)
+			return wantService == *restoredService
 		}
 
 		expect.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
@@ -90,7 +113,10 @@ func Test_TransformService(t *testing.T) {
 
 		f := func(wantServices []model.Service) bool {
 			restoredServices, err := servicesFromProto(servicesToProto(wantServices))
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return false
+			}
 
 			if len(wantServices) != 0 && len(restoredServices) != 0 && !reflect.DeepEqual(wantServices, restoredServices) {
 				t.Logf("\nwant %v\ngot  %v", wantServices, restoredServices)
@@ -166,7 +192,10 @@ func Test_maskFromProto(t *testing.T) {
 				return
 			}
 
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			if !slices.Equal(tt.modelMask, got) {
 				t.Errorf("want %v, got %v", tt.modelMask, got)

@@ -42,7 +42,10 @@ func Test_TranslateMock(t *testing.T) {
 				t.Parallel()
 
 				output, err := mock.Translate(context.Background(), tt.input, targetLang)
-				expect.NoError(t, err)
+				if err != nil {
+					t.Error(err)
+					return
+				}
 
 				// Check the that the translated translation have the correct language.
 				expect.Equal(t, targetLang, output.Language)

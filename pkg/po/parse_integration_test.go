@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.expect.digital/translate/pkg/testutil/expect"
 )
 
 const link = "https://raw.githubusercontent.com/apache/superset/cc2f6f1ed962ae1886c4eb5c4ce1b094ddc7fe9c/superset/translations/nl/LC_MESSAGES/messages.po" //nolint:lll
@@ -18,11 +17,17 @@ func parseFile(t *testing.T, reader io.Reader) PO {
 	t.Helper()
 
 	var buff bytes.Buffer
-	_, err := io.Copy(&buff, reader)
-	expect.NoError(t, err)
+
+	if _, err := io.Copy(&buff, reader); err != nil {
+		t.Error(err)
+		return PO{}
+	}
 
 	po, err := Parse(buff.Bytes())
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return PO{}
+	}
 
 	return po
 }
@@ -31,7 +36,10 @@ func Test_ParseSuperset(t *testing.T) {
 	t.Parallel()
 
 	resp, err := http.Get(link) //nolint:noctx
-	expect.NoError(t, err)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	defer resp.Body.Close()
 

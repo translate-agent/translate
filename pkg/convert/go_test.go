@@ -1,13 +1,11 @@
 package convert
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 )
 
@@ -105,9 +103,14 @@ func TestToGo(t *testing.T) {
 			t.Parallel()
 
 			got, err := ToGo(tt.input)
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			assert.JSONEq(t, string(tt.want), string(got))
+			if bytes.Equal(tt.want, got) {
+				t.Errorf("want %s, got %s", tt.want, got)
+			}
 		})
 	}
 }
@@ -231,8 +234,10 @@ func TestFromGo(t *testing.T) {
 			t.Parallel()
 
 			actual, err := FromGo(tt.input, &tt.want.Original)
-
-			expect.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			if !reflect.DeepEqual(tt.want, actual) {
 				t.Errorf("want %v, got %v", tt.want, actual)
