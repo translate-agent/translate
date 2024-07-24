@@ -61,7 +61,7 @@ func Test_ParseSuperset(t *testing.T) {
 	}
 
 	if !slices.Equal(wantHeaders, got.Headers) {
-		t.Errorf("want %v, got %v", wantHeaders, got.Headers)
+		t.Errorf("want headers %v, got %v", wantHeaders, got.Headers)
 	}
 
 	someWantMessages := []Message{

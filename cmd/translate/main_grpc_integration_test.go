@@ -183,7 +183,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 			_, err := client.UploadTranslationFile(ctx, test.request)
 
 			if test.wantCode != status.Code(err) {
-				t.Errorf("want '%s', got '%s'", test.wantCode, status.Code(err))
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
 			}
 		})
 	}
@@ -213,7 +213,7 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 	_, err = client.UploadTranslationFile(ctx, uploadReq)
 
 	if status.Code(err) != codes.OK {
-		t.Errorf("want '%s', got '%s'", codes.OK, status.Code(err))
+		t.Errorf("want status '%s', got '%s'", codes.OK, status.Code(err))
 	}
 }
 
@@ -288,7 +288,7 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 			_, err := client.DownloadTranslationFile(ctx, test.request)
 
 			if status.Code(err) != test.wantCode {
-				t.Errorf("want '%s', got '%s'", test.wantCode, status.Code(err))
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
 			}
 		})
 	}
@@ -344,7 +344,7 @@ func Test_CreateService_gRPC(t *testing.T) {
 			_, err := client.CreateService(ctx, test.request)
 
 			if status.Code(err) != test.wantCode {
-				t.Errorf("want '%s', got '%s'", test.wantCode, status.Code(err))
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
 			}
 		})
 	}
@@ -403,7 +403,7 @@ func Test_UpdateService_gRPC(t *testing.T) {
 			_, err := client.UpdateService(ctx, test.request)
 
 			if status.Code(err) != test.wantCode {
-				t.Errorf("want '%s', got '%s'", test.wantCode, status.Code(err))
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
 			}
 		})
 	}
@@ -445,7 +445,7 @@ func Test_GetService_gRPC(t *testing.T) {
 			_, err := client.GetService(ctx, test.request)
 
 			if status.Code(err) != test.wantCode {
-				t.Errorf("want '%s', got '%s'", test.wantCode, status.Code(err))
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
 			}
 		})
 	}
@@ -487,7 +487,7 @@ func Test_DeleteService_gRPC(t *testing.T) {
 			_, err := client.DeleteService(ctx, test.request)
 
 			if status.Code(err) != test.wantCode {
-				t.Errorf("want '%s', got '%s'", test.wantCode, status.Code(err))
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
 			}
 		})
 	}
@@ -501,7 +501,7 @@ func Test_ListServices_gRPC(t *testing.T) {
 	_, err := client.ListServices(ctx, &translatev1.ListServicesRequest{})
 
 	if status.Code(err) != codes.OK {
-		t.Errorf("want '%s', got '%s'", codes.OK, status.Code(err))
+		t.Errorf("want status '%s', got '%s'", codes.OK, status.Code(err))
 	}
 }
 
@@ -649,11 +649,11 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 			}
 
 			if status.Code(err) != test.wantCode {
-				t.Errorf("want '%s', got '%s'", test.wantCode, status.Code(err))
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
 			}
 
 			if status.Code(err) == codes.OK && test.request.GetTranslation().GetLanguage() != translation.GetLanguage() {
-				t.Errorf("want '%s', got '%s'", test.request.GetTranslation().GetLanguage(), translation.GetLanguage())
+				t.Errorf("want language '%s', got '%s'", test.request.GetTranslation().GetLanguage(), translation.GetLanguage())
 			}
 		})
 	}
@@ -706,11 +706,11 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 			resp, err := client.ListTranslations(ctx, test.request)
 
 			if err == nil && resp == nil {
-				t.Error("want resp, got nil")
+				t.Error("want response, got nil")
 			}
 
 			if status.Code(err) != test.wantCode {
-				t.Errorf("want '%s', got '%s'", test.wantCode, status.Code(err))
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
 			}
 		})
 	}
@@ -797,7 +797,7 @@ func Test_UpdateTranslationFromMask_gRPC(t *testing.T) {
 	}
 
 	if resp == nil {
-		t.Error("want resp, got nil")
+		t.Error("want response, got nil")
 	}
 
 	got, err := client.ListTranslations(ctx, &translatev1.ListTranslationsRequest{
@@ -884,11 +884,11 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 			resp, err := client.UpdateTranslation(ctx, test.request)
 
 			if err == nil && resp == nil {
-				t.Error("want resp, got nil")
+				t.Error("want response, got nil")
 			}
 
 			if status.Code(err) != test.wantCode {
-				t.Errorf("want '%s', got '%s'", test.wantCode, status.Code(err))
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
 			}
 
 			if test.request == happyReq {
@@ -917,7 +917,7 @@ func matchingTranslationExistsInService(
 	}
 
 	if resp == nil {
-		t.Error("want resp, got nil")
+		t.Error("want response, got nil")
 	}
 
 	for i := range resp.GetTranslations() {

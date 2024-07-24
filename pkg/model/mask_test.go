@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 )
 
@@ -80,7 +79,9 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			mask: []string{"A"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
 				// Check if field is updated
-				expect.Equal(t, src.A, dst.A)
+				if src.A != dst.A {
+					t.Errorf("want %d, got %d", src.A, dst.A)
+				}
 
 				// Reset field to original value, and perform full check, to ensure that nothing else was changed
 				dst.A = original.A
@@ -95,7 +96,9 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update A and B int and string",
 			mask: []string{"A", "B"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
-				expect.Equal(t, src.A, dst.A)
+				if src.A != dst.A {
+					t.Errorf("want %d, got %d", src.A, dst.A)
+				}
 
 				dst.A, dst.B = original.A, original.B
 
@@ -218,7 +221,9 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update L *string",
 			mask: []string{"L"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
-				expect.Equal(t, src.L, dst.L)
+				if src.L != dst.L {
+					t.Errorf("want %s, got %s", *src.L, *dst.L)
+				}
 
 				dst.L = original.L
 

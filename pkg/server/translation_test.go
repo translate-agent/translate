@@ -7,7 +7,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
@@ -36,6 +35,7 @@ func (m *mockTranslator) Translate(ctx context.Context,
 	return newTranslation, nil
 }
 
+//nolint:gocognit
 func Test_fuzzyTranslate(t *testing.T) {
 	t.Parallel()
 
@@ -85,10 +85,15 @@ func Test_fuzzyTranslate(t *testing.T) {
 
 				for _, message := range translation.Messages {
 					if _, ok := untranslatedMessageIDLookup[message.ID]; ok {
-						expect.Equal(t, mockTranslation, message.Message)
-						expect.Equal(t, model.MessageStatusFuzzy.String(), message.Status.String())
-					} else {
-						expect.Equal(t, model.MessageStatusTranslated.String(), message.Status.String())
+						if mockTranslation != message.Message {
+							t.Errorf("want message '%s', got '%s'", mockTranslation, message.Message)
+						}
+
+						if model.MessageStatusFuzzy.String() != message.Status.String() {
+							t.Errorf("want message status '%s', got '%s'", model.MessageStatusFuzzy, message.Status)
+						}
+					} else if model.MessageStatusTranslated.String() != message.Status.String() {
+						t.Errorf("want message status '%s', got '%s'", model.MessageStatusTranslated, message.Status)
 					}
 				}
 			}

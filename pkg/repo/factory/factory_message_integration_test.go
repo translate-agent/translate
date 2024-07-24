@@ -67,7 +67,7 @@ func Test_SaveTranslation(t *testing.T) {
 
 				if test.wantErr != nil {
 					if !errors.Is(err, test.wantErr) {
-						t.Errorf("want %s, got %s", test.wantErr, err)
+						t.Errorf("want error '%s', got '%s'", test.wantErr, err)
 					}
 
 					return

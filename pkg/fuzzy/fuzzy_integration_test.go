@@ -15,7 +15,6 @@ import (
 	mf2 "go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
@@ -38,18 +37,19 @@ func Test_Translate(t *testing.T) {
 			}
 
 			// Check the number of translated messages is the same as the number of input messages.
-			expect.Equal(t, len(output.Messages), len(input.Messages))
-
 			if len(output.Messages) != len(input.Messages) {
-				t.Errorf("want %d, got %d", len(input.Messages), len(output.Messages))
+				t.Errorf("want messages length %d, got %d", len(output.Messages), len(input.Messages))
 			}
+
 			// Check the translated messages are not empty and are marked as fuzzy.
 			for _, m := range output.Messages {
 				if len(m.Message) == 0 {
 					t.Errorf("want message, got empty")
 				}
 
-				expect.Equal(t, model.MessageStatusFuzzy, m.Status)
+				if model.MessageStatusFuzzy != m.Status {
+					t.Errorf("want message status '%s', got '%s'", model.MessageStatusFuzzy, m.Status)
+				}
 
 				_, err := mf2.Parse(m.Message)
 				if err != nil {

@@ -195,7 +195,7 @@ func Test_ToNgxTranslate(t *testing.T) {
 			}
 
 			if !bytes.Equal(test.want, got) {
-				t.Errorf("want '%s', got '%s'", string(test.want), string(got))
+				t.Errorf("want ngxtranslate '%s', got '%s'", string(test.want), string(got))
 			}
 		})
 	}

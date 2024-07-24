@@ -214,7 +214,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if want := "File uploaded successfully.\n"; string(output) != want {
-			t.Errorf("want '%s', got '%s'", want, output)
+			t.Errorf("want output '%s', got '%s'", want, output)
 		}
 	})
 
@@ -259,7 +259,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if want := "File uploaded successfully.\n"; string(output) != want {
-			t.Errorf("want '%s', got '%s'", want, output)
+			t.Errorf("want output '%s', got '%s'", want, output)
 		}
 	})
 
@@ -305,7 +305,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if want := "File uploaded successfully.\n"; string(output) != want {
-			t.Errorf("want '%s', got '%s'", want, output)
+			t.Errorf("want output '%s', got '%s'", want, output)
 		}
 	})
 
@@ -351,7 +351,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if want := "File uploaded successfully.\n"; string(output) != want {
-			t.Errorf("want '%s', got '%s'", want, output)
+			t.Errorf("want output '%s', got '%s'", want, output)
 		}
 
 		// upload file using link to previously uploaded translation file.
@@ -373,7 +373,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if want := "File uploaded successfully.\n"; string(output) != want {
-			t.Error("want '%s', got '%s'", want, output)
+			t.Errorf("want output '%s', got '%s'", want, output)
 		}
 	})
 
@@ -418,7 +418,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if want := "File uploaded successfully.\n"; string(output) != want {
-			t.Errorf("want '%s', got '%s'", want, output)
+			t.Errorf("want output '%s', got '%s'", want, output)
 		}
 	})
 
@@ -457,7 +457,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		if want := "well-formed but unknown"; !strings.Contains(err.Error(), want) {
-			t.Errorf("want '%s' to contain '%s'", err, want)
+			t.Errorf("want error '%s' to contain '%s'", err, want)
 		}
 
 		if len(output) > 0 {
@@ -482,7 +482,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 		want := "must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2"
 		if !strings.Contains(err.Error(), want) {
-			t.Errorf("want '%s' to contain '%s'", err, want)
+			t.Errorf("want error '%s' to contain '%s'", err, want)
 		}
 
 		if len(output) > 0 {
@@ -507,7 +507,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 
 		want := "must be one of: json_ng_localize, json_ngx_translate, go, arb, po, xliff_12, xliff_2"
 		if !strings.Contains(err.Error(), want) {
-			t.Errorf("want '%s' to contain '%s'", err, want)
+			t.Errorf("want error '%s' to contain '%s'", err, want)
 		}
 
 		if len(output) > 0 {
@@ -529,7 +529,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			"--service", gofakeit.UUID(),
 		})
 		if want := "required flag(s) \"schema\" not set"; !strings.Contains(err.Error(), want) {
-			t.Errorf("want '%s' to contain '%s'", err, want)
+			t.Errorf("want error '%s' to contain '%s'", err, want)
 		}
 
 		if len(output) > 0 {
@@ -574,7 +574,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		if want := "no language is set"; !strings.Contains(err.Error(), want) {
-			t.Errorf("want '%s' to contain '%s'", err, want)
+			t.Errorf("want error '%s' to contain '%s'", err, want)
 		}
 
 		if len(output) > 0 {
@@ -597,7 +597,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		if want := "required flag(s) \"file\" not set"; !strings.Contains(err.Error(), want) {
-			t.Errorf("want '%s' to contain '%s'", err, want)
+			t.Errorf("want error '%s' to contain '%s'", err, want)
 		}
 
 		if len(output) > 0 {
@@ -620,7 +620,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		})
 
 		if want := "required flag(s) \"service\" not set"; !strings.Contains(err.Error(), want) {
-			t.Errorf("want '%s' to contain '%s'", err, want)
+			t.Errorf("want error '%s' to contain '%s'", err, want)
 		}
 
 		if len(output) > 0 {
@@ -629,6 +629,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 	})
 }
 
+//nolint:gocognit
 func Test_TranslationFileDownload_CLI(t *testing.T) {
 	t.Parallel()
 
@@ -674,7 +675,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		}
 
 		if want := "File uploaded successfully.\n"; string(output) != want {
-			t.Error("want '%s', got '%s'", want, output)
+			t.Errorf("want output '%s', got '%s'", want, output)
 		}
 
 		output, err = cmd.ExecuteWithParams(ctx, []string{
@@ -693,7 +694,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		}
 
 		if want := "File downloaded successfully.\n"; string(output) != want {
-			t.Errorf("want '%s', got '%s'", want, output)
+			t.Errorf("want output '%s', got '%s'", want, output)
 		}
 
 		_, err = os.Stat(filepath.Join(tempDir, service.GetId()+"_"+lang.String()+".xlf"))
@@ -718,7 +719,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		})
 
 		if want := "required flag(s) \"language\" not set"; !strings.Contains(err.Error(), want) {
-			t.Errorf("want '%s' to contain '%s'", err, want)
+			t.Errorf("want error '%s' to contain '%s'", err, want)
 		}
 
 		if len(output) > 0 {
@@ -741,7 +742,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		})
 
 		if want := "required flag(s) \"schema\" not set"; !strings.Contains(err.Error(), want) {
-			t.Errorf("want '%s' to contain '%s'", err, want)
+			t.Errorf("want error '%s' to contain '%s'", err, want)
 		}
 
 		if len(output) > 0 {
@@ -764,7 +765,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		})
 
 		if want := "required flag(s) \"service\" not set"; !strings.Contains(err.Error(), want) {
-			t.Errorf("want '%s' to contain '%s'", err, want)
+			t.Errorf("want error '%s' to contain '%s'", err, want)
 		}
 
 		if len(output) > 0 {
@@ -787,7 +788,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		})
 
 		if want := "required flag(s) \"path\" not set"; !strings.Contains(err.Error(), want) {
-			t.Errorf("want '%s' to contain '%s'", err, want)
+			t.Errorf("want error '%s' to contain '%s'", err, want)
 		}
 
 		if len(output) > 0 {

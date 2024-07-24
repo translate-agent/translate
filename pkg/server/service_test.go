@@ -2,6 +2,7 @@ package server
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -77,7 +78,7 @@ func Test_ParseGetServiceParams(t *testing.T) {
 			}
 
 			if *test.want != *got {
-				t.Errorf("want %v, got %v", test.want, got)
+				t.Errorf("want params %v, got %v", test.want, got)
 			}
 		})
 	}
@@ -227,7 +228,10 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			got, err := parseUpdateServiceParams(test.request)
 
 			if test.wantErr != "" {
-				if err.Error() != test.wantErr {
+				// TODO(jhorsts): improve the testing. Proto packages introduce the following:
+				// Deliberately introduce instability into the error message string to
+				// discourage users from performing error string comparisons.
+				if v := strings.ReplaceAll(err.Error(), " ", " "); v != test.wantErr {
 					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
 				}
 
@@ -240,7 +244,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.want, got) {
-				t.Errorf("want %v, got %v", test.want, got)
+				t.Errorf("want params %v, got %v", test.want, got)
 			}
 		})
 	}
@@ -376,7 +380,7 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.want, got) {
-				t.Errorf("want %v, got %v", test.want, got)
+				t.Errorf("want params %v, got %v", test.want, got)
 			}
 		})
 	}
@@ -513,7 +517,7 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.want, got) {
-				t.Errorf("want %v, got %v", test.want, got)
+				t.Errorf("want params %v, got %v", test.want, got)
 			}
 		})
 	}

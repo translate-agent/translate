@@ -131,7 +131,7 @@ func Test_FromNgLocalize(t *testing.T) {
 func Test_ToNgLocalize(t *testing.T) {
 	t.Parallel()
 
-	t.Skip() // TODO
+	t.Skip() // TODO(jhorsts): why is it skipped?
 
 	tests := []struct {
 		name    string
@@ -194,7 +194,7 @@ func Test_ToNgLocalize(t *testing.T) {
 			got, err := ToNgLocalize(test.input)
 			if test.wantErr != nil {
 				if err.Error() != test.wantErr.Error() {
-					t.Errorf("want '%s', got '%s'", test.wantErr, err)
+					t.Errorf("want error '%s', got '%s'", test.wantErr, err)
 				}
 
 				return
@@ -205,8 +205,8 @@ func Test_ToNgLocalize(t *testing.T) {
 				return
 			}
 
-			if bytes.Equal(test.want, got) {
-				t.Errorf("want %s, got %s", test.want, got)
+			if !bytes.Equal(test.want, got) {
+				t.Errorf("want nglocalize %s, got %s", test.want, got)
 			}
 		})
 	}

@@ -70,7 +70,7 @@ func assertEqualXML(t *testing.T, want, got []byte) bool { //nolint:unparam
 	gotTrimmed := re.ReplaceAllString(string(got), "><")
 
 	if wantTrimmed != gotTrimmed {
-		t.Errorf("want '%s', got '%s'", wantTrimmed, gotTrimmed)
+		t.Errorf("want XML\n'%s'\ngot\n'%s'", wantTrimmed, gotTrimmed)
 		return false
 	}
 

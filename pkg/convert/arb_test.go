@@ -272,7 +272,7 @@ func Test_ToArb(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(want, got) {
-				t.Errorf("want %s, got %s", test.want, actual)
+				t.Errorf("want arb%s\ngot\n%s", test.want, actual)
 			}
 		})
 	}

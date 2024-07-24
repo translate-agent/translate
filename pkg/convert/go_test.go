@@ -1,7 +1,7 @@
 package convert
 
 import (
-	"bytes"
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -108,8 +108,18 @@ func TestToGo(t *testing.T) {
 				return
 			}
 
-			if bytes.Equal(test.want, got) {
-				t.Errorf("want %s, got %s", test.want, got)
+			var a, b any
+
+			if err := json.Unmarshal(test.want, &a); err != nil {
+				t.Error(err)
+			}
+
+			if err := json.Unmarshal(got, &b); err != nil {
+				t.Error(err)
+			}
+
+			if !reflect.DeepEqual(a, b) {
+				t.Errorf("want go%s\ngot\n%s", test.want, got)
 			}
 		})
 	}
@@ -240,7 +250,7 @@ func TestFromGo(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.want, actual) {
-				t.Errorf("want %v, got %v", test.want, actual)
+				t.Errorf("want translation %v, got %v", test.want, actual)
 			}
 		})
 	}

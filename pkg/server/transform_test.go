@@ -80,7 +80,7 @@ func Test_TransformLanguage(t *testing.T) {
 		}
 
 		if wantLangTag != restoredLangTag {
-			t.Errorf("want %s, got %s", wantLangTag, restoredLangTag)
+			t.Errorf("want language '%s', got '%s'", wantLangTag, restoredLangTag)
 			return false
 		}
 
@@ -199,7 +199,7 @@ func Test_maskFromProto(t *testing.T) {
 			got, err := maskFromProto(test.protoMessage, test.protoMask)
 			if test.wantErr != nil {
 				if test.wantErr.Error() != err.Error() {
-					t.Errorf("want %s, got %s", test.wantErr, err)
+					t.Errorf("want error '%s', got '%s'", test.wantErr, err)
 				}
 
 				return
@@ -211,7 +211,7 @@ func Test_maskFromProto(t *testing.T) {
 			}
 
 			if !slices.Equal(test.modelMask, got) {
-				t.Errorf("want %v, got %v", test.modelMask, got)
+				t.Errorf("want mask %v, got %v", test.modelMask, got)
 			}
 		})
 	}

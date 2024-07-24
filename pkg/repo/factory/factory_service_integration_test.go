@@ -50,7 +50,7 @@ func Test_SaveService(t *testing.T) {
 				}
 
 				if !reflect.DeepEqual(test.service, gotService) {
-					t.Errorf("want %v, got %v", test.service, gotService)
+					t.Errorf("want service %v, got %v", test.service, gotService)
 				}
 			})
 		}
@@ -91,7 +91,7 @@ func Test_UpdateService(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(wantService, gotService) {
-			t.Errorf("want %v, got %v", wantService, gotService)
+			t.Errorf("want service %v, got %v", wantService, gotService)
 		}
 	})
 }
@@ -134,12 +134,12 @@ func Test_LoadService(t *testing.T) {
 			subtest(test.name, func(ctx context.Context, t *testing.T) {
 				got, err := repository.LoadService(ctx, test.serviceID)
 				if !errors.Is(err, test.wantErr) {
-					t.Errorf("want %s, got %s", test.wantErr, err)
+					t.Errorf("want error '%s', got '%s'", test.wantErr, err)
 					return
 				}
 
 				if !reflect.DeepEqual(test.want, got) {
-					t.Errorf("want %v, got %v", test.want, got)
+					t.Errorf("want service %v, got %v", test.want, got)
 				}
 			})
 		}
@@ -169,14 +169,14 @@ func Test_LoadServices(t *testing.T) {
 		}
 
 		if len(got) < len(wantServices) {
-			t.Errorf("want %d greater than %d", len(got), len(wantServices))
+			t.Errorf("want services length %d greater than %d", len(got), len(wantServices))
 		}
 
 		for _, want := range wantServices {
 			if !slices.ContainsFunc(got, func(service model.Service) bool {
 				return reflect.DeepEqual(service, *want)
 			}) {
-				t.Errorf("want %v to contain %v", got, *want)
+				t.Errorf("want services %v to contain %v", got, *want)
 			}
 		}
 	})
@@ -218,14 +218,14 @@ func Test_DeleteService(t *testing.T) {
 			subtest(test.name, func(ctx context.Context, t *testing.T) {
 				err := repository.DeleteService(ctx, test.serviceID)
 				if !errors.Is(err, test.wantErr) {
-					t.Errorf("want %s, got %s", test.wantErr, err)
+					t.Errorf("want error '%s', got '%s'", test.wantErr, err)
 					return
 				}
 
 				// check if really is deleted
 				_, err = repository.LoadService(ctx, test.serviceID)
 				if !errors.Is(err, repo.ErrNotFound) {
-					t.Errorf("want %s, got %s", repo.ErrNotFound, err)
+					t.Errorf("want error '%s', got '%s'", repo.ErrNotFound, err)
 				}
 			})
 		}

@@ -10,7 +10,6 @@ import (
 	"github.com/googleapis/gax-go/v2"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 )
@@ -48,13 +47,20 @@ func Test_TranslateMock(t *testing.T) {
 				}
 
 				// Check the that the translated translation have the correct language.
-				expect.Equal(t, targetLang, output.Language)
+				if targetLang != output.Language {
+					t.Errorf("want language '%s', got '%s'", targetLang, output.Language)
+				}
 
 				// Check that length matches.
-				expect.Equal(t, len(output.Messages), len(test.input.Messages))
+				if len(output.Messages) != len(test.input.Messages) {
+					t.Errorf("want messages length %d, got %d", len(output.Messages), len(test.input.Messages))
+				}
 
 				for i, m := range output.Messages {
-					expect.Equal(t, model.MessageStatusFuzzy, m.Status)
+					if model.MessageStatusFuzzy != m.Status {
+						t.Errorf("want message status '%s', got '%s'", model.MessageStatusFuzzy, m.Status)
+					}
+
 					testutil.EqualMF2Message(t, test.input.Messages[i].Message, m.Message)
 
 					// Reset the message to empty and fuzzy to original values, for the last check for side effects.

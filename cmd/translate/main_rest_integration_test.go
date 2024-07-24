@@ -180,7 +180,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 			}
 
 			if test.wantCode != resp.StatusCode {
-				t.Errorf("want %d status code, got %d", test.wantCode, resp.StatusCode)
+				t.Errorf("want status code %d, got %d", test.wantCode, resp.StatusCode)
 			}
 		})
 	}
@@ -215,7 +215,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("want %d status code, got %d", http.StatusOK, resp.StatusCode)
+		t.Errorf("want status code %d, got %d", http.StatusOK, resp.StatusCode)
 	}
 }
 
@@ -289,7 +289,7 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 			defer resp.Body.Close()
 
 			if test.wantCode != resp.StatusCode {
-				t.Errorf("want %d status code, got %d", test.wantCode, resp.StatusCode)
+				t.Errorf("want status code %d, got %d", test.wantCode, resp.StatusCode)
 			}
 		})
 	}
@@ -363,7 +363,7 @@ func Test_CreateService_REST(t *testing.T) {
 			defer resp.Body.Close()
 
 			if test.wantCode != resp.StatusCode {
-				t.Errorf("want %d status code, got %d", test.wantCode, resp.StatusCode)
+				t.Errorf("want status code %d, got %d", test.wantCode, resp.StatusCode)
 			}
 		})
 	}
@@ -418,7 +418,7 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("want %d status code, got %d", http.StatusOK, resp.StatusCode)
+		t.Errorf("want status code %d, got %d", http.StatusOK, resp.StatusCode)
 	}
 }
 
@@ -467,7 +467,7 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("want %d status code, got %d", http.StatusOK, resp.StatusCode)
+		t.Errorf("want status code %d, got %d", http.StatusOK, resp.StatusCode)
 	}
 }
 
@@ -527,7 +527,7 @@ func Test_GetService_REST(t *testing.T) {
 			defer resp.Body.Close()
 
 			if test.wantCode != resp.StatusCode {
-				t.Errorf("want %d status code, got %d", test.wantCode, resp.StatusCode)
+				t.Errorf("want status code %d, got %d", test.wantCode, resp.StatusCode)
 			}
 		})
 	}
@@ -589,7 +589,7 @@ func Test_DeleteService_REST(t *testing.T) {
 			defer resp.Body.Close()
 
 			if test.wantCode != resp.StatusCode {
-				t.Errorf("want %d status code, got %d", test.wantCode, resp.StatusCode)
+				t.Errorf("want status code %d, got %d", test.wantCode, resp.StatusCode)
 			}
 		})
 	}
@@ -622,7 +622,7 @@ func Test_ListServices_REST(t *testing.T) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		t.Errorf("want %d status code, got %d", http.StatusOK, resp.StatusCode)
+		t.Errorf("want status code %d, got %d", http.StatusOK, resp.StatusCode)
 	}
 }
 
@@ -737,7 +737,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 			defer resp.Body.Close()
 
 			if test.wantCode != resp.StatusCode {
-				t.Errorf("want %d status code, got %d", test.wantCode, resp.StatusCode)
+				t.Errorf("want status code %d, got %d", test.wantCode, resp.StatusCode)
 			}
 		})
 	}
@@ -859,7 +859,7 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 			defer resp.Body.Close()
 
 			if test.wantCode != resp.StatusCode {
-				t.Errorf("want %d status code, got %d", test.wantCode, resp.StatusCode)
+				t.Errorf("want status code %d, got %d", test.wantCode, resp.StatusCode)
 			}
 		})
 	}
@@ -938,7 +938,7 @@ func Test_GetTranslations_REST(t *testing.T) {
 			}
 
 			if test.wantCode != resp.StatusCode {
-				t.Errorf("want %d status code, got %d", test.wantCode, resp.StatusCode)
+				t.Errorf("want status code %d, got %d", test.wantCode, resp.StatusCode)
 			}
 		})
 	}

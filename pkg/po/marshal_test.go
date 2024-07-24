@@ -2,8 +2,6 @@ package po
 
 import (
 	"testing"
-
-	"go.expect.digital/translate/pkg/testutil/expect"
 )
 
 func TestPo_Marshal(t *testing.T) {
@@ -120,7 +118,9 @@ msgstr[1] ""
 
 			got := test.input.Marshal()
 
-			expect.Equal(t, test.want, string(got))
+			if test.want != string(got) {
+				t.Errorf("want %s, got %s", test.want, got)
+			}
 		})
 	}
 }

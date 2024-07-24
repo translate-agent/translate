@@ -16,7 +16,7 @@ func requireEqualPO(t *testing.T, want, got string) {
 	replace := func(s string) string { return strings.NewReplacer("\\n", "", "\n", "", "\"", "").Replace(s) }
 
 	if replace(want) != replace(got) {
-		t.Errorf("want '%s', got '%s'", replace(want), replace(got))
+		t.Errorf("want po '%s', got '%s'", replace(want), replace(got))
 	}
 }
 
@@ -254,7 +254,7 @@ msgstr "Sveika, {name}!"
 			}
 
 			if !reflect.DeepEqual(test.want, got) {
-				t.Errorf("want %v, got %v", test.want, got)
+				t.Errorf("want translation\n%v\ngot\n%v", test.want, got)
 			}
 
 			// Test: Translation -> PO
@@ -441,7 +441,7 @@ msgstr[2] ""
 			}
 
 			if !reflect.DeepEqual(test.want, got) {
-				t.Errorf("want %v, got %v", test.want, got)
+				t.Errorf("want translation\n%v\ngot\n%v", test.want, got)
 			}
 
 			// Test: Translation -> PO
