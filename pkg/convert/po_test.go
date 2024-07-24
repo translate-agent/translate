@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"golang.org/x/text/language"
 )
 
@@ -15,7 +14,10 @@ func requireEqualPO(t *testing.T, want, got string) {
 	t.Helper()
 
 	replace := func(s string) string { return strings.NewReplacer("\\n", "", "\n", "", "\"", "").Replace(s) }
-	expect.Equal(t, replace(want), replace(got))
+
+	if replace(want) != replace(got) {
+		t.Errorf("want '%s', got '%s'", replace(want), replace(got))
+	}
 }
 
 // Test_FromPoSingular tests the conversion from PO->Translation->PO for singular messages.

@@ -13,7 +13,6 @@ import (
 	"go.expect.digital/translate/pkg/convert"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
 	"google.golang.org/genproto/protobuf/field_mask"
@@ -653,8 +652,8 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 				t.Errorf("want '%s', got '%s'", test.wantCode, status.Code(err))
 			}
 
-			if status.Code(err) == codes.OK {
-				expect.Equal(t, test.request.GetTranslation().GetLanguage(), translation.GetLanguage())
+			if status.Code(err) == codes.OK && test.request.GetTranslation().GetLanguage() != translation.GetLanguage() {
+				t.Errorf("want '%s', got '%s'", test.request.GetTranslation().GetLanguage(), translation.GetLanguage())
 			}
 		})
 	}

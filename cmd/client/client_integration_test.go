@@ -24,7 +24,6 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/server"
 	"go.expect.digital/translate/pkg/testutil"
-	"go.expect.digital/translate/pkg/testutil/expect"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/text/language"
@@ -214,7 +213,9 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(output))
+		if want := "File uploaded successfully.\n"; string(output) != want {
+			t.Errorf("want '%s', got '%s'", want, output)
+		}
 	})
 
 	t.Run("OK, with local file and original flag", func(t *testing.T) {
@@ -257,7 +258,9 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(output))
+		if want := "File uploaded successfully.\n"; string(output) != want {
+			t.Errorf("want '%s', got '%s'", want, output)
+		}
 	})
 
 	t.Run("OK, with local file, original=true populate=false", func(t *testing.T) {
@@ -301,7 +304,9 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(output))
+		if want := "File uploaded successfully.\n"; string(output) != want {
+			t.Errorf("want '%s', got '%s'", want, output)
+		}
 	})
 
 	t.Run("OK, file from URL", func(t *testing.T) {
@@ -345,7 +350,9 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(output))
+		if want := "File uploaded successfully.\n"; string(output) != want {
+			t.Errorf("want '%s', got '%s'", want, output)
+		}
 
 		// upload file using link to previously uploaded translation file.
 		output, err = cmd.ExecuteWithParams(ctx, []string{
@@ -365,7 +372,9 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(output))
+		if want := "File uploaded successfully.\n"; string(output) != want {
+			t.Error("want '%s', got '%s'", want, output)
+		}
 	})
 
 	// Translation has language tag, but CLI parameter 'language' is not set.
@@ -408,7 +417,9 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(output))
+		if want := "File uploaded successfully.\n"; string(output) != want {
+			t.Errorf("want '%s', got '%s'", want, output)
+		}
 	})
 
 	t.Run("error, malformed language", func(t *testing.T) {
@@ -662,7 +673,9 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File uploaded successfully.\n", string(output))
+		if want := "File uploaded successfully.\n"; string(output) != want {
+			t.Error("want '%s', got '%s'", want, output)
+		}
 
 		output, err = cmd.ExecuteWithParams(ctx, []string{
 			"service", "download",
@@ -679,7 +692,9 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 			return
 		}
 
-		expect.Equal(t, "File downloaded successfully.\n", string(output))
+		if want := "File downloaded successfully.\n"; string(output) != want {
+			t.Errorf("want '%s', got '%s'", want, output)
+		}
 
 		_, err = os.Stat(filepath.Join(tempDir, service.GetId()+"_"+lang.String()+".xlf"))
 		if err != nil {

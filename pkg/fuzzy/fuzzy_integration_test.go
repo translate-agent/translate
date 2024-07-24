@@ -40,6 +40,9 @@ func Test_Translate(t *testing.T) {
 			// Check the number of translated messages is the same as the number of input messages.
 			expect.Equal(t, len(output.Messages), len(input.Messages))
 
+			if len(output.Messages) != len(input.Messages) {
+				t.Errorf("want %d, got %d", len(input.Messages), len(output.Messages))
+			}
 			// Check the translated messages are not empty and are marked as fuzzy.
 			for _, m := range output.Messages {
 				if len(m.Message) == 0 {

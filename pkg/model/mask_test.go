@@ -9,7 +9,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"go.expect.digital/translate/pkg/testutil/expect"
-
 	"golang.org/x/text/language"
 )
 
