@@ -30,12 +30,7 @@ func Test_TransformUUID(t *testing.T) {
 				return false
 			}
 
-			if wantID != restoredID {
-				t.Errorf("want UUID %s, got %s", wantID, restoredID)
-				return false
-			}
-
-			return true
+			return wantID == restoredID
 		}
 
 		err := quick.Check(f, &quick.Config{MaxCount: 1000})
