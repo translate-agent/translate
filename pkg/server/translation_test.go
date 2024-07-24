@@ -2,10 +2,10 @@ package server
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
@@ -35,6 +35,7 @@ func (m *mockTranslator) Translate(ctx context.Context,
 	return newTranslation, nil
 }
 
+//nolint:gocognit
 func Test_fuzzyTranslate(t *testing.T) {
 	t.Parallel()
 
@@ -66,21 +67,33 @@ func Test_fuzzyTranslate(t *testing.T) {
 			allTranslations := append(model.Translations{*test.originalTranslation}, test.translations...)
 			untranslatedMessageIDLookup := randomUntranslatedMessageStatus(t, allTranslations)
 
-			require.NoError(t, translateSrv.fuzzyTranslate(context.Background(), allTranslations))
+			err := translateSrv.fuzzyTranslate(context.Background(), allTranslations)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			// Check that untranslated messages have been translated and marked as fuzzy for all translations.
 			for _, translation := range allTranslations {
 				if translation.Original {
-					require.Equal(t, *test.originalTranslation, translation)
+					if !reflect.DeepEqual(*test.originalTranslation, translation) {
+						t.Errorf("\nwant %v\ngot  %v", *test.originalTranslation, translation)
+					}
+
 					continue
 				}
 
 				for _, message := range translation.Messages {
 					if _, ok := untranslatedMessageIDLookup[message.ID]; ok {
-						require.Equal(t, mockTranslation, message.Message)
-						require.Equal(t, model.MessageStatusFuzzy.String(), message.Status.String())
-					} else {
-						require.Equal(t, model.MessageStatusTranslated.String(), message.Status.String())
+						if mockTranslation != message.Message {
+							t.Errorf("want message '%s', got '%s'", mockTranslation, message.Message)
+						}
+
+						if model.MessageStatusFuzzy.String() != message.Status.String() {
+							t.Errorf("want message status '%s', got '%s'", model.MessageStatusFuzzy, message.Status)
+						}
+					} else if model.MessageStatusTranslated.String() != message.Status.String() {
+						t.Errorf("want message status '%s', got '%s'", model.MessageStatusTranslated, message.Status)
 					}
 				}
 			}

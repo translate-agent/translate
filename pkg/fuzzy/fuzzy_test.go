@@ -2,12 +2,12 @@ package fuzzy
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"cloud.google.com/go/translate/apiv3/translatepb"
 	awst "github.com/aws/aws-sdk-go-v2/service/translate"
 	"github.com/googleapis/gax-go/v2"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil"
 	"go.expect.digital/translate/pkg/testutil/rand"
@@ -41,16 +41,26 @@ func Test_TranslateMock(t *testing.T) {
 				t.Parallel()
 
 				output, err := mock.Translate(context.Background(), test.input, targetLang)
-				require.NoError(t, err)
+				if err != nil {
+					t.Error(err)
+					return
+				}
 
 				// Check the that the translated translation have the correct language.
-				require.Equal(t, targetLang, output.Language)
+				if targetLang != output.Language {
+					t.Errorf("want language '%s', got '%s'", targetLang, output.Language)
+				}
 
 				// Check that length matches.
-				require.Len(t, output.Messages, len(test.input.Messages))
+				if len(output.Messages) != len(test.input.Messages) {
+					t.Errorf("want messages length %d, got %d", len(output.Messages), len(test.input.Messages))
+				}
 
 				for i, m := range output.Messages {
-					require.Equal(t, model.MessageStatusFuzzy, m.Status)
+					if model.MessageStatusFuzzy != m.Status {
+						t.Errorf("want message status '%s', got '%s'", model.MessageStatusFuzzy, m.Status)
+					}
+
 					testutil.EqualMF2Message(t, test.input.Messages[i].Message, m.Message)
 
 					// Reset the message to empty and fuzzy to original values, for the last check for side effects.
@@ -59,7 +69,9 @@ func Test_TranslateMock(t *testing.T) {
 				}
 
 				// Check the translated translation.messages are the same as the input messages. (Check for side effects)
-				require.ElementsMatch(t, test.input.Messages, output.Messages)
+				if !reflect.DeepEqual(test.input.Messages, output.Messages) {
+					t.Errorf("\nwant %v\ngot  %v", test.input.Messages, output.Messages)
+				}
 			})
 		}
 	})

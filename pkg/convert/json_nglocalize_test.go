@@ -1,13 +1,12 @@
 package convert
 
 import (
-	"errors"
+	"bytes"
+	"reflect"
+	"slices"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
 
@@ -15,7 +14,7 @@ func Test_FromNgLocalize(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		wanterr error
+		wantErr string
 		input   []byte
 		name    string
 		want    model.Translation
@@ -86,7 +85,7 @@ func Test_FromNgLocalize(t *testing.T) {
           "Welcome": "Bienvenue"
         }
       }`),
-			wanterr: errors.New("language: subtag \"xyz\" is well-formed but unknown"),
+			wantErr: `unmarshal @angular/localize JSON into ngJSON struct: language: subtag "xyz" is well-formed but unknown`,
 		},
 	}
 	for _, test := range tests {
@@ -95,14 +94,36 @@ func Test_FromNgLocalize(t *testing.T) {
 
 			got, err := FromNgLocalize(test.input, &test.want.Original)
 
-			if test.wanterr != nil {
-				require.ErrorContains(t, err, test.wanterr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			testutil.EqualTranslations(t, &test.want, &got)
+			cmp := func(a, b model.Message) int {
+				switch {
+				default:
+					return 0
+				case a.ID < b.ID:
+					return -1
+				case b.ID < a.ID:
+					return 1
+				}
+			}
+
+			slices.SortFunc(test.want.Messages, cmp)
+			slices.SortFunc(got.Messages, cmp)
+
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("\nwant %v\ngot  %v", test.want, got)
+			}
 		})
 	}
 }
@@ -110,7 +131,7 @@ func Test_FromNgLocalize(t *testing.T) {
 func Test_ToNgLocalize(t *testing.T) {
 	t.Parallel()
 
-	t.Skip() // TODO
+	t.Skip() // TODO(jhorsts): why is it skipped?
 
 	tests := []struct {
 		name    string
@@ -171,15 +192,22 @@ func Test_ToNgLocalize(t *testing.T) {
 			t.Parallel()
 
 			got, err := ToNgLocalize(test.input)
-
 			if test.wantErr != nil {
-				require.ErrorContains(t, err, test.wantErr.Error())
+				if err.Error() != test.wantErr.Error() {
+					t.Errorf("want error '%s', got '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			assert.JSONEq(t, string(test.want), string(got))
+			if !bytes.Equal(test.want, got) {
+				t.Errorf("want nglocalize %s, got %s", test.want, got)
+			}
 		})
 	}
 }

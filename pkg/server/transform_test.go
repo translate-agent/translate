@@ -4,13 +4,12 @@ import (
 	"errors"
 	"math/rand"
 	"reflect"
+	"slices"
 	"testing"
 	"testing/quick"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"golang.org/x/text/language"
@@ -26,12 +25,18 @@ func Test_TransformUUID(t *testing.T) {
 
 		f := func(wantID uuid.UUID) bool {
 			restoredID, err := uuidFromProto(uuidToProto(wantID))
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return false
+			}
 
-			return assert.Equal(t, wantID, restoredID)
+			return wantID == restoredID
 		}
 
-		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
+		err := quick.Check(f, &quick.Config{MaxCount: 1000})
+		if err != nil {
+			t.Error(err)
+		}
 	})
 
 	// Separate check with Nil UUID.
@@ -41,9 +46,14 @@ func Test_TransformUUID(t *testing.T) {
 		wantID := uuid.Nil
 
 		restoredID, err := uuidFromProto(uuidToProto(wantID))
-		require.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
-		assert.Equal(t, wantID, restoredID)
+		if wantID != restoredID {
+			t.Errorf("want UUID %s, got %s", wantID, restoredID)
+		}
 	})
 }
 
@@ -59,12 +69,23 @@ func Test_TransformLanguage(t *testing.T) {
 
 	f := func(wantLangTag language.Tag) bool {
 		restoredLangTag, err := languageFromProto(languageToProto(wantLangTag))
-		require.NoError(t, err)
+		if err != nil {
+			t.Error(err)
+			return false
+		}
 
-		return assert.Equal(t, wantLangTag, restoredLangTag)
+		if wantLangTag != restoredLangTag {
+			t.Errorf("want language '%s', got '%s'", wantLangTag, restoredLangTag)
+			return false
+		}
+
+		return true
 	}
 
-	require.NoError(t, quick.Check(f, conf))
+	err := quick.Check(f, conf)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func Test_TransformService(t *testing.T) {
@@ -75,12 +96,18 @@ func Test_TransformService(t *testing.T) {
 
 		f := func(wantService model.Service) bool {
 			restoredService, err := serviceFromProto(serviceToProto(&wantService))
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return false
+			}
 
-			return assert.Equal(t, wantService, *restoredService)
+			return wantService == *restoredService
 		}
 
-		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 1000}))
+		err := quick.Check(f, &quick.Config{MaxCount: 1000})
+		if err != nil {
+			t.Error(err)
+		}
 	})
 
 	t.Run("Services to proto to services", func(t *testing.T) {
@@ -88,12 +115,23 @@ func Test_TransformService(t *testing.T) {
 
 		f := func(wantServices []model.Service) bool {
 			restoredServices, err := servicesFromProto(servicesToProto(wantServices))
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return false
+			}
 
-			return assert.ElementsMatch(t, wantServices, restoredServices)
+			if len(wantServices) != 0 && len(restoredServices) != 0 && !reflect.DeepEqual(wantServices, restoredServices) {
+				t.Logf("\nwant %v\ngot  %v", wantServices, restoredServices)
+				return false
+			}
+
+			return true
 		}
 
-		require.NoError(t, quick.Check(f, &quick.Config{MaxCount: 100}))
+		err := quick.Check(f, &quick.Config{MaxCount: 100})
+		if err != nil {
+			t.Error(err)
+		}
 	})
 }
 
@@ -154,12 +192,21 @@ func Test_maskFromProto(t *testing.T) {
 
 			got, err := maskFromProto(test.protoMessage, test.protoMask)
 			if test.wantErr != nil {
-				require.EqualError(t, err, test.wantErr.Error())
+				if test.wantErr.Error() != err.Error() {
+					t.Errorf("want error '%s', got '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 
-			require.NoError(t, err)
-			assert.ElementsMatch(t, test.modelMask, got)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			if !slices.Equal(test.modelMask, got) {
+				t.Errorf("want mask %v, got %v", test.modelMask, got)
+			}
 		})
 	}
 }

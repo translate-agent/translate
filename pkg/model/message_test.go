@@ -3,10 +3,9 @@ package model
 import (
 	"slices"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
+//nolint:gocognit
 func Test_MarkUntranslated(t *testing.T) {
 	t.Parallel()
 
@@ -75,7 +74,9 @@ func Test_MarkUntranslated(t *testing.T) {
 			// all messages should be with status translated.
 			if origIdx != -1 {
 				for _, msg := range test.translations[origIdx].Messages {
-					require.Equal(t, MessageStatusTranslated.String(), msg.Status.String())
+					if MessageStatusTranslated.String() != msg.Status.String() {
+						t.Errorf("want messages status '%s', got '%s'", MessageStatusTranslated, msg.Status)
+					}
 				}
 			}
 
@@ -93,7 +94,9 @@ func Test_MarkUntranslated(t *testing.T) {
 						wantStatus = MessageStatusUntranslated
 					}
 
-					require.Equal(t, wantStatus.String(), message.Status.String())
+					if wantStatus.String() != message.Status.String() {
+						t.Errorf("want message status '%s', got '%s'", wantStatus, message.Status)
+					}
 				}
 			}
 		})
@@ -175,14 +178,22 @@ func Test_PopulateTranslations(t *testing.T) {
 			test.translations.PopulateTranslations()
 
 			for _, translation := range test.translations {
-				require.Len(t, translation.Messages, wantLen)
+				if len(translation.Messages) != wantLen {
+					t.Errorf("want messages length %d, got %d", wantLen, len(translation.Messages))
+				}
 
 				// Check that translation has all messages from original.
 				// Status check not needed, as if translated messages
 				// are successfully populated, they will also have status Untranslated
 				for _, message := range translation.Messages {
-					require.Contains(t, wantIds, message.ID)
-					require.Contains(t, wantIds, message.Message)
+					if !slices.Contains(wantIds, message.ID) {
+						t.Errorf("want %v to contain %s", wantIds, message.ID)
+						return
+					}
+
+					if !slices.Contains(wantIds, message.Message) {
+						t.Errorf("want %v to contain %s", wantIds, message.Message)
+					}
 				}
 			}
 		})
@@ -211,5 +222,7 @@ func Test_FindChangedMessageIDs(t *testing.T) {
 	// ID:1 -> Are the same (Should not be included)
 	// ID:2 -> Messages has been changed (Should be included)
 	// ID:3 -> Is new (Should be included)
-	require.Equal(t, []string{"2", "3"}, changedIDs)
+	if !slices.Equal([]string{"2", "3"}, changedIDs) {
+		t.Errorf("want %v, got %v", []string{"2", "3"}, changedIDs)
+	}
 }

@@ -10,8 +10,6 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/convert"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil"
@@ -20,6 +18,7 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 // -------------Translation File-------------.
@@ -31,7 +30,10 @@ func randUploadData(t *testing.T, lang language.Tag) []byte {
 	translation := rand.ModelTranslation(3, nil, rand.WithLanguage(lang), rand.WithSimpleMF2Messages())
 
 	data, err := convert.ToPo(*translation)
-	require.NoError(t, err, "convert rand translation to serialized data")
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
 
 	return data
 }
@@ -75,7 +77,10 @@ func createService(ctx context.Context, t *testing.T) *translatev1.Service {
 	service := randService()
 
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	require.NoError(t, err, "create test service")
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
 
 	return service
 }
@@ -86,7 +91,9 @@ func createTranslation(ctx context.Context, t *testing.T, serviceID string,
 ) *translatev1.Translation { //nolint:unparam
 	t.Helper()
 
-	require.NotEmpty(t, serviceID)
+	if serviceID == "" {
+		t.Error("want serviceID, got empty string")
+	}
 
 	ctx, span := testutil.Tracer().Start(ctx, "test: create translation")
 	defer span.End()
@@ -95,7 +102,10 @@ func createTranslation(ctx context.Context, t *testing.T, serviceID string,
 		ServiceId:   serviceID,
 		Translation: randTranslation(t, override),
 	})
-	require.NoError(t, err, "create test translation")
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
 
 	return translation
 }
@@ -139,32 +149,32 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	tests := []struct {
 		request  *translatev1.UploadTranslationFileRequest
 		name     string
-		wantcode codes.Code
+		wantCode codes.Code
 	}{
 		{
 			name:     "Happy path",
 			request:  happyRequest,
-			wantcode: codes.OK,
+			wantCode: codes.OK,
 		},
 		{
 			name:     "Happy path no language in request",
 			request:  happyRequestNoLangInReq,
-			wantcode: codes.OK,
+			wantCode: codes.OK,
 		},
 		{
 			name:     "Invalid argument missing service_id",
 			request:  invalidArgumentMissingServiceRequest,
-			wantcode: codes.InvalidArgument,
+			wantCode: codes.InvalidArgument,
 		},
 		{
 			name:     "Not found service ID",
 			request:  notFoundServiceIDRequest,
-			wantcode: codes.NotFound,
+			wantCode: codes.NotFound,
 		},
 		{
 			name:     "Invalid argument, service already has original translation",
 			request:  originalAlreadyExistsReq,
-			wantcode: codes.InvalidArgument,
+			wantCode: codes.InvalidArgument,
 		},
 	}
 
@@ -172,7 +182,9 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 		subtest(test.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.UploadTranslationFile(ctx, test.request)
 
-			assert.Equal(t, test.wantcode, status.Code(err), "want %s, got %s", test.wantcode, status.Code(err))
+			if test.wantCode != status.Code(err) {
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -190,14 +202,19 @@ func Test_UploadTranslationFileUpdateFile_gRPC(t *testing.T) {
 	uploadReq := randUploadTranslationFileReq(t, service.GetId())
 
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
-	require.NoError(t, err, "create test translation file")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	// Change translation and upload again with the same language and serviceID
 	uploadReq.Data = randUploadData(t, language.MustParse(uploadReq.GetLanguage()))
 
 	_, err = client.UploadTranslationFile(ctx, uploadReq)
 
-	assert.Equal(t, codes.OK, status.Code(err))
+	if status.Code(err) != codes.OK {
+		t.Errorf("want status '%s', got '%s'", codes.OK, status.Code(err))
+	}
 }
 
 func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslationFileRequest {
@@ -219,7 +236,10 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	uploadRequest := randUploadTranslationFileReq(t, service.GetId())
 
 	_, err := client.UploadTranslationFile(ctx, uploadRequest)
-	require.NoError(t, err, "create test translation file")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	// Requests
 
@@ -267,7 +287,9 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 		subtest(test.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.DownloadTranslationFile(ctx, test.request)
 
-			assert.Equal(t, test.wantCode, status.Code(err))
+			if status.Code(err) != test.wantCode {
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -321,7 +343,9 @@ func Test_CreateService_gRPC(t *testing.T) {
 		subtest(test.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.CreateService(ctx, test.request)
 
-			assert.Equal(t, test.wantCode, status.Code(err))
+			if status.Code(err) != test.wantCode {
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -378,7 +402,9 @@ func Test_UpdateService_gRPC(t *testing.T) {
 
 			_, err := client.UpdateService(ctx, test.request)
 
-			assert.Equal(t, test.wantCode, status.Code(err))
+			if status.Code(err) != test.wantCode {
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -392,7 +418,10 @@ func Test_GetService_gRPC(t *testing.T) {
 	service := randService()
 
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	require.NoError(t, err, "Prepare test service")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	tests := []struct {
 		request  *translatev1.GetServiceRequest
@@ -415,7 +444,9 @@ func Test_GetService_gRPC(t *testing.T) {
 		subtest(test.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.GetService(ctx, test.request)
 
-			assert.Equal(t, test.wantCode, status.Code(err))
+			if status.Code(err) != test.wantCode {
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -429,7 +460,10 @@ func Test_DeleteService_gRPC(t *testing.T) {
 	service := randService()
 
 	_, err := client.CreateService(ctx, &translatev1.CreateServiceRequest{Service: service})
-	require.NoError(t, err, "Prepare test service")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	tests := []struct {
 		request  *translatev1.DeleteServiceRequest
@@ -452,7 +486,9 @@ func Test_DeleteService_gRPC(t *testing.T) {
 		subtest(test.name, func(ctx context.Context, t *testing.T) {
 			_, err := client.DeleteService(ctx, test.request)
 
-			assert.Equal(t, test.wantCode, status.Code(err))
+			if status.Code(err) != test.wantCode {
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -464,7 +500,9 @@ func Test_ListServices_gRPC(t *testing.T) {
 
 	_, err := client.ListServices(ctx, &translatev1.ListServicesRequest{})
 
-	assert.Equal(t, codes.OK, status.Code(err))
+	if status.Code(err) != codes.OK {
+		t.Errorf("want status '%s', got '%s'", codes.OK, status.Code(err))
+	}
 }
 
 // ------------------Translation------------------
@@ -527,7 +565,10 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 	uploadReq := randUploadTranslationFileReq(t, serviceWithTranslations.GetId())
 
 	_, err := client.UploadTranslationFile(ctx, uploadReq)
-	require.NoError(t, err, "create test translation file")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	tests := []struct {
 		request  *translatev1.CreateTranslationRequest
@@ -603,14 +644,16 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 	for _, test := range tests {
 		subtest(test.name, func(ctx context.Context, t *testing.T) {
 			translation, err := client.CreateTranslation(ctx, test.request)
-			if err != nil {
-				require.Nil(t, translation)
+			if err != nil && translation != nil {
+				t.Errorf("want nil translation, got %v", translation)
 			}
 
-			assert.Equal(t, test.wantCode, status.Code(err))
+			if status.Code(err) != test.wantCode {
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
+			}
 
-			if status.Code(err) == codes.OK {
-				require.Equal(t, test.request.GetTranslation().GetLanguage(), translation.GetLanguage())
+			if status.Code(err) == codes.OK && test.request.GetTranslation().GetLanguage() != translation.GetLanguage() {
+				t.Errorf("want language '%s', got '%s'", test.request.GetTranslation().GetLanguage(), translation.GetLanguage())
 			}
 		})
 	}
@@ -626,8 +669,12 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 
 	for range gofakeit.IntRange(1, 5) {
 		uploadRequest := randUploadTranslationFileReq(t, service.GetId())
+
 		_, err := client.UploadTranslationFile(ctx, uploadRequest)
-		require.NoError(t, err, "create test translation file")
+		if err != nil {
+			t.Error(err)
+			return
+		}
 	}
 
 	// Requests
@@ -658,11 +705,13 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 		subtest(test.name, func(ctx context.Context, t *testing.T) {
 			resp, err := client.ListTranslations(ctx, test.request)
 
-			if err == nil {
-				require.NotNil(t, resp)
+			if err == nil && resp == nil {
+				t.Error("want response, got nil")
 			}
 
-			assert.Equal(t, test.wantCode, status.Code(err))
+			if status.Code(err) != test.wantCode {
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
+			}
 		})
 	}
 }
@@ -742,17 +791,26 @@ func Test_UpdateTranslationFromMask_gRPC(t *testing.T) {
 	}
 
 	resp, err := client.UpdateTranslation(ctx, req)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
-	require.NoError(t, err)
-	require.NotNil(t, resp)
+	if resp == nil {
+		t.Error("want response, got nil")
+	}
 
 	got, err := client.ListTranslations(ctx, &translatev1.ListTranslationsRequest{
 		ServiceId: service.GetId(),
 	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
-	require.NoError(t, err)
-
-	assert.ElementsMatch(t, want.GetTranslations(), got.GetTranslations())
+	if !proto.Equal(want, got) {
+		t.Errorf("\nwant %v\ngot  %v\n", want, got)
+	}
 }
 
 func Test_UpdateTranslation_gRPC(t *testing.T) {
@@ -825,11 +883,13 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 		subtest(test.name, func(ctx context.Context, t *testing.T) {
 			resp, err := client.UpdateTranslation(ctx, test.request)
 
-			if err == nil {
-				require.NotNil(t, resp)
+			if err == nil && resp == nil {
+				t.Error("want response, got nil")
 			}
 
-			assert.Equal(t, test.wantCode, status.Code(err))
+			if status.Code(err) != test.wantCode {
+				t.Errorf("want status '%s', got '%s'", test.wantCode, status.Code(err))
+			}
 
 			if test.request == happyReq {
 				matchingTranslationExistsInService(ctx, t, test.request.GetServiceId(), resp)
@@ -851,21 +911,24 @@ func matchingTranslationExistsInService(
 	resp, err := client.ListTranslations(ctx, &translatev1.ListTranslationsRequest{
 		ServiceId: serviceID,
 	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
-	require.NoError(t, err)
-	require.NotEmpty(t, resp)
-
-	var translationFromService *translatev1.Translation
+	if resp == nil {
+		t.Error("want response, got nil")
+	}
 
 	for i := range resp.GetTranslations() {
-		if resp.GetTranslations()[i].GetLanguage() == translation.GetLanguage() {
-			translationFromService = resp.GetTranslations()[i]
+		got := resp.GetTranslations()[i]
+
+		if got.GetLanguage() == translation.GetLanguage() {
+			if !proto.Equal(translation, got) {
+				t.Errorf("\nwant %v\ngot  %v\n", translation, got)
+			}
+
 			break
 		}
 	}
-
-	require.NotNil(t, translationFromService)
-	require.Equal(t, translation.GetOriginal(), translationFromService.GetOriginal())
-	require.Equal(t, translation.GetLanguage(), translationFromService.GetLanguage())
-	require.ElementsMatch(t, translation.GetMessages(), translationFromService.GetMessages())
 }

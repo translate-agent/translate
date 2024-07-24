@@ -1,9 +1,8 @@
 package fuzzy
 
 import (
+	"slices"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_SplitTextByPlaceholder(t *testing.T) {
@@ -68,7 +67,9 @@ func Test_SplitTextByPlaceholder(t *testing.T) {
 			t.Parallel()
 
 			got := splitTextByPlaceholder(test.input)
-			assert.Equal(t, test.want, got)
+			if !slices.Equal(test.want, got) {
+				t.Errorf("want slice %v, got %v", test.want, got)
+			}
 		})
 	}
 }

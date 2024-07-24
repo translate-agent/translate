@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/spf13/viper"
-	"github.com/stretchr/testify/require"
 
 	mf2 "go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
@@ -32,18 +31,31 @@ func Test_Translate(t *testing.T) {
 			input := rand.ModelTranslation(3, nil, rand.WithLanguage(language.English))
 
 			output, err := translator.Translate(ctx, input, targetLang)
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			// Check the number of translated messages is the same as the number of input messages.
-			require.Len(t, output.Messages, len(input.Messages))
+			if len(output.Messages) != len(input.Messages) {
+				t.Errorf("want messages length %d, got %d", len(output.Messages), len(input.Messages))
+			}
 
 			// Check the translated messages are not empty and are marked as fuzzy.
 			for _, m := range output.Messages {
-				require.NotEmpty(t, m.Message)
-				require.Equal(t, model.MessageStatusFuzzy, m.Status, "want: %s, got: %s", model.MessageStatusFuzzy, m.Status)
+				if len(m.Message) == 0 {
+					t.Errorf("want message, got empty")
+				}
+
+				if model.MessageStatusFuzzy != m.Status {
+					t.Errorf("want message status '%s', got '%s'", model.MessageStatusFuzzy, m.Status)
+				}
 
 				_, err := mf2.Parse(m.Message)
-				require.NoError(t, err, "mf2: parse translated message")
+				if err != nil {
+					t.Error(err)
+					return
+				}
 			}
 		})
 	})

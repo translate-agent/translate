@@ -1,13 +1,11 @@
 package convert
 
 import (
+	"encoding/json"
+	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
 
@@ -105,9 +103,24 @@ func TestToGo(t *testing.T) {
 			t.Parallel()
 
 			got, err := ToGo(test.input)
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			assert.JSONEq(t, string(test.want), string(got))
+			var a, b any
+
+			if err := json.Unmarshal(test.want, &a); err != nil {
+				t.Error(err)
+			}
+
+			if err := json.Unmarshal(got, &b); err != nil {
+				t.Error(err)
+			}
+
+			if !reflect.DeepEqual(a, b) {
+				t.Errorf("want go%s\ngot\n%s", test.want, got)
+			}
 		})
 	}
 }
@@ -231,10 +244,14 @@ func TestFromGo(t *testing.T) {
 			t.Parallel()
 
 			actual, err := FromGo(test.input, &test.want.Original)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			require.NoError(t, err)
-
-			testutil.EqualTranslations(t, &test.want, &actual)
+			if !reflect.DeepEqual(test.want, actual) {
+				t.Errorf("want translation %v, got %v", test.want, actual)
+			}
 		})
 	}
 }

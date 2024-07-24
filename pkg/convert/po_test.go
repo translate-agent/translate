@@ -1,21 +1,23 @@
 package convert
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
 
 // requireEqualPO is a helper function to compare two PO strings, ignoring whitespace, newlines, and quotes.
-func requireEqualPO(t *testing.T, want, got string, msgAndArgs ...any) {
+func requireEqualPO(t *testing.T, want, got string) {
 	t.Helper()
 
 	replace := func(s string) string { return strings.NewReplacer("\\n", "", "\n", "", "\"", "").Replace(s) }
-	require.Equal(t, replace(want), replace(got), msgAndArgs)
+
+	if replace(want) != replace(got) {
+		t.Errorf("want po '%s', got '%s'", replace(want), replace(got))
+	}
 }
 
 // Test_FromPoSingular tests the conversion from PO->Translation->PO for singular messages.
@@ -246,16 +248,24 @@ msgstr "Sveika, {name}!"
 			// Test: PO -> Translation
 
 			got, err := FromPo([]byte(test.args.input), test.args.original)
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			testutil.EqualTranslations(t, &test.want, &got)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("want translation\n%v\ngot\n%v", test.want, got)
+			}
 
 			// Test: Translation -> PO
 
 			gotPo, err := ToPo(got)
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			requireEqualPO(t, test.args.input, string(gotPo), "convert back to Po")
+			requireEqualPO(t, test.args.input, string(gotPo))
 		})
 	}
 }
@@ -425,16 +435,24 @@ msgstr[2] ""
 			// Test: PO -> Translation
 
 			got, err := FromPo([]byte(test.args.input), test.args.original)
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			testutil.EqualTranslations(t, &test.want, &got)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("want translation\n%v\ngot\n%v", test.want, got)
+			}
 
 			// Test: Translation -> PO
 
 			gotPo, err := ToPo(got)
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			requireEqualPO(t, test.args.input, string(gotPo), "convert back to Po")
+			requireEqualPO(t, test.args.input, string(gotPo))
 		})
 	}
 }

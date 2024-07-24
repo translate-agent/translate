@@ -4,12 +4,13 @@ package factory
 
 import (
 	"context"
+	"errors"
+	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/testutil"
@@ -23,7 +24,10 @@ func prepareService(ctx context.Context, t *testing.T, repository repo.Repo) *mo
 	service := rand.ModelService()
 
 	err := repository.SaveService(ctx, service)
-	require.NoError(t, err, "Prepare test service")
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
 
 	return service
 }
@@ -62,19 +66,30 @@ func Test_SaveTranslation(t *testing.T) {
 				err := repository.SaveTranslation(ctx, test.serviceID, test.translation)
 
 				if test.wantErr != nil {
-					require.ErrorIs(t, err, test.wantErr)
+					if !errors.Is(err, test.wantErr) {
+						t.Errorf("want error '%s', got '%s'", test.wantErr, err)
+					}
+
 					return
 				}
 
-				require.NoError(t, err, "Save Translation")
+				if err != nil {
+					t.Error(err)
+					return
+				}
 
 				// Assure that the translations were saved correctly.
 
 				gotTranslations, err := repository.LoadTranslations(ctx, test.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{test.translation.Language}})
-				require.NoError(t, err, "Load saved translations")
+				if err != nil {
+					t.Error(err)
+					return
+				}
 
-				testutil.EqualTranslations(t, test.translation, &gotTranslations[0])
+				if !reflect.DeepEqual(*test.translation, gotTranslations[0]) {
+					t.Errorf("\nwant %v\ngot  %v", *test.translation, gotTranslations[0])
+				}
 			})
 		}
 	})
@@ -101,16 +116,24 @@ func Test_SaveTranslationsMultipleLangOneService(t *testing.T) {
 		// Save translation
 		for _, translation := range translations {
 			err := repository.SaveTranslation(testCtx, service.ID, translation)
-			require.NoError(t, err, "Save translation")
+			if err != nil {
+				t.Error(err)
+				return
+			}
 		}
 
 		// Assure that all translations are saved
 		for _, translation := range translations {
 			gotTranslations, err := repository.LoadTranslations(testCtx, service.ID,
 				repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{translation.Language}})
-			require.NoError(t, err, "Load saved translations")
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			testutil.EqualTranslations(t, translation, &gotTranslations[0])
+			if !reflect.DeepEqual(*translation, gotTranslations[0]) {
+				t.Errorf("\nwant %v\ngot  %v", *translation, gotTranslations[0])
+			}
 		}
 	})
 }
@@ -126,7 +149,10 @@ func Test_SaveTranslationUpdate(t *testing.T) {
 		wantTranslations := rand.ModelTranslation(3, nil)
 
 		err := repository.SaveTranslation(testCtx, service.ID, wantTranslations)
-		require.NoError(t, err, "Save translation")
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		// Update Message, Description and Status values, while keeping the ID
 		for i := range wantTranslations.Messages {
@@ -138,15 +164,23 @@ func Test_SaveTranslationUpdate(t *testing.T) {
 		// Save updated translations
 
 		err = repository.SaveTranslation(testCtx, service.ID, wantTranslations)
-		require.NoError(t, err, "Update Translation")
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		// Assure that translations are updated
 
 		gotTranslation, err := repository.LoadTranslations(testCtx, service.ID,
 			repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{wantTranslations.Language}})
-		require.NoError(t, err, "Load updated translations")
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
-		testutil.EqualTranslations(t, wantTranslations, &gotTranslation[0])
+		if !reflect.DeepEqual(*wantTranslations, gotTranslation[0]) {
+			t.Errorf("\nwant %v\ngot  %v", *wantTranslations, gotTranslation[0])
+		}
 	})
 }
 
@@ -169,12 +203,15 @@ func Test_LoadTranslation(t *testing.T) {
 		translations := rand.ModelTranslation(3, nil, rand.WithLanguage(translationLang))
 
 		err := repository.SaveTranslation(testCtx, service.ID, translations)
-		require.NoError(t, err, "Prepare test translation")
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		tests := []struct {
 			language  language.Tag
 			name      string
-			want      []model.Translation
+			want      model.Translations
 			serviceID uuid.UUID
 		}{
 			{
@@ -201,9 +238,14 @@ func Test_LoadTranslation(t *testing.T) {
 			subtest(test.name, func(ctx context.Context, t *testing.T) {
 				gotTranslations, err := repository.LoadTranslations(ctx, test.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{test.language}})
-				require.NoError(t, err, "Load translations")
+				if err != nil {
+					t.Error(err)
+					return
+				}
 
-				assert.ElementsMatch(t, test.want, gotTranslations)
+				if len(test.want) != 0 && len(gotTranslations) != 0 && !reflect.DeepEqual(test.want, gotTranslations) {
+					t.Errorf("\nwant %v\ngot  %v", test.want, gotTranslations)
+				}
 			})
 		}
 	})
@@ -223,15 +265,19 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 
 		for _, lang := range languages {
 			translation := rand.ModelTranslation(1, nil, rand.WithLanguage(lang))
+
 			err := repository.SaveTranslation(testCtx, service.ID, translation)
-			require.NoError(t, err, "Prepare test translations")
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
 			translations = append(translations, *translation)
 		}
 
 		tests := []struct {
 			name             string
-			wantTranslations []model.Translation
+			wantTranslations model.Translations
 			languages        []language.Tag
 			serviceID        uuid.UUID
 		}{
@@ -252,9 +298,28 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 			subtest(test.name, func(ctx context.Context, t *testing.T) {
 				gotTranslations, err := repository.LoadTranslations(ctx, test.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: test.languages})
+				if err != nil {
+					t.Error(err)
+					return
+				}
 
-				require.NoError(t, err, "Load translations")
-				assert.ElementsMatch(t, gotTranslations, test.wantTranslations)
+				cmp := func(a, b model.Translation) int {
+					switch {
+					default:
+						return 0
+					case a.Language.String() < b.Language.String():
+						return -1
+					case b.Language.String() < a.Language.String():
+						return 1
+					}
+				}
+
+				slices.SortFunc(test.wantTranslations, cmp)
+				slices.SortFunc(gotTranslations, cmp)
+
+				if !reflect.DeepEqual(test.wantTranslations, gotTranslations) {
+					t.Errorf("\nwant %v\ngot  %v", test.wantTranslations, gotTranslations)
+				}
 			})
 		}
 	})

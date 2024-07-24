@@ -1,9 +1,8 @@
 package po
 
 import (
+	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 func Test_Parse(t *testing.T) {
@@ -188,9 +187,14 @@ msgstr ""`,
 			t.Parallel()
 
 			got, err := Parse([]byte(test.input))
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			require.Equal(t, test.want, got)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("\nwant %v\ngot  %v", test.want, got)
+			}
 		})
 	}
 }

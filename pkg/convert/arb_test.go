@@ -1,13 +1,12 @@
 package convert
 
 import (
-	"errors"
+	"encoding/json"
+	"reflect"
+	"slices"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.expect.digital/translate/pkg/model"
-	"go.expect.digital/translate/pkg/testutil"
 	"golang.org/x/text/language"
 )
 
@@ -15,7 +14,7 @@ func Test_FromArb(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		wantErr error
+		wantErr string
 		name    string
 		input   []byte
 		want    model.Translation
@@ -93,7 +92,7 @@ func Test_FromArb(t *testing.T) {
 				"title": "Hello World!",
 				"@title": "Message to greet the World"
 			}`),
-			wantErr: errors.New("expected a map, got 'string'"),
+			wantErr: `find description of "title": decode metadata map: '' expected a map, got 'string'`,
 		},
 		{
 			name: "Wrong value type for greeting key",
@@ -104,7 +103,7 @@ func Test_FromArb(t *testing.T) {
 					"description": "Needed for greeting"
 				}
 			}`),
-			wantErr: errors.New("unsupported value type 'map[string]interface {}' for key 'greeting'"),
+			wantErr: "unsupported value type 'map[string]interface {}' for key 'greeting'",
 		},
 		{
 			name: "Wrong value type for description key",
@@ -117,7 +116,9 @@ func Test_FromArb(t *testing.T) {
 					}
 				}
 			}`),
-			wantErr: errors.New("'description' expected type 'string', got unconvertible type 'map[string]interface {}', value: 'map[meaning:When you greet someone]'"), //nolint:lll
+			wantErr: `find description of "title": decode metadata map: 1 error(s) decoding:
+
+* 'description' expected type 'string', got unconvertible type 'map[string]interface {}', value: 'map[meaning:When you greet someone]'`, //nolint:lll
 		},
 		{
 			name: "With malformed locale",
@@ -129,7 +130,7 @@ func Test_FromArb(t *testing.T) {
           "description": "Message to greet the World"
         }
       }`),
-			wantErr: errors.New("language: tag is not well-formed"),
+			wantErr: "find locale: parse language: language: tag is not well-formed", //nolint:dupword
 		},
 		{
 			name: "With wrong value type for locale",
@@ -143,7 +144,7 @@ func Test_FromArb(t *testing.T) {
           "description": "Message to greet the World"
         }
       }`),
-			wantErr: errors.New("unsupported value type 'map[string]interface {}' for key '@@locale'"),
+			wantErr: `find locale: unsupported value type "map[string]interface {}" for key "@@locale"`,
 		},
 	}
 	for _, test := range tests {
@@ -151,14 +152,36 @@ func Test_FromArb(t *testing.T) {
 			t.Parallel()
 
 			got, err := FromArb(test.input, &test.want.Original)
-			if test.wantErr != nil {
-				require.ErrorContains(t, err, test.wantErr.Error())
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("\nwant '%s'\ngot  '%s'", test.wantErr, err)
+				}
+
 				return
 			}
 
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			testutil.EqualTranslations(t, &test.want, &got)
+			cmp := func(a, b model.Message) int {
+				switch {
+				default:
+					return 0
+				case a.ID < b.ID:
+					return -1
+				case b.ID < a.ID:
+					return 1
+				}
+			}
+
+			slices.SortFunc(test.want.Messages, cmp)
+			slices.SortFunc(got.Messages, cmp)
+
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("\nwant %v\ngot  %v", test.want, got)
+			}
 		})
 	}
 }
@@ -231,9 +254,26 @@ func Test_ToArb(t *testing.T) {
 			t.Parallel()
 
 			actual, err := ToArb(test.input)
-			require.NoError(t, err)
+			if err != nil {
+				t.Error(err)
+				return
+			}
 
-			assert.JSONEq(t, string(test.want), string(actual))
+			var want, got any
+
+			if err = json.Unmarshal(actual, &got); err != nil {
+				t.Error(err)
+				return
+			}
+
+			if err = json.Unmarshal(test.want, &want); err != nil {
+				t.Error(err)
+				return
+			}
+
+			if !reflect.DeepEqual(want, got) {
+				t.Errorf("want arb%s\ngot\n%s", test.want, actual)
+			}
 		})
 	}
 }
