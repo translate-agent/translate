@@ -161,11 +161,11 @@ func Test_ListServices_CLI(t *testing.T) {
 		})
 
 		if want := "no transport security set"; !strings.Contains(err.Error(), want) {
-			t.Errorf("want '%s' to contain '%s'", err, want)
+			t.Errorf("want error '%s' to contain '%s'", err, want)
 		}
 
 		if len(output) > 0 {
-			t.Errorf("want empty output, got %v", output)
+			t.Errorf("want empty output, got '%s'", output)
 		}
 	})
 }
@@ -461,7 +461,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if len(output) > 0 {
-			t.Errorf("want empty output, got %v", output)
+			t.Errorf("want empty output, got '%s'", output)
 		}
 	})
 
@@ -486,7 +486,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if len(output) > 0 {
-			t.Errorf("want empty output, got %v", output)
+			t.Errorf("want empty output, got '%s'", output)
 		}
 	})
 
@@ -511,7 +511,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if len(output) > 0 {
-			t.Errorf("want empty output, got %v", output)
+			t.Errorf("want empty output, got '%s'", output)
 		}
 	})
 
@@ -533,7 +533,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if len(output) > 0 {
-			t.Errorf("want empty output, got %v", output)
+			t.Errorf("want empty output, got '%s'", output)
 		}
 	})
 
@@ -578,7 +578,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if len(output) > 0 {
-			t.Errorf("want empty output, got %v", output)
+			t.Errorf("want empty output, got '%s'", output)
 		}
 	})
 
@@ -601,7 +601,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if len(output) > 0 {
-			t.Errorf("want empty output, got %v", output)
+			t.Errorf("want empty output, got '%s'", output)
 		}
 	})
 
@@ -624,7 +624,7 @@ func Test_TranslationFileUpload_CLI(t *testing.T) {
 		}
 
 		if len(output) > 0 {
-			t.Errorf("want empty output, got %v", output)
+			t.Errorf("want empty output, got %s", output)
 		}
 	})
 }
@@ -723,7 +723,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		}
 
 		if len(output) > 0 {
-			t.Errorf("want empty output, got %v", output)
+			t.Errorf("want empty output, got '%s'", output)
 		}
 	})
 
@@ -746,7 +746,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		}
 
 		if len(output) > 0 {
-			t.Errorf("want empty output, got %v", output)
+			t.Errorf("want empty output, got '%s'", output)
 		}
 	})
 
@@ -769,7 +769,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		}
 
 		if len(output) > 0 {
-			t.Errorf("want empty output, got %v", output)
+			t.Errorf("want empty output, got '%s'", output)
 		}
 	})
 
@@ -792,7 +792,7 @@ func Test_TranslationFileDownload_CLI(t *testing.T) {
 		}
 
 		if len(output) > 0 {
-			t.Errorf("want empty output, got %v", output)
+			t.Errorf("want empty output, got '%s'", output)
 		}
 	})
 }

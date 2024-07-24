@@ -127,7 +127,6 @@ func Test_TransformService(t *testing.T) {
 
 			if len(wantServices) != 0 && len(restoredServices) != 0 && !reflect.DeepEqual(wantServices, restoredServices) {
 				t.Logf("\nwant %v\ngot  %v", wantServices, restoredServices)
-
 				return false
 			}
 
