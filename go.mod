@@ -4,7 +4,7 @@ go 1.22
 
 // Direct
 require (
-	cloud.google.com/go/translate v1.10.6
+	cloud.google.com/go/translate v1.10.7
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/XSAM/otelsql v0.32.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.27
@@ -33,7 +33,7 @@ require (
 	golang.org/x/text v0.16.0
 	google.golang.org/api v0.189.0
 	google.golang.org/genproto v0.0.0-20240722135656-d784300faade
-	google.golang.org/genproto/googleapis/api v0.0.0-20240711142825-46eb208f015d
+	google.golang.org/genproto/googleapis/api v0.0.0-20240722135656-d784300faade
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 )
