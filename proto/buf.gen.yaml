@@ -1,18 +1,20 @@
-version: v1
+version: v2
 managed:
   enabled: true
-  go_package_prefix:
-    default: "go.expect.digital/translate/pkg/pb/translate/v1"
-    except:
-      - buf.build/googleapis/googleapis
+  override:
+    - file_option: go_package_prefix
+      value: "go.expect.digital/translate/pkg/pb/translate/v1"
+  disable:
+    - module: buf.build/googleapis/googleapis
+      file_option: go_package_prefix
 plugins:
-  - plugin: buf.build/protocolbuffers/go:v1.34.2
+  - remote: buf.build/protocolbuffers/go:v1.34.2
     out: gen/proto/go
     opt: paths=source_relative
-  - plugin: buf.build/grpc/go:v1.4.0
+  - remote: buf.build/grpc/go:v1.4.0
     out: gen/proto/go
     opt: paths=source_relative
-  - plugin: buf.build/grpc-ecosystem/gateway:v2.20.0
+  - remote: buf.build/grpc-ecosystem/gateway:v2.20.0
     out: gen/proto/go
     opt:
       - paths=source_relative

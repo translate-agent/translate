@@ -83,7 +83,7 @@ go:
 
 # proto generates gRPC server.
 proto:
-  ARG bufbuild_version=1.34.0
+  ARG bufbuild_version=1.35.1
   FROM bufbuild/buf:$bufbuild_version
   ENV BUF_CACHE_DIR=/.cache/buf_cache
   COPY --dir proto .
@@ -111,7 +111,7 @@ proto:
 
 # buf-registry pushes BUF modules to the registry.
 buf-registry:
-  ARG bufbuild_version=1.34.0
+  ARG bufbuild_version=1.35.1
   FROM bufbuild/buf:$bufbuild_version
   WORKDIR proto
   COPY +proto/proto .
@@ -163,7 +163,7 @@ lint-go:
 
 # lint-proto analyses proto for stylistic issues.
 lint-proto:
-  ARG bufbuild_version=1.34.0
+  ARG bufbuild_version=1.35.1
   FROM bufbuild/buf:$bufbuild_version
   WORKDIR proto
   COPY +proto/proto .
