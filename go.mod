@@ -16,7 +16,7 @@ require (
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.13.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.21.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rodaine/table v1.2.0
 	github.com/spf13/cobra v1.8.1
