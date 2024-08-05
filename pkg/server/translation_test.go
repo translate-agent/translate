@@ -15,7 +15,7 @@ const mockTranslation = "{Translated}"
 
 type mockTranslator struct{}
 
-func (m *mockTranslator) Translate(ctx context.Context,
+func (m *mockTranslator) Translate(_ context.Context,
 	translation *model.Translation,
 	targetLanguage language.Tag,
 ) (*model.Translation, error) {

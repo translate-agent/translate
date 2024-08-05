@@ -20,7 +20,7 @@ import (
 func Test_SaveService(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, subTest testutil.SubtestFn) {
+	allRepos(t, func(_ *testing.T, repository repo.Repo, subTest testutil.SubtestFn) {
 		tests := []struct {
 			service *model.Service
 			name    string
@@ -60,7 +60,7 @@ func Test_SaveService(t *testing.T) {
 func Test_UpdateService(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, _ testutil.SubtestFn) {
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
@@ -149,7 +149,7 @@ func Test_LoadService(t *testing.T) {
 func Test_LoadServices(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, _ testutil.SubtestFn) {
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare

@@ -22,7 +22,7 @@ func newUploadCmd() *cobra.Command {
 	uploadCmd := &cobra.Command{
 		Use:   "upload",
 		Short: "Upload file to translate agent service",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			timeout, err := cmd.InheritedFlags().GetDuration("timeout")
 			if err != nil {
 				return fmt.Errorf("upload file: get cli parameter 'timeout': %w", err)

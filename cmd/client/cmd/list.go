@@ -14,7 +14,7 @@ func newLsCmd() *cobra.Command {
 	lsCmd := &cobra.Command{
 		Use:   "ls",
 		Short: "List services",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			timeout, err := cmd.InheritedFlags().GetDuration("timeout")
 			if err != nil {
 				return fmt.Errorf("list services: get cli parameter 'timeout': %w", err)

@@ -50,7 +50,7 @@ var rootCmd = &cobra.Command{
 	RunE:  RootCmdRunE,
 }
 
-func RootCmdRunE(cmd *cobra.Command, args []string) error {
+func RootCmdRunE(cmd *cobra.Command, _ []string) error {
 	ctx := cmd.Context()
 
 	addr := viper.GetString("service.host") + ":" + viper.GetString("service.port")
@@ -58,7 +58,7 @@ func RootCmdRunE(cmd *cobra.Command, args []string) error {
 	terminationChan := make(chan os.Signal, 1)
 	signal.Notify(terminationChan, syscall.SIGTERM, syscall.SIGINT)
 
-	tp, err := tracer.TracerProvider(ctx)
+	tp, err := tracer.Provider(ctx)
 	if err != nil {
 		return fmt.Errorf("set tracer provider: %w", err)
 	}

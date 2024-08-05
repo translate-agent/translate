@@ -64,7 +64,7 @@ func (t *TranslateServiceServer) GetService(
 
 func (t *TranslateServiceServer) ListServices(
 	ctx context.Context,
-	req *translatev1.ListServicesRequest,
+	_ *translatev1.ListServicesRequest,
 ) (*translatev1.ListServicesResponse, error) {
 	services, err := t.repo.LoadServices(ctx)
 	if err != nil {
