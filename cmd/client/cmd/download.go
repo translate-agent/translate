@@ -26,7 +26,7 @@ func newDownloadCmd() *cobra.Command {
 	downloadCmd := &cobra.Command{
 		Use:   "download",
 		Short: "Download file from translate agent service",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			timeout, err := cmd.InheritedFlags().GetDuration("timeout")
 			if err != nil {
 				return fmt.Errorf("download file: get cli parameter 'timeout': %w", err)

@@ -98,7 +98,7 @@ func Test_SaveTranslation(t *testing.T) {
 func Test_SaveTranslationsMultipleLangOneService(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, subTest testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, _ testutil.SubtestFn) {
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
@@ -141,7 +141,7 @@ func Test_SaveTranslationsMultipleLangOneService(t *testing.T) {
 func Test_SaveTranslationUpdate(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, _ testutil.SubtestFn) {
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare

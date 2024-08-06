@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/XSAM/otelsql"
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql" // MySQL driver
 	"github.com/spf13/viper"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )

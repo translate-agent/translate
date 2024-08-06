@@ -87,9 +87,9 @@ type mockAWSTranslateClient struct{}
 
 // TranslateText returns the input text as translated text.
 func (m *mockGoogleTranslateClient) TranslateText(
-	ctx context.Context,
+	_ context.Context,
 	req *translatepb.TranslateTextRequest,
-	opts ...gax.CallOption,
+	_ ...gax.CallOption,
 ) (*translatepb.TranslateTextResponse, error) {
 	translations := make([]*translatepb.Translation, 0, len(req.GetContents()))
 	for _, v := range req.GetContents() {
@@ -101,9 +101,9 @@ func (m *mockGoogleTranslateClient) TranslateText(
 
 // TranslateText returns the input text as translated text.
 func (m *mockAWSTranslateClient) TranslateText(
-	ctx context.Context,
+	_ context.Context,
 	params *awst.TranslateTextInput,
-	optFns ...func(*awst.Options),
+	_ ...func(*awst.Options),
 ) (*awst.TranslateTextOutput, error) {
 	return &awst.TranslateTextOutput{
 		SourceLanguageCode: params.SourceLanguageCode,

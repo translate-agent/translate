@@ -34,32 +34,32 @@ func Test_MarkUntranslated(t *testing.T) {
 	tests := []struct {
 		name            string
 		translations    Translations
-		untranslatedIds []string
+		untranslatedIDs []string
 	}{
 		// Nothing is changed, untranslated IDs are not provided.
 		{
 			name:            "Without untranslated IDs",
 			translations:    Translations{original(), nonOriginal()},
-			untranslatedIds: nil,
+			untranslatedIDs: nil,
 		},
 		// Nothing is changed, translation with original flag should not be altered.
 		{
 			name:            "One original translation",
 			translations:    Translations{original()},
-			untranslatedIds: []string{"1"},
+			untranslatedIDs: []string{"1"},
 		},
 		// First message status is changed to untranslated for all translations, other messages are not changed.
 		{
 			name:            "Multiple translations",
 			translations:    Translations{nonOriginal(), nonOriginal()},
-			untranslatedIds: []string{"1"},
+			untranslatedIDs: []string{"1"},
 		},
 		// First message status is changed to untranslated for all translations except original one
 		// other messages are not changed.
 		{
 			name:            "Mixed translations",
 			translations:    Translations{original(), nonOriginal()},
-			untranslatedIds: []string{"1", "2"},
+			untranslatedIDs: []string{"1", "2"},
 		},
 	}
 
@@ -68,7 +68,7 @@ func Test_MarkUntranslated(t *testing.T) {
 			t.Parallel()
 
 			origIdx := test.translations.OriginalIndex()
-			test.translations.MarkUntranslated(test.untranslatedIds)
+			test.translations.MarkUntranslated(test.untranslatedIDs)
 
 			// For original translations, no translation.messages should be altered, e.g.
 			// all messages should be with status translated.
@@ -90,7 +90,7 @@ func Test_MarkUntranslated(t *testing.T) {
 
 				for _, message := range translation.Messages {
 					wantStatus := MessageStatusTranslated
-					if slices.Contains(test.untranslatedIds, message.ID) {
+					if slices.Contains(test.untranslatedIDs, message.ID) {
 						wantStatus = MessageStatusUntranslated
 					}
 
@@ -153,7 +153,7 @@ func Test_PopulateTranslations(t *testing.T) {
 	}
 
 	wantLen := len(onlyOriginal[0].Messages)
-	wantIds := []string{"0", "1", "2"}
+	wantIDs := []string{"0", "1", "2"}
 
 	tests := []struct {
 		name         string
@@ -186,13 +186,13 @@ func Test_PopulateTranslations(t *testing.T) {
 				// Status check not needed, as if translated messages
 				// are successfully populated, they will also have status Untranslated
 				for _, message := range translation.Messages {
-					if !slices.Contains(wantIds, message.ID) {
-						t.Errorf("want %v to contain %s", wantIds, message.ID)
+					if !slices.Contains(wantIDs, message.ID) {
+						t.Errorf("want %v to contain %s", wantIDs, message.ID)
 						return
 					}
 
-					if !slices.Contains(wantIds, message.Message) {
-						t.Errorf("want %v to contain %s", wantIds, message.Message)
+					if !slices.Contains(wantIDs, message.Message) {
+						t.Errorf("want %v to contain %s", wantIDs, message.Message)
 					}
 				}
 			}

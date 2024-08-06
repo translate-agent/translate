@@ -26,7 +26,7 @@ func Test_Translate(t *testing.T) {
 
 	targetLang := language.Latvian
 
-	allTranslators(t, func(t *testing.T, translator Translator, subTest testutil.SubtestFn) {
+	allTranslators(t, func(_ *testing.T, translator Translator, subTest testutil.SubtestFn) {
 		subTest("Multiple messages", func(ctx context.Context, t *testing.T) {
 			input := rand.ModelTranslation(3, nil, rand.WithLanguage(language.English))
 

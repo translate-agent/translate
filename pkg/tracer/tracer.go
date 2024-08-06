@@ -12,10 +12,9 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )
 
-func TracerProvider(ctx context.Context) (*tracesdk.TracerProvider, error) {
-	//nolint:lll
-	// OpenTelemetry SDK environment variables docs: https://opentelemetry.io/docs/reference/specification/sdk-environment-variables/
-	// OpenTelemetry Protocol Exporter (OTLP) docs: https://opentelemetry.io/docs/reference/specification/protocol/exporter/
+func Provider(ctx context.Context) (*tracesdk.TracerProvider, error) {
+	// OpenTelemetry environment variables: https://opentelemetry.io/docs/reference/specification/sdk-environment-variables
+	// OpenTelemetry Protocol Exporter (OTLP): https://opentelemetry.io/docs/reference/specification/protocol/exporter
 	exp, err := otlptracehttp.New(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("create OTLP exporter: %w", err)
