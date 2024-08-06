@@ -340,9 +340,7 @@ func Test_CreateService_gRPC(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
-			t.Helper()
-
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			_, err := client.CreateService(ctx, test.request)
 
 			if status.Code(err) != test.wantCode {
