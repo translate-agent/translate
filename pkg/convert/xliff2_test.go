@@ -15,6 +15,8 @@ import (
 )
 
 func randXliff2(t *testing.T, translation *model.Translation) []byte {
+	t.Helper()
+
 	xliff := xliff2{
 		Version: "2.0",
 	}

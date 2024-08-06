@@ -35,7 +35,7 @@ func prepareService(ctx context.Context, t *testing.T, repository repo.Repo) *mo
 func Test_SaveTranslation(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) { //nolint:thelper
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
@@ -62,7 +62,7 @@ func Test_SaveTranslation(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			subtest(test.name, func(ctx context.Context, t *testing.T) {
+			subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 				err := repository.SaveTranslation(ctx, test.serviceID, test.translation)
 
 				if test.wantErr != nil {
@@ -98,7 +98,7 @@ func Test_SaveTranslation(t *testing.T) {
 func Test_SaveTranslationsMultipleLangOneService(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, _ testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, _ testutil.SubtestFn) { //nolint:thelper
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
@@ -141,7 +141,7 @@ func Test_SaveTranslationsMultipleLangOneService(t *testing.T) {
 func Test_SaveTranslationUpdate(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, _ testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, _ testutil.SubtestFn) { //nolint:thelper
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
@@ -187,7 +187,7 @@ func Test_SaveTranslationUpdate(t *testing.T) {
 func Test_LoadTranslation(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) { //nolint:thelper
 		testCtx, _ := testutil.Trace(t)
 
 		langs := rand.Languages(2)
@@ -235,7 +235,7 @@ func Test_LoadTranslation(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			subtest(test.name, func(ctx context.Context, t *testing.T) {
+			subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 				gotTranslations, err := repository.LoadTranslations(ctx, test.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{test.language}})
 				if err != nil {
@@ -254,7 +254,7 @@ func Test_LoadTranslation(t *testing.T) {
 func Test_LoadAllTranslationsForService(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) { //nolint:thelper
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
@@ -295,7 +295,7 @@ func Test_LoadAllTranslationsForService(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			subtest(test.name, func(ctx context.Context, t *testing.T) {
+			subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 				gotTranslations, err := repository.LoadTranslations(ctx, test.serviceID,
 					repo.LoadTranslationsOpts{FilterLanguages: test.languages})
 				if err != nil {

@@ -21,7 +21,7 @@ func Test_TranslateMock(t *testing.T) {
 
 	targetLang := language.Latvian
 
-	allMocks(t, func(t *testing.T, mock Translator) {
+	allMocks(t, func(t *testing.T, mock Translator) { //nolint:thelper
 		tests := []struct {
 			input *model.Translation
 			name  string
@@ -123,6 +123,8 @@ var mockTranslators = map[string]Translator{
 
 // allMocks runs a test function f for each mocked translate service that is defined in the mockTranslators map.
 func allMocks(t *testing.T, f func(t *testing.T, mock Translator)) {
+	t.Helper()
+
 	for name, mock := range mockTranslators {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()

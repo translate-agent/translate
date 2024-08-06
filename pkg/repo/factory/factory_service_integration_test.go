@@ -35,7 +35,7 @@ func Test_SaveService(t *testing.T) {
 			},
 		}
 		for _, test := range tests {
-			subTest(test.name, func(ctx context.Context, t *testing.T) {
+			subTest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 				err := repository.SaveService(ctx, test.service)
 				if err != nil {
 					t.Error(err)
@@ -60,7 +60,7 @@ func Test_SaveService(t *testing.T) {
 func Test_UpdateService(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, _ testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, _ testutil.SubtestFn) { //nolint:thelper
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
@@ -99,7 +99,7 @@ func Test_UpdateService(t *testing.T) {
 func Test_LoadService(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) { //nolint:thelper
 		testCtx, _ := testutil.Trace(t)
 		// Prepare
 		service := rand.ModelService()
@@ -131,7 +131,7 @@ func Test_LoadService(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			subtest(test.name, func(ctx context.Context, t *testing.T) {
+			subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 				got, err := repository.LoadService(ctx, test.serviceID)
 				if !errors.Is(err, test.wantErr) {
 					t.Errorf("want error '%s', got '%s'", test.wantErr, err)
@@ -149,7 +149,7 @@ func Test_LoadService(t *testing.T) {
 func Test_LoadServices(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, _ testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, _ testutil.SubtestFn) { //nolint:thelper
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
@@ -185,7 +185,7 @@ func Test_LoadServices(t *testing.T) {
 func Test_DeleteService(t *testing.T) {
 	t.Parallel()
 
-	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) {
+	allRepos(t, func(t *testing.T, repository repo.Repo, subtest testutil.SubtestFn) { //nolint:thelper
 		testCtx, _ := testutil.Trace(t)
 
 		// Prepare
@@ -215,7 +215,7 @@ func Test_DeleteService(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			subtest(test.name, func(ctx context.Context, t *testing.T) {
+			subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 				err := repository.DeleteService(ctx, test.serviceID)
 				if !errors.Is(err, test.wantErr) {
 					t.Errorf("want error '%s', got '%s'", test.wantErr, err)

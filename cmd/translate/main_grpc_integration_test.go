@@ -179,7 +179,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			_, err := client.UploadTranslationFile(ctx, test.request)
 
 			if test.wantCode != status.Code(err) {
@@ -284,7 +284,7 @@ func Test_DownloadTranslationFile_gRPC(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			_, err := client.DownloadTranslationFile(ctx, test.request)
 
 			if status.Code(err) != test.wantCode {
@@ -340,7 +340,7 @@ func Test_CreateService_gRPC(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			_, err := client.CreateService(ctx, test.request)
 
 			if status.Code(err) != test.wantCode {
@@ -396,7 +396,7 @@ func Test_UpdateService_gRPC(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			// Change the ID to the one of the service that was created in the prepare step.
 			test.request.Service.Id = test.serviceToUpdate.GetId()
 
@@ -441,7 +441,7 @@ func Test_GetService_gRPC(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			_, err := client.GetService(ctx, test.request)
 
 			if status.Code(err) != test.wantCode {
@@ -483,7 +483,7 @@ func Test_DeleteService_gRPC(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			_, err := client.DeleteService(ctx, test.request)
 
 			if status.Code(err) != test.wantCode {
@@ -642,7 +642,7 @@ func Test_CreateTranslation_gRPC(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			translation, err := client.CreateTranslation(ctx, test.request)
 			if err != nil && translation != nil {
 				t.Errorf("want nil translation, got %v", translation)
@@ -702,7 +702,7 @@ func Test_ListTranslations_gRPC(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			resp, err := client.ListTranslations(ctx, test.request)
 
 			if err == nil && resp == nil {
@@ -880,7 +880,7 @@ func Test_UpdateTranslation_gRPC(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			resp, err := client.UpdateTranslation(ctx, test.request)
 
 			if err == nil && resp == nil {

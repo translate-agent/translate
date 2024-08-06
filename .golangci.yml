@@ -39,7 +39,6 @@ linters:
     - tagliatelle
     - testableexamples
     - testpackage
-    - thelper
     - tparallel
     - varnamelen
     - wastedassign
