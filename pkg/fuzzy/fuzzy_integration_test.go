@@ -27,7 +27,7 @@ func Test_Translate(t *testing.T) {
 	targetLang := language.Latvian
 
 	allTranslators(t, func(_ *testing.T, translator Translator, subTest testutil.SubtestFn) {
-		subTest("Multiple messages", func(ctx context.Context, t *testing.T) {
+		subTest("Multiple messages", func(ctx context.Context, t *testing.T) { //nolint:thelper
 			input := rand.ModelTranslation(3, nil, rand.WithLanguage(language.English))
 
 			output, err := translator.Translate(ctx, input, targetLang)
@@ -133,6 +133,8 @@ func TestMain(m *testing.M) {
 
 // allTranslators runs a test for each translate service that is defined in the translators map.
 func allTranslators(t *testing.T, f func(t *testing.T, translator Translator, subtest testutil.SubtestFn)) {
+	t.Helper()
+
 	for name, translator := range translators {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()

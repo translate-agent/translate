@@ -39,6 +39,8 @@ func Tracer() trace.Tracer { //nolint:ireturn
 //
 //nolint:spancheck
 func Trace(t *testing.T) (context.Context, SubtestFn) {
+	t.Helper()
+
 	ctx, span := testTracer.Start(context.Background(), t.Name())
 
 	t.Cleanup(func() {
@@ -61,6 +63,8 @@ type SubtestFn = func(name string, f func(context.Context, *testing.T))
 
 // Subtest returns SubtestFn that runs parallel subtest with a trace instrumentation.
 func Subtest(ctx context.Context, t *testing.T) SubtestFn {
+	t.Helper()
+
 	return func(name string, f func(ctx context.Context, t *testing.T)) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()

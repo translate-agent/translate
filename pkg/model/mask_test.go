@@ -78,6 +78,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update A int",
 			mask: []string{"A"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
+				t.Helper()
+
 				// Check if field is updated
 				if src.A != dst.A {
 					t.Errorf("want %d, got %d", src.A, dst.A)
@@ -96,6 +98,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update A and B int and string",
 			mask: []string{"A", "B"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
+				t.Helper()
+
 				if src.A != dst.A {
 					t.Errorf("want %d, got %d", src.A, dst.A)
 				}
@@ -112,6 +116,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update C struct",
 			mask: []string{"C"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
+				t.Helper()
+
 				if !reflect.DeepEqual(src.C, dst.C) {
 					t.Errorf("want %v, got %v", src.C, dst.C)
 					return
@@ -129,6 +135,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update C.D struct.float",
 			mask: []string{"C.D"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
+				t.Helper()
+
 				if dst.C.D-src.C.D >= 0.01 {
 					t.Errorf("want %f, got %f", src.C.D, dst.C.D)
 				}
@@ -145,6 +153,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update C.F struct.struct",
 			mask: []string{"C.F"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
+				t.Helper()
+
 				if !reflect.DeepEqual(src.C.F, dst.C.F) {
 					t.Errorf("want %v, got %v", src.C.F, dst.C.F)
 					return
@@ -162,6 +172,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update C.F.G struct.struct.[]string",
 			mask: []string{"C.F.G"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
+				t.Helper()
+
 				// Check if all elements from src and dst are in result
 				for _, v := range src.C.F.G {
 					if !slices.Contains(dst.C.F.G, v) {
@@ -181,6 +193,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update C.H struct.struct.[]struct",
 			mask: []string{"C.H"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
+				t.Helper()
+
 				// Check if all elements from src and dst are in result
 				for _, srcElem := range src.C.H {
 					if !slices.Contains(dst.C.H, srcElem) {
@@ -201,6 +215,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update J.K struct.map[string]string",
 			mask: []string{"J.K"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
+				t.Helper()
+
 				// Check if all keys from src and dst are in result
 				for srcKey := range src.J.K {
 					if _, ok := dst.J.K[srcKey]; !ok {
@@ -221,6 +237,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update L *string",
 			mask: []string{"L"},
 			assertFunc: func(t *testing.T, src, dst, original nestedStruct) {
+				t.Helper()
+
 				if src.L != dst.L {
 					t.Errorf("want %s, got %s", *src.L, *dst.L)
 				}
@@ -237,6 +255,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update All",
 			mask: nil,
 			assertFunc: func(t *testing.T, src, dst, _ nestedStruct) {
+				t.Helper()
+
 				if !reflect.DeepEqual(src, dst) {
 					t.Errorf("\nwant %v\ngot  %v", src, dst)
 				}
@@ -247,6 +267,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update Nothing Empty Paths",
 			mask: Mask{},
 			assertFunc: func(t *testing.T, _, dst, original nestedStruct) {
+				t.Helper()
+
 				if !reflect.DeepEqual(original, dst) {
 					t.Errorf("want %v, got %v", original, dst)
 				}
@@ -257,6 +279,8 @@ func Test_UpdateNestedStructFromMask(t *testing.T) {
 			name: "Update Nothing Random Path",
 			mask: Mask{"random_path"},
 			assertFunc: func(t *testing.T, _, dst, original nestedStruct) {
+				t.Helper()
+
 				if !reflect.DeepEqual(original, dst) {
 					t.Errorf("want %v, got %v", original, dst)
 				}
@@ -305,6 +329,8 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			name:      "Update Name",
 			fieldMask: Mask{"Name"},
 			assertFunc: func(t *testing.T, srcService, dstService, original Service) {
+				t.Helper()
+
 				// Same ID updated name
 				if original.ID != dstService.ID {
 					t.Errorf("want id '%s', got '%s'", original.ID, dstService.ID)
@@ -319,6 +345,8 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			name:      "Update All",
 			fieldMask: nil,
 			assertFunc: func(t *testing.T, srcService, dstService, original Service) {
+				t.Helper()
+
 				// Same ID updated name, as ID cannot be updated, and service has only two fields.
 				if original.ID != dstService.ID {
 					t.Errorf("want %s, got %s", original.ID, dstService.ID)
@@ -333,6 +361,8 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			name:      "Nothing to Update Empty Paths",
 			fieldMask: Mask{},
 			assertFunc: func(t *testing.T, _, dstService, original Service) {
+				t.Helper()
+
 				// Same ID and name, as nothing was updated
 				if !reflect.DeepEqual(dstService, original) {
 					t.Errorf("want %v, got %v", dstService, original)
@@ -343,6 +373,8 @@ func Test_UpdateServiceFromMask(t *testing.T) {
 			name:      "Nothing to Update Random Path",
 			fieldMask: Mask{"random_path"},
 			assertFunc: func(t *testing.T, _, dstService, original Service) {
+				t.Helper()
+
 				// Same ID and name, as nothing was updated
 				if !reflect.DeepEqual(dstService, original) {
 					t.Errorf("want %v, got %v", dstService, original)

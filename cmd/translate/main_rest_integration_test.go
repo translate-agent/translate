@@ -30,7 +30,7 @@ import (
 
 // -------------Translation File-------------.
 
-func attachFile(text []byte, t *testing.T) (*bytes.Buffer, string) {
+func attachFile(t *testing.T, text []byte) (*bytes.Buffer, string) {
 	t.Helper()
 
 	var body bytes.Buffer
@@ -70,7 +70,7 @@ func gRPCUploadFileToRESTReq(
 		RawQuery: query.Encode(),
 	}
 
-	body, contentType := attachFile(req.GetData(), t)
+	body, contentType := attachFile(t, req.GetData())
 
 	r, err := http.NewRequestWithContext(ctx, http.MethodPut, u.String(), body)
 	if err != nil {
@@ -163,7 +163,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, test.request))
 			if err != nil {
 				t.Error(err)
@@ -279,7 +279,7 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			resp, err := otelhttp.DefaultClient.Do(gRPCDownloadFileToRESTReq(ctx, t, test.request))
 			if err != nil {
 				t.Error(err)
@@ -335,7 +335,7 @@ func Test_CreateService_REST(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			body, err := json.Marshal(test.service)
 			if err != nil {
 				t.Error(err)
@@ -505,7 +505,7 @@ func Test_GetService_REST(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			u := url.URL{
 				Scheme: "http",
 				Host:   net.JoinHostPort(host, port),
@@ -567,7 +567,7 @@ func Test_DeleteService_REST(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			u := url.URL{
 				Scheme: "http",
 				Host:   net.JoinHostPort(host, port),
@@ -709,7 +709,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			body, err := json.Marshal(test.translation)
 			if err != nil {
 				t.Error(err)
@@ -825,7 +825,7 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			body, err := json.Marshal(test.request.GetTranslation())
 			if err != nil {
 				t.Error(err)
@@ -906,7 +906,7 @@ func Test_GetTranslations_REST(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		subtest(test.name, func(ctx context.Context, t *testing.T) {
+		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
 			u := url.URL{
 				Scheme: "http",
 				Host:   net.JoinHostPort(host, port),

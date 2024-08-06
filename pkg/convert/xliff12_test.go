@@ -17,6 +17,8 @@ import (
 
 // randXliff12 dynamically generates a random XLIFF 1.2 file from the given translation.
 func randXliff12(t *testing.T, translation *model.Translation) []byte {
+	t.Helper()
+
 	xliff := xliff12{
 		Version: "1.2",
 	}
