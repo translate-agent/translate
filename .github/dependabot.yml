@@ -12,6 +12,9 @@ updates:
       aws:
         patterns:
           - "github.com/aws/*"
+      google:
+        patterns:
+          - "cloud.google.com/*"
       grpc:
         patterns:
           - "google.golang.org/*"
