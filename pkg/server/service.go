@@ -43,11 +43,11 @@ func (t *TranslateServiceServer) GetService(
 ) (*translatev1.Service, error) {
 	params, err := parseGetServiceRequestParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	if err := params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	switch service, err := t.repo.LoadService(ctx, params.id); {
@@ -103,11 +103,11 @@ func (t *TranslateServiceServer) CreateService(
 ) (*translatev1.Service, error) {
 	params, err := parseCreateServiceParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	if err := params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	if err := t.repo.SaveService(ctx, params.service); err != nil {
@@ -165,11 +165,11 @@ func (t *TranslateServiceServer) UpdateService(
 ) (*translatev1.Service, error) {
 	params, err := parseUpdateServiceParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	if err = params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	loadedService, err := t.repo.LoadService(ctx, params.service.ID)
@@ -182,7 +182,7 @@ func (t *TranslateServiceServer) UpdateService(
 	}
 
 	if err := model.UpdateService(params.service, loadedService, params.mask); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	if err := t.repo.SaveService(ctx, loadedService); err != nil {
@@ -221,11 +221,11 @@ func (t *TranslateServiceServer) DeleteService(
 ) (*emptypb.Empty, error) {
 	params, err := parseDeleteServiceRequest(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	if err := params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	switch err := t.repo.DeleteService(ctx, params.id); {

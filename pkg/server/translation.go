@@ -60,11 +60,11 @@ func (t *TranslateServiceServer) CreateTranslation(
 ) (*translatev1.Translation, error) {
 	params, err := parseCreateTranslationRequestParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	if err = params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
@@ -97,7 +97,7 @@ func (t *TranslateServiceServer) CreateTranslation(
 			// untranslated text in incoming translation will be translated from original to target language.
 			params.translation, err = t.translator.Translate(ctx, params.translation, targetLanguage)
 			if err != nil {
-				return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
+				return nil, status.Errorf(codes.Unknown, "%s", err) // TODO(Darja): For now we don't know the cause of the error.
 			}
 		}
 	}
@@ -140,11 +140,11 @@ func (t *TranslateServiceServer) ListTranslations(
 ) (*translatev1.ListTranslationsResponse, error) {
 	params, err := parseListTranslationsRequestParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	if err = params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	translations, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
@@ -210,11 +210,11 @@ func (t *TranslateServiceServer) UpdateTranslation(
 ) (*translatev1.Translation, error) {
 	params, err := parseUpdateTranslationRequestParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	if err = params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})

@@ -30,7 +30,9 @@ func init() {
 }
 
 // Tracer returns test tracer.
-func Tracer() trace.Tracer { //nolint:ireturn
+//
+//nolint:ireturn
+func Tracer() trace.Tracer {
 	return testTracer
 }
 

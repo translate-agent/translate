@@ -97,21 +97,21 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 ) (*emptypb.Empty, error) {
 	params, err := parseUploadTranslationFileRequestParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	if err = params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	translation, err := TranslationFromData(params)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	translation.Language, err = getLanguage(params, translation)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%sd", err)
 	}
 
 	var all model.Translations
@@ -225,11 +225,11 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 ) (*translatev1.DownloadTranslationFileResponse, error) {
 	params, err := parseDownloadTranslationFileRequestParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	if err = params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
 	}
 
 	translations, err := t.repo.LoadTranslations(ctx, params.serviceID,

@@ -1,6 +1,6 @@
 module go.expect.digital/translate
 
-go 1.22
+go 1.23.0
 
 // Direct
 require (
