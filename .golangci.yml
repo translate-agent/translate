@@ -47,10 +47,20 @@ linters:
 linters-settings:
   cyclop:
     max-complexity: 30
-  gosec:
-    excludes:
-      - G601 # False positive in go 1.22+. Implicit memory aliasing of items from a range statement.
   govet:
     enable-all: true
   predeclared:
     ignore: ""
+  wrapcheck:
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - errors.Unwrap(
+      - errors.Join(
+      - status.Error(
+      - .Wrap(
+      - .Wrapf(
+      - .WithMessage(
+      - .WithMessagef(
+      - .WithStack(
+

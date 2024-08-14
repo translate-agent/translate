@@ -43,20 +43,20 @@ func (t *TranslateServiceServer) GetService(
 ) (*translatev1.Service, error) {
 	params, err := parseGetServiceRequestParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err := params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	switch service, err := t.repo.LoadService(ctx, params.id); {
 	default:
 		return serviceToProto(service), nil
 	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, "service not found")
+		return nil, status.Error(codes.NotFound, "service not found")
 	case err != nil:
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 }
 
@@ -68,7 +68,7 @@ func (t *TranslateServiceServer) ListServices(
 ) (*translatev1.ListServicesResponse, error) {
 	services, err := t.repo.LoadServices(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 
 	return &translatev1.ListServicesResponse{Services: servicesToProto(services)}, nil
@@ -103,15 +103,15 @@ func (t *TranslateServiceServer) CreateService(
 ) (*translatev1.Service, error) {
 	params, err := parseCreateServiceParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err := params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err := t.repo.SaveService(ctx, params.service); err != nil {
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 
 	return serviceToProto(params.service), nil
@@ -165,28 +165,28 @@ func (t *TranslateServiceServer) UpdateService(
 ) (*translatev1.Service, error) {
 	params, err := parseUpdateServiceParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err = params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	loadedService, err := t.repo.LoadService(ctx, params.service.ID)
 
 	switch {
 	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, "service not found")
+		return nil, status.Error(codes.NotFound, "service not found")
 	case err != nil:
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 
 	if err := model.UpdateService(params.service, loadedService, params.mask); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err := t.repo.SaveService(ctx, loadedService); err != nil {
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 
 	return serviceToProto(loadedService), nil
@@ -221,19 +221,19 @@ func (t *TranslateServiceServer) DeleteService(
 ) (*emptypb.Empty, error) {
 	params, err := parseDeleteServiceRequest(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err := params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "%s", err)
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	switch err := t.repo.DeleteService(ctx, params.id); {
 	default:
 		return &emptypb.Empty{}, nil
 	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, "service not found")
+		return nil, status.Error(codes.NotFound, "service not found")
 	case err != nil:
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 }
