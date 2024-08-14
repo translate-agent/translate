@@ -60,16 +60,16 @@ func (t *TranslateServiceServer) CreateTranslation(
 ) (*translatev1.Translation, error) {
 	params, err := parseCreateTranslationRequestParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err = params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 
 	if all.HasLanguage(params.translation.Language) {
@@ -97,15 +97,15 @@ func (t *TranslateServiceServer) CreateTranslation(
 			// untranslated text in incoming translation will be translated from original to target language.
 			params.translation, err = t.translator.Translate(ctx, params.translation, targetLanguage)
 			if err != nil {
-				return nil, status.Errorf(codes.Unknown, err.Error()) // TODO: For now we don't know the cause of the error.
+				return nil, status.Error(codes.Unknown, err.Error()) // TODO(Darja): For now we don't know the cause of the error.
 			}
 		}
 	}
 
 	if err := t.repo.SaveTranslation(ctx, params.serviceID, params.translation); errors.Is(err, repo.ErrNotFound) {
-		return nil, status.Errorf(codes.NotFound, "service not found")
+		return nil, status.Error(codes.NotFound, "service not found")
 	} else if err != nil {
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 
 	return translationToProto(params.translation), nil
@@ -140,16 +140,16 @@ func (t *TranslateServiceServer) ListTranslations(
 ) (*translatev1.ListTranslationsResponse, error) {
 	params, err := parseListTranslationsRequestParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err = params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	translations, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 
 	return &translatev1.ListTranslationsResponse{Translations: translationsToProto(translations)}, nil
@@ -210,16 +210,16 @@ func (t *TranslateServiceServer) UpdateTranslation(
 ) (*translatev1.Translation, error) {
 	params, err := parseUpdateTranslationRequestParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err = params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	all, err := t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 
 	if !all.HasLanguage(params.translation.Language) {
@@ -260,7 +260,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		}
 
 		if err = t.fuzzyTranslate(ctx, all); err != nil {
-			return nil, status.Errorf(codes.Internal, "")
+			return nil, status.Error(codes.Internal, "")
 		}
 	}
 
@@ -274,7 +274,7 @@ func (t *TranslateServiceServer) UpdateTranslation(
 
 		return nil
 	}); err != nil {
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 
 	return translationToProto(&all[all.LanguageIndex(params.translation.Language)]), nil

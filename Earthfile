@@ -2,7 +2,7 @@ VERSION 0.8
 PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
-ARG --global go_version=1.22.5
+ARG --global go_version=1.23.0
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
 
@@ -150,7 +150,7 @@ lint-migrate:
 
 # lint-go analyses golang code for errors, bugs and stylistic issues (golangci-lint).
 lint-go:
-  ARG golangci_lint_version=1.59.0
+  ARG golangci_lint_version=1.60.1
   FROM golangci/golangci-lint:v$golangci_lint_version-alpine
   WORKDIR translate
   COPY +go/translate .

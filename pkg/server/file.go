@@ -97,28 +97,28 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 ) (*emptypb.Empty, error) {
 	params, err := parseUploadTranslationFileRequestParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err = params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	translation, err := TranslationFromData(params)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	translation.Language, err = getLanguage(params, translation)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	var all model.Translations
 
 	if translation.Original {
 		if all, err = t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{}); err != nil {
-			return nil, status.Errorf(codes.Internal, "")
+			return nil, status.Error(codes.Internal, "")
 		}
 	}
 
@@ -148,7 +148,7 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		}
 
 		if err = t.fuzzyTranslate(ctx, all); err != nil {
-			return nil, status.Errorf(codes.Internal, "")
+			return nil, status.Error(codes.Internal, "")
 		}
 	}
 
@@ -167,9 +167,9 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	default:
 		return &emptypb.Empty{}, nil
 	case errors.Is(err, repo.ErrNotFound):
-		return nil, status.Errorf(codes.NotFound, "service not found")
+		return nil, status.Error(codes.NotFound, "service not found")
 	case err != nil:
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 }
 
@@ -225,17 +225,17 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 ) (*translatev1.DownloadTranslationFileResponse, error) {
 	params, err := parseDownloadTranslationFileRequestParams(req)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	if err = params.validate(); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	translations, err := t.repo.LoadTranslations(ctx, params.serviceID,
 		repo.LoadTranslationsOpts{FilterLanguages: []language.Tag{params.languageTag}})
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 
 	if len(translations) == 0 {
@@ -244,7 +244,7 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 
 	data, err := TranslationToData(params.schema, &translations[0])
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "")
+		return nil, status.Error(codes.Internal, "")
 	}
 
 	return &translatev1.DownloadTranslationFileResponse{Data: data}, nil
