@@ -88,23 +88,20 @@ proto:
   ENV BUF_CACHE_DIR=/.cache/buf_cache
   COPY --dir proto .
   WORKDIR proto
-  RUN \
-    --mount=type=cache,target=$BUF_CACHE_DIR,mode=0700 \
-      buf dep update && buf build && buf generate
-
+  RUN --mount=type=cache,target=$BUF_CACHE_DIR,mode=0700 \
+    buf dep update && buf build && buf generate
   RUN sed -i'.bak' '/client.UploadTranslationFile/i \
-  \\tfile, _, err := req.FormFile("file")\n\
-	\tif err != nil {\n\
-		\t\t\treturn nil, metadata, status.Errorf(codes.InvalidArgument, "%s", "'file' is required")\n\
-	\t}\n\
-  \tdefer file.Close()\n\
-	\n\
-	\tprotoReq.Data, err = io.ReadAll(file)\n\
-	\tif err != nil {\n\
-		\t\t\treturn nil, metadata, status.Errorf(codes.Internal, "%v", err)\n\
-	\t}\n\
-  ' gen/proto/go/translate/v1/translate.pb.gw.go
-
+    \\tfile, _, err := req.FormFile("file")\n\
+    \tif err != nil {\n\
+      \t\t\treturn nil, metadata, status.Errorf(codes.InvalidArgument, "%s", "'file' is required")\n\
+    \t}\n\
+    \tdefer file.Close()\n\
+    \n\
+    \tprotoReq.Data, err = io.ReadAll(file)\n\
+    \tif err != nil {\n\
+      \t\t\treturn nil, metadata, status.Errorf(codes.Internal, "%v", err)\n\
+    \t}\n\
+    ' gen/proto/go/translate/v1/translate.pb.gw.go
   RUN rm gen/proto/go/translate/v1/translate.pb.gw.go.bak
   SAVE ARTIFACT . proto
   SAVE ARTIFACT gen/proto/go/translate/v1 translate/v1 AS LOCAL pkg/pb/translate/v1
@@ -238,16 +235,17 @@ test:
 # build compiles translate service and client and saves them to ./bin.
 build:
   ARG GOARCH=$USERARCH
+  ARG GOOS=linux
   ENV CGO_ENABLED=0
   COPY --platform=linux/$USERARCH +go/translate translate
   WORKDIR translate
   RUN \
-  --mount=type=cache,id=go-mod,target=/go/pkg/mod \
-  --mount=type=cache,id=go-build,target=/root/.cache/go-build \
+    --mount=type=cache,id=go-mod,target=/go/pkg/mod \
+    --mount=type=cache,id=go-build,target=/root/.cache/go-build \
     go build -o translate-service cmd/translate/main.go && \
     go build -o translate cmd/client/main.go
-  SAVE ARTIFACT translate-service bin/translate-service # service
-  SAVE ARTIFACT translate bin/translate # client
+  SAVE ARTIFACT translate-service bin/translate-service AS LOCAL bin/translate-service # service
+  SAVE ARTIFACT translate bin/translate AS LOCAL bin/translate # client
 
 # image builds translate service image.
 image:
@@ -263,9 +261,9 @@ image:
 image-multiplatform:
   ARG --required registry
   BUILD \
-  --platform=linux/amd64 \
-  --platform=linux/arm64 \
-  +image --registry=$registry
+    --platform=linux/amd64 \
+    --platform=linux/arm64 \
+    +image --registry=$registry
 
 # -----------------------All-in-one image-----------------------
 
@@ -310,6 +308,6 @@ image-all-in-one-multiplatform:
   ARG --required registry
   ARG tag=latest
   BUILD \
-  --platform=linux/amd64 \
-  --platform=linux/arm64 \
-  +image-all-in-one --registry=$registry --tag=$tag
+    --platform=linux/amd64 \
+    --platform=linux/arm64 \
+    +image-all-in-one --registry=$registry --tag=$tag
