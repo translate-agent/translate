@@ -93,13 +93,13 @@ proto:
   RUN sed -i'.bak' '/client.UploadTranslationFile/i \
     \\tfile, _, err := req.FormFile("file")\n\
     \tif err != nil {\n\
-      \t\t\treturn nil, metadata, status.Errorf(codes.InvalidArgument, "%s", "'file' is required")\n\
+    \t\t\treturn nil, metadata, status.Errorf(codes.InvalidArgument, "%s", "'file' is required")\n\
     \t}\n\
     \tdefer file.Close()\n\
     \n\
     \tprotoReq.Data, err = io.ReadAll(file)\n\
     \tif err != nil {\n\
-      \t\t\treturn nil, metadata, status.Errorf(codes.Internal, "%v", err)\n\
+    \t\t\treturn nil, metadata, status.Errorf(codes.Internal, "%v", err)\n\
     \t}\n\
     ' gen/proto/go/translate/v1/translate.pb.gw.go
   RUN rm gen/proto/go/translate/v1/translate.pb.gw.go.bak
