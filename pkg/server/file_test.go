@@ -20,7 +20,7 @@ func Test_ParseUploadParams(t *testing.T) {
 		return &translatev1.UploadTranslationFileRequest{
 			Language:  rand.Language().String(),
 			Data:      []byte(`{"key":"value"}`),
-			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
+			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)), //#nosec G115
 			ServiceId: gofakeit.UUID(),
 			Original:  ptr(gofakeit.Bool()),
 		}
@@ -89,7 +89,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 		return &uploadParams{
 			languageTag:          rand.Language(),
 			data:                 []byte(`{"key":"value"}`),
-			schema:               translatev1.Schema(gofakeit.IntRange(1, 7)),
+			schema:               translatev1.Schema(gofakeit.IntRange(1, 7)), //#nosec G115
 			serviceID:            uuid.New(),
 			original:             ptr(gofakeit.Bool()),
 			populateTranslations: gofakeit.Bool(),
@@ -258,7 +258,7 @@ func Test_ParseDownloadParams(t *testing.T) {
 	randReq := func() *translatev1.DownloadTranslationFileRequest {
 		return &translatev1.DownloadTranslationFileRequest{
 			Language:  rand.Language().String(),
-			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
+			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)), //#nosec G115
 			ServiceId: gofakeit.UUID(),
 		}
 	}
@@ -326,7 +326,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 	randParams := func() *downloadParams {
 		return &downloadParams{
 			languageTag: rand.Language(),
-			schema:      translatev1.Schema(gofakeit.IntRange(1, 7)),
+			schema:      translatev1.Schema(gofakeit.IntRange(1, 7)), //#nosec G115
 			serviceID:   uuid.New(),
 		}
 	}
