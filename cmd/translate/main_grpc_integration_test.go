@@ -221,7 +221,7 @@ func randDownloadRequest(serviceID, lang string) *translatev1.DownloadTranslatio
 	return &translatev1.DownloadTranslationFileRequest{
 		ServiceId: serviceID,
 		Language:  lang,
-		Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)),
+		Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)), //#nosec G115
 	}
 }
 
@@ -535,7 +535,7 @@ func randTranslation(t *testing.T, override *translatev1.Translation) *translate
 			Id:          gofakeit.SentenceSimple(),
 			Message:     gofakeit.SentenceSimple(),
 			Description: gofakeit.SentenceSimple(),
-			Status:      translatev1.Message_Status(gofakeit.IntRange(0, 2)),
+			Status:      translatev1.Message_Status(gofakeit.IntRange(0, 2)), //#nosec G115
 		}
 
 		for range gofakeit.Number(0, 2) {

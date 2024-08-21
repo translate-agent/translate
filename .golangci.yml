@@ -14,6 +14,7 @@ linters:
     - err113
     - execinquery
     - exhaustruct
+    - exportloopref
     - forbidigo
     - funlen
     - gci
