@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"go.expect.digital/mf2"
+	"go.expect.digital/mf2/builder"
 	ast "go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/po"
@@ -131,11 +131,11 @@ var placeholderFormats = map[string]*regexp.Regexp{
 
 // msgNodeToMF2 function converts a po.MessageNode to a MessageFormat2 string.
 func msgNodeToMF2(node po.Message, getMessages func(po.Message) []string) (string, error) {
-	mfBuilder := mf2.NewBuilder()
+	mfBuilder := builder.NewBuilder()
 	placeholders := make(map[string]struct{}) // map of placeholders to avoid duplicates, only for plural messages
 
 	// default build function, for message without placeholders
-	build := func(mfBuilder *mf2.Builder, msg string, _ map[string]struct{}) { mfBuilder.Text(msg) }
+	build := func(mfBuilder *builder.Builder, msg string, _ map[string]struct{}) { mfBuilder.Text(msg) }
 
 	// look for format flag, e.g. #, python-format, c-format, no-python-format, etc.
 	formatFlagIdx := slices.IndexFunc(node.Flags, func(flag string) bool {
@@ -143,7 +143,7 @@ func msgNodeToMF2(node po.Message, getMessages func(po.Message) []string) (strin
 	})
 
 	if formatFlagIdx != -1 {
-		mfBuilder.Local("format", mf2.Literal(node.Flags[formatFlagIdx])) // capture format flag
+		mfBuilder.Local("format", builder.Literal(node.Flags[formatFlagIdx])) // capture format flag
 	}
 
 	switch messages := getMessages(node); len(messages) {
@@ -155,9 +155,8 @@ func msgNodeToMF2(node po.Message, getMessages func(po.Message) []string) (strin
 		}
 
 		build(mfBuilder, messages[0], placeholders)
-
 	default: // plural message
-		mfBuilder.Match(mf2.Var("count")) // match to arbitrary variable name
+		mfBuilder.Match(builder.Var("count")) // match to arbitrary variable name
 
 		if formatFlagIdx != -1 && !strings.HasPrefix(node.Flags[formatFlagIdx], "no-") { // with placeholders
 			build = textWithPlaceholders
@@ -183,7 +182,7 @@ func msgNodeToMF2(node po.Message, getMessages func(po.Message) []string) (strin
 }
 
 // textWithPlaceholders processes a message string, identifies placeholders, and adds them to a Builder.
-func textWithPlaceholders(mfBuilder *mf2.Builder, msg string, placeholders map[string]struct{}) {
+func textWithPlaceholders(mfBuilder *builder.Builder, msg string, placeholders map[string]struct{}) {
 	for name, re := range placeholderFormats {
 		var currentIdx int
 
@@ -210,12 +209,12 @@ func textWithPlaceholders(mfBuilder *mf2.Builder, msg string, placeholders map[s
 
 			// Avoid adding duplicate locals variables when working with plural messages
 			if _, ok := placeholders[mf2Variable]; !ok {
-				mfBuilder.Local(mf2Variable, mf2.Literal(originalVariable))
+				mfBuilder.Local(mf2Variable, builder.Literal(originalVariable))
 
 				placeholders[mf2Variable] = struct{}{}
 			}
 
-			mfBuilder.Expr(mf2.Var(mf2Variable))
+			mfBuilder.Expr(builder.Var(mf2Variable))
 
 			currentIdx = indices[1]
 

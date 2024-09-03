@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	"go.expect.digital/mf2/builder"
 	ast "go.expect.digital/mf2/parse"
 
-	"go.expect.digital/mf2"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -46,7 +46,7 @@ func FromNgLocalize(data []byte, original *bool) (model.Translation, error) {
 	}
 
 	for k, v := range ng.Translations {
-		msg, err := mf2.NewBuilder().Text(v).Build()
+		msg, err := builder.NewBuilder().Text(v).Build()
 		if err != nil {
 			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
 		}

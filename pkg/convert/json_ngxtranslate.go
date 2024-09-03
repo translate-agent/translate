@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"go.expect.digital/mf2/builder"
 	ast "go.expect.digital/mf2/parse"
-
-	"go.expect.digital/mf2"
 
 	"go.expect.digital/translate/pkg/model"
 )
@@ -41,7 +40,7 @@ func FromNgxTranslate(b []byte, original *bool) (translation model.Translation, 
 		default:
 			return fmt.Errorf("unsupported value type %T for key %s", value, key)
 		case string:
-			msg, err := mf2.NewBuilder().Text(v).Build() //nolint:govet
+			msg, err := builder.NewBuilder().Text(v).Build() //nolint:govet
 			if err != nil {
 				return fmt.Errorf("convert string to MF2: %w", err)
 			}

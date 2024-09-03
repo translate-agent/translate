@@ -1,10 +1,10 @@
 package convert
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -253,9 +253,7 @@ msgstr "Sveika, {name}!"
 				return
 			}
 
-			if !reflect.DeepEqual(test.want, got) {
-				t.Errorf("want translation\n%v\ngot\n%v", test.want, got)
-			}
+			assertTranslation(t, test.want, got)
 
 			// Test: Translation -> PO
 
@@ -436,13 +434,13 @@ msgstr[2] ""
 
 			got, err := FromPo([]byte(test.args.input), test.args.original)
 			if err != nil {
+				t.Log("\n" + test.args.input)
 				t.Error(err)
+
 				return
 			}
 
-			if !reflect.DeepEqual(test.want, got) {
-				t.Errorf("want translation\n%v\ngot\n%v", test.want, got)
-			}
+			assertTranslation(t, test.want, got)
 
 			// Test: Translation -> PO
 
@@ -454,5 +452,17 @@ msgstr[2] ""
 
 			requireEqualPO(t, test.args.input, string(gotPo))
 		})
+	}
+}
+
+func assertTranslation(t *testing.T, want, got model.Translation) {
+	t.Helper()
+
+	cmpTag := cmp.Comparer(func(a, b language.Tag) bool {
+		return a == b
+	})
+
+	if v := cmp.Diff(want, got, cmpTag); v != "" {
+		t.Errorf("want equal translations\n%s", v)
 	}
 }
