@@ -3,7 +3,7 @@ package rand
 import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/google/uuid"
-	"go.expect.digital/mf2"
+	"go.expect.digital/mf2/builder"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -69,7 +69,7 @@ func WithID(id uuid.UUID) ModelServiceOption {
 
 // modelMessage generates a random model.Message.
 func modelMessage() *model.Message {
-	message := mf2.NewBuilder()
+	message := builder.NewBuilder()
 
 	switch gofakeit.Bool() {
 	default: // simple message
@@ -78,10 +78,10 @@ func modelMessage() *model.Message {
 		v := gofakeit.Word()
 
 		if gofakeit.Bool() { // complex message, local declaration
-			message.Local(v, mf2.Var(gofakeit.Word()))
-			message.Text(gofakeit.SentenceSimple()).Expr(mf2.Var(v))
+			message.Local(v, builder.Var(gofakeit.Word()))
+			message.Text(gofakeit.SentenceSimple()).Expr(builder.Var(v))
 		} else { // complex message, matcher
-			message.Match(mf2.Var(v))
+			message.Match(builder.Var(v))
 			message.Keys(gofakeit.Word()).Text(gofakeit.SentenceSimple())
 			message.Keys("*").Text(gofakeit.SentenceSimple())
 		}
@@ -224,7 +224,7 @@ func WithSameIDs(t *model.Translation) ModelTranslationOption {
 func WithSimpleMF2Messages() ModelTranslationOption {
 	return func(t *model.Translation) {
 		for i := range t.Messages {
-			t.Messages[i].Message = mf2.NewBuilder().Text(gofakeit.SentenceSimple()).MustBuild()
+			t.Messages[i].Message = builder.NewBuilder().Text(gofakeit.SentenceSimple()).MustBuild()
 		}
 	}
 }

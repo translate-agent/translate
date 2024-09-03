@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	"go.expect.digital/mf2/builder"
 	ast "go.expect.digital/mf2/parse"
 
-	"go.expect.digital/mf2"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/message/pipeline"
 )
@@ -116,7 +116,7 @@ func translationFromPipeline(m pipeline.Messages, original bool) (model.Translat
 	}
 
 	for _, value := range m.Messages {
-		mf2Message, err := mf2.NewBuilder().Text(getMessage(value)).Build()
+		mf2Message, err := builder.NewBuilder().Text(getMessage(value)).Build()
 		if err != nil {
 			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
 		}

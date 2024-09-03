@@ -7,7 +7,7 @@ import (
 
 	ast "go.expect.digital/mf2/parse"
 
-	"go.expect.digital/mf2"
+	"go.expect.digital/mf2/builder"
 
 	"github.com/mitchellh/mapstructure"
 	"go.expect.digital/translate/pkg/model"
@@ -124,7 +124,7 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 			return model.Translation{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
 		}
 
-		if msg.Message, err = mf2.NewBuilder().Text(msg.Message).Build(); err != nil {
+		if msg.Message, err = builder.NewBuilder().Text(msg.Message).Build(); err != nil {
 			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
 		}
 
