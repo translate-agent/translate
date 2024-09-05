@@ -83,7 +83,7 @@ go:
 
 # proto generates gRPC server.
 proto:
-  ARG bufbuild_version=1.39.0
+  ARG bufbuild_version=1.40.0
   FROM bufbuild/buf:$bufbuild_version
   ENV BUF_CACHE_DIR=/.cache/buf_cache
   COPY --dir proto .
