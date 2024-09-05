@@ -17,12 +17,11 @@ var conn *grpc.ClientConn
 
 func newRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:               "translate",
-		TraverseChildren:  true,
-		Short:             "Translate provides tools for interacting with translate agent service",
-		PersistentPreRunE: rootCmdPersistentPreRunE,
-		RunE:              func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
-		// TODO: Add graceful connection close, in PersistentPostRunE
+		Use:                "translate",
+		TraverseChildren:   true,
+		Short:              "Translate provides tools for interacting with translate agent service",
+		PersistentPreRunE:  rootCmdPersistentPreRunE,
+		PersistentPostRunE: rootCmdPersistenPostRunE,
 	}
 
 	rootCmd.AddCommand(newServiceCmd())
@@ -55,12 +54,16 @@ func rootCmdPersistentPreRunE(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func Execute(ctx context.Context) error {
-	if err := newRootCmd().ExecuteContext(ctx); err != nil { //nolint:contextcheck
-		return fmt.Errorf("execute root command: %w", err)
+func rootCmdPersistenPostRunE(_ *cobra.Command, _ []string) error {
+	if err := conn.Close(); err != nil {
+		return fmt.Errorf("close gRPC connection: %w", err)
 	}
 
 	return nil
+}
+
+func Execute(ctx context.Context) error {
+	return newRootCmd().ExecuteContext(ctx) //nolint:contextcheck,wrapcheck
 }
 
 // ExecuteWithParams executes root command using passed in command parameters,
