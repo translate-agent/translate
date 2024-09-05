@@ -1,34 +1,41 @@
 {
+  "editor.formatOnSave": true,
+  "files.readonlyInclude": {
+    "**/bin/*": true,
+    "**/pkg/pb/**": true
+  },
   "emeraldwalk.runonsave": {
     "autoClearConsole": true,
     "commands": [
       {
         "match": "\\.proto$",
         "cmd": "earthly +proto"
-      },
+      }
     ]
   },
-  "go.testEnvFile": "${workspaceFolder}/.env.test",
   "go.buildTags": "integration",
+  "go.formatTool": "gofumpt",
+  "go.lintOnSave": "workspace",
+  "go.lintTool": "golangci-lint",
+  "go.testEnvFile": "${workspaceFolder}/.env.test",
+  "gopls": {
+    "ui.codelenses": {
+      "gc_details": true
+    },
+    "ui.diagnostic.annotations": {
+      "bounds": true,
+      "escape": true
+    }
+  },
   // SQLFluff
   "sqlfluff.config": "${workspaceFolder}/.sqlfluff",
   "sqlfluff.linter.diagnosticSeverity": "warning",
   "sqlfluff.linter.lintEntireProject": true,
   "sqlfluff.format.enabled": true,
-  "sqlfluff.format.arguments": [
-    "--FIX-EVEN-UNPARSABLE"
-  ],
+  "sqlfluff.format.arguments": ["--FIX-EVEN-UNPARSABLE"],
   "yaml.schemas": {
     "https://gist.githubusercontent.com/mmizutani/17d83a90791e7122aef7230fbcf009d4/raw/d0c96d433c611a60652b17a45dc76f298f802976/envoy-schema.json": [
       "envoy.yaml"
     ]
-  },
-  "files.readonlyInclude": {
-    "**/bin/*": true,
-    "**/pkg/pb/**": true
-  },
-  "go.formatTool": "gofumpt",
-  "go.lintOnSave": "workspace",
-  "go.lintTool": "golangci-lint",
-  "editor.formatOnSave": true
+  }
 }
