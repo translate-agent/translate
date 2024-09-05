@@ -128,11 +128,11 @@ TARGETS:
       proto generates gRPC server.
   +buf-registry [--USERARCH] [--go_version=1.23.0] [--bufbuild_version=1.40.0]
       buf-registry pushes BUF modules to the registry.
-  +migrate --db --db_user --db_host --db_port --db_schema [--USERARCH] [--go_version=1.23.0] [--migrate_version=4.17.0] [--cmd=up]
+  +migrate --db --db_user --db_host --db_port --db_schema [--USERARCH] [--go_version=1.23.0] [--migrate_version=4.17.1] [--cmd=up]
       migrate runs DDL migration scripts against the given database.
   +check [--USERARCH] [--go_version=1.23.0]
       check verifies code quality by running linters and tests.
-  +lint-migrate [--USERARCH] [--go_version=1.23.0] [--sqlfluff_version=3.0.3]
+  +lint-migrate [--USERARCH] [--go_version=1.23.0] [--sqlfluff_version=3.1.1]
       lint-migrate analyses migrate scripts for stylistic issues.
   +lint-go [--USERARCH] [--go_version=1.23.0] [--golangci_lint_version=1.60.3]
       lint-go analyses golang code for errors, bugs and stylistic issues (golangci-lint).
@@ -142,7 +142,7 @@ TARGETS:
       lint runs all linters for golang, proto and migrate scripts.
   +test-unit [--USERARCH] [--go_version=1.23.0]
       test-unit runs unit tests.
-  +test-integration [--USERARCH] [--go_version=1.23.0] [--migrate_version=4.17.0]
+  +test-integration [--USERARCH] [--go_version=1.23.0] [--migrate_version=4.17.1]
       test-integration runs integration tests.
   +test [--USERARCH] [--go_version=1.23.0]
       test runs unit and integration tests.
