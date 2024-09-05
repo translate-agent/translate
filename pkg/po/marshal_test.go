@@ -1,7 +1,10 @@
 package po
 
 import (
+	"runtime"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestPo_Marshal(t *testing.T) {
@@ -21,7 +24,7 @@ func TestPo_Marshal(t *testing.T) {
 				},
 				Messages: []Message{
 					{
-						MsgID:             "Hello, world!",
+						MsgID:             "Hello, \"world\"!",
 						MsgStr:            []string{},
 						Flags:             []string{"fuzzy"},
 						ExtractedComments: []string{"A simple greeting"},
@@ -37,7 +40,7 @@ msgstr ""
 #. A simple greeting
 #: main.go:1
 #, fuzzy
-msgid "Hello, world!"
+msgid "Hello, \"world\"!"
 msgstr ""
 `,
 		},
@@ -118,9 +121,38 @@ msgstr[1] ""
 
 			got := test.input.Marshal()
 
-			if test.want != string(got) {
-				t.Errorf("want %s, got %s", test.want, got)
+			if diff := cmp.Diff(test.want, string(got)); diff != "" {
+				t.Errorf("want equal messages\n%s", diff)
 			}
 		})
 	}
+}
+
+func BenchmarkMarshal(b *testing.B) {
+	translation := PO{
+		Headers: Headers{
+			{Name: "Language", Value: "lv"},
+			{Name: "Last-Translator", Value: "John Doe"},
+			{Name: "Plural-Forms", Value: "nplurals=2; n != 1"},
+		},
+		Messages: []Message{
+			{
+				MsgID:  "\nThere is apple",
+				MsgStr: []string{"\nIr ābols"},
+			},
+			{
+				MsgID:       "\nThere is 1 orange",
+				MsgIDPlural: "\nThere is multiple oranges",
+				MsgStr:      []string{"\nIr 1 apelsīns", "\nIr vairāki apelsīni"},
+			},
+		},
+	}
+
+	var v []byte
+
+	for range b.N {
+		v = translation.Marshal()
+	}
+
+	runtime.KeepAlive(v)
 }

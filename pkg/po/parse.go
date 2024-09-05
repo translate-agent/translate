@@ -112,6 +112,10 @@ func (p *parser) parseMessage() (Message, error) {
 		lastState state // track the last state to handle multiline strings
 	)
 
+	replaceEscapedQuote := func(s string) string {
+		return strings.ReplaceAll(s, `\"`, `"`)
+	}
+
 	for line := p.next(); line != "" && line != eof; line = p.next() {
 		switch {
 		case strings.HasPrefix(line, "# "):
@@ -124,23 +128,25 @@ func (p *parser) parseMessage() (Message, error) {
 			msg.Flags = append(msg.Flags, line[3:])
 		case strings.HasPrefix(line, `msgid "`):
 			lastState = msgID
-			msg.MsgID = line[7 : len(line)-1]
+			msg.MsgID = replaceEscapedQuote(line[7 : len(line)-1])
 		case strings.HasPrefix(line, `msgstr "`):
 			lastState = msgStr
 
-			msg.MsgStr = append(msg.MsgStr, line[8:len(line)-1])
+			msg.MsgStr = append(msg.MsgStr, replaceEscapedQuote(line[8:len(line)-1]))
 		case strings.HasPrefix(line, `msgstr[`):
 			lastState = msgStr
 			idx := strings.Index(line, `] "`)
-			msg.MsgStr = append(msg.MsgStr, line[idx+3:len(line)-1])
+			msg.MsgStr = append(msg.MsgStr, replaceEscapedQuote(line[idx+3:len(line)-1]))
 		case strings.HasPrefix(line, `msgid_plural "`):
 			lastState = msgIDPlural
-			msg.MsgIDPlural = line[14 : len(line)-1]
+			msg.MsgIDPlural = replaceEscapedQuote(line[14 : len(line)-1])
 		case strings.HasPrefix(line, `"`):
 			lineVal := line[1 : len(line)-1]
 			if strings.HasSuffix(line, `\n"`) {
 				lineVal = line[1:len(line)-3] + "\n"
 			}
+
+			lineVal = replaceEscapedQuote(lineVal)
 
 			switch lastState {
 			case msgID:

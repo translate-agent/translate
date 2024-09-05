@@ -32,7 +32,7 @@ msgstr ""
 #: main.go:1
 # Translator comment
 msgid "id1"
-msgstr "str1"
+msgstr "str1\""
 
 #. Extracted comment
 msgid "id2"
@@ -43,7 +43,7 @@ msgstr[1] "str2-1"`,
 				Messages: []Message{
 					{
 						MsgID:              "id1",
-						MsgStr:             []string{"str1"},
+						MsgStr:             []string{"str1\""},
 						Flags:              []string{"fuzzy"},
 						References:         []string{"main.go:1"},
 						TranslatorComments: []string{"Translator comment"},

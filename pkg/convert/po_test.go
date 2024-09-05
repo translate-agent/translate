@@ -13,10 +13,22 @@ import (
 func requireEqualPO(t *testing.T, want, got string) {
 	t.Helper()
 
-	replace := func(s string) string { return strings.NewReplacer("\\n", "", "\n", "", "\"", "").Replace(s) }
+	// In PO, long text is split across multiple lines.
+	//
+	// msgid ""
+	// " Set the opacity to 0 if you do not want to override the color specified "
+	// "in the GeoJSON"
+	//
+	// When marshalling to PO, we do not split across multiple lines.
+	//
+	// msgid " Set the opacity to 0 if you do not want to override the color specified in the GeoJSON"
+	replace := func(s string) string { return strings.NewReplacer("\"\"\n", "", "\"\n\"", "").Replace(s) }
 
-	if replace(want) != replace(got) {
-		t.Errorf("want po '%s', got '%s'", replace(want), replace(got))
+	want = replace(want)
+	got = replace(got)
+
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("want equal PO\n%s", diff)
 	}
 }
 
@@ -363,8 +375,8 @@ msgstr[1] ""
 				Original: true,
 				Messages: []model.Message{
 					{
-						ID:        "%(suggestion)s instead of \\\"%(undefinedParameter)s?\\\"",
-						PluralID:  "%(firstSuggestions)s or %(lastSuggestion)s instead of\\\"%(undefinedParameter)s\\\"?",
+						ID:        `%(suggestion)s instead of "%(undefinedParameter)s?"`,
+						PluralID:  `%(firstSuggestions)s or %(lastSuggestion)s instead of"%(undefinedParameter)s"?`,
 						Status:    model.MessageStatusTranslated,
 						Positions: []string{"superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88"},
 						Message: `.local $format = { python-format }
@@ -373,8 +385,8 @@ msgstr[1] ""
 .local $firstSuggestions = { |%(firstSuggestions)s| }
 .local $lastSuggestion = { |%(lastSuggestion)s| }
 .match { $count }
-1 {{{ $suggestion } instead of \\"{ $undefinedParameter }?\\"}}
-* {{{ $firstSuggestions } or { $lastSuggestion } instead of\\"{ $undefinedParameter }\\"?}}`,
+1 {{{ $suggestion } instead of "{ $undefinedParameter }?"}}
+* {{{ $firstSuggestions } or { $lastSuggestion } instead of"{ $undefinedParameter }"?}}`,
 					},
 				},
 			},
@@ -407,8 +419,8 @@ msgstr[2] ""
 				Original: false,
 				Messages: []model.Message{
 					{
-						ID:        "%(suggestion)s instead of \\\"%(undefinedParameter)s?\\\"",
-						PluralID:  "%(firstSuggestions)s or %(lastSuggestion)s instead of \\\"%(undefinedParameter)s\\\"?",
+						ID:        `%(suggestion)s instead of "%(undefinedParameter)s?"`,
+						PluralID:  `%(firstSuggestions)s or %(lastSuggestion)s instead of "%(undefinedParameter)s"?`,
 						Status:    model.MessageStatusUntranslated,
 						Positions: []string{"superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88"},
 						Message: `.local $format = { python-format }
@@ -417,9 +429,9 @@ msgstr[2] ""
 .local $firstSuggestions = { |%(firstSuggestions)s| }
 .local $lastSuggestion = { |%(lastSuggestion)s| }
 .match { $count }
-1 {{{ $suggestion } вместо \\"{ $undefinedParameter }\\"?}}
-2 {{{ $firstSuggestions } или { $lastSuggestion } вместо \\"{ $undefinedParameter }\\"?}}
-* {{{ $firstSuggestions } или { $lastSuggestion } вместо \\"{ $undefinedParameter }\\"?}}`,
+1 {{{ $suggestion } вместо "{ $undefinedParameter }"?}}
+2 {{{ $firstSuggestions } или { $lastSuggestion } вместо "{ $undefinedParameter }"?}}
+* {{{ $firstSuggestions } или { $lastSuggestion } вместо "{ $undefinedParameter }"?}}`,
 					},
 				},
 			},

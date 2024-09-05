@@ -3,7 +3,7 @@ package po
 import (
 	"bytes"
 	"fmt"
-	"strings"
+	"strconv"
 )
 
 // Marshal serializes the Po object into a byte slice.
@@ -20,14 +20,26 @@ func (p *PO) Marshal() []byte {
 }
 
 func (m *Message) marshal(b *bytes.Buffer) {
-	// quoteLines function splits a string into multiple lines and wraps each line in double quotes.
-	quoteLines := func(s string) string {
-		split := strings.Split(s, "\n")
-		for i, line := range split {
-			split[i] = fmt.Sprintf("\"%s\"", line)
+	// writeQuoted function splits a string into multiple lines and wraps each line in double quotes.
+	writeQuoted := func(s string) {
+		b.WriteRune('"')
+
+		for i, r := range s {
+			switch r {
+			case '\n': // end of line
+				if i < len(s)-1 { // not the last character
+					b.WriteString("\"\n\"")
+				}
+
+				continue
+			case '"': // escape
+				b.WriteRune('\\')
+			}
+
+			b.WriteRune(r)
 		}
 
-		return strings.Join(split, "\n")
+		b.WriteString("\"\n")
 	}
 
 	if b.Len() > 0 {
@@ -51,21 +63,25 @@ func (m *Message) marshal(b *bytes.Buffer) {
 	}
 
 	if m.MsgID != "" {
-		b.WriteString(fmt.Sprintf("msgid %s\n", quoteLines(m.MsgID)))
+		b.WriteString("msgid ")
+		writeQuoted(m.MsgID)
 	}
 
 	if m.MsgIDPlural != "" {
-		b.WriteString(fmt.Sprintf("msgid_plural %s\n", quoteLines(m.MsgIDPlural)))
+		b.WriteString("msgid_plural ")
+		writeQuoted(m.MsgIDPlural)
 	}
 
 	switch len(m.MsgStr) {
 	case 0: // empty
 		b.WriteString("msgstr \"\"\n")
 	case 1: // singular
-		b.WriteString(fmt.Sprintf("msgstr %s\n", quoteLines(m.MsgStr[0])))
+		b.WriteString("msgstr ")
+		writeQuoted(m.MsgStr[0])
 	default: // plural
 		for i, ms := range m.MsgStr {
-			b.WriteString(fmt.Sprintf("msgstr[%d] %s\n", i, quoteLines(ms)))
+			b.WriteString("msgstr[" + strconv.Itoa(i) + "] ")
+			writeQuoted(ms)
 		}
 	}
 }
