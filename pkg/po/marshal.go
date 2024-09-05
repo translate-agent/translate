@@ -24,12 +24,15 @@ func (m *Message) marshal(b *bytes.Buffer) {
 	writeQuoted := func(s string) {
 		b.WriteRune('"')
 
-		for _, r := range s {
+		for i, r := range s {
 			switch r {
-			case '\n':
-				b.WriteString("\"\n\"")
+			case '\n': // end of line
+				if i < len(s)-1 { // not the last character
+					b.WriteString("\"\n\"")
+				}
+
 				continue
-			case '"':
+			case '"': // escape
 				b.WriteRune('\\')
 			}
 

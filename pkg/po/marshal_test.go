@@ -122,7 +122,7 @@ msgstr[1] ""
 			got := test.input.Marshal()
 
 			if diff := cmp.Diff(test.want, string(got)); diff != "" {
-				t.Errorf("want equal translations\n%s", diff)
+				t.Errorf("want equal messages\n%s", diff)
 			}
 		})
 	}
