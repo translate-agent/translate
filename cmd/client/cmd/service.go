@@ -9,7 +9,7 @@ import (
 
 const cmdTimeout = 10 * time.Second
 
-func newServiceCmd() *cobra.Command {
+func newServiceCmd(svc *Service) *cobra.Command {
 	serviceCmd := &cobra.Command{
 		Use:   "service",
 		Short: "Manage services",
@@ -26,9 +26,9 @@ func newServiceCmd() *cobra.Command {
 	serviceFlags.Bool("insecure", false, `disable transport security (default false)`)
 	serviceFlags.Duration("timeout", cmdTimeout, `command execution timeout`)
 
-	serviceCmd.AddCommand(newUploadCmd())
-	serviceCmd.AddCommand(newDownloadCmd())
-	serviceCmd.AddCommand(newLsCmd())
+	serviceCmd.AddCommand(newUploadCmd(svc))
+	serviceCmd.AddCommand(newDownloadCmd(svc))
+	serviceCmd.AddCommand(newLsCmd(svc))
 
 	return serviceCmd
 }

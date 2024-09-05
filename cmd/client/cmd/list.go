@@ -10,7 +10,7 @@ import (
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 )
 
-func newLsCmd() *cobra.Command {
+func newLsCmd(svc *Service) *cobra.Command {
 	lsCmd := &cobra.Command{
 		Use:   "ls",
 		Short: "List services",
@@ -23,7 +23,7 @@ func newLsCmd() *cobra.Command {
 			ctx, cancelFunc := context.WithTimeout(cmd.Context(), timeout)
 			defer cancelFunc()
 
-			resp, err := translatev1.NewTranslateServiceClient(conn).ListServices(ctx, &translatev1.ListServicesRequest{})
+			resp, err := svc.client.ListServices(ctx, &translatev1.ListServicesRequest{})
 			if err != nil {
 				return fmt.Errorf("list services: send gRPC request: %w", err)
 			}

@@ -20,7 +20,7 @@ const (
 	xlf  = "xlf"
 )
 
-func newDownloadCmd() *cobra.Command {
+func newDownloadCmd(svc *Service) *cobra.Command {
 	var schemaFlag schema
 
 	downloadCmd := &cobra.Command{
@@ -55,7 +55,7 @@ func newDownloadCmd() *cobra.Command {
 				return fmt.Errorf("download file: schema to translate schema: %w", err)
 			}
 
-			res, err := translatev1.NewTranslateServiceClient(conn).DownloadTranslationFile(ctx,
+			res, err := svc.client.DownloadTranslationFile(ctx,
 				&translatev1.DownloadTranslationFileRequest{
 					Language: language, Schema: translateSchema, ServiceId: serviceID,
 				})

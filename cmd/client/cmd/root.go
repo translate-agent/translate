@@ -13,53 +13,59 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-var conn *grpc.ClientConn
+// Service contains a Translate service connection.
+type Service struct {
+	client translatev1.TranslateServiceClient
+}
 
 func newRootCmd() *cobra.Command {
+	var (
+		conn *grpc.ClientConn
+		svc  = new(Service)
+	)
+
 	rootCmd := &cobra.Command{
-		Use:                "translate",
-		TraverseChildren:   true,
-		Short:              "Translate provides tools for interacting with translate agent service",
-		PersistentPreRunE:  rootCmdPersistentPreRunE,
-		PersistentPostRunE: rootCmdPersistentPostRunE,
+		Use:              "translate",
+		TraverseChildren: true,
+		Short:            "Translate provides tools for interacting with translate agent service",
+		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+			address, err := cmd.InheritedFlags().GetString("address")
+			if err != nil {
+				return fmt.Errorf("get cli parameter 'address': %w", err)
+			}
+
+			connIsInsecure, err := cmd.InheritedFlags().GetBool("insecure")
+			if err != nil {
+				return fmt.Errorf("get cli parameter 'insecure': %w", err)
+			}
+
+			var opts []grpc.DialOption
+
+			if connIsInsecure {
+				opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+			}
+
+			conn, err = grpc.NewClient(address, opts...)
+			if err != nil {
+				return fmt.Errorf("create gRPC client: %w", err)
+			}
+
+			svc.client = translatev1.NewTranslateServiceClient(conn)
+
+			return nil
+		},
+		PersistentPostRunE: func(_ *cobra.Command, _ []string) error {
+			if err := conn.Close(); err != nil {
+				return fmt.Errorf("close gRPC connection: %w", err)
+			}
+
+			return nil
+		},
 	}
 
-	rootCmd.AddCommand(newServiceCmd())
+	rootCmd.AddCommand(newServiceCmd(svc))
 
 	return rootCmd
-}
-
-func rootCmdPersistentPreRunE(cmd *cobra.Command, _ []string) error {
-	address, err := cmd.InheritedFlags().GetString("address")
-	if err != nil {
-		return fmt.Errorf("get cli parameter 'address': %w", err)
-	}
-
-	connIsInsecure, err := cmd.InheritedFlags().GetBool("insecure")
-	if err != nil {
-		return fmt.Errorf("get cli parameter 'insecure': %w", err)
-	}
-
-	var opts []grpc.DialOption
-
-	if connIsInsecure {
-		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	}
-
-	conn, err = grpc.NewClient(address, opts...)
-	if err != nil {
-		return fmt.Errorf("create gRPC client: %w", err)
-	}
-
-	return nil
-}
-
-func rootCmdPersistentPostRunE(_ *cobra.Command, _ []string) error {
-	if err := conn.Close(); err != nil {
-		return fmt.Errorf("close gRPC connection: %w", err)
-	}
-
-	return nil
 }
 
 func Execute(ctx context.Context) error {
