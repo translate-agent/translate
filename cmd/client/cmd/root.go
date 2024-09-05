@@ -56,7 +56,7 @@ func newRootCmd() *cobra.Command {
 		},
 		PersistentPostRunE: func(_ *cobra.Command, _ []string) error {
 			if err := conn.Close(); err != nil {
-				return fmt.Errorf("close gRPC connection: %w", err)
+				return fmt.Errorf("close gRPC client: %w", err)
 			}
 
 			return nil
