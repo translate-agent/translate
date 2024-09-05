@@ -21,7 +21,7 @@ func newRootCmd() *cobra.Command {
 		TraverseChildren:   true,
 		Short:              "Translate provides tools for interacting with translate agent service",
 		PersistentPreRunE:  rootCmdPersistentPreRunE,
-		PersistentPostRunE: rootCmdPersistenPostRunE,
+		PersistentPostRunE: rootCmdPersistentPostRunE,
 	}
 
 	rootCmd.AddCommand(newServiceCmd())
@@ -54,7 +54,7 @@ func rootCmdPersistentPreRunE(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func rootCmdPersistenPostRunE(_ *cobra.Command, _ []string) error {
+func rootCmdPersistentPostRunE(_ *cobra.Command, _ []string) error {
 	if err := conn.Close(); err != nil {
 		return fmt.Errorf("close gRPC connection: %w", err)
 	}
