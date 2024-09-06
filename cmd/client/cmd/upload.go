@@ -16,7 +16,7 @@ import (
 )
 
 //nolint:gocognit
-func newUploadCmd() *cobra.Command {
+func newUploadCmd(svc *Service) *cobra.Command {
 	var schemaFlag schema
 
 	uploadCmd := &cobra.Command{
@@ -79,7 +79,7 @@ func newUploadCmd() *cobra.Command {
 				return fmt.Errorf("upload file: schema to translate schema: %w", err)
 			}
 
-			if _, err = translatev1.NewTranslateServiceClient(conn).UploadTranslationFile(ctx,
+			if _, err = svc.client.UploadTranslationFile(ctx,
 				&translatev1.UploadTranslationFileRequest{
 					Language:             language,
 					Data:                 data,
