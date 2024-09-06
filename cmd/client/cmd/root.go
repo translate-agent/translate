@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Service contains a Translate service connection.
+// Service contains a Translate service client.
 type Service struct {
 	client translatev1.TranslateServiceClient
 }
