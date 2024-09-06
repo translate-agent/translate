@@ -1,11 +1,11 @@
 package convert
 
 import (
-	"bytes"
 	"reflect"
 	"slices"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -131,8 +131,6 @@ func Test_FromNgLocalize(t *testing.T) {
 func Test_ToNgLocalize(t *testing.T) {
 	t.Parallel()
 
-	t.Skip() // TODO(jhorsts): why is it skipped?
-
 	tests := []struct {
 		name    string
 		want    []byte
@@ -141,15 +139,7 @@ func Test_ToNgLocalize(t *testing.T) {
 	}{
 		{
 			name: "All OK",
-			want: []byte(`
-      {
-        "locale": "en",
-        "translations": {
-          "Welcome": "Welcome to our website!",
-          "Error": "Something went wrong. Please try again later.",
-          "Feedback": "We appreciate your feedback. Thank you for using our service."
-        }
-      }`),
+			want: []byte(`{"locale":"en","translations":{"Error":"Something went wrong. Please try again later.","Feedback":"We appreciate your feedback. Thank you for using our service.","Welcome":"Welcome to our website!"}}`), //nolint:lll
 			input: model.Translation{
 				Language: language.English,
 				Messages: []model.Message{
@@ -183,7 +173,7 @@ func Test_ToNgLocalize(t *testing.T) {
 					},
 				},
 			},
-			want:    []byte(`{"locale": "en","translations": {"Welcome": "Welcome to our website {user} 99|100 \\"}}`),
+			want:    []byte(`{"locale":"en","translations":{"Welcome":"Welcome to our website {user} 99|100 \\"}}`),
 			wantErr: nil,
 		},
 	}
@@ -205,8 +195,8 @@ func Test_ToNgLocalize(t *testing.T) {
 				return
 			}
 
-			if !bytes.Equal(test.want, got) {
-				t.Errorf("want nglocalize %s, got %s", test.want, got)
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Errorf("want equal nglocalize\n%s", diff)
 			}
 		})
 	}
