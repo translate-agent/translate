@@ -118,45 +118,45 @@ The project uses [Earthly](https://earthly.dev) to automate all development task
 ```shell
 ✗ earthly doc
 TARGETS:
-  +init [--USERARCH] [--go_version=1.23.0]
+  +init [--USERARCH] [--go_version=1.23.1]
       init sets up the project for local development.
-  +up [--USERARCH] [--go_version=1.23.0]
+  +up [--USERARCH] [--go_version=1.23.1]
       up installs the project to local docker instance.
-  +down [--USERARCH] [--go_version=1.23.0]
+  +down [--USERARCH] [--go_version=1.23.1]
       down uninstalls the project from local docker instance.
-  +proto [--USERARCH] [--go_version=1.23.0] [--bufbuild_version=1.40.0]
+  +proto [--USERARCH] [--go_version=1.23.1] [--bufbuild_version=1.40.1]
       proto generates gRPC server.
-  +buf-registry [--USERARCH] [--go_version=1.23.0] [--bufbuild_version=1.40.0]
+  +buf-registry [--USERARCH] [--go_version=1.23.1] [--bufbuild_version=1.40.1]
       buf-registry pushes BUF modules to the registry.
-  +migrate --db --db_user --db_host --db_port --db_schema [--USERARCH] [--go_version=1.23.0] [--migrate_version=4.17.1] [--cmd=up]
+  +migrate --db --db_user --db_host --db_port --db_schema [--USERARCH] [--go_version=1.23.1] [--migrate_version=4.17.1] [--cmd=up]
       migrate runs DDL migration scripts against the given database.
-  +check [--USERARCH] [--go_version=1.23.0]
+  +check [--USERARCH] [--go_version=1.23.1]
       check verifies code quality by running linters and tests.
-  +lint-migrate [--USERARCH] [--go_version=1.23.0] [--sqlfluff_version=3.1.1]
+  +lint-migrate [--USERARCH] [--go_version=1.23.1] [--sqlfluff_version=3.1.1]
       lint-migrate analyses migrate scripts for stylistic issues.
-  +lint-go [--USERARCH] [--go_version=1.23.0] [--golangci_lint_version=1.60.3]
+  +lint-go [--USERARCH] [--go_version=1.23.1] [--golangci_lint_version=1.60.3]
       lint-go analyses golang code for errors, bugs and stylistic issues (golangci-lint).
-  +lint-proto [--USERARCH] [--go_version=1.23.0] [--bufbuild_version=1.40.0]
+  +lint-proto [--USERARCH] [--go_version=1.23.1] [--bufbuild_version=1.40.1]
       lint-proto analyses proto for stylistic issues.
-  +lint [--USERARCH] [--go_version=1.23.0]
+  +lint [--USERARCH] [--go_version=1.23.1]
       lint runs all linters for golang, proto and migrate scripts.
-  +test-unit [--USERARCH] [--go_version=1.23.0]
+  +test-unit [--USERARCH] [--go_version=1.23.1]
       test-unit runs unit tests.
-  +test-integration [--USERARCH] [--go_version=1.23.0] [--migrate_version=4.17.1]
+  +test-integration [--USERARCH] [--go_version=1.23.1] [--migrate_version=4.17.1]
       test-integration runs integration tests.
-  +test [--USERARCH] [--go_version=1.23.0]
+  +test [--USERARCH] [--go_version=1.23.1]
       test runs unit and integration tests.
-  +build [--USERARCH] [--go_version=1.23.0] [--GOARCH=$USERARCH] [--GOOS=linux]
+  +build [--USERARCH] [--go_version=1.23.1] [--GOARCH=$USERARCH] [--GOOS=linux]
       build compiles translate service and client and saves them to ./bin.
-  +image --registry [--USERARCH] [--go_version=1.23.0] [--TARGETARCH] [--tag=latest]
+  +image --registry [--USERARCH] [--go_version=1.23.1] [--TARGETARCH] [--tag=latest]
       image builds translate service image.
-  +image-multiplatform --registry [--USERARCH] [--go_version=1.23.0]
+  +image-multiplatform --registry [--USERARCH] [--go_version=1.23.1]
       image-multiplatform builds translate service image for all platforms.
-  +jaeger [--USERARCH] [--go_version=1.23.0]
+  +jaeger [--USERARCH] [--go_version=1.23.1]
       jaeger is helper target for all-in-one image, it removes the need
       to download the correct jaeger image on every build
-  +image-all-in-one --registry [--USERARCH] [--go_version=1.23.0] [--TARGETARCH] [--tag=latest]
+  +image-all-in-one --registry [--USERARCH] [--go_version=1.23.1] [--TARGETARCH] [--tag=latest]
       image-all-in-one builds all-in-one image.
-  +image-all-in-one-multiplatform --registry [--USERARCH] [--go_version=1.23.0] [--tag=latest]
+  +image-all-in-one-multiplatform --registry [--USERARCH] [--go_version=1.23.1] [--tag=latest]
       image-all-in-one-multiplatform builds all-in-one multiplatform images.
 ```
