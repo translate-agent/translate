@@ -2,7 +2,7 @@ VERSION 0.8
 PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
-ARG --global go_version=1.23.0
+ARG --global go_version=1.23.1
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
 
@@ -83,7 +83,7 @@ go:
 
 # proto generates gRPC server.
 proto:
-  ARG bufbuild_version=1.40.0
+  ARG bufbuild_version=1.40.1
   FROM bufbuild/buf:$bufbuild_version
   ENV BUF_CACHE_DIR=/.cache/buf_cache
   COPY --dir proto .
@@ -108,7 +108,7 @@ proto:
 
 # buf-registry pushes BUF modules to the registry.
 buf-registry:
-  ARG bufbuild_version=1.40.0
+  ARG bufbuild_version=1.40.1
   FROM bufbuild/buf:$bufbuild_version
   WORKDIR proto
   COPY +proto/proto .
@@ -160,7 +160,7 @@ lint-go:
 
 # lint-proto analyses proto for stylistic issues.
 lint-proto:
-  ARG bufbuild_version=1.40.0
+  ARG bufbuild_version=1.40.1
   FROM bufbuild/buf:$bufbuild_version
   WORKDIR proto
   COPY +proto/proto .
