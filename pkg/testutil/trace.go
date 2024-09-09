@@ -57,21 +57,21 @@ func Trace(t *testing.T) (context.Context, SubtestFn) {
 		tp.ForceFlush(ctx)
 	})
 
-	return ctx, Subtest(ctx, t)
+	return ctx, Subtest(t)
 }
 
 // SubtestFn is a function that runs parallel subtest with a trace instrumentation.
 type SubtestFn = func(name string, f func(context.Context, *testing.T))
 
 // Subtest returns SubtestFn that runs parallel subtest with a trace instrumentation.
-func Subtest(ctx context.Context, t *testing.T) SubtestFn {
+func Subtest(t *testing.T) SubtestFn {
 	t.Helper()
 
 	return func(name string, f func(ctx context.Context, t *testing.T)) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx, _ = Trace(t)
+			ctx, _ := Trace(t)
 
 			f(ctx, t)
 		})
