@@ -134,7 +134,7 @@ TARGETS:
       check verifies code quality by running linters and tests.
   +lint-migrate [--USERARCH] [--go_version=1.23.1] [--sqlfluff_version=3.1.1]
       lint-migrate analyses migrate scripts for stylistic issues.
-  +lint-go [--USERARCH] [--go_version=1.23.1] [--golangci_lint_version=1.60.3]
+  +lint-go [--USERARCH] [--go_version=1.23.1] [--golangci_lint_version=1.61.0]
       lint-go analyses golang code for errors, bugs and stylistic issues (golangci-lint).
   +lint-proto [--USERARCH] [--go_version=1.23.1] [--bufbuild_version=1.40.1]
       lint-proto analyses proto for stylistic issues.
