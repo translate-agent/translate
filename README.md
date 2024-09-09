@@ -128,7 +128,7 @@ TARGETS:
       proto generates gRPC server.
   +buf-registry [--USERARCH] [--go_version=1.23.1] [--bufbuild_version=1.40.1]
       buf-registry pushes BUF modules to the registry.
-  +migrate --db --db_user --db_host --db_port --db_schema [--USERARCH] [--go_version=1.23.1] [--migrate_version=4.18.0] [--cmd=up]
+  +migrate --db --db_user --db_host --db_port --db_schema [--USERARCH] [--go_version=1.23.1] [--migrate_version=4.18.1] [--cmd=up]
       migrate runs DDL migration scripts against the given database.
   +check [--USERARCH] [--go_version=1.23.1]
       check verifies code quality by running linters and tests.
@@ -142,7 +142,7 @@ TARGETS:
       lint runs all linters for golang, proto and migrate scripts.
   +test-unit [--USERARCH] [--go_version=1.23.1]
       test-unit runs unit tests.
-  +test-integration [--USERARCH] [--go_version=1.23.1] [--migrate_version=4.18.0]
+  +test-integration [--USERARCH] [--go_version=1.23.1] [--migrate_version=4.18.1]
       test-integration runs integration tests.
   +test [--USERARCH] [--go_version=1.23.1]
       test runs unit and integration tests.
