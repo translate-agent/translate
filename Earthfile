@@ -117,7 +117,7 @@ buf-registry:
 
 # migrate runs DDL migration scripts against the given database.
 migrate:
-  ARG migrate_version=4.17.1
+  ARG migrate_version=4.18.0
   FROM migrate/migrate:v$migrate_version
   ARG --required db # supported databases: mysql
   ARG --required db_user
@@ -185,7 +185,7 @@ test-unit:
 # test-integration runs integration tests.
 test-integration:
   FROM earthly/dind:alpine-3.19
-  ARG migrate_version=4.17.1
+  ARG migrate_version=4.18.0
   COPY .earthly/compose.yaml compose.yaml
   COPY +go/translate /translate
   COPY --dir migrate/mysql migrate
