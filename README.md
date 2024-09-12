@@ -124,9 +124,9 @@ TARGETS:
       up installs the project to local docker instance.
   +down [--USERARCH] [--go_version=1.23.1]
       down uninstalls the project from local docker instance.
-  +proto [--USERARCH] [--go_version=1.23.1] [--bufbuild_version=1.40.1]
+  +proto [--USERARCH] [--go_version=1.23.1] [--bufbuild_version=1.41.0]
       proto generates gRPC server.
-  +buf-registry [--USERARCH] [--go_version=1.23.1] [--bufbuild_version=1.40.1]
+  +buf-registry [--USERARCH] [--go_version=1.23.1] [--bufbuild_version=1.41.0]
       buf-registry pushes BUF modules to the registry.
   +migrate --db --db_user --db_host --db_port --db_schema [--USERARCH] [--go_version=1.23.1] [--migrate_version=4.18.1] [--cmd=up]
       migrate runs DDL migration scripts against the given database.
@@ -136,7 +136,7 @@ TARGETS:
       lint-migrate analyses migrate scripts for stylistic issues.
   +lint-go [--USERARCH] [--go_version=1.23.1] [--golangci_lint_version=1.61.0]
       lint-go analyses golang code for errors, bugs and stylistic issues (golangci-lint).
-  +lint-proto [--USERARCH] [--go_version=1.23.1] [--bufbuild_version=1.40.1]
+  +lint-proto [--USERARCH] [--go_version=1.23.1] [--bufbuild_version=1.41.0]
       lint-proto analyses proto for stylistic issues.
   +lint [--USERARCH] [--go_version=1.23.1]
       lint runs all linters for golang, proto and migrate scripts.
