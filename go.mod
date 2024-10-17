@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/translate v1.12.1
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/XSAM/otelsql v0.35.0
-	github.com/aws/aws-sdk-go-v2/config v1.27.43
+	github.com/aws/aws-sdk-go-v2/config v1.28.0
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.41
 	github.com/aws/aws-sdk-go-v2/service/translate v1.28.2
 	github.com/brianvoe/gofakeit/v6 v6.28.0
