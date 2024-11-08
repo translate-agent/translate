@@ -7,9 +7,9 @@ require (
 	cloud.google.com/go/translate v1.12.2
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/XSAM/otelsql v0.35.0
-	github.com/aws/aws-sdk-go-v2/config v1.28.2
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.43
-	github.com/aws/aws-sdk-go-v2/service/translate v1.28.4
+	github.com/aws/aws-sdk-go-v2/config v1.28.3
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.44
+	github.com/aws/aws-sdk-go-v2/service/translate v1.28.5
 	github.com/brianvoe/gofakeit/v6 v6.28.0
 	github.com/dgraph-io/badger/v4 v4.3.1
 	github.com/fatih/color v1.18.0
@@ -54,7 +54,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.24.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.24.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.32.4 // indirect
 	github.com/aws/smithy-go v1.22.0 // indirect
