@@ -83,8 +83,8 @@ ON DUPLICATE KEY UPDATE
 				m.ID,
 				m.Message,
 				m.Description,
-				m.Positions,
-				m.Status,
+				&m.Positions,
+				&m.Status,
 			)
 			if err != nil {
 				return fmt.Errorf("repo: insert message: %w", err)
