@@ -74,8 +74,8 @@ func Test_MarkUntranslated(t *testing.T) {
 			// all messages should be with status translated.
 			if origIdx != -1 {
 				for _, msg := range test.translations[origIdx].Messages {
-					if MessageStatusTranslated.String() != msg.Status.String() {
-						t.Errorf("want messages status '%s', got '%s'", MessageStatusTranslated, msg.Status)
+					if msg.Status != MessageStatusTranslated {
+						t.Errorf("want messages status '%s', got '%s'", ptr(MessageStatusTranslated), &msg.Status)
 					}
 				}
 			}
@@ -94,8 +94,8 @@ func Test_MarkUntranslated(t *testing.T) {
 						wantStatus = MessageStatusUntranslated
 					}
 
-					if wantStatus.String() != message.Status.String() {
-						t.Errorf("want message status '%s', got '%s'", wantStatus, message.Status)
+					if wantStatus != message.Status {
+						t.Errorf("want message status '%s', got '%s'", &wantStatus, &message.Status)
 					}
 				}
 			}

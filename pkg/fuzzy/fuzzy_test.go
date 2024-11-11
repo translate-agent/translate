@@ -58,7 +58,7 @@ func Test_TranslateMock(t *testing.T) {
 
 				for i, m := range output.Messages {
 					if model.MessageStatusFuzzy != m.Status {
-						t.Errorf("want message status '%s', got '%s'", model.MessageStatusFuzzy, m.Status)
+						t.Errorf("want message status '%s', got '%s'", ptr(model.MessageStatusFuzzy), &m.Status)
 					}
 
 					testutil.EqualMF2Message(t, test.input.Messages[i].Message, m.Message)
