@@ -96,8 +96,8 @@ func ExecuteWithParams(ctx context.Context, params []string) ([]byte, error) {
 type schema string
 
 // String is used both by fmt.Print and by Cobra in help text.
-func (s schema) String() string {
-	return string(s)
+func (s *schema) String() string {
+	return string(*s)
 }
 
 // Set must have pointer receiver so it doesn't change the value of a copy.
@@ -118,11 +118,11 @@ func (s *schema) Set(v string) error {
 }
 
 // Type is only used in help text.
-func (s schema) Type() string {
+func (*schema) Type() string {
 	return "schema"
 }
 
-func (s schema) ToTranslateSchema() (translatev1.Schema, error) {
+func (s *schema) ToTranslateSchema() (translatev1.Schema, error) {
 	if v, ok := translatev1.Schema_value[s.String()]; ok {
 		return translatev1.Schema(v), nil
 	}

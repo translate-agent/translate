@@ -48,7 +48,7 @@ func Test_Translate(t *testing.T) {
 				}
 
 				if model.MessageStatusFuzzy != m.Status {
-					t.Errorf("want message status '%s', got '%s'", model.MessageStatusFuzzy, m.Status)
+					t.Errorf("want message status '%s', got '%s'", ptr(model.MessageStatusFuzzy), &m.Status)
 				}
 
 				_, err := mf2.Parse(m.Message)

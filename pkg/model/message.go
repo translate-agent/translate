@@ -41,20 +41,20 @@ func (t *Translation) FindChangedMessageIDs(current *Translation) []string {
 type Translations []Translation
 
 // HasLanguage checks if Translations contains Translation with the given language.
-func (t Translations) HasLanguage(lang language.Tag) bool {
+func (t *Translations) HasLanguage(lang language.Tag) bool {
 	return t.LanguageIndex(lang) != -1
 }
 
 // LanguageIndex returns index of Translation with the given language. If not found, returns -1.
-func (t Translations) LanguageIndex(lang language.Tag) int {
-	return slices.IndexFunc(t, func(t Translation) bool {
+func (t *Translations) LanguageIndex(lang language.Tag) int {
+	return slices.IndexFunc(*t, func(t Translation) bool {
 		return t.Language == lang
 	})
 }
 
 // OriginalIndex returns index of Translation with the original flag set to true. If not found, returns -1.
-func (t Translations) OriginalIndex() int {
-	return slices.IndexFunc(t, func(t Translation) bool {
+func (t *Translations) OriginalIndex() int {
+	return slices.IndexFunc(*t, func(t Translation) bool {
 		return t.Original
 	})
 }
@@ -103,15 +103,15 @@ Example:
 			Messages: [ { ID: "1", Message: "Bonjour", Status: Untranslated  }, ... ],
 		}
 */
-func (t Translations) MarkUntranslated(ids []string) {
-	n := len(t)
-	if len(ids) == 0 || n == 0 || (n == 1 && t[0].Original) {
+func (t *Translations) MarkUntranslated(ids []string) {
+	n := len(*t)
+	if len(ids) == 0 || n == 0 || (n == 1 && (*t)[0].Original) {
 		return
 	}
 
 	slices.Sort(ids)
 
-	for _, translation := range t {
+	for _, translation := range *t {
 		if translation.Original {
 			continue
 		}
@@ -156,16 +156,16 @@ Example:
 			Messages: [ { ID: "1", Message: "Bonjour" }, { ID: "2", Message: "World", Status: Untranslated } ],
 		},
 */
-func (t Translations) PopulateTranslations() {
-	origIdx := slices.IndexFunc(t, func(t Translation) bool { return t.Original })
+func (t *Translations) PopulateTranslations() {
+	origIdx := slices.IndexFunc(*t, func(t Translation) bool { return t.Original })
 	if origIdx == -1 {
 		return
 	}
 
 	var wg sync.WaitGroup
 
-	for i := range t {
-		if t[i].Original {
+	for i := range *t {
+		if (*t)[i].Original {
 			continue
 		}
 
@@ -174,17 +174,17 @@ func (t Translations) PopulateTranslations() {
 		populate := func(i int) {
 			defer wg.Done()
 
-			lookup := make(map[string]struct{}, len(t[i].Messages))
-			for j := range t[i].Messages {
-				lookup[t[i].Messages[j].ID] = struct{}{}
+			lookup := make(map[string]struct{}, len((*t)[i].Messages))
+			for j := range (*t)[i].Messages {
+				lookup[(*t)[i].Messages[j].ID] = struct{}{}
 			}
 
-			for j := range t[origIdx].Messages {
-				if _, ok := lookup[t[origIdx].Messages[j].ID]; !ok {
-					newMsg := t[origIdx].Messages[j]
+			for j := range (*t)[origIdx].Messages {
+				if _, ok := lookup[(*t)[origIdx].Messages[j].ID]; !ok {
+					newMsg := (*t)[origIdx].Messages[j]
 					newMsg.Status = MessageStatusUntranslated
 
-					t[i].Messages = append(t[i].Messages, newMsg)
+					(*t)[i].Messages = append((*t)[i].Messages, newMsg)
 				}
 			}
 		}
@@ -212,21 +212,27 @@ const (
 	MessageStatusUntranslated
 )
 
-func (s MessageStatus) String() string {
-	switch s {
+const (
+	messageStatusTextTranslated   = "TRANSLATED"
+	messageStatusTextFuzzy        = "FUZZY"
+	messageStatusTextUntranslated = "UNTRANSLATED"
+)
+
+func (s *MessageStatus) String() string {
+	switch *s {
 	default:
 		return ""
 	case MessageStatusTranslated:
-		return "TRANSLATED"
+		return messageStatusTextTranslated
 	case MessageStatusFuzzy:
-		return "FUZZY"
+		return messageStatusTextFuzzy
 	case MessageStatusUntranslated:
-		return "UNTRANSLATED"
+		return messageStatusTextUntranslated
 	}
 }
 
 // Value implements driver.Valuer interface.
-func (s MessageStatus) Value() (driver.Value, error) {
+func (s *MessageStatus) Value() (driver.Value, error) {
 	return s.String(), nil
 }
 
@@ -237,14 +243,14 @@ func (s *MessageStatus) Scan(value interface{}) error {
 		return fmt.Errorf("unknown type %+v, want string", v)
 	case []byte:
 		switch string(v) {
-		case MessageStatusTranslated.String():
-			*s = MessageStatusTranslated
-		case MessageStatusFuzzy.String():
-			*s = MessageStatusFuzzy
-		case MessageStatusUntranslated.String():
-			*s = MessageStatusUntranslated
 		default:
 			return fmt.Errorf("unknown message status: %+v", v)
+		case messageStatusTextTranslated:
+			*s = MessageStatusTranslated
+		case messageStatusTextFuzzy:
+			*s = MessageStatusFuzzy
+		case messageStatusTextUntranslated:
+			*s = MessageStatusUntranslated
 		}
 	}
 
@@ -254,8 +260,8 @@ func (s *MessageStatus) Scan(value interface{}) error {
 type Positions []string
 
 // Value implements driver.Valuer interface.
-func (p Positions) Value() (driver.Value, error) {
-	if len(p) == 0 {
+func (p *Positions) Value() (driver.Value, error) {
+	if len(*p) == 0 {
 		return nil, nil //nolint:nilnil
 	}
 

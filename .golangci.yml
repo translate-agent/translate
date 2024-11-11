@@ -12,7 +12,6 @@ linters:
     - depguard
     - dupl
     - err113
-    - execinquery
     - exhaustruct
     - exportloopref
     - forbidigo
@@ -27,7 +26,6 @@ linters:
     - gofmt
     - goheader
     - goimports
-    - gomnd
     - gomodguard
     - gosmopolitan
     - grouper

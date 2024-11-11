@@ -89,11 +89,11 @@ func Test_fuzzyTranslate(t *testing.T) {
 							t.Errorf("want message '%s', got '%s'", mockTranslation, message.Message)
 						}
 
-						if model.MessageStatusFuzzy.String() != message.Status.String() {
-							t.Errorf("want message status '%s', got '%s'", model.MessageStatusFuzzy, message.Status)
+						if model.MessageStatusFuzzy != message.Status {
+							t.Errorf("want message status '%s', got '%s'", ptr(model.MessageStatusFuzzy), &message.Status)
 						}
-					} else if model.MessageStatusTranslated.String() != message.Status.String() {
-						t.Errorf("want message status '%s', got '%s'", model.MessageStatusTranslated, message.Status)
+					} else if model.MessageStatusTranslated != message.Status {
+						t.Errorf("want message status '%s', got '%s'", ptr(model.MessageStatusTranslated), &message.Status)
 					}
 				}
 			}
