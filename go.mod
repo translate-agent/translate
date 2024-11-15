@@ -32,11 +32,11 @@ require (
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/net v0.31.0
 	golang.org/x/text v0.20.0
-	google.golang.org/api v0.205.0
-	google.golang.org/genproto v0.0.0-20241021214115-324edc3d5d38
+	google.golang.org/api v0.206.0
+	google.golang.org/genproto v0.0.0-20241104194629-dd2ea8efbc28
 	google.golang.org/genproto/googleapis/api v0.0.0-20241104194629-dd2ea8efbc28
 	google.golang.org/grpc v1.68.0
-	google.golang.org/protobuf v1.35.1
+	google.golang.org/protobuf v1.35.2
 )
 
 // Indirect
