@@ -32,8 +32,8 @@ require (
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/net v0.31.0
 	golang.org/x/text v0.20.0
-	google.golang.org/api v0.206.0
-	google.golang.org/genproto v0.0.0-20241104194629-dd2ea8efbc28
+	google.golang.org/api v0.207.0
+	google.golang.org/genproto v0.0.0-20241113202542-65e8d215514f
 	google.golang.org/genproto/googleapis/api v0.0.0-20241104194629-dd2ea8efbc28
 	google.golang.org/grpc v1.68.0
 	google.golang.org/protobuf v1.35.2
@@ -101,7 +101,7 @@ require (
 	golang.org/x/sys v0.27.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
 	golang.org/x/tools v0.27.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241104194629-dd2ea8efbc28 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241113202542-65e8d215514f // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
