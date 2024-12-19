@@ -1,7 +1,7 @@
 run:
   build-tags:
     - integration
-  timeout: 2m
+  timeout: 3m
 issues:
   exclude-dirs:
     - pkg/pb
