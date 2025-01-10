@@ -32,7 +32,7 @@ require (
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/net v0.34.0
 	golang.org/x/text v0.21.0
-	google.golang.org/api v0.215.0
+	google.golang.org/api v0.216.0
 	google.golang.org/genproto v0.0.0-20241118233622-e639e219e697
 	google.golang.org/genproto/googleapis/api v0.0.0-20250102185135-69823020774d
 	google.golang.org/grpc v1.69.2
