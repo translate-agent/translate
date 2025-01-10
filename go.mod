@@ -105,6 +105,6 @@ require (
 )
 
 require (
-	github.com/dgraph-io/ristretto/v2 v2.0.1 // indirect
+	github.com/dgraph-io/ristretto/v2 v2.1.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 )
