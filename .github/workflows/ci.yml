@@ -34,7 +34,7 @@ jobs:
       - name: Test Unit
         run: earthly --ci +test-unit
       - name: Test Integration
-        if: ${{ github.actor != 'dependabot[bot]' }}
+        if: ${{ github.actor != 'dependabot[bot]' || github.ref == 'refs/heads/main' }}
         env:
           EARTHLY_TOKEN: ${{ secrets.EARTHLY_TOKEN }}
         run: earthly --ci --allow-privileged +test-integration
