@@ -4,6 +4,7 @@ on:
   pull_request_target:
     types: [closed]
   push:
+    branches-ignore: [main]
 
 jobs:
   check:
