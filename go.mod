@@ -13,7 +13,7 @@ require (
 	github.com/dgraph-io/badger/v4 v4.5.1
 	github.com/fatih/color v1.18.0
 	github.com/go-sql-driver/mysql v1.9.0
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.14.1
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1
