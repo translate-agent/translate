@@ -31,7 +31,7 @@ require (
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/net v0.35.0
 	golang.org/x/text v0.22.0
-	google.golang.org/api v0.222.0
+	google.golang.org/api v0.223.0
 	google.golang.org/genproto v0.0.0-20250122153221-138b5a5a4fd4
 	google.golang.org/genproto/googleapis/api v0.0.0-20250219182151-9fdb1cabc7b2
 	google.golang.org/grpc v1.70.0
