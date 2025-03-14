@@ -67,7 +67,7 @@ func Test_fuzzyTranslate(t *testing.T) {
 			allTranslations := append(model.Translations{*test.originalTranslation}, test.translations...)
 			untranslatedMessageIDLookup := randomUntranslatedMessageStatus(t, allTranslations)
 
-			err := translateSrv.fuzzyTranslate(context.Background(), allTranslations)
+			err := translateSrv.fuzzyTranslate(t.Context(), allTranslations)
 			if err != nil {
 				t.Error(err)
 				return

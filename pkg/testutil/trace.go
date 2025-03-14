@@ -43,7 +43,7 @@ func Tracer() trace.Tracer {
 func Trace(t *testing.T) (context.Context, SubtestFn) {
 	t.Helper()
 
-	ctx, span := testTracer.Start(context.Background(), t.Name())
+	ctx, span := testTracer.Start(t.Context(), t.Name())
 
 	t.Cleanup(func() {
 		if t.Failed() {

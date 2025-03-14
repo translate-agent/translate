@@ -13,7 +13,6 @@ linters:
     - dupl
     - err113
     - exhaustruct
-    - exportloopref
     - forbidigo
     - funlen
     - gci
@@ -36,6 +35,7 @@ linters:
     - nonamedreturns
     - promlinter
     - tagliatelle
+    - tenv # Duplicate feature in another linter. Replaced by usetesting.
     - testableexamples
     - testpackage
     - tparallel
