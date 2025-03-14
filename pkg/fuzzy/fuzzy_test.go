@@ -40,7 +40,7 @@ func Test_TranslateMock(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				t.Parallel()
 
-				output, err := mock.Translate(context.Background(), test.input, targetLang)
+				output, err := mock.Translate(t.Context(), test.input, targetLang)
 				if err != nil {
 					t.Error(err)
 					return
