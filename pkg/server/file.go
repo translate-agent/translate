@@ -31,7 +31,7 @@ func parseUploadTranslationFileRequestParams(req *translatev1.UploadTranslationF
 		params = &uploadParams{
 			data:                 req.GetData(),
 			schema:               req.GetSchema(),
-			original:             req.Original, //nolint:protogetter
+			original:             req.Original,
 			populateTranslations: req.GetPopulateTranslations(),
 		}
 		err error

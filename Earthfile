@@ -147,7 +147,7 @@ lint-migrate:
 
 # lint-go analyses golang code for errors, bugs and stylistic issues (golangci-lint).
 lint-go:
-  ARG golangci_lint_version=1.64.7
+  ARG golangci_lint_version=2.0.2
   FROM golangci/golangci-lint:v$golangci_lint_version-alpine
   WORKDIR translate
   COPY +go/translate .

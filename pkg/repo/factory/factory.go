@@ -23,9 +23,7 @@ func Usage() string {
 }
 
 // NewRepo creates a new repo based on the provided database string.
-//
-//nolint:ireturn
-func NewRepo(ctx context.Context, db string) (repo.Repo, error) {
+func NewRepo(ctx context.Context, db string) (repo.Repo, error) { //nolint:ireturn
 	var (
 		repo repo.Repo
 		err  error
