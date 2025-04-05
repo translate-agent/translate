@@ -2,7 +2,7 @@ VERSION 0.8
 PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
-ARG --global go_version=1.24.1
+ARG --global go_version=1.24.2
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
 
