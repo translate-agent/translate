@@ -47,19 +47,19 @@ func (m *Message) marshal(b *bytes.Buffer) {
 	}
 
 	for _, translatorComment := range m.TranslatorComments {
-		b.WriteString(fmt.Sprintf("# %s\n", translatorComment))
+		fmt.Fprintf(b, "# %s\n", translatorComment)
 	}
 
 	for _, extractedComment := range m.ExtractedComments {
-		b.WriteString(fmt.Sprintf("#. %s\n", extractedComment))
+		fmt.Fprintf(b, "#. %s\n", extractedComment)
 	}
 
 	for _, reference := range m.References {
-		b.WriteString(fmt.Sprintf("#: %s\n", reference))
+		fmt.Fprintf(b, "#: %s\n", reference)
 	}
 
 	for _, flag := range m.Flags {
-		b.WriteString(fmt.Sprintf("#, %s\n", flag))
+		fmt.Fprintf(b, "#, %s\n", flag)
 	}
 
 	if m.MsgID != "" {
@@ -94,6 +94,6 @@ func (h Headers) marshal(b *bytes.Buffer) {
 	b.WriteString("msgid \"\"\nmsgstr \"\"\n")
 
 	for _, header := range h {
-		b.WriteString(fmt.Sprintf("\"%s: %s\\n\"\n", header.Name, header.Value))
+		fmt.Fprintf(b, "\"%s: %s\\n\"\n", header.Name, header.Value)
 	}
 }
