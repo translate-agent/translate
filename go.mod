@@ -16,7 +16,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/googleapis/gax-go/v2 v2.14.1
+	github.com/googleapis/gax-go/v2 v2.14.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rodaine/table v1.3.0
@@ -33,8 +33,8 @@ require (
 	golang.org/x/net v0.41.0
 	golang.org/x/text v0.26.0
 	google.golang.org/api v0.232.0
-	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb
-	google.golang.org/genproto/googleapis/api v0.0.0-20250425173222-7b384671a197
+	google.golang.org/genproto v0.0.0-20250505200425-f936aa4a68b2
+	google.golang.org/genproto/googleapis/api v0.0.0-20250505200425-f936aa4a68b2
 	google.golang.org/grpc v1.72.0
 	google.golang.org/protobuf v1.36.6
 )
