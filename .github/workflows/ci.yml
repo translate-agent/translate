@@ -9,6 +9,9 @@ jobs:
     env:
       FORCE_COLOR: 1
       EARTHLY_REMOTE_CACHE: ghcr.io/${{ github.repository_owner }}/translate:cache
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
       # Check if Generated Go files are up to date
