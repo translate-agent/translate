@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_COLOR: 1
-      EARTHLY_REMOTE_CACHE: ghcr.io/${{ github.repository_owner }}/translate:cache
+      # EARTHLY_REMOTE_CACHE: ghcr.io/${{ github.repository_owner }}/translate:cache
     permissions:
       contents: read
       packages: write
@@ -35,16 +35,16 @@ jobs:
           fi
         # LINT
       - name: Lint Proto
-        run: earthly --ci +lint-proto
+        run: earthly --ci --remote-cache=ghcr.io/${{ github.repository_owner }}/translate:cache-lint-proto +lint-proto
       - name: Lint Migrate
-        run: earthly --ci +lint-migrate
+        run: earthly --ci --remote-cache=ghcr.io/${{ github.repository_owner }}/translate:cache-lint-migrate  +lint-migrate
       - name: Lint GO
-        run: earthly --ci +lint-go
+        run: earthly --ci --remote-cache=ghcr.io/${{ github.repository_owner }}/translate:cache-lint-go  +lint-go
         # TEST
       - name: Test Unit
-        run: earthly --ci +test-unit
+        run: earthly --ci --remote-cache=ghcr.io/${{ github.repository_owner }}/translate:cache-test-unit  +test-unit
       - name: Test Integration
         if: ${{ github.actor != 'dependabot[bot]' }}
         env:
           EARTHLY_TOKEN: ${{ secrets.EARTHLY_TOKEN }}
-        run: earthly --ci --allow-privileged +test-integration
+        run: earthly --ci --allow-privileged  --remote-cache=ghcr.io/${{ github.repository_owner }}/translate:cache-test-integration  +test-integration
