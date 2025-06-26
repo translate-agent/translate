@@ -10,12 +10,18 @@ jobs:
       FORCE_COLOR: 1
       EARTHLY_REMOTE_CACHE: ghcr.io/${{ github.repository_owner }}/translate:cache
     steps:
+      - uses: actions/checkout@v4
+      # Check if Generated Go files are up to date
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - uses: earthly/actions-setup@v1
         with:
           version: 0.8.15
           use-cache: true
-      - uses: actions/checkout@v4
-      # Check if Generated Go files are up to date
       - name: GO proto up-to-date
         run: |
           earthly --ci +proto
