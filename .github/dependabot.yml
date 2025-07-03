@@ -17,8 +17,6 @@ updates:
       google:
         patterns:
           - "cloud.google.com/*"
-      grpc:
-        patterns:
           - "google.golang.org/*"
       otel:
         patterns:
@@ -26,4 +24,3 @@ updates:
       x:
         patterns:
           - "golang.org/x/*"
-
