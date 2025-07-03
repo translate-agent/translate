@@ -38,22 +38,6 @@ jobs:
         env:
           EARTHLY_TOKEN: ${{ secrets.EARTHLY_TOKEN }}
         run: earthly --ci --allow-privileged +test-integration
-  tst:
-    runs-on: ubuntu-latest
-    steps:
-      - name: branch
-        if: github.ref_type == 'branch'
-        run: echo "OK"
-      - name: ref_name
-        if: startsWith(github.ref_name, 'dependabot/')
-        run: echo "OK"
-
-      - name: actor
-        if: github.actor == 'dependabot[bot]'
-        run: echo "OK"
-      - name: repository
-        if: github.repository == 'translate-agent/translate'
-        run: echo "OK"
   automerge:
     runs-on: ubuntu-latest
     needs: check
@@ -63,7 +47,6 @@ jobs:
     if: |
       github.ref_type == 'branch' &&
       startsWith(github.ref_name, 'dependabot/') &&
-      github.actor == 'dependabot[bot]' &&
       github.repository == 'translate-agent/translate'
     steps:
       - name: Dependabot metadata
