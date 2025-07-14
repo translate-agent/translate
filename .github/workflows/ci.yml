@@ -3,10 +3,15 @@ name: CI
 on:
   pull_request:
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   check:
     runs-on: ubuntu-latest
     env:
+      EARTHLY_REMOTE_CACHE: ghcr.io/translate-agent/ci-translate:cache
       FORCE_COLOR: 1
     steps:
       - uses: earthly/actions-setup@v1
@@ -15,6 +20,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           use-cache: false
       - uses: actions/checkout@v4
+      - name: Log in to the GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          # Use the new PAT secret instead of GITHUB_TOKEN
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       # Check if Generated Go files are up to date
       - name: GO proto up-to-date
         run: |
