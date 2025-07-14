@@ -9,10 +9,6 @@ jobs:
     env:
       FORCE_COLOR: 1
     steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
       - uses: earthly/actions-setup@v1
         with:
           version: 0.8.15
@@ -50,7 +46,7 @@ jobs:
       pull-requests: write
     if: |
       github.ref_type == 'branch' &&
-      startsWith(github.ref_name, 'dependabot/') &&
+      startsWith(github.head_ref, 'dependabot/') &&
       github.actor == 'dependabot[bot]' &&
       github.repository == 'translate-agent/translate'
     steps:
