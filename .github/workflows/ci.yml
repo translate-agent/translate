@@ -9,6 +9,10 @@ jobs:
     env:
       FORCE_COLOR: 1
     steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
       - uses: earthly/actions-setup@v1
         with:
           version: 0.8.15
