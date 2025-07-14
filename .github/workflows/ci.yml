@@ -12,7 +12,6 @@ jobs:
       - uses: earthly/actions-setup@v1
         with:
           version: 0.8.15
-          use-cache: true
       - uses: actions/checkout@v4
       # Check if Generated Go files are up to date
       - name: GO proto up-to-date
