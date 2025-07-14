@@ -12,7 +12,8 @@ jobs:
       - uses: earthly/actions-setup@v1
         with:
           version: 0.8.15
-          use-cache: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          use-cache: false
       - uses: actions/checkout@v4
       # Check if Generated Go files are up to date
       - name: GO proto up-to-date
@@ -66,7 +67,7 @@ jobs:
           )
         run: |
           gh pr review --approve "$PR_URL"
-          gh pr merge --auto --merge "$PR_URL"
+          gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
           GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
