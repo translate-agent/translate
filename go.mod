@@ -98,6 +98,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-require github.com/brianvoe/gofakeit/v6 v6.28.0
+require github.com/brianvoe/gofakeit/v7 v7.3.0
 
 require github.com/cenkalti/backoff/v5 v5.0.2 // indirect
