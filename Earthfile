@@ -11,7 +11,6 @@ FROM --platform=linux/$USERARCH golang:$go_version-alpine
 # init sets up the project for local development.
 init:
   LOCALLY
-  RUN earthly secret --org expect.digital --project translate-agent get google_account_key > google_account_key.json
   RUN \
     echo "# OpenTelemetry" > .env.test && \
     echo "OTEL_SERVICE_NAME=translate" >> .env.test && \
