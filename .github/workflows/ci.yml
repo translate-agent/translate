@@ -35,9 +35,13 @@ jobs:
       - name: Test Unit
         run: earthly --ci +test-unit
       - name: Test Integration
+        env:
+          GOOGLE_ACCOUNT_KEY: ${{ secrets.GOOGLE_ACCOUNT_KEY }}
+          EARTHLY_SECRET_FILES: google_account_key=google_account_key.json
         run: |
+          echo $GOOGLE_ACCONT_KEY > google_account_key.json
           earthly --ci --allow-privileged \
             --secret aws_access_key_id=${{  secrets.AWS_ACCESS_KEY_ID }} \
             --secret aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
-            --secret google_account_key=${{ secrets.GOOGLE_ACCOUNT_KEY }} \
+             \
             +test-integration
