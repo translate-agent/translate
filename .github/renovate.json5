@@ -24,7 +24,7 @@
         "/^cloud\\.google\\.com",
         "/^github\\.com\\/google\\//",
         "/^github\\.com\\/googleapis\\//",
-        "/^google\\.golang\\.org/grpc\\//",
+        "/^google\\.golang\\.org\\//",
       ],
       automerge: true,
     },
