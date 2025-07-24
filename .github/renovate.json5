@@ -5,7 +5,7 @@
   packageRules: [
     {
       groupName: "aws",
-      matchPackageNames: ["/^github\\.com\\//"],
+      matchPackageNames: ["/^github\\.com\\/aws\\//"],
       automerge: true,
     },
     {
