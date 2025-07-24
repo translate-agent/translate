@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v6"
+	"github.com/brianvoe/gofakeit/v7"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/testutil/rand"
 	"golang.org/x/text/language"
