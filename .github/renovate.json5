@@ -1,0 +1,32 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:recommended"],
+  rebaseWhen: "behind-base-branch",
+  packageRules: [
+    {
+      groupName: "aws",
+      matchPackageNames: ["/$github\\.com\\//"],
+      automerge: true,
+    },
+    {
+      groupName: "otel",
+      matchPackageNames: ["/$go\\.opentelemetry\\.io\\//"],
+      automerge: true,
+    },
+    {
+      groupName: "go x",
+      matchPackageNames: ["/$golang\\.org/x\\//"],
+      automerge: true,
+    },
+    {
+      groupName: "google",
+      matchPackageNames: [
+        "/$cloud\\.google\\.com",
+        "/$github\\.com\\/google\\//",
+        "/$github\\.com\\/googleapis\\//",
+        "/$google\\.golang\\.org/grpc\\//",
+      ],
+      automerge: true,
+    },
+  ],
+}
