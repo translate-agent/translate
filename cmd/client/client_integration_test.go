@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brianvoe/gofakeit/v6"
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/spf13/viper"
 	"go.expect.digital/translate/cmd/client/cmd"
 	translatesrv "go.expect.digital/translate/cmd/translate/service"

@@ -1,7 +1,7 @@
 package rand
 
 import (
-	"github.com/brianvoe/gofakeit/v6"
+	"github.com/brianvoe/gofakeit/v7"
 	"golang.org/x/text/language"
 )
 
