@@ -7,8 +7,8 @@ require (
 	cloud.google.com/go/translate v1.12.6
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/XSAM/otelsql v0.39.0
-	github.com/aws/aws-sdk-go-v2/config v1.30.0
-	github.com/aws/aws-sdk-go-v2/credentials v1.18.0
+	github.com/aws/aws-sdk-go-v2/config v1.30.1
+	github.com/aws/aws-sdk-go-v2/credentials v1.18.1
 	github.com/aws/aws-sdk-go-v2/service/translate v1.30.0
 	github.com/brianvoe/gofakeit/v7 v7.3.0
 	github.com/dgraph-io/badger/v4 v4.8.0
@@ -48,7 +48,7 @@ require (
 	cloud.google.com/go/longrunning v0.6.7 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.37.0 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.17.0 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.3 // indirect
