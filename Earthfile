@@ -2,6 +2,7 @@ VERSION 0.8
 PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
+# renovate datasource=docker packageName=golang
 ARG --global go_version=1.24.2
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
@@ -82,6 +83,7 @@ go:
 
 # proto generates gRPC server.
 proto:
+  # renovate datasource=docker packageName=bufbuild/buf
   ARG bufbuild_version=1.41.0
   FROM bufbuild/buf:$bufbuild_version
   ENV BUF_CACHE_DIR=/.cache/buf_cache
@@ -107,6 +109,7 @@ proto:
 
 # buf-registry pushes BUF modules to the registry.
 buf-registry:
+  # renovate datasource=docker packageName=bufbuild/buf
   ARG bufbuild_version=1.41.0
   FROM bufbuild/buf:$bufbuild_version
   WORKDIR proto
@@ -116,6 +119,7 @@ buf-registry:
 
 # migrate runs DDL migration scripts against the given database.
 migrate:
+  # renovate datasource=docker packageName=migrate/migrate
   ARG migrate_version=4.18.1
   FROM migrate/migrate:v$migrate_version
   ARG --required db # supported databases: mysql
@@ -138,6 +142,7 @@ check:
 
 # lint-migrate analyses migrate scripts for stylistic issues.
 lint-migrate:
+  # renovate datasource=docker packageName=sqlfluff/sqlfluff
   ARG sqlfluff_version=3.1.1
   FROM sqlfluff/sqlfluff:$sqlfluff_version
   WORKDIR migrate
@@ -146,8 +151,9 @@ lint-migrate:
 
 # lint-go analyses golang code for errors, bugs and stylistic issues (golangci-lint).
 lint-go:
-  ARG golangci_lint_version=2.0.2
-  FROM golangci/golangci-lint:v$golangci_lint_version-alpine
+  # renovate datasource=docker packageName=golangci/golangci-lint
+  ARG golangci_lint_version=v2.0.2-alpine
+  FROM golangci/golangci-lint:$golangci_lint_version
   WORKDIR translate
   COPY +go/translate .
   COPY .golangci.yml .
@@ -159,6 +165,7 @@ lint-go:
 
 # lint-proto analyses proto for stylistic issues.
 lint-proto:
+  # renovate datasource=docker packageName=bufbuild/buf
   ARG bufbuild_version=1.41.0
   FROM bufbuild/buf:$bufbuild_version
   WORKDIR proto
@@ -183,7 +190,10 @@ test-unit:
 
 # test-integration runs integration tests.
 test-integration:
-  FROM earthly/dind:alpine-3.19
+  # renovate datasource=docker packageName=earthbuild/dind
+  ARG dind_version=alpine-3.22-docker-28.3.3-r1
+  FROM earthbuild/dind:$dind_version
+  # renovate datasource=docker packageName=migrate/migrate
   ARG migrate_version=4.18.1
   COPY .earthly/compose.yaml compose.yaml
   COPY +go/translate /translate
@@ -269,7 +279,9 @@ image-multiplatform:
 # jaeger is helper target for all-in-one image, it removes the need
 # to download the correct jaeger image on every build
 jaeger:
-  FROM jaegertracing/all-in-one:1.47
+  # renovate datasource=docker packageName=jaegertracing/all-in-one
+  ARG jaeger_version=1.47
+  FROM jaegertracing/all-in-one:$jaeger_version
   SAVE ARTIFACT /go/bin/all-in-one-linux jaeger
 
 # image-all-in-one builds all-in-one image.
@@ -277,7 +289,9 @@ image-all-in-one:
   ARG TARGETARCH
   ARG --required registry
   ARG tag=latest
-  FROM envoyproxy/envoy:v1.26-latest
+  # renovate datasource=docker packageName=envoyproxy/envoy
+  ARG envoy_version=v1.26.0-latest
+  FROM envoyproxy/envoy:$envoy_version
 
   # Install supervisor to run multiple processes in a single container
   RUN apt-get update && apt-get install -y supervisor
