@@ -178,6 +178,8 @@ github.com/aws/aws-sdk-go-v2/service/translate v1.32.1 h1:Ym8SP1BiWbwHYQpWxhyLEG
 github.com/aws/aws-sdk-go-v2/service/translate v1.32.1/go.mod h1:re9agwYXOUlrasXGA2BA8kE/tfKbhsdrCse93BBYySY=
 github.com/aws/aws-sdk-go-v2/service/translate v1.32.2 h1:fjOim9TH02srMmqT4z4TZArEMOcQmKQ3dlhpmEOhelg=
 github.com/aws/aws-sdk-go-v2/service/translate v1.32.2/go.mod h1:85ZNkOak2fLd+58xpDboVGk2nelrT76SL03A3BqWKJY=
+github.com/aws/aws-sdk-go-v2/service/translate v1.33.0 h1:9FpjtEORKPfhpim1NYQVx8UqbmDZlkxuZJQYsjXeOUw=
+github.com/aws/aws-sdk-go-v2/service/translate v1.33.0/go.mod h1:85ZNkOak2fLd+58xpDboVGk2nelrT76SL03A3BqWKJY=
 github.com/aws/smithy-go v1.22.4 h1:uqXzVZNuNexwc/xrh6Tb56u89WDlJY6HS+KC0S4QSjw=
 github.com/aws/smithy-go v1.22.4/go.mod h1:t1ufH5HMublsJYulve2RKmHDC15xu1f26kHCp/HgceI=
 github.com/aws/smithy-go v1.22.5 h1:P9ATCXPMb2mPjYBgueqJNCA5S9UfktsW0tTxi+a7eqw=
