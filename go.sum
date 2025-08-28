@@ -333,6 +333,8 @@ github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
 go.expect.digital/mf2 v0.0.0-20240903132843-58499fb90f35 h1:3JfnWAGy3Rj6Pw1wkaZN8gyxt0Yyjwk8GfQlkkMOktg=
 go.expect.digital/mf2 v0.0.0-20240903132843-58499fb90f35/go.mod h1:bcT4xX9OSY71fzvRaI1I3Z+Z02w8b+tRaLBLR4JN0VI=
+go.expect.digital/mf2 v0.0.0-20250820093543-f5cd0ee7931c h1:zctJG7mWLGn9mcDkM3EhYPr1qqwgWqJyZZRfOk9J2ck=
+go.expect.digital/mf2 v0.0.0-20250820093543-f5cd0ee7931c/go.mod h1:tkz5BI0HqycVDibcIanPoc3g0gtJqhBvj042l3NxnDg=
 go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJySYA=
 go.opentelemetry.io/auto/sdk v1.1.0/go.mod h1:3wSPjt5PWp2RhlCcmmOial7AvC4DQqZb7a7wCow3W8A=
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.62.0 h1:rbRJ8BBoVMsQShESYZ0FkvcITu8X8QNwJogcLUmDNNw=
