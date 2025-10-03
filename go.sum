@@ -618,6 +618,8 @@ google.golang.org/genproto v0.0.0-20250922171735-9219d122eba9 h1:LvZVVaPE0JSqL+Z
 google.golang.org/genproto v0.0.0-20250922171735-9219d122eba9/go.mod h1:QFOrLhdAe2PsTp3vQY4quuLKTi9j3XG3r6JPPaw7MSc=
 google.golang.org/genproto v0.0.0-20250929231259-57b25ae835d4 h1:HmI33/XNQ1jVwhb5ZUgot40oiwFHa2l5ZNkQpj8VaEg=
 google.golang.org/genproto v0.0.0-20250929231259-57b25ae835d4/go.mod h1:OqVwZqqGV3h7k+YCVWXoTtwC2cs55RnDEUVMMadhxrc=
+google.golang.org/genproto v0.0.0-20251002232023-7c0ddcbb5797 h1:06qNPeHxbfl+OJluwQ2zOiTP6di3mvADTHnMYQuOKDQ=
+google.golang.org/genproto v0.0.0-20251002232023-7c0ddcbb5797/go.mod h1:OqVwZqqGV3h7k+YCVWXoTtwC2cs55RnDEUVMMadhxrc=
 google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822 h1:oWVWY3NzT7KJppx2UKhKmzPq4SRe0LdCijVRwvGeikY=
 google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822/go.mod h1:h3c4v36UTKzUiuaOKQ6gr3S+0hovBtUrXzTG/i3+XEc=
 google.golang.org/genproto/googleapis/api v0.0.0-20250721164621-a45f3dfb1074 h1:mVXdvnmR3S3BQOqHECm9NGMjYiRtEvDYcqAqedTXY6s=
@@ -642,6 +644,8 @@ google.golang.org/genproto/googleapis/api v0.0.0-20250922171735-9219d122eba9 h1:
 google.golang.org/genproto/googleapis/api v0.0.0-20250922171735-9219d122eba9/go.mod h1:LmwNphe5Afor5V3R5BppOULHOnt2mCIf+NxMd4XiygE=
 google.golang.org/genproto/googleapis/api v0.0.0-20250929231259-57b25ae835d4 h1:8XJ4pajGwOlasW+L13MnEGA8W4115jJySQtVfS2/IBU=
 google.golang.org/genproto/googleapis/api v0.0.0-20250929231259-57b25ae835d4/go.mod h1:NnuHhy+bxcg30o7FnVAZbXsPHUDQ9qKWAQKCD7VxFtk=
+google.golang.org/genproto/googleapis/api v0.0.0-20251002232023-7c0ddcbb5797 h1:D/zZ8knc/wLq9imidPFpHsGuRUYTCWWCwemZ2dxACGs=
+google.golang.org/genproto/googleapis/api v0.0.0-20251002232023-7c0ddcbb5797/go.mod h1:NnuHhy+bxcg30o7FnVAZbXsPHUDQ9qKWAQKCD7VxFtk=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20250715232539-7130f93afb79 h1:1ZwqphdOdWYXsUHgMpU/101nCtf/kSp9hOrcvFsnl10=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20250715232539-7130f93afb79/go.mod h1:qQ0YXyHHx3XkvlzUtpXDkS29lDSafHMZBAZDc03LQ3A=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20250721164621-a45f3dfb1074 h1:qJW29YvkiJmXOYMu5Tf8lyrTp3dOS+K4z6IixtLaCf8=
