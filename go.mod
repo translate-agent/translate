@@ -17,7 +17,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.15.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rodaine/table v1.3.0
 	github.com/spf13/cobra v1.10.1
