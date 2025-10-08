@@ -30,7 +30,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.38.0
 	go.opentelemetry.io/otel/trace v1.38.0
 	go.uber.org/automaxprocs v1.6.0
-	golang.org/x/net v0.44.0
+	golang.org/x/net v0.45.0
 	golang.org/x/text v0.29.0
 	google.golang.org/api v0.251.0
 	google.golang.org/genproto v0.0.0-20251006185510-65f7160b3a87
