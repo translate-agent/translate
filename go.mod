@@ -4,7 +4,7 @@ go 1.24.2
 
 // Direct
 require (
-	cloud.google.com/go/translate v1.12.6
+	cloud.google.com/go/translate v1.12.7
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/XSAM/otelsql v0.40.0
 	github.com/aws/aws-sdk-go-v2/config v1.31.12
@@ -41,7 +41,7 @@ require (
 
 // Indirect
 require (
-	cloud.google.com/go v0.121.4 // indirect
+	cloud.google.com/go v0.121.6 // indirect
 	cloud.google.com/go/auth v0.17.0 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
