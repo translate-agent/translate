@@ -18,7 +18,7 @@ services:
     restart: always
 
   jaeger:
-    image: jaegertracing/all-in-one:1.60@sha256:4fd2d70fa347d6a47e79fcb06b1c177e6079f92cba88b083153d56263082135e
+    image: jaegertracing/all-in-one:1.60.0@sha256:4fd2d70fa347d6a47e79fcb06b1c177e6079f92cba88b083153d56263082135e
     container_name: jaeger
     hostname: jaeger
     networks:
@@ -38,7 +38,7 @@ services:
     restart: always
 
   envoy:
-    image: envoyproxy/envoy:v1.35-latest@sha256:4d496918618a7ebd6c71ae8285e31ebff092f3a0a5ad642d50decf4a54eb2456
+    image: envoyproxy/envoy:v1.35.3@sha256:a0766c592eb3e4943b4a941d385aca932b88665d637a10e505aa57c640e801ae
     ports:
       - "8080:8080"
     volumes:
