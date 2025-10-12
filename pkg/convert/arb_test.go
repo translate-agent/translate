@@ -261,12 +261,14 @@ func Test_ToArb(t *testing.T) {
 
 			var want, got any
 
-			if err = json.Unmarshal(actual, &got); err != nil {
+			err = json.Unmarshal(actual, &got)
+			if err != nil {
 				t.Error(err)
 				return
 			}
 
-			if err = json.Unmarshal(test.want, &want); err != nil {
+			err = json.Unmarshal(test.want, &want)
+			if err != nil {
 				t.Error(err)
 				return
 			}

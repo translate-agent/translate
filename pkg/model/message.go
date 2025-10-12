@@ -237,7 +237,7 @@ func (s *MessageStatus) Value() (driver.Value, error) {
 }
 
 // Scan implements sql.Scanner interface.
-func (s *MessageStatus) Scan(value interface{}) error {
+func (s *MessageStatus) Scan(value any) error {
 	switch v := value.(type) {
 	default:
 		return fmt.Errorf("unknown type %+v, want string", v)
@@ -274,7 +274,7 @@ func (p *Positions) Value() (driver.Value, error) {
 }
 
 // Scan implements sql.Scanner interface.
-func (p *Positions) Scan(value interface{}) error {
+func (p *Positions) Scan(value any) error {
 	switch v := value.(type) {
 	default:
 		return fmt.Errorf("unknown type %+v, want []byte", v)
@@ -282,7 +282,8 @@ func (p *Positions) Scan(value interface{}) error {
 		*p = nil
 		return nil
 	case []byte:
-		if err := json.Unmarshal(v, &p); err != nil {
+		err := json.Unmarshal(v, &p)
+		if err != nil {
 			return fmt.Errorf("json unmarshal positions: %w", err)
 		}
 

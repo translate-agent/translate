@@ -78,11 +78,15 @@ func newDownloadCmd(svc *Service) *cobra.Command {
 				fileName += "." + xlf
 			}
 
-			if err = os.WriteFile(filepath.Join(path, fileName), res.GetData(), 0o644); err != nil { //nolint:mnd,gosec
+			const userRW = 0o600
+
+			err = os.WriteFile(filepath.Join(path, fileName), res.GetData(), userRW)
+			if err != nil {
 				return fmt.Errorf("download file: write file to path: %w", err)
 			}
 
-			if _, err = fmt.Fprintln(cmd.OutOrStdout(), "File downloaded successfully."); err != nil {
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), "File downloaded successfully.")
+			if err != nil {
 				return fmt.Errorf("download file: output response to stdout: %w", err)
 			}
 
@@ -97,19 +101,23 @@ func newDownloadCmd(svc *Service) *cobra.Command {
 	downloadFlags.Var(&schemaFlag, "schema",
 		`translate schema, allowed: 'json_ng_localize', 'json_ngx_translate', 'go', 'arb', 'po', 'xliff_12', 'xliff_2'`)
 
-	if err := downloadCmd.MarkFlagRequired("service"); err != nil {
+	err := downloadCmd.MarkFlagRequired("service")
+	if err != nil {
 		log.Panicf("download file cmd: set field 'service' as required: %v", err)
 	}
 
-	if err := downloadCmd.MarkFlagRequired("path"); err != nil {
+	err = downloadCmd.MarkFlagRequired("path")
+	if err != nil {
 		log.Panicf("download file cmd: set field 'path' as required: %v", err)
 	}
 
-	if err := downloadCmd.MarkFlagRequired("language"); err != nil {
+	err = downloadCmd.MarkFlagRequired("language")
+	if err != nil {
 		log.Panicf("download file cmd: set field 'language' as required: %v", err)
 	}
 
-	if err := downloadCmd.MarkFlagRequired("schema"); err != nil {
+	err = downloadCmd.MarkFlagRequired("schema")
+	if err != nil {
 		log.Panicf("download file cmd: set field 'schema' as required: %v", err)
 	}
 

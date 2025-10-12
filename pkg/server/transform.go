@@ -202,11 +202,13 @@ func translationFromProto(t *translatev1.Translation) (*model.Translation, error
 		translation = &model.Translation{Original: t.GetOriginal()}
 	)
 
-	if translation.Language, err = languageFromProto(t.GetLanguage()); err != nil {
+	translation.Language, err = languageFromProto(t.GetLanguage())
+	if err != nil {
 		return nil, fmt.Errorf("transform language tag: %w", err)
 	}
 
-	if translation.Messages, err = messagesFromProto(t.GetMessages()); err != nil {
+	translation.Messages, err = messagesFromProto(t.GetMessages())
+	if err != nil {
 		return nil, fmt.Errorf("transform translation: %w", err)
 	}
 

@@ -82,7 +82,8 @@ func NewAWSTranslate(ctx context.Context, opts ...AWSTranslateOption) (*AWSTrans
 	awst := &AWSTranslate{}
 
 	for _, opt := range opts {
-		if optErr := opt(awst); optErr != nil {
+		optErr := opt(awst)
+		if optErr != nil {
 			return nil, fmt.Errorf("apply opt: %w", optErr)
 		}
 	}

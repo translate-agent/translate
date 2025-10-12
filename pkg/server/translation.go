@@ -27,11 +27,13 @@ func parseCreateTranslationRequestParams(req *translatev1.CreateTranslationReque
 		err error
 	)
 
-	if p.serviceID, err = uuidFromProto(req.GetServiceId()); err != nil {
+	p.serviceID, err = uuidFromProto(req.GetServiceId())
+	if err != nil {
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	if p.translation, err = translationFromProto(req.GetTranslation()); err != nil {
+	p.translation, err = translationFromProto(req.GetTranslation())
+	if err != nil {
 		return nil, fmt.Errorf("parse translation: %w", err)
 	}
 
@@ -63,7 +65,8 @@ func (t *TranslateServiceServer) CreateTranslation(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err = params.validate(); err != nil {
+	err = params.validate()
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -102,7 +105,8 @@ func (t *TranslateServiceServer) CreateTranslation(
 		}
 	}
 
-	if err := t.repo.SaveTranslation(ctx, params.serviceID, params.translation); errors.Is(err, repo.ErrNotFound) {
+	err = t.repo.SaveTranslation(ctx, params.serviceID, params.translation)
+	if errors.Is(err, repo.ErrNotFound) {
 		return nil, status.Error(codes.NotFound, "service not found")
 	} else if err != nil {
 		return nil, status.Error(codes.Internal, "")
@@ -143,7 +147,8 @@ func (t *TranslateServiceServer) ListTranslations(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err = params.validate(); err != nil {
+	err = params.validate()
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -170,15 +175,18 @@ func parseUpdateTranslationRequestParams(req *translatev1.UpdateTranslationReque
 		err    error
 	)
 
-	if params.serviceID, err = uuidFromProto(req.GetServiceId()); err != nil {
+	params.serviceID, err = uuidFromProto(req.GetServiceId())
+	if err != nil {
 		return nil, fmt.Errorf("parse service_id: %w", err)
 	}
 
-	if params.translation, err = translationFromProto(req.GetTranslation()); err != nil {
+	params.translation, err = translationFromProto(req.GetTranslation())
+	if err != nil {
 		return nil, fmt.Errorf("parse translation: %w", err)
 	}
 
-	if params.mask, err = maskFromProto(req.GetTranslation(), req.GetUpdateMask()); err != nil {
+	params.mask, err = maskFromProto(req.GetTranslation(), req.GetUpdateMask())
+	if err != nil {
 		return nil, fmt.Errorf("parse mask: %w", err)
 	}
 
@@ -201,7 +209,8 @@ func (u *updateTranslationParams) validate() error {
 	return nil
 }
 
-// https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
+// UpdateTranslation implements translation update logic.
+// See: https://github.com/protocolbuffers/protobuf/blob/9bbea4aa65bdaf5fc6c2583e045c07ff37ffb0e7/src/google/protobuf/field_mask.proto#L111
 //
 //nolint:lll
 func (t *TranslateServiceServer) UpdateTranslation(
@@ -213,7 +222,8 @@ func (t *TranslateServiceServer) UpdateTranslation(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err = params.validate(); err != nil {
+	err = params.validate()
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -259,21 +269,24 @@ func (t *TranslateServiceServer) UpdateTranslation(
 			all.PopulateTranslations()
 		}
 
-		if err = t.fuzzyTranslate(ctx, all); err != nil {
+		err = t.fuzzyTranslate(ctx, all)
+		if err != nil {
 			return nil, status.Error(codes.Internal, "")
 		}
 	}
 
 	// Update affected translations
-	if err = t.repo.Tx(ctx, func(ctx context.Context, r repo.Repo) error {
+	err = t.repo.Tx(ctx, func(ctx context.Context, r repo.Repo) error {
 		for i := range all {
-			if err = r.SaveTranslation(ctx, params.serviceID, &all[i]); err != nil {
-				return fmt.Errorf("save translation: %w", err)
+			inErr := r.SaveTranslation(ctx, params.serviceID, &all[i])
+			if inErr != nil {
+				return fmt.Errorf("save translation: %w", inErr)
 			}
 		}
 
 		return nil
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, status.Error(codes.Internal, "")
 	}
 

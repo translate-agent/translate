@@ -22,20 +22,21 @@ func FromNgxTranslate(b []byte, original *bool) (translation model.Translation, 
 
 	translation.Original = *original
 
-	var dst map[string]interface{}
+	var dst map[string]any
 
-	if err = json.Unmarshal(b, &dst); err != nil {
+	err = json.Unmarshal(b, &dst)
+	if err != nil {
 		return translation, fmt.Errorf("unmarshal from ngx-translate to model.Translation: %w", err)
 	}
 
-	var traverseMap func(key string, value interface{}) error
+	var traverseMap func(key string, value any) error
 
 	status := model.MessageStatusUntranslated
 	if *original {
 		status = model.MessageStatusTranslated
 	}
 
-	traverseMap = func(key string, value interface{}) (err error) {
+	traverseMap = func(key string, value any) (err error) {
 		switch v := value.(type) {
 		default:
 			return fmt.Errorf("unsupported value type %T for key %s", value, key)
@@ -50,13 +51,14 @@ func FromNgxTranslate(b []byte, original *bool) (translation model.Translation, 
 				Message: msg,
 				Status:  status,
 			})
-		case map[string]interface{}:
+		case map[string]any:
 			for subKey, subValue := range v {
 				if key != "" {
 					subKey = key + "." + subKey
 				}
 
-				if err = traverseMap(subKey, subValue); err != nil {
+				err = traverseMap(subKey, subValue)
+				if err != nil {
 					return err
 				}
 			}
@@ -65,7 +67,8 @@ func FromNgxTranslate(b []byte, original *bool) (translation model.Translation, 
 		return err
 	}
 
-	if err = traverseMap("", dst); err != nil {
+	err = traverseMap("", dst)
+	if err != nil {
 		return translation, fmt.Errorf("traverse ngx-translate: %w", err)
 	}
 

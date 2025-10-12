@@ -46,7 +46,8 @@ func (t *TranslateServiceServer) GetService(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := params.validate(); err != nil {
+	err = params.validate()
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -106,11 +107,13 @@ func (t *TranslateServiceServer) CreateService(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := params.validate(); err != nil {
+	err = params.validate()
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := t.repo.SaveService(ctx, params.service); err != nil {
+	err = t.repo.SaveService(ctx, params.service)
+	if err != nil {
 		return nil, status.Error(codes.Internal, "")
 	}
 
@@ -168,7 +171,8 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err = params.validate(); err != nil {
+	err = params.validate()
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -181,11 +185,13 @@ func (t *TranslateServiceServer) UpdateService(
 		return nil, status.Error(codes.Internal, "")
 	}
 
-	if err := model.UpdateService(params.service, loadedService, params.mask); err != nil {
+	err = model.UpdateService(params.service, loadedService, params.mask)
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := t.repo.SaveService(ctx, loadedService); err != nil {
+	err = t.repo.SaveService(ctx, loadedService)
+	if err != nil {
 		return nil, status.Error(codes.Internal, "")
 	}
 
@@ -224,7 +230,8 @@ func (t *TranslateServiceServer) DeleteService(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := params.validate(); err != nil {
+	err = params.validate()
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 

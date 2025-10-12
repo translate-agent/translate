@@ -8,6 +8,7 @@ import (
 
 type TranslateServiceServer struct {
 	translatev1.UnimplementedTranslateServiceServer
+
 	repo       repo.Repo
 	translator fuzzy.Translator
 }

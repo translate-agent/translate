@@ -532,9 +532,9 @@ func randTranslation(t *testing.T, override *translatev1.Translation) *translate
 
 	for range n {
 		message := &translatev1.Message{
-			Id:          gofakeit.SentenceSimple(),
-			Message:     gofakeit.SentenceSimple(),
-			Description: gofakeit.SentenceSimple(),
+			Id:          gofakeit.Sentence(),
+			Message:     gofakeit.Sentence(),
+			Description: gofakeit.Sentence(),
 			Status:      translatev1.Message_Status(gofakeit.IntRange(0, 2)), //#nosec G115
 		}
 

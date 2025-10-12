@@ -44,7 +44,8 @@ type note struct {
 func FromXliff2(data []byte, original *bool) (model.Translation, error) {
 	var xlf xliff2
 
-	if err := xml.Unmarshal(data, &xlf); err != nil {
+	err := xml.Unmarshal(data, &xlf)
+	if err != nil {
 		return model.Translation{}, fmt.Errorf("unmarshal xliff2: %w", err)
 	}
 

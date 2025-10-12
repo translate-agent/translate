@@ -107,7 +107,8 @@ func testMain(m *testing.M) int {
 	}
 
 	// AWS Translate
-	if err = initAWSTranslate(ctx); err != nil {
+	err = initAWSTranslate(ctx)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -116,7 +117,8 @@ func testMain(m *testing.M) int {
 	// Close the Google Translate client.
 	if gtCloser != nil {
 		defer func() {
-			if err := gtCloser(); err != nil {
+			err := gtCloser()
+			if err != nil {
 				log.Printf("close Google Translate: %v", err)
 			}
 		}()

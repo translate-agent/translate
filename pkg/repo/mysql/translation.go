@@ -40,14 +40,15 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 		case errors.Is(err, sql.ErrNoRows):
 			translationID = uuid.New()
 
-			if _, err = r.db.ExecContext(
+			_, err = r.db.ExecContext(
 				ctx,
 				`INSERT INTO translation (id, service_id, language, original) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
 				translationID,
 				serviceID,
 				translation.Language.String(),
 				translation.Original,
-			); err != nil {
+			)
+			if err != nil {
 				return fmt.Errorf("repo: insert message: %w", err)
 			}
 
@@ -120,8 +121,8 @@ func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts r
 			original bool
 		)
 
-		if err = rows.Scan(
-			&msg.ID, &msg.Message, &msg.Description, &msg.Positions, &msg.Status, &lang, &original); err != nil {
+		err = rows.Scan(&msg.ID, &msg.Message, &msg.Description, &msg.Positions, &msg.Status, &lang, &original)
+		if err != nil {
 			return nil, fmt.Errorf("repo: scan message: %w", err)
 		}
 
@@ -140,7 +141,8 @@ func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts r
 		translation.Messages = append(translation.Messages, msg)
 	}
 
-	if err := rows.Err(); err != nil {
+	err = rows.Err()
+	if err != nil {
 		return nil, fmt.Errorf("repo: scan messages: %w", err)
 	}
 

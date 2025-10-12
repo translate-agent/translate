@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 	"os"
@@ -44,13 +45,17 @@ func testMain(m *testing.M) (code int) {
 
 	go func() {
 		defer wg.Done()
+
 		main()
 	}()
 
 	// ensure gRPC server is listening before running tests
 	// wait for 300ms (6x50ms) for successful TCP connection
+	dialer := new(net.Dialer)
+	ctx := context.Background()
+
 	for range 6 {
-		conn, err := net.Dial("tcp", addr)
+		conn, err := dialer.DialContext(ctx, "tcp", addr)
 		if err != nil {
 			time.Sleep(time.Millisecond * 50)
 			continue
@@ -84,7 +89,8 @@ func testMain(m *testing.M) (code int) {
 	wg.Wait()
 
 	// Close the connection and tracer.
-	if err := conn.Close(); err != nil {
+	err = conn.Close()
+	if err != nil {
 		log.Panicf("close gRPC client connection: %v", err)
 	}
 
@@ -93,7 +99,9 @@ func testMain(m *testing.M) (code int) {
 
 func mustGetFreePort() string {
 	// Listen on port 0 to have the operating system allocate an available port.
-	l, err := net.Listen("tcp", host+":0")
+	lc := new(net.ListenConfig)
+
+	l, err := lc.Listen(context.Background(), "tcp", host+":0")
 	if err != nil {
 		log.Panicf("get free port: %v", err)
 	}

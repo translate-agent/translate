@@ -65,11 +65,13 @@ func newUploadCmd(svc *Service) *cobra.Command {
 			var data []byte
 
 			if strings.HasPrefix(filePath, "http://") || strings.HasPrefix(filePath, "https://") {
-				if data, err = readFileFromURL(ctx, filePath); err != nil {
+				data, err = readFileFromURL(ctx, filePath)
+				if err != nil {
 					return fmt.Errorf("upload file: read file from URL: %w", err)
 				}
 			} else {
-				if data, err = os.ReadFile(filePath); err != nil {
+				data, err = os.ReadFile(filePath)
+				if err != nil {
 					return fmt.Errorf("upload file: read file from local path: %w", err)
 				}
 			}
@@ -79,7 +81,7 @@ func newUploadCmd(svc *Service) *cobra.Command {
 				return fmt.Errorf("upload file: schema to translate schema: %w", err)
 			}
 
-			if _, err = svc.client.UploadTranslationFile(ctx,
+			_, err = svc.client.UploadTranslationFile(ctx,
 				&translatev1.UploadTranslationFileRequest{
 					Language:             language,
 					Data:                 data,
@@ -87,11 +89,13 @@ func newUploadCmd(svc *Service) *cobra.Command {
 					ServiceId:            serviceID,
 					Original:             original,
 					PopulateTranslations: populateTranslations,
-				}); err != nil {
+				})
+			if err != nil {
 				return fmt.Errorf("upload file: send gRPC request: %w", err)
 			}
 
-			if _, err = fmt.Fprintln(cmd.OutOrStdout(), "File uploaded successfully."); err != nil {
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), "File uploaded successfully.")
+			if err != nil {
 				return fmt.Errorf("upload file: output response to stdout: %w", err)
 			}
 
@@ -108,15 +112,18 @@ func newUploadCmd(svc *Service) *cobra.Command {
 	uploadFlags.Bool("original", false, "file's language is an original language")
 	uploadFlags.Bool("populate_translations", true, "populate translation messages from original file")
 
-	if err := uploadCmd.MarkFlagRequired("service"); err != nil {
+	err := uploadCmd.MarkFlagRequired("service")
+	if err != nil {
 		log.Panicf("upload file cmd: set field 'service' as required: %v", err)
 	}
 
-	if err := uploadCmd.MarkFlagRequired("file"); err != nil {
+	err = uploadCmd.MarkFlagRequired("file")
+	if err != nil {
 		log.Panicf("upload file cmd: set field 'file' as required: %v", err)
 	}
 
-	if err := uploadCmd.MarkFlagRequired("schema"); err != nil {
+	err = uploadCmd.MarkFlagRequired("schema")
+	if err != nil {
 		log.Panicf("upload file cmd: set field 'schema' as required: %v", err)
 	}
 

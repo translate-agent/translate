@@ -17,6 +17,23 @@ type Repo struct {
 	tx *badger.Txn
 }
 
+// NewRepo creates a new repo.
+//
+// NOTE: One of the options (WithDefaultDB or WithInMemoryDB) must be provided,
+// otherwise it will return an error.
+func NewRepo(opts ...Option) (*Repo, error) {
+	r := new(Repo)
+
+	for _, opt := range opts {
+		err := opt(r)
+		if err != nil {
+			return nil, fmt.Errorf("apply option to repo: %w", err)
+		}
+	}
+
+	return r, nil
+}
+
 func (r *Repo) Close() error {
 	err := r.db.Close()
 	if err != nil {
@@ -47,28 +64,13 @@ func WithDefaultDB() Option {
 
 		var err error
 
-		if r.db, err = newDB(badgerOpts); err != nil {
+		r.db, err = newDB(badgerOpts)
+		if err != nil {
 			return fmt.Errorf("WithDefaultDB: new badger db: %w", err)
 		}
 
 		return nil
 	}
-}
-
-// NewRepo creates a new repo.
-//
-// NOTE: One of the options (WithDefaultDB or WithInMemoryDB) must be provided,
-// otherwise it will return an error.
-func NewRepo(opts ...Option) (*Repo, error) {
-	r := new(Repo)
-
-	for _, opt := range opts {
-		if err := opt(r); err != nil {
-			return nil, fmt.Errorf("apply option to repo: %w", err)
-		}
-	}
-
-	return r, nil
 }
 
 func (r *Repo) Tx(ctx context.Context, fn func(context.Context, repo.Repo) error) (err error) {
@@ -86,13 +88,15 @@ func (r *Repo) Tx(ctx context.Context, fn func(context.Context, repo.Repo) error
 		}
 	}()
 
-	if err = fn(ctx, &Repo{db: r.db, tx: tx}); err != nil {
+	err = fn(ctx, &Repo{db: r.db, tx: tx})
+	if err != nil {
 		tx.Discard()
 
 		return fmt.Errorf("repo: execute tx: %w", err)
 	}
 
-	if err = tx.Commit(); err != nil {
+	err = tx.Commit()
+	if err != nil {
 		return fmt.Errorf("repo: commit tx: %w", err)
 	}
 
@@ -115,13 +119,15 @@ func (r *Repo) ensureTx(ctx context.Context, fn func(context.Context, *Repo) err
 		}
 	}()
 
-	if err = fn(ctx, &Repo{db: r.db, tx: tx}); err != nil {
+	err = fn(ctx, &Repo{db: r.db, tx: tx})
+	if err != nil {
 		tx.Discard()
 
 		return fmt.Errorf("repo: execute tx: %w", err)
 	}
 
-	if err = tx.Commit(); err != nil {
+	err = tx.Commit()
+	if err != nil {
 		return fmt.Errorf("repo: commit tx: %w", err)
 	}
 

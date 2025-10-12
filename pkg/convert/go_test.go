@@ -110,11 +110,13 @@ func TestToGo(t *testing.T) {
 
 			var a, b any
 
-			if err := json.Unmarshal(test.want, &a); err != nil {
+			err = json.Unmarshal(test.want, &a)
+			if err != nil {
 				t.Error(err)
 			}
 
-			if err := json.Unmarshal(got, &b); err != nil {
+			err = json.Unmarshal(got, &b)
+			if err != nil {
 				t.Error(err)
 			}
 

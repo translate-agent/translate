@@ -64,7 +64,8 @@ func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
 		services = append(services, service)
 	}
 
-	if err := rows.Err(); err != nil {
+	err = rows.Err()
+	if err != nil {
 		return nil, fmt.Errorf("repo: scan services: %w", err)
 	}
 

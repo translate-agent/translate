@@ -60,13 +60,15 @@ func testMain(m *testing.M) int {
 	repos = make(map[string]repo.Repo, len(SupportedDBs))
 
 	// MySQL
-	if err := initMysql(ctx); err != nil {
+	err := initMysql(ctx)
+	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 
 	// BadgerDB
-	if err := initBadgerDB(); err != nil {
+	err = initBadgerDB()
+	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}

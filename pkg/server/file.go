@@ -100,7 +100,8 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err = params.validate(); err != nil {
+	err = params.validate()
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -117,7 +118,8 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	var all model.Translations
 
 	if translation.Original {
-		if all, err = t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{}); err != nil {
+		all, err = t.repo.LoadTranslations(ctx, params.serviceID, repo.LoadTranslationsOpts{})
+		if err != nil {
 			return nil, status.Error(codes.Internal, "")
 		}
 	}
@@ -147,7 +149,8 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 			all.PopulateTranslations()
 		}
 
-		if err = t.fuzzyTranslate(ctx, all); err != nil {
+		err = t.fuzzyTranslate(ctx, all)
+		if err != nil {
 			return nil, status.Error(codes.Internal, "")
 		}
 	}
@@ -155,7 +158,8 @@ func (t *TranslateServiceServer) UploadTranslationFile(
 	// Update affected translations
 	err = t.repo.Tx(ctx, func(ctx context.Context, r repo.Repo) error {
 		for i := range all {
-			if err = r.SaveTranslation(ctx, params.serviceID, &all[i]); err != nil {
+			err = r.SaveTranslation(ctx, params.serviceID, &all[i])
+			if err != nil {
 				return fmt.Errorf("save translation: %w", err)
 			}
 		}
@@ -228,7 +232,8 @@ func (t *TranslateServiceServer) DownloadTranslationFile(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err = params.validate(); err != nil {
+	err = params.validate()
+	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 

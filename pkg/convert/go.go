@@ -33,7 +33,8 @@ func ToGo(t model.Translation) ([]byte, error) {
 func FromGo(b []byte, original *bool) (model.Translation, error) {
 	var pipelineMsgs pipeline.Messages
 
-	if err := json.Unmarshal(b, &pipelineMsgs); err != nil {
+	err := json.Unmarshal(b, &pipelineMsgs)
+	if err != nil {
 		return model.Translation{}, fmt.Errorf("decode JSON to pipeline.Messages: %w", err)
 	}
 
