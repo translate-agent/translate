@@ -18,7 +18,8 @@ func parseFile(t *testing.T, reader io.Reader) PO {
 
 	var buff bytes.Buffer
 
-	if _, err := io.Copy(&buff, reader); err != nil {
+	_, err := io.Copy(&buff, reader)
+	if err != nil {
 		t.Error(err)
 		return PO{}
 	}

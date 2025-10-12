@@ -25,7 +25,9 @@ type ngJSON struct {
 // into a model.Translation struct.
 func FromNgLocalize(data []byte, original *bool) (model.Translation, error) {
 	var ng ngJSON
-	if err := json.Unmarshal(data, &ng); err != nil {
+
+	err := json.Unmarshal(data, &ng)
+	if err != nil {
 		return model.Translation{}, fmt.Errorf("unmarshal @angular/localize JSON into ngJSON struct: %w", err)
 	}
 

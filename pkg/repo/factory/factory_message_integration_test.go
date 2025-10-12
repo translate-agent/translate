@@ -156,8 +156,8 @@ func Test_SaveTranslationUpdate(t *testing.T) {
 
 		// Update Message, Description and Status values, while keeping the ID
 		for i := range wantTranslations.Messages {
-			wantTranslations.Messages[i].Message = gofakeit.SentenceSimple()
-			wantTranslations.Messages[i].Description = gofakeit.SentenceSimple()
+			wantTranslations.Messages[i].Message = gofakeit.Sentence()
+			wantTranslations.Messages[i].Description = gofakeit.Sentence()
 			wantTranslations.Messages[i].Status = rand.MessageStatus()
 		}
 

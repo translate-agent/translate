@@ -137,7 +137,7 @@ func updateSliceField(srcField, dstField reflect.Value) {
 	for i := range srcField.Len() {
 		srcID := srcField.Index(i).FieldByName("ID").Interface()
 
-		idx := func(id interface{}) int {
+		idx := func(id any) int {
 			for j := range dstField.Len() {
 				if dstField.Index(j).FieldByName("ID").Interface() == id {
 					return j

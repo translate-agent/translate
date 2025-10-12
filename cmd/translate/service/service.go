@@ -64,7 +64,8 @@ func RootCmdRunE(cmd *cobra.Command, _ []string) error {
 	}
 
 	defer func() {
-		if tpShutdownErr := tp.Shutdown(ctx); tpShutdownErr != nil {
+		tpShutdownErr := tp.Shutdown(ctx)
+		if tpShutdownErr != nil {
 			log.Panicf("gracefully shutdown tracer: %v", tpShutdownErr)
 		}
 	}()
@@ -81,7 +82,8 @@ func RootCmdRunE(cmd *cobra.Command, _ []string) error {
 	}
 
 	defer func() {
-		if closeErr := repo.Close(); closeErr != nil {
+		closeErr := repo.Close()
+		if closeErr != nil {
 			log.Printf("close repo: %v", closeErr)
 		}
 	}()
@@ -98,11 +100,13 @@ func RootCmdRunE(cmd *cobra.Command, _ []string) error {
 		translator, err = fuzzy.NewAWSTranslate(ctx, fuzzy.WithDefaultAWSClient(ctx))
 	case "GoogleTranslate":
 		var closeTranslate func() error
+
 		translator, closeTranslate, err = fuzzy.NewGoogleTranslate(
 			ctx, fuzzy.WithDefaultGoogleClient(ctx))
 
 		defer func() {
-			if closeErr := closeTranslate(); closeErr != nil {
+			closeErr := closeTranslate()
+			if closeErr != nil {
 				log.Printf("close GoogleTranslate client: %v\n", closeErr)
 			}
 		}()
@@ -140,8 +144,9 @@ func RootCmdRunE(cmd *cobra.Command, _ []string) error {
 	}
 
 	go func() {
-		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Panicf("server serve: %v", err)
+		inErr := httpServer.ListenAndServe()
+		if inErr != nil && !errors.Is(inErr, http.ErrServerClosed) {
+			log.Panicf("server serve: %v", inErr)
 		}
 	}()
 
@@ -153,7 +158,8 @@ func RootCmdRunE(cmd *cobra.Command, _ []string) error {
 
 func Serve() {
 	// Execute adds all child commands to the root command and sets flags appropriately.
-	if err := rootCmd.Execute(); err != nil {
+	err := rootCmd.Execute()
+	if err != nil {
 		panic(err)
 	}
 }
@@ -180,14 +186,15 @@ func initConfig() {
 	viper.AutomaticEnv()
 
 	// Try to read config.
-	if err := viper.ReadInConfig(); err != nil && cfgFile != "translate.yaml" {
+	err := viper.ReadInConfig()
+	if err != nil && cfgFile != "translate.yaml" {
 		log.Panicf("read config: %v", err)
 	}
 
 	// Prevent concurrent writes to Viper which happens in tests.
 	mutex.Lock()
 
-	err := viper.BindPFlag("service.port", rootCmd.PersistentFlags().Lookup("port"))
+	err = viper.BindPFlag("service.port", rootCmd.PersistentFlags().Lookup("port"))
 	if err != nil {
 		log.Panicf("bind port flag: %v", err)
 	}

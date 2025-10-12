@@ -12,12 +12,12 @@ import (
 
 // DB interface defines method signatures found both in sql.DB and sql.Tx.
 type DB interface {
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
+	Exec(query string, args ...any) (sql.Result, error)
+	Query(query string, args ...any) (*sql.Rows, error)
 
-	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
-	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
-	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
 }
 
@@ -25,9 +25,23 @@ type Repo struct {
 	db DB
 }
 
+func NewRepo(opts ...Option) (*Repo, error) {
+	r := new(Repo)
+
+	for _, opt := range opts {
+		err := opt(r)
+		if err != nil {
+			return nil, fmt.Errorf("apply option to repo: :%w", err)
+		}
+	}
+
+	return r, nil
+}
+
 func (r *Repo) Close() error {
 	if db, ok := r.db.(*sql.DB); ok {
-		if err := db.Close(); err != nil {
+		err := db.Close()
+		if err != nil {
 			return fmt.Errorf("close mysql db: %w", err)
 		}
 	}
@@ -62,24 +76,13 @@ func WithDefaultDB(ctx context.Context) Option {
 
 func WithConf(ctx context.Context, conf *Conf) Option {
 	return func(r *Repo) (err error) {
-		if r.db, err = NewDB(ctx, conf); err != nil {
+		r.db, err = NewDB(ctx, conf)
+		if err != nil {
 			return errors.New("apply db conf to repo")
 		}
 
 		return nil
 	}
-}
-
-func NewRepo(opts ...Option) (*Repo, error) {
-	r := new(Repo)
-
-	for _, opt := range opts {
-		if err := opt(r); err != nil {
-			return nil, fmt.Errorf("apply option to repo: :%w", err)
-		}
-	}
-
-	return r, nil
 }
 
 // eq returns empty squirrel.Eq if values is empty.
@@ -99,7 +102,8 @@ func (r *Repo) Tx(ctx context.Context, fn func(context.Context, repo.Repo) error
 
 	switch db := r.db.(type) {
 	case *sql.DB: // start transaction
-		if tx, err = db.BeginTx(ctx, nil); err != nil {
+		tx, err = db.BeginTx(ctx, nil)
+		if err != nil {
 			return fmt.Errorf("repo: begin tx: %w", err)
 		}
 	case *sql.Tx:
@@ -114,13 +118,15 @@ func (r *Repo) Tx(ctx context.Context, fn func(context.Context, repo.Repo) error
 		}
 	}()
 
-	if err = fn(ctx, &Repo{db: tx}); err != nil {
+	err = fn(ctx, &Repo{db: tx})
+	if err != nil {
 		tx.Rollback() //nolint:errcheck
 
 		return fmt.Errorf("repo: execute tx: %w", err)
 	}
 
-	if err = tx.Commit(); err != nil {
+	err = tx.Commit()
+	if err != nil {
 		return fmt.Errorf("repo: commit tx: %w", err)
 	}
 
@@ -135,7 +141,8 @@ func (r *Repo) ensureTx(ctx context.Context, fn func(context.Context, *Repo) err
 	case *sql.DB:
 		var tx *sql.Tx
 
-		if tx, err = db.BeginTx(ctx, nil); err != nil {
+		tx, err = db.BeginTx(ctx, nil)
+		if err != nil {
 			return fmt.Errorf("repo: begin tx: %w", err)
 		}
 
@@ -147,13 +154,15 @@ func (r *Repo) ensureTx(ctx context.Context, fn func(context.Context, *Repo) err
 			}
 		}()
 
-		if err = fn(ctx, &Repo{db: tx}); err != nil {
+		err = fn(ctx, &Repo{db: tx})
+		if err != nil {
 			tx.Rollback() //nolint:errcheck
 
 			return fmt.Errorf("repo: execute tx: %w", err)
 		}
 
-		if err = tx.Commit(); err != nil {
+		err = tx.Commit()
+		if err != nil {
 			return fmt.Errorf("repo: commit tx: %w", err)
 		}
 	}

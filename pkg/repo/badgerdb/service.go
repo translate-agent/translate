@@ -30,7 +30,8 @@ func (r *Repo) SaveService(_ context.Context, service *model.Service) error {
 			return fmt.Errorf("marshal service: %w", err)
 		}
 
-		if err := txn.Set(getServiceKey(service.ID), val); err != nil {
+		err = txn.Set(getServiceKey(service.ID), val)
+		if err != nil {
 			return fmt.Errorf("transaction: set service: %w", err)
 		}
 
@@ -80,7 +81,8 @@ func (r *Repo) LoadServices(_ context.Context) ([]model.Service, error) {
 
 			var service model.Service
 
-			if err := getValue(item, &service); err != nil {
+			err := getValue(item, &service)
+			if err != nil {
 				return err
 			}
 
@@ -106,7 +108,8 @@ func (r *Repo) DeleteService(_ context.Context, serviceID uuid.UUID) error {
 
 		switch {
 		default:
-			if deleteErr := txn.Delete(key); deleteErr != nil {
+			deleteErr := txn.Delete(key)
+			if deleteErr != nil {
 				return fmt.Errorf("transaction: delete service: %w", deleteErr)
 			}
 

@@ -55,7 +55,9 @@ type context struct {
 // FromXliff12 converts serialized data from the XML data in the XLIFF 1.2 format into a model.Translation struct.
 func FromXliff12(data []byte, original *bool) (model.Translation, error) {
 	var xlf xliff12
-	if err := xml.Unmarshal(data, &xlf); err != nil {
+
+	err := xml.Unmarshal(data, &xlf)
+	if err != nil {
 		return model.Translation{}, fmt.Errorf("unmarshal xliff12: %w", err)
 	}
 

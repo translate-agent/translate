@@ -55,7 +55,8 @@ func newRootCmd() *cobra.Command {
 			return nil
 		},
 		PersistentPostRunE: func(_ *cobra.Command, _ []string) error {
-			if err := conn.Close(); err != nil {
+			err := conn.Close()
+			if err != nil {
 				return fmt.Errorf("close gRPC client: %w", err)
 			}
 
@@ -79,11 +80,14 @@ func ExecuteWithParams(ctx context.Context, params []string) ([]byte, error) {
 	rootCmd.SetArgs(params)
 
 	var output []byte
+
 	buf := bytes.NewBuffer(output)
+
 	rootCmd.SetOut(buf)
 	rootCmd.SetErr(buf)
 
-	if err := rootCmd.ExecuteContext(ctx); err != nil {
+	err := rootCmd.ExecuteContext(ctx)
+	if err != nil {
 		buf.WriteString(err.Error())
 		return nil, fmt.Errorf("execute root command with params: %w", err)
 	}

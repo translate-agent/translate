@@ -14,9 +14,11 @@ func newServiceCmd(svc *Service) *cobra.Command {
 		Use:   "service",
 		Short: "Manage services",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if err := cmd.Help(); err != nil {
+			err := cmd.Help()
+			if err != nil {
 				return fmt.Errorf("display help: %w", err)
 			}
+
 			return nil
 		},
 	}

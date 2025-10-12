@@ -86,7 +86,8 @@ func NewGoogleTranslate(
 	gt = &GoogleTranslate{}
 
 	for _, opt := range opts {
-		if optErr := opt(gt); optErr != nil {
+		optErr := opt(gt)
+		if optErr != nil {
 			return nil, nil, fmt.Errorf("apply opt: %w", optErr)
 		}
 	}

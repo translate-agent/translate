@@ -73,25 +73,25 @@ func modelMessage() *model.Message {
 
 	switch gofakeit.Bool() {
 	default: // simple message
-		message.Text(gofakeit.SentenceSimple())
+		message.Text(gofakeit.Sentence())
 	case true:
 		v := gofakeit.Word()
 
 		if gofakeit.Bool() { // complex message, local declaration
 			message.Local(v, builder.Var(gofakeit.Word()))
-			message.Text(gofakeit.SentenceSimple()).Expr(builder.Var(v))
+			message.Text(gofakeit.Sentence()).Expr(builder.Var(v))
 		} else { // complex message, matcher
 			message.Match(builder.Var(v))
-			message.Keys(gofakeit.Word()).Text(gofakeit.SentenceSimple())
-			message.Keys("*").Text(gofakeit.SentenceSimple())
+			message.Keys(gofakeit.Word()).Text(gofakeit.Sentence())
+			message.Keys("*").Text(gofakeit.Sentence())
 		}
 	}
 
 	msg := &model.Message{
-		ID:          gofakeit.SentenceSimple(),
-		PluralID:    gofakeit.SentenceSimple(),
+		ID:          gofakeit.Sentence(),
+		PluralID:    gofakeit.Sentence(),
 		Message:     message.MustBuild(),
-		Description: gofakeit.SentenceSimple(),
+		Description: gofakeit.Sentence(),
 		Status:      MessageStatus(),
 	}
 
@@ -224,7 +224,7 @@ func WithSameIDs(t *model.Translation) ModelTranslationOption {
 func WithSimpleMF2Messages() ModelTranslationOption {
 	return func(t *model.Translation) {
 		for i := range t.Messages {
-			t.Messages[i].Message = builder.NewBuilder().Text(gofakeit.SentenceSimple()).MustBuild()
+			t.Messages[i].Message = builder.NewBuilder().Text(gofakeit.Sentence()).MustBuild()
 		}
 	}
 }

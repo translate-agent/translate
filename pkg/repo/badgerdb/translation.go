@@ -33,7 +33,8 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 			return fmt.Errorf("marshal translation: %w", err)
 		}
 
-		if err = r.tx.Set(translationKey(serviceID, translation.Language), b); err != nil {
+		err = r.tx.Set(translationKey(serviceID, translation.Language), b)
+		if err != nil {
 			return fmt.Errorf("repo: set translation: %w", err)
 		}
 
@@ -44,7 +45,8 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 // LoadTranslations retrieves translations from db based on serviceID and LoadMessageOpts.
 func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts repo.LoadTranslationsOpts,
 ) (model.Translations, error) {
-	if _, err := r.LoadService(ctx, serviceID); errors.Is(err, repo.ErrNotFound) {
+	_, err := r.LoadService(ctx, serviceID)
+	if errors.Is(err, repo.ErrNotFound) {
 		return nil, nil // Empty translation.messages for this service (Not an error)
 	} else if err != nil {
 		return nil, fmt.Errorf("repo: load service: %w", err)
@@ -52,7 +54,9 @@ func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts r
 
 	// load all translations if languages are not provided.
 	if len(opts.FilterLanguages) == 0 {
-		translations, err := r.loadTranslations(serviceID)
+		var translations model.Translations
+
+		translations, err = r.loadTranslations(serviceID)
 		if err != nil {
 			return nil, fmt.Errorf("load translations by service '%s': %w", serviceID, err)
 		}
@@ -74,14 +78,16 @@ func (r *Repo) loadTranslationsByLang(serviceID uuid.UUID, languages []language.
 ) (model.Translations, error) {
 	translations := make([]model.Translation, 0, len(languages))
 
-	if err := r.db.View(func(txn *badger.Txn) error {
+	err := r.db.View(func(txn *badger.Txn) error {
 		for _, lang := range languages {
 			var translation model.Translation
 
 			item, txErr := txn.Get(translationKey(serviceID, lang))
+
 			switch {
 			default:
-				if valErr := getValue(item, &translation); valErr != nil {
+				valErr := getValue(item, &translation)
+				if valErr != nil {
 					return fmt.Errorf("get translation by language '%s': %w", lang, valErr)
 				}
 
@@ -94,7 +100,8 @@ func (r *Repo) loadTranslationsByLang(serviceID uuid.UUID, languages []language.
 		}
 
 		return nil
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, fmt.Errorf("repo: db view: %w", err)
 	}
 
@@ -107,14 +114,15 @@ func (r *Repo) loadTranslations(serviceID uuid.UUID) (model.Translations, error)
 
 	var translations []model.Translation
 
-	if err := r.db.View(func(txn *badger.Txn) error {
+	err := r.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 
 		for it.Seek(keyPrefix); it.ValidForPrefix(keyPrefix); it.Next() {
 			translation := model.Translation{}
 
-			if err := getValue(it.Item(), &translation); err != nil {
+			err := getValue(it.Item(), &translation)
+			if err != nil {
 				return fmt.Errorf("transaction: get value: %w", err)
 			}
 
@@ -122,7 +130,8 @@ func (r *Repo) loadTranslations(serviceID uuid.UUID) (model.Translations, error)
 		}
 
 		return nil
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, fmt.Errorf("repo: db view: %w", err)
 	}
 

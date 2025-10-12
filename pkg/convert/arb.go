@@ -46,9 +46,11 @@ app_fr.arb
 
 // FromArb converts a serialized data in ARB file format into model.Translation.
 func FromArb(data []byte, original *bool) (model.Translation, error) {
-	var dst map[string]interface{}
-	if err := json.Unmarshal(data, &dst); err != nil {
-		return model.Translation{}, fmt.Errorf("unmarshal ARB serialized data: %w", err)
+	var dst map[string]any
+
+	inErr := json.Unmarshal(data, &dst)
+	if inErr != nil {
+		return model.Translation{}, fmt.Errorf("unmarshal ARB serialized data: %w", inErr)
 	}
 
 	// if original is not provided default to false.
@@ -67,8 +69,9 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 			Description string `json:"description" mapstructure:"description"`
 		}
 
-		if err := mapstructure.Decode(subKeyMap, &meta); err != nil {
-			return "", fmt.Errorf("decode metadata map: %w", err)
+		inErr = mapstructure.Decode(subKeyMap, &meta)
+		if inErr != nil {
+			return "", fmt.Errorf("decode metadata map: %w", inErr)
 		}
 
 		return meta.Description, nil
@@ -98,9 +101,9 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 		return lang, nil
 	}
 
-	lang, err := findLocale()
-	if err != nil {
-		return model.Translation{}, fmt.Errorf("find locale: %w", err)
+	lang, inErr := findLocale()
+	if inErr != nil {
+		return model.Translation{}, fmt.Errorf("find locale: %w", inErr)
 	}
 
 	status := model.MessageStatusUntranslated
@@ -124,12 +127,14 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 			return model.Translation{}, fmt.Errorf("unsupported value type '%T' for key '%s'", value, key)
 		}
 
-		if msg.Message, err = builder.NewBuilder().Text(msg.Message).Build(); err != nil {
-			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", err)
+		msg.Message, inErr = builder.NewBuilder().Text(msg.Message).Build()
+		if inErr != nil {
+			return model.Translation{}, fmt.Errorf("convert string to MF2: %w", inErr)
 		}
 
-		if msg.Description, err = findDescription(key); err != nil {
-			return model.Translation{}, fmt.Errorf(`find description of "%s": %w`, key, err)
+		msg.Description, inErr = findDescription(key)
+		if inErr != nil {
+			return model.Translation{}, fmt.Errorf(`find description of "%s": %w`, key, inErr)
 		}
 
 		translation.Messages = append(translation.Messages, msg)
@@ -141,7 +146,7 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 // ToArb converts model.Translation into a serialized data in ARB file format.
 func ToArb(translation model.Translation) ([]byte, error) {
 	// dst length = number of messages + number of potential descriptions (same as number of messages) + locale.
-	dst := make(map[string]interface{}, len(translation.Messages)*2+1)
+	dst := make(map[string]any, len(translation.Messages)*2+1)
 
 	// "und" (Undetermined) language.Tag is also valid BCP47 tag.
 	dst["@@locale"] = translation.Language
