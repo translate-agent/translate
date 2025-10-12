@@ -18,6 +18,10 @@
   ],
   packageRules: [
     {
+      "matchFileNames": [ ".earthly/compose.yaml" ],
+      "pinDigests": false
+    },
+    {
       groupName: "aws",
       matchPackageNames: ["/^github\\.com\\/aws\\//"],
       automerge: true,
