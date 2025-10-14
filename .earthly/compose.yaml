@@ -38,7 +38,7 @@ services:
     restart: always
 
   envoy:
-    image: envoyproxy/envoy:v1.35.3
+    image: envoyproxy/envoy:v1.35.4
     ports:
       - "8080:8080"
     volumes:
