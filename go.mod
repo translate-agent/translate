@@ -22,7 +22,7 @@ require (
 	github.com/rodaine/table v1.3.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
-	go.expect.digital/mf2 v0.0.0-20240903132843-58499fb90f35
+	go.expect.digital/mf2 v0.0.0-20251121080632-4636339eedfc
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.63.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0
 	go.opentelemetry.io/otel v1.38.0
