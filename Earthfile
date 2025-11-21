@@ -279,9 +279,9 @@ image-multiplatform:
 # jaeger is helper target for all-in-one image, it removes the need
 # to download the correct jaeger image on every build
 jaeger:
-  # renovate datasource=docker packageName=jaegertracing/all-in-one
-  ARG jaeger_version=1.47
-  FROM jaegertracing/all-in-one:$jaeger_version
+  # renovate datasource=docker packageName=cr.jaegertracing.io/jaegertracing/jaeger
+  ARG jaeger_version=2.11.0
+  FROM cr.jaegertracing.io/jaegertracing/jaeger:$jaeger_version
   SAVE ARTIFACT /go/bin/all-in-one-linux jaeger
 
 # image-all-in-one builds all-in-one image.
