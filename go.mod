@@ -20,7 +20,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rodaine/table v1.3.0
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	go.expect.digital/mf2 v0.0.0-20251121080632-4636339eedfc
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.63.0
