@@ -338,6 +338,8 @@ go.expect.digital/mf2 v0.0.0-20240903132843-58499fb90f35 h1:3JfnWAGy3Rj6Pw1wkaZN
 go.expect.digital/mf2 v0.0.0-20240903132843-58499fb90f35/go.mod h1:bcT4xX9OSY71fzvRaI1I3Z+Z02w8b+tRaLBLR4JN0VI=
 go.expect.digital/mf2 v0.0.0-20251121080632-4636339eedfc h1:2QN08HTpN3zIbgObGSX6IH7Ohxf4w/zQMezXeec3VrA=
 go.expect.digital/mf2 v0.0.0-20251121080632-4636339eedfc/go.mod h1:LPxmvnzc8t647iWxFrFWDCBY/E4AQPjg34lMIDoIqbU=
+go.expect.digital/mf2 v0.0.0-20251211172704-9b96a8812b0a h1:u3GJoZ0bpZW4UowlKAF4TI5hLuekbhirDyzNmyY0/VM=
+go.expect.digital/mf2 v0.0.0-20251211172704-9b96a8812b0a/go.mod h1:ha6WQWhdr+rSWKYRGWKW65rMBoHES0udpfylS4SVJkc=
 go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJySYA=
 go.opentelemetry.io/auto/sdk v1.1.0/go.mod h1:3wSPjt5PWp2RhlCcmmOial7AvC4DQqZb7a7wCow3W8A=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
