@@ -56,14 +56,14 @@ init:
 # up installs the project to local docker instance.
 up:
   LOCALLY
-  RUN docker compose --project-name=translate --project-directory=.earthly up --detach --wait --timeout 60
+  RUN docker compose --project-name=translate --project-directory=.earth up --detach --wait --timeout 60
   RUN docker exec mysql sh -c 'mysqladmin ping -h 127.0.0.1 -u root --wait=30 --silent'
   BUILD +migrate --db=mysql
 
 # down uninstalls the project from local docker instance.
 down:
   LOCALLY
-  RUN docker compose --project-name=translate --project-directory=.earthly down -v --remove-orphans
+  RUN docker compose --project-name=translate --project-directory=.earth down -v --remove-orphans
 
 # Others
 
@@ -195,7 +195,7 @@ test-integration:
   FROM earthbuild/dind:$dind_version
   # renovate datasource=docker packageName=migrate/migrate
   ARG migrate_version=4.18.1
-  COPY .earthly/compose.yaml compose.yaml
+  COPY .earth/compose.yaml compose.yaml
   COPY +go/translate /translate
   COPY --dir migrate/mysql migrate
   WITH DOCKER --compose compose.yaml --service mysql --pull migrate/migrate:v$migrate_version --pull golang:$go_version-alpine
@@ -241,7 +241,7 @@ test-migrate:
   FROM earthbuild/dind:$dind_version
   # renovate datasource=docker packageName=migrate/migrate
   ARG migrate_version=4.18.1
-  COPY .earthly/compose.yaml compose.yaml
+  COPY .earth/compose.yaml compose.yaml
   COPY --dir migrate/mysql migrate
   WITH DOCKER --compose compose.yaml --service mysql --pull migrate/migrate:v$migrate_version
     RUN \
@@ -326,8 +326,8 @@ image-all-in-one:
   WORKDIR app/
 
   # Copy supervisord configuration and envoy configuration
-  COPY .earthly/supervisord.conf supervisord.conf
-  COPY .earthly/envoy.yaml envoy.yaml
+  COPY .earth/supervisord.conf supervisord.conf
+  COPY .earth/envoy.yaml envoy.yaml
 
   # Copy binaries
   COPY +jaeger/jaeger /usr/local/bin/jaeger
