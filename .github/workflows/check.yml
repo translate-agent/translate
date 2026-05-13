@@ -8,19 +8,16 @@ permissions:
 
 jobs:
   check:
-    runs-on: ubuntu-24.04-arm
-    env:
-      FORCE_COLOR: 1
+    runs-on: ubuntu-24.04
     steps:
       - uses: earthbuild/actions-setup@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          use-cache: false
       - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6
       # Check if Generated Go files are up to date
       - name: GO proto up-to-date
         run: |
-          earthly --ci +proto
+          earth --ci +proto
           if ! git diff --quiet; then
             echo "Generated Go files are not up to date"
             git diff --stat
@@ -28,20 +25,20 @@ jobs:
           fi
         # LINT
       - name: Lint Proto
-        run: earthly --ci +lint-proto
+        run: earth --ci +lint-proto
       - name: Lint Migrate
-        run: earthly --ci +lint-migrate
+        run: earth --ci +lint-migrate
       - name: Lint GO
-        run: earthly --ci +lint-go
+        run: earth --ci +lint-go
         # TEST
       - name: Test Unit
-        run: earthly --ci +test-unit
+        run: earth --ci +test-unit
       - name: Test Integration
         env:
           EARTHLY_SECRET_FILES: google_account_key=google_account_key.json
         run: |
           echo ${{ secrets.GOOGLE_ACCOUNT_KEY }} | base64 -d > google_account_key.json
-          earthly --ci --allow-privileged \
+          earth --ci --allow-privileged \
             --secret aws_access_key_id=${{  secrets.AWS_ACCESS_KEY_ID }} \
             --secret aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
              \
