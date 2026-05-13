@@ -6,8 +6,7 @@ import (
 	"fmt"
 
 	"go.expect.digital/mf2/builder"
-	ast "go.expect.digital/mf2/parse"
-
+	"go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/message/pipeline"
 )
@@ -59,7 +58,7 @@ func translationToPipeline(t model.Translation) (pipeline.Messages, error) {
 	}
 
 	for _, value := range t.Messages {
-		tree, err := ast.Parse(value.Message)
+		tree, err := parse.Parse(value.Message)
 		if err != nil {
 			return pipeline.Messages{}, fmt.Errorf("parse mf2 message: %w", err)
 		}
@@ -67,9 +66,9 @@ func translationToPipeline(t model.Translation) (pipeline.Messages, error) {
 		switch mf2Msg := tree.Message.(type) {
 		case nil:
 			value.Message = ""
-		case ast.SimpleMessage:
+		case parse.SimpleMessage:
 			value.Message = patternsToSimpleMsg(mf2Msg)
-		case ast.ComplexMessage:
+		case parse.ComplexMessage:
 			return pipeline.Messages{}, errors.New("complex message not supported")
 		}
 

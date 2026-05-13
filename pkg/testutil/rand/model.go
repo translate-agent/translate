@@ -4,6 +4,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"go.expect.digital/mf2/builder"
+	"go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -81,7 +82,8 @@ func modelMessage() *model.Message {
 			message.Local(v, builder.Var(gofakeit.Word()))
 			message.Text(gofakeit.Sentence()).Expr(builder.Var(v))
 		} else { // complex message, matcher
-			message.Match(builder.Var(v))
+			message.Input(builder.Var(v).Func("string"))
+			message.Match(parse.Variable(v))
 			message.Keys(gofakeit.Word()).Text(gofakeit.Sentence())
 			message.Keys("*").Text(gofakeit.Sentence())
 		}

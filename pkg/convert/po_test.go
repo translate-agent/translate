@@ -311,9 +311,10 @@ msgstr[1] ""
 				Original: true,
 				Messages: []model.Message{
 					{
-						ID:          "There is one apple.",
-						PluralID:    "There are multiple apples.",
-						Message:     ".match { $count }\n1 {{There is one apple.}}\n* {{There are multiple apples.}}",
+						ID:       "There is one apple.",
+						PluralID: "There are multiple apples.",
+						Message: ".input { $count :number }\n.match $count\n|1| {{There is one apple.}}\n" +
+							"* {{There are multiple apples.}}",
 						Description: "Description",
 						Status:      model.MessageStatusTranslated,
 					},
@@ -343,9 +344,10 @@ msgstr[2] "вариантов"
 					{
 						ID:       "option",
 						PluralID: "options",
-						Message: `.match { $count }
-1 {{вариант}}
-2 {{варианта}}
+						Message: `.input { $count :number }
+.match $count
+|1| {{вариант}}
+|2| {{варианта}}
 * {{вариантов}}`,
 						Status: model.MessageStatusUntranslated,
 						Positions: []string{
@@ -380,12 +382,13 @@ msgstr[1] ""
 						Status:    model.MessageStatusTranslated,
 						Positions: []string{"superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88"},
 						Message: `.local $format = { python-format }
+.input { $count :number }
 .local $suggestion = { |%(suggestion)s| }
 .local $undefinedParameter = { |%(undefinedParameter)s| }
 .local $firstSuggestions = { |%(firstSuggestions)s| }
 .local $lastSuggestion = { |%(lastSuggestion)s| }
-.match { $count }
-1 {{{ $suggestion } instead of "{ $undefinedParameter }?"}}
+.match $count
+|1| {{{ $suggestion } instead of "{ $undefinedParameter }?"}}
 * {{{ $firstSuggestions } or { $lastSuggestion } instead of"{ $undefinedParameter }"?}}`,
 					},
 				},
@@ -424,13 +427,14 @@ msgstr[2] ""
 						Status:    model.MessageStatusUntranslated,
 						Positions: []string{"superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88"},
 						Message: `.local $format = { python-format }
+.input { $count :number }
 .local $suggestion = { |%(suggestion)s| }
 .local $undefinedParameter = { |%(undefinedParameter)s| }
 .local $firstSuggestions = { |%(firstSuggestions)s| }
 .local $lastSuggestion = { |%(lastSuggestion)s| }
-.match { $count }
-1 {{{ $suggestion } вместо "{ $undefinedParameter }"?}}
-2 {{{ $firstSuggestions } или { $lastSuggestion } вместо "{ $undefinedParameter }"?}}
+.match $count
+|1| {{{ $suggestion } вместо "{ $undefinedParameter }"?}}
+|2| {{{ $firstSuggestions } или { $lastSuggestion } вместо "{ $undefinedParameter }"?}}
 * {{{ $firstSuggestions } или { $lastSuggestion } вместо "{ $undefinedParameter }"?}}`,
 					},
 				},

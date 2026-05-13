@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"go.expect.digital/mf2/builder"
-	ast "go.expect.digital/mf2/parse"
+	"go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/po"
 	"golang.org/x/text/language"
@@ -156,7 +156,8 @@ func msgNodeToMF2(node po.Message, getMessages func(po.Message) []string) (strin
 
 		build(mfBuilder, messages[0], placeholders)
 	default: // plural message
-		mfBuilder.Match(builder.Var("count")) // match to arbitrary variable name
+		mfBuilder.Input(builder.Var("count").Func("number"))
+		mfBuilder.Match(parse.Variable("count")) // match to arbitrary variable name
 
 		if formatFlagIdx != -1 && !strings.HasPrefix(node.Flags[formatFlagIdx], "no-") { // with placeholders
 			build = textWithPlaceholders
@@ -237,37 +238,38 @@ func textWithPlaceholders(mfBuilder *builder.Builder, msg string, placeholders m
 // ---------------------------------------Translation->PO---------------------------------------
 
 // ToPo converts a model.Translation structure to a byte slice representing a PO file.
-func ToPo(t model.Translation) ([]byte, error) {
+func ToPo(t model.Translation) ([]byte, error) { //nolint:gocognit
 	file := po.PO{Messages: make([]po.Message, 0, len(t.Messages))}
 
 	if !t.Original {
 		file.Headers = append(file.Headers, po.Header{Name: "Language", Value: t.Language.String()})
 	}
 
-	var placeholders map[ast.Variable]string // MF2Variable:OriginalVariable, only for complex messages
+	var placeholders map[parse.Variable]string // MF2Variable:OriginalVariable, only for complex messages
 
 	// patternsToMsg function converts a slice of patterns to a PO msgstr.
-	patternsToMsg := func(patterns []ast.PatternPart) string {
-		var text string
+	patternsToMsg := func(patterns []parse.PatternPart) string {
+		var text strings.Builder
 
 		for _, p := range patterns {
 			switch p := p.(type) {
-			case ast.Text:
-				text += string(p)
-			case ast.Expression:
-				text += placeholders[p.Operand.(ast.Variable)] //nolint:forcetypeassert // operand is always of type Variable
+			case parse.Text:
+				text.WriteString(string(p))
+			case parse.Expression:
+				//nolint:forcetypeassert // operand is always of type Variable
+				text.WriteString(placeholders[p.Operand.(parse.Variable)])
 			}
 		}
 
-		return text
+		return text.String()
 	}
 
 	// If original, msgstr are empty
 	if t.Original {
-		patternsToMsg = func([]ast.PatternPart) string { return "" }
+		patternsToMsg = func([]parse.PatternPart) string { return "" }
 	}
 
-	unquoteLiteral := func(l ast.Literal) string { return strings.ReplaceAll(l.String(), "|", "") }
+	unquoteLiteral := func(l parse.Literal) string { return strings.ReplaceAll(l.String(), "|", "") }
 
 	for _, message := range t.Messages {
 		// Build po.MessageNode, from model.Message.
@@ -288,7 +290,7 @@ func ToPo(t model.Translation) ([]byte, error) {
 
 		// Parse mf2 message.
 
-		tree, err := ast.Parse(message.Message)
+		tree, err := parse.Parse(message.Message)
 		if err != nil {
 			return nil, fmt.Errorf("parse mf2 message: %w", err)
 		}
@@ -296,32 +298,34 @@ func ToPo(t model.Translation) ([]byte, error) {
 		switch message := tree.Message.(type) {
 		case nil:
 			poMsg.MsgStr = append(poMsg.MsgStr, "") // no mf2 message
-		case ast.SimpleMessage:
+		case parse.SimpleMessage:
 			poMsg.MsgStr = append(poMsg.MsgStr, patternsToMsg(message))
-		case ast.ComplexMessage:
+		case parse.ComplexMessage:
 			// Declarations
-			placeholders = make(map[ast.Variable]string, len(message.Declarations))
+			placeholders = make(map[parse.Variable]string, len(message.Declarations))
 
 			for _, decl := range message.Declarations {
-				decl := decl.(ast.LocalDeclaration) //nolint:forcetypeassert // no other types of declarations are used in convert
-
-				//nolint:forcetypeassert // All declarations are of type LiteralExpression.
-				switch decl.Variable.String() {
-				case "$format": // flag
-					poMsg.Flags = append(poMsg.Flags, unquoteLiteral(decl.Expression.Operand.(ast.Literal)))
-				default: // placeholder
-					placeholders[decl.Variable] = unquoteLiteral(decl.Expression.Operand.(ast.Literal))
+				switch decl := decl.(type) {
+				case parse.LocalDeclaration:
+					//nolint:forcetypeassert // All declarations are of type LiteralExpression.
+					switch decl.Variable.String() {
+					case "$format": // flag
+						poMsg.Flags = append(poMsg.Flags, unquoteLiteral(decl.Expression.Operand.(parse.Literal)))
+					default: // placeholder
+						placeholders[decl.Variable] = unquoteLiteral(decl.Expression.Operand.(parse.Literal))
+					}
+				case parse.InputDeclaration: // Ignore InputDeclaration (e.g. for count variable)
 				}
 			}
 
 			// Body
 			switch body := message.ComplexBody.(type) {
-			case ast.Matcher:
+			case parse.Matcher:
 				poMsg.MsgStr = make([]string, 0, len(body.Variants))
 				for _, variant := range body.Variants {
 					poMsg.MsgStr = append(poMsg.MsgStr, patternsToMsg(variant.QuotedPattern))
 				}
-			case ast.QuotedPattern:
+			case parse.QuotedPattern:
 				poMsg.MsgStr = append(poMsg.MsgStr, patternsToMsg(body))
 			}
 		}
