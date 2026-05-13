@@ -56,14 +56,14 @@ init:
 # up installs the project to local docker instance.
 up:
   LOCALLY
-  RUN docker compose --project-name=translate --project-directory=.earthly up --detach --wait --timeout 60
+  RUN docker compose --project-name=translate --project-directory=.earth up --detach --wait --timeout 60
   RUN docker exec mysql sh -c 'mysqladmin ping -h 127.0.0.1 -u root --wait=30 --silent'
   BUILD +migrate --db=mysql
 
 # down uninstalls the project from local docker instance.
 down:
   LOCALLY
-  RUN docker compose --project-name=translate --project-directory=.earthly down -v --remove-orphans
+  RUN docker compose --project-name=translate --project-directory=.earth down -v --remove-orphans
 
 # Others
 
@@ -195,7 +195,7 @@ test-integration:
   FROM earthbuild/dind:$dind_version
   # renovate datasource=docker packageName=migrate/migrate
   ARG migrate_version=4.18.1
-  COPY .earthly/compose.yaml compose.yaml
+  COPY .earth/compose.yaml compose.yaml
   COPY +go/translate /translate
   COPY --dir migrate/mysql migrate
   WITH DOCKER --compose compose.yaml --service mysql --pull migrate/migrate:v$migrate_version --pull golang:$go_version-alpine
@@ -234,10 +234,37 @@ test-integration:
         golang:$go_version-alpine go test -C /translate --tags=integration -count=1 ./...
   END
 
+
+test-migrate:
+  # renovate datasource=docker packageName=earthbuild/dind
+  ARG dind_version=alpine-3.22-docker-28.3.3-r1
+  FROM earthbuild/dind:$dind_version
+  # renovate datasource=docker packageName=migrate/migrate
+  ARG migrate_version=4.18.1
+  COPY .earth/compose.yaml compose.yaml
+  COPY --dir migrate/mysql migrate
+  WITH DOCKER --compose compose.yaml --service mysql --pull migrate/migrate:v$migrate_version
+    RUN \
+      # Wait for the MySQL server to start running
+      docker exec mysql sh -c 'mysqladmin ping -h 127.0.0.1 -u root --wait=30 --silent' && \
+
+      docker run -v /migrate:/migrations --network=host migrate/migrate:v$migrate_version  \
+        -path /migrations \
+        -database "mysql://root@tcp(127.0.0.1:3306)/translate" \
+        up && \
+
+      docker run -v /migrate:/migrations --network=host migrate/migrate:v$migrate_version  \
+        -path /migrations \
+        -database "mysql://root@tcp(127.0.0.1:3306)/translate" \
+        down -all
+  END
+
+
 # test runs unit and integration tests.
 test:
-  BUILD +test-unit
+  BUILD +test-migrate
   BUILD +test-integration
+  BUILD +test-unit
 
 # -----------------------Building-----------------------
 
@@ -299,8 +326,8 @@ image-all-in-one:
   WORKDIR app/
 
   # Copy supervisord configuration and envoy configuration
-  COPY .earthly/supervisord.conf supervisord.conf
-  COPY .earthly/envoy.yaml envoy.yaml
+  COPY .earth/supervisord.conf supervisord.conf
+  COPY .earth/envoy.yaml envoy.yaml
 
   # Copy binaries
   COPY +jaeger/jaeger /usr/local/bin/jaeger

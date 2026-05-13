@@ -20,6 +20,6 @@ CREATE TABLE message (
   status ENUM('UNTRANSLATED', 'FUZZY', 'TRANSLATED') NOT NULL,
   positions JSON,
 
-  UNIQUE ((SHA1(id)), translation_id),
+  UNIQUE ((SHA2(id, 256)), translation_id),
   FOREIGN KEY (translation_id) REFERENCES translation (id)
 );

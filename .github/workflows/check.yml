@@ -33,6 +33,8 @@ jobs:
         # TEST
       - name: Test Unit
         run: earth --ci +test-unit
+      - name: Test Migrate
+        run: earth --ci +test-migrate
       - name: Test Integration
         env:
           EARTHLY_SECRET_FILES: google_account_key=google_account_key.json
