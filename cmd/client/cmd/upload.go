@@ -142,7 +142,9 @@ func readFileFromURL(ctx context.Context, filePath string) ([]byte, error) {
 		return nil, fmt.Errorf("prepare request to fetch file: %w", err)
 	}
 
-	resp, err := otelhttp.DefaultClient.Do(req)
+	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetch file: %w", err)
 	}

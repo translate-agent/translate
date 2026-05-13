@@ -23,6 +23,8 @@ import (
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 
+var otelClient = &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
+
 // TODO: Currently, we manually create requests for the REST API.
 // We could use a client generated from the OpenAPI specification to simplify testing and integration.
 
@@ -164,7 +166,7 @@ func Test_UploadTranslationFile_REST(t *testing.T) {
 
 	for _, test := range tests {
 		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
-			resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, test.request))
+			resp, err := otelClient.Do(gRPCUploadFileToRESTReq(ctx, t, test.request))
 			if err != nil {
 				t.Error(err)
 				return
@@ -206,7 +208,7 @@ func Test_UploadTranslationFileUpdateFile_REST(t *testing.T) {
 	// Change translation and upload again with the same language and serviceID
 	uploadReq.Data = randUploadData(t, language.MustParse(uploadReq.GetLanguage()))
 
-	resp, err := otelhttp.DefaultClient.Do(gRPCUploadFileToRESTReq(ctx, t, uploadReq))
+	resp, err := otelClient.Do(gRPCUploadFileToRESTReq(ctx, t, uploadReq))
 	if err != nil {
 		t.Error(err)
 		return
@@ -280,7 +282,7 @@ func Test_DownloadTranslationFile_REST(t *testing.T) {
 
 	for _, test := range tests {
 		subtest(test.name, func(ctx context.Context, t *testing.T) { //nolint:thelper
-			resp, err := otelhttp.DefaultClient.Do(gRPCDownloadFileToRESTReq(ctx, t, test.request))
+			resp, err := otelClient.Do(gRPCDownloadFileToRESTReq(ctx, t, test.request))
 			if err != nil {
 				t.Error(err)
 				return
@@ -354,7 +356,7 @@ func Test_CreateService_REST(t *testing.T) {
 				return
 			}
 
-			resp, err := otelhttp.DefaultClient.Do(req)
+			resp, err := otelClient.Do(req)
 			if err != nil {
 				t.Error(err)
 				return
@@ -409,7 +411,7 @@ func Test_UpdateServiceAllFields_REST(t *testing.T) {
 		return
 	}
 
-	resp, err := otelhttp.DefaultClient.Do(req)
+	resp, err := otelClient.Do(req)
 	if err != nil {
 		t.Error(err)
 		return
@@ -458,7 +460,7 @@ func Test_UpdateServiceSpecificField_REST(t *testing.T) {
 		return
 	}
 
-	resp, err := otelhttp.DefaultClient.Do(req)
+	resp, err := otelClient.Do(req)
 	if err != nil {
 		t.Error(err)
 		return
@@ -518,7 +520,7 @@ func Test_GetService_REST(t *testing.T) {
 				return
 			}
 
-			resp, err := otelhttp.DefaultClient.Do(req)
+			resp, err := otelClient.Do(req)
 			if err != nil {
 				t.Error(err)
 				return
@@ -580,7 +582,7 @@ func Test_DeleteService_REST(t *testing.T) {
 				return
 			}
 
-			resp, err := otelhttp.DefaultClient.Do(req)
+			resp, err := otelClient.Do(req)
 			if err != nil {
 				t.Error(err)
 				return
@@ -613,7 +615,7 @@ func Test_ListServices_REST(t *testing.T) {
 		return
 	}
 
-	resp, err := otelhttp.DefaultClient.Do(req)
+	resp, err := otelClient.Do(req)
 	if err != nil {
 		t.Error(err)
 		return
@@ -728,7 +730,7 @@ func Test_CreateTranslation_REST(t *testing.T) {
 				return
 			}
 
-			resp, err := otelhttp.DefaultClient.Do(req)
+			resp, err := otelClient.Do(req)
 			if err != nil {
 				t.Error(err)
 				return
@@ -850,7 +852,7 @@ func Test_UpdateTranslation_REST(t *testing.T) {
 				return
 			}
 
-			resp, err := otelhttp.DefaultClient.Do(req)
+			resp, err := otelClient.Do(req)
 			if err != nil {
 				t.Error(err)
 				return
@@ -919,7 +921,7 @@ func Test_GetTranslations_REST(t *testing.T) {
 				return
 			}
 
-			resp, err := otelhttp.DefaultClient.Do(req)
+			resp, err := otelClient.Do(req)
 			if err != nil {
 				t.Error(err)
 				return
