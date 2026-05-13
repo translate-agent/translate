@@ -311,9 +311,10 @@ msgstr[1] ""
 				Original: true,
 				Messages: []model.Message{
 					{
-						ID:          "There is one apple.",
-						PluralID:    "There are multiple apples.",
-						Message:     ".input { $count :number }\n.match $count\n|1| {{There is one apple.}}\n* {{There are multiple apples.}}",
+						ID:       "There is one apple.",
+						PluralID: "There are multiple apples.",
+						Message: ".input { $count :number }\n.match $count\n|1| {{There is one apple.}}\n" +
+							"* {{There are multiple apples.}}",
 						Description: "Description",
 						Status:      model.MessageStatusTranslated,
 					},

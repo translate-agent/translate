@@ -238,7 +238,7 @@ func textWithPlaceholders(mfBuilder *builder.Builder, msg string, placeholders m
 // ---------------------------------------Translation->PO---------------------------------------
 
 // ToPo converts a model.Translation structure to a byte slice representing a PO file.
-func ToPo(t model.Translation) ([]byte, error) {
+func ToPo(t model.Translation) ([]byte, error) { //nolint:gocognit
 	file := po.PO{Messages: make([]po.Message, 0, len(t.Messages))}
 
 	if !t.Original {
@@ -249,18 +249,19 @@ func ToPo(t model.Translation) ([]byte, error) {
 
 	// patternsToMsg function converts a slice of patterns to a PO msgstr.
 	patternsToMsg := func(patterns []parse.PatternPart) string {
-		var text string
+		var text strings.Builder
 
 		for _, p := range patterns {
 			switch p := p.(type) {
 			case parse.Text:
-				text += string(p)
+				text.WriteString(string(p))
 			case parse.Expression:
-				text += placeholders[p.Operand.(parse.Variable)] //nolint:forcetypeassert // operand is always of type Variable
+				//nolint:forcetypeassert // operand is always of type Variable
+				text.WriteString(placeholders[p.Operand.(parse.Variable)])
 			}
 		}
 
-		return text
+		return text.String()
 	}
 
 	// If original, msgstr are empty
@@ -313,8 +314,7 @@ func ToPo(t model.Translation) ([]byte, error) {
 					default: // placeholder
 						placeholders[decl.Variable] = unquoteLiteral(decl.Expression.Operand.(parse.Literal))
 					}
-				case parse.InputDeclaration:
-					// Ignore InputDeclaration (e.g. for count variable)
+				case parse.InputDeclaration: // Ignore InputDeclaration (e.g. for count variable)
 				}
 			}
 
