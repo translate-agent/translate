@@ -32,7 +32,7 @@ func FromNgLocalize(data []byte, original *bool) (model.Translation, error) {
 
 	// if original is not provided default to false.
 	if original == nil {
-		original = ptr(false)
+		original = new(false)
 	}
 
 	translation := model.Translation{

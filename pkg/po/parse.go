@@ -49,12 +49,12 @@ func (p *parser) parseHead() Headers {
 		return nil
 	}
 
-	var buff string                                                    // buffer for headers
+	var sb strings.Builder
 	for line := p.next(); line != "" && line != eof; line = p.next() { // until next newline
-		buff += line + "\n"
+		sb.WriteString(line + "\n")
 	}
 
-	return p.emitHeaders(buff)
+	return p.emitHeaders(sb.String())
 }
 
 func (p *parser) emitHeaders(buff string) Headers {

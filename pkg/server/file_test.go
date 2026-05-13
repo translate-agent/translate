@@ -22,7 +22,7 @@ func Test_ParseUploadParams(t *testing.T) {
 			Data:      []byte(`{"key":"value"}`),
 			Schema:    translatev1.Schema(gofakeit.IntRange(1, 7)), //#nosec G115
 			ServiceId: gofakeit.UUID(),
-			Original:  ptr(gofakeit.Bool()),
+			Original:  new(gofakeit.Bool()),
 		}
 	}
 
@@ -91,7 +91,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 			data:                 []byte(`{"key":"value"}`),
 			schema:               translatev1.Schema(gofakeit.IntRange(1, 7)), //#nosec G115
 			serviceID:            uuid.New(),
-			original:             ptr(gofakeit.Bool()),
+			original:             new(gofakeit.Bool()),
 			populateTranslations: gofakeit.Bool(),
 		}
 	}
@@ -386,11 +386,4 @@ func Test_ValidateDownloadParams(t *testing.T) {
 			}
 		})
 	}
-}
-
-// helpers
-
-// ptr returns pointer to the passed in value.
-func ptr[T any](v T) *T {
-	return &v
 }

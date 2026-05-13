@@ -1,15 +1,19 @@
 package convert
 
-import "go.expect.digital/mf2/parse"
+import (
+	"strings"
+
+	"go.expect.digital/mf2/parse"
+)
 
 func patternsToSimpleMsg(patterns []parse.PatternPart) string {
-	var text string
+	var sb strings.Builder
 
 	for _, p := range patterns {
 		if textPattern, ok := p.(parse.Text); ok {
-			text += string(textPattern)
+			sb.WriteString(string(textPattern))
 		}
 	}
 
-	return text
+	return sb.String()
 }

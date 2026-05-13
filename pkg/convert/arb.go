@@ -53,7 +53,7 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 
 	// if original is not provided default to false.
 	if original == nil {
-		original = ptr(false)
+		original = new(false)
 	}
 
 	findDescription := func(key string) (string, error) {
@@ -175,8 +175,4 @@ func ToArb(translation model.Translation) ([]byte, error) {
 	}
 
 	return result, nil
-}
-
-func ptr[T any](v T) *T {
-	return &v
 }

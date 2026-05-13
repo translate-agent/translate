@@ -51,13 +51,9 @@ func testMain(m *testing.M) int {
 
 	var wg sync.WaitGroup
 
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-
+	wg.Go(func() {
 		translatesrv.Serve()
-	}()
+	})
 
 	// ensure gRPC server is listening before running tests
 	// wait for 300ms (6x50ms) for successful TCP connection

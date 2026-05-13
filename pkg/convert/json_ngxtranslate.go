@@ -16,7 +16,7 @@ import (
 func FromNgxTranslate(b []byte, original *bool) (translation model.Translation, err error) {
 	// if original is not provided default to false.
 	if original == nil {
-		original = ptr(false)
+		original = new(false)
 	}
 
 	translation.Original = *original

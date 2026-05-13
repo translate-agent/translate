@@ -6,6 +6,7 @@ import (
 	"io"
 	"regexp"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 
 	translate "cloud.google.com/go/translate/apiv3"
@@ -265,18 +266,18 @@ func getTexts(translation *model.Translation) ([]string, error) {
 // Output:
 // "Hello {$0} {$1}!".
 func patternToString(pattern []parse.PatternPart) string {
-	var text string
+	var text strings.Builder
 
 	for i := range pattern {
 		switch v := pattern[i].(type) {
 		case parse.Text:
-			text += string(v)
+			text.WriteString(string(v))
 		case parse.Expression, parse.Markup:
-			text += fmt.Sprintf("{$%d}", i)
+			fmt.Fprintf(&text, "{$%d}", i)
 		}
 	}
 
-	return text
+	return text.String()
 }
 
 // buildTranslated constructs a translated version of the untranslated translation

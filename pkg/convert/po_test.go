@@ -118,7 +118,7 @@ msgstr "Dinozauri"
 		{
 			name: "multiline translation",
 			args: args{
-				original: ptr(false),
+				original: new(false),
 				input: `msgid ""
 msgstr ""
 "Language: de\n"
@@ -361,7 +361,7 @@ msgstr[2] "вариантов"
 		{
 			name: "original with placeholders",
 			args: args{
-				original: ptr(true),
+				original: new(true),
 				input: `#: superset-frontend/src/components/ErrorMessage/ParameterErrorMessage.tsx:88
 #, python-format
 msgid "%(suggestion)s instead of \"%(undefinedParameter)s?\""
@@ -397,7 +397,7 @@ msgstr[1] ""
 		{
 			name: "translation with placeholders",
 			args: args{
-				original: ptr(false),
+				original: new(false),
 				input: `msgid ""
 msgstr ""
 "Language: ru\n"

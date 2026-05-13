@@ -49,7 +49,7 @@ func randUploadTranslationFileReq(t *testing.T, serviceID string) *translatev1.U
 		Language:  lang.String(),
 		Data:      poData,
 		Schema:    translatev1.Schema_PO,
-		Original:  ptr(false),
+		Original:  new(false),
 	}
 }
 
@@ -139,7 +139,7 @@ func Test_UploadTranslationFile_gRPC(t *testing.T) {
 	notFoundServiceIDRequest := randUploadTranslationFileReq(t, gofakeit.UUID())
 
 	originalAlreadyExistsReq := &translatev1.UploadTranslationFileRequest{
-		Original:  ptr(true),
+		Original:  new(true),
 		Language:  langs[1].String(),
 		ServiceId: serviceWithExistingOriginal.GetId(),
 		Data:      randUploadData(t, langs[1]),

@@ -75,7 +75,7 @@ func Test_MarkUntranslated(t *testing.T) {
 			if origIdx != -1 {
 				for _, msg := range test.translations[origIdx].Messages {
 					if msg.Status != MessageStatusTranslated {
-						t.Errorf("want messages status '%s', got '%s'", ptr(MessageStatusTranslated), &msg.Status)
+						t.Errorf("want messages status '%s', got '%s'", new(MessageStatusTranslated), &msg.Status)
 					}
 				}
 			}

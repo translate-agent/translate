@@ -41,13 +41,9 @@ func testMain(m *testing.M) (code int) {
 
 	var wg sync.WaitGroup
 
-	wg.Add(1)
-
-	go func() {
-		defer wg.Done()
-
+	wg.Go(func() {
 		main()
-	}()
+	})
 
 	// ensure gRPC server is listening before running tests
 	// wait for 300ms (6x50ms) for successful TCP connection
@@ -114,9 +110,4 @@ func mustGetFreePort() string {
 	}
 
 	return strconv.Itoa(addr.Port)
-}
-
-// ptr returns pointer to the passed in value.
-func ptr[T any](v T) *T {
-	return &v
 }

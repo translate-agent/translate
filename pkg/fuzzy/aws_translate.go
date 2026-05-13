@@ -90,9 +90,9 @@ func NewAWSTranslate(ctx context.Context, opts ...AWSTranslateOption) (*AWSTrans
 
 	// Ping the AWS Translate API to ensure that the client is working.
 	_, err := awst.client.TranslateText(ctx, &translate.TranslateTextInput{
-		SourceLanguageCode: ptr("en"),
-		TargetLanguageCode: ptr("lv"),
-		Text:               ptr("Hello World!"),
+		SourceLanguageCode: new("en"),
+		TargetLanguageCode: new("lv"),
+		Text:               new("Hello World!"),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("AWS translate client: ping AWS translate: %w", err)
@@ -130,7 +130,7 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 			&translate.TranslateTextInput{
 				TargetLanguageCode: awsLanguage(targetLanguage),
 				SourceLanguageCode: awsLanguage(translation.Language),
-				Text:               ptr(texts[i]), // Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
+				Text:               new(texts[i]), // Maximum text size limit accepted by the AWS Translate API - 10000 bytes.
 			})
 		if translateErr != nil {
 			return nil, fmt.Errorf("aws translate: translate text #%d: %w", i, translateErr)
@@ -149,11 +149,6 @@ func (a *AWSTranslate) Translate(ctx context.Context,
 }
 
 // helpers
-
-// ptr returns pointer to the passed in value.
-func ptr[T any](v T) *T {
-	return &v
-}
 
 // awsLanguage normalizes language.Tag to be usable by AWS translate.
 // skips locale part if region is not a country,
