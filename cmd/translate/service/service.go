@@ -22,8 +22,6 @@ import (
 	"go.expect.digital/translate/pkg/tracer"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -33,13 +31,13 @@ var cfgFile string
 
 // grpcHandlerFunc returns an http.Handler that routes gRPC and non-gRPC requests to the appropriate handler.
 func grpcHandlerFunc(grpcServer *grpc.Server, otherHandler http.Handler) http.Handler {
-	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
 			grpcServer.ServeHTTP(w, r)
 		} else {
 			otherHandler.ServeHTTP(w, r)
 		}
-	}), &http2.Server{})
+	})
 }
 
 // rootCmd represents the base command when called without any subcommands.
@@ -137,10 +135,16 @@ func RootCmdRunE(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("register translate service: %w", err)
 	}
 
+	protocols := new(http.Protocols)
+	protocols.SetHTTP1(true)
+	protocols.SetHTTP2(true)
+	protocols.SetUnencryptedHTTP2(true)
+
 	httpServer := http.Server{
 		Addr:              addr,
 		Handler:           grpcHandlerFunc(grpcServer, otelhttp.NewHandler(mux, "grpc-gateway")),
 		ReadHeaderTimeout: time.Second * 5, //nolint:mnd
+		Protocols:         protocols,
 	}
 
 	go func() {
