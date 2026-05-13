@@ -63,7 +63,7 @@ func Test_FromNgLocalize(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "Hello",
-						Message: `Welcome \{user\}! | \\`,
+						Message: `Welcome \{user\}! \| \\`,
 						Status:  model.MessageStatusTranslated,
 					},
 					{

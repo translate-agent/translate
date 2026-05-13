@@ -41,7 +41,7 @@ func Test_FromNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: `Order #\{Id\} has been canceled for \{ClientName\} | \\`,
+						Message: `Order #\{Id\} has been canceled for \{ClientName\} \| \\`,
 						Status:  model.MessageStatusTranslated,
 					},
 				},
@@ -176,7 +176,7 @@ func Test_ToNgxTranslate(t *testing.T) {
 				Messages: []model.Message{
 					{
 						ID:      "message",
-						Message: `Welcome \{user\} | \\ !`,
+						Message: `Welcome \{user\} \| \\ !`,
 					},
 				},
 			},
