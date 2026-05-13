@@ -5,11 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	ast "go.expect.digital/mf2/parse"
-
-	"go.expect.digital/mf2/builder"
-
 	"github.com/mitchellh/mapstructure"
+	"go.expect.digital/mf2/builder"
+	"go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -55,7 +53,7 @@ func FromArb(data []byte, original *bool) (model.Translation, error) {
 
 	// if original is not provided default to false.
 	if original == nil {
-		original = ptr(false)
+		original = new(false)
 	}
 
 	findDescription := func(key string) (string, error) {
@@ -152,7 +150,7 @@ func ToArb(translation model.Translation) ([]byte, error) {
 	dst["@@locale"] = translation.Language
 
 	for _, msg := range translation.Messages {
-		tree, err := ast.Parse(msg.Message)
+		tree, err := parse.Parse(msg.Message)
 		if err != nil {
 			return nil, fmt.Errorf("parse mf2 message: %w", err)
 		}
@@ -160,9 +158,9 @@ func ToArb(translation model.Translation) ([]byte, error) {
 		switch mf2Msg := tree.Message.(type) {
 		case nil:
 			dst[msg.ID] = ""
-		case ast.SimpleMessage:
+		case parse.SimpleMessage:
 			dst[msg.ID] = patternsToSimpleMsg(mf2Msg)
-		case ast.ComplexMessage:
+		case parse.ComplexMessage:
 			return nil, errors.New("complex message not supported")
 		}
 
@@ -177,8 +175,4 @@ func ToArb(translation model.Translation) ([]byte, error) {
 	}
 
 	return result, nil
-}
-
-func ptr[T any](v T) *T {
-	return &v
 }

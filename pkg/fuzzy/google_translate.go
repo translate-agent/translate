@@ -6,14 +6,14 @@ import (
 	"io"
 	"regexp"
 	"strconv"
+	"strings"
 	"unicode/utf8"
-
-	ast "go.expect.digital/mf2/parse"
 
 	translate "cloud.google.com/go/translate/apiv3"
 	"cloud.google.com/go/translate/apiv3/translatepb"
 	"github.com/googleapis/gax-go/v2"
 	"github.com/spf13/viper"
+	"go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/text/language"
@@ -201,7 +201,7 @@ func textToBatches(text []string) [][]string {
 // getTexts extracts translatable text from the translation.Messages slice.
 // To prevent the translation of placeholders, they are replaced with simplified
 // numbered placeholders '{$d}', where the placeholder number represents the
-// index of the ast.Pattern element in the message AST.
+// index of the parse.Pattern element in the message parse.
 // The function returns a slice of strings representing the extracted translatable texts and error.
 //
 // Example:
@@ -224,7 +224,7 @@ func getTexts(translation *model.Translation) ([]string, error) {
 	texts := make([]string, 0, len(translation.Messages))
 
 	for i := range translation.Messages {
-		messageAST, err := ast.Parse(translation.Messages[i].Message)
+		messageAST, err := parse.Parse(translation.Messages[i].Message)
 		if err != nil {
 			return nil, fmt.Errorf("parse mf2 message with ID '%s': %w", translation.Messages[i].ID, err)
 		}
@@ -232,15 +232,15 @@ func getTexts(translation *model.Translation) ([]string, error) {
 		switch v := messageAST.Message.(type) {
 		default:
 			return nil, fmt.Errorf("unsupported message type: %T", v)
-		case ast.SimpleMessage:
+		case parse.SimpleMessage:
 			texts = append(texts, patternToString(v))
-		case ast.ComplexMessage:
+		case parse.ComplexMessage:
 			switch v := v.ComplexBody.(type) {
-			case ast.Matcher:
+			case parse.Matcher:
 				for _, variant := range v.Variants {
 					texts = append(texts, patternToString(variant.QuotedPattern))
 				}
-			case ast.QuotedPattern:
+			case parse.QuotedPattern:
 				texts = append(texts, patternToString(v))
 			}
 		}
@@ -249,8 +249,8 @@ func getTexts(translation *model.Translation) ([]string, error) {
 	return texts, nil
 }
 
-// patternToString iterates over an ast.Pattern slice, appending ast.TextPatterns to a string.
-// When an non Text ast.Pattern is encountered, a simplified placeholder version '{$d}' is appended.
+// patternToString iterates over an parse.Pattern slice, appending parse.TextPatterns to a string.
+// When an non Text parse.Pattern is encountered, a simplified placeholder version '{$d}' is appended.
 // The function returns a string representing the concatenated patterns.
 // Example:
 // Input:
@@ -265,19 +265,19 @@ func getTexts(translation *model.Translation) ([]string, error) {
 //
 // Output:
 // "Hello {$0} {$1}!".
-func patternToString(pattern []ast.PatternPart) string {
-	var text string
+func patternToString(pattern []parse.PatternPart) string {
+	var text strings.Builder
 
 	for i := range pattern {
 		switch v := pattern[i].(type) {
-		case ast.Text:
-			text += string(v)
-		case ast.Expression, ast.Markup:
-			text += fmt.Sprintf("{$%d}", i)
+		case parse.Text:
+			text.WriteString(string(v))
+		case parse.Expression, parse.Markup:
+			fmt.Fprintf(&text, "{$%d}", i)
 		}
 	}
 
-	return text
+	return text.String()
 }
 
 // buildTranslated constructs a translated version of the untranslated translation
@@ -323,13 +323,13 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 	var textIndex int
 
 	for i := range translation.Messages {
-		messageAST, err := ast.Parse(translation.Messages[i].Message)
+		messageAST, err := parse.Parse(translation.Messages[i].Message)
 		if err != nil {
 			return nil, fmt.Errorf("parse mf2 message: %w", err)
 		}
 
 		switch message := messageAST.Message.(type) {
-		case ast.SimpleMessage:
+		case parse.SimpleMessage:
 			message, err = buildTranslatedPattern(translatedTexts[textIndex], message)
 			if err != nil {
 				return nil, fmt.Errorf("build translated pattern for simple message: %w", err)
@@ -340,9 +340,9 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 			// rewrite AST
 			messageAST.Message = message
 
-		case ast.ComplexMessage:
+		case parse.ComplexMessage:
 			switch complexBody := message.ComplexBody.(type) {
-			case ast.Matcher:
+			case parse.Matcher:
 				for i := range complexBody.Variants {
 					complexBody.Variants[i].QuotedPattern, err = buildTranslatedPattern(
 						translatedTexts[textIndex], complexBody.Variants[i].QuotedPattern)
@@ -357,7 +357,7 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 				message.ComplexBody = complexBody
 				messageAST.Message = message
 
-			case ast.QuotedPattern:
+			case parse.QuotedPattern:
 				complexBody, err = buildTranslatedPattern(translatedTexts[textIndex], complexBody)
 				if err != nil {
 					return nil, fmt.Errorf("build translated pattern for quoted pattern: %w", err)
@@ -384,13 +384,13 @@ func buildTranslated(translation *model.Translation, translatedTexts []string, t
 	return translated, nil
 }
 
-// buildTranslatedPattern constructs a slice of ast.Pattern from a given text and placeholders
+// buildTranslatedPattern constructs a slice of parse.Pattern from a given text and placeholders
 // extracted from a translated text. Placeholders are replaced with corresponding
-// ast.Pattern retrieved from the message AST. The function returns a slice of ast.Pattern and error.
-func buildTranslatedPattern(translatedText string, previousPattern []ast.PatternPart) ([]ast.PatternPart, error) {
+// parse.Pattern retrieved from the message parse. The function returns a slice of parse.Pattern and error.
+func buildTranslatedPattern(translatedText string, previousPattern []parse.PatternPart) ([]parse.PatternPart, error) {
 	re := regexp.MustCompile(`\{\$(0|[1-9]\d*)\}`)
 
-	translatedPattern := make([]ast.PatternPart, 0, len(previousPattern))
+	translatedPattern := make([]parse.PatternPart, 0, len(previousPattern))
 
 	for _, v := range splitTextByPlaceholder(translatedText) {
 		if re.MatchString(v) { // simplified placeholder
@@ -401,7 +401,7 @@ func buildTranslatedPattern(translatedText string, previousPattern []ast.Pattern
 
 			translatedPattern = append(translatedPattern, previousPattern[placeholderIndex])
 		} else { // translated text
-			translatedPattern = append(translatedPattern, ast.Text(v))
+			translatedPattern = append(translatedPattern, parse.Text(v))
 		}
 	}
 

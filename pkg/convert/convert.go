@@ -1,15 +1,19 @@
 package convert
 
-import ast "go.expect.digital/mf2/parse"
+import (
+	"strings"
 
-func patternsToSimpleMsg(patterns []ast.PatternPart) string {
-	var text string
+	"go.expect.digital/mf2/parse"
+)
+
+func patternsToSimpleMsg(patterns []parse.PatternPart) string {
+	var sb strings.Builder
 
 	for _, p := range patterns {
-		if textPattern, ok := p.(ast.Text); ok {
-			text += string(textPattern)
+		if textPattern, ok := p.(parse.Text); ok {
+			sb.WriteString(string(textPattern))
 		}
 	}
 
-	return text
+	return sb.String()
 }

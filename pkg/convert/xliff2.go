@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"go.expect.digital/mf2/builder"
-	ast "go.expect.digital/mf2/parse"
+	"go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )
@@ -118,7 +118,7 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 	}
 
 	for _, msg := range translation.Messages {
-		tree, err := ast.Parse(msg.Message)
+		tree, err := parse.Parse(msg.Message)
 		if err != nil {
 			return nil, fmt.Errorf("parse mf2 message: %w", err)
 		}
@@ -126,9 +126,9 @@ func ToXliff2(translation model.Translation) ([]byte, error) {
 		switch mf2Msg := tree.Message.(type) {
 		case nil:
 			msg.Message = ""
-		case ast.SimpleMessage:
+		case parse.SimpleMessage:
 			msg.Message = patternsToSimpleMsg(mf2Msg)
-		case ast.ComplexMessage:
+		case parse.ComplexMessage:
 			return nil, errors.New("complex message not supported")
 		}
 

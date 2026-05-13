@@ -17,7 +17,7 @@ const translationPrefix = "translation:"
 
 // translationKey converts a serviceID and language to a BadgerDB key with prefix.
 func translationKey(serviceID uuid.UUID, language language.Tag) []byte {
-	return []byte(fmt.Sprintf("%s%s:%s", translationPrefix, serviceID, language))
+	return fmt.Appendf(nil, "%s%s:%s", translationPrefix, serviceID, language)
 }
 
 // SaveTranslation handles both Create and Update.

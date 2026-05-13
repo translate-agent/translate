@@ -90,10 +90,10 @@ func Test_fuzzyTranslate(t *testing.T) {
 						}
 
 						if model.MessageStatusFuzzy != message.Status {
-							t.Errorf("want message status '%s', got '%s'", ptr(model.MessageStatusFuzzy), &message.Status)
+							t.Errorf("want message status '%d', got '%d'", model.MessageStatusFuzzy, message.Status)
 						}
 					} else if model.MessageStatusTranslated != message.Status {
-						t.Errorf("want message status '%s', got '%s'", ptr(model.MessageStatusTranslated), &message.Status)
+						t.Errorf("want message status '%d', got '%d'", model.MessageStatusTranslated, message.Status)
 					}
 				}
 			}

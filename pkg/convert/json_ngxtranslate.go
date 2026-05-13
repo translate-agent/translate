@@ -6,8 +6,7 @@ import (
 	"fmt"
 
 	"go.expect.digital/mf2/builder"
-	ast "go.expect.digital/mf2/parse"
-
+	"go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"
 )
 
@@ -17,7 +16,7 @@ import (
 func FromNgxTranslate(b []byte, original *bool) (translation model.Translation, err error) {
 	// if original is not provided default to false.
 	if original == nil {
-		original = ptr(false)
+		original = new(false)
 	}
 
 	translation.Original = *original
@@ -80,7 +79,7 @@ func ToNgxTranslate(translation model.Translation) ([]byte, error) {
 	dst := make(map[string]string, len(translation.Messages))
 
 	for _, msg := range translation.Messages {
-		tree, err := ast.Parse(msg.Message)
+		tree, err := parse.Parse(msg.Message)
 		if err != nil {
 			return nil, fmt.Errorf("parse mf2 message: %w", err)
 		}
@@ -88,9 +87,9 @@ func ToNgxTranslate(translation model.Translation) ([]byte, error) {
 		switch mf2Msg := tree.Message.(type) {
 		case nil:
 			dst[msg.ID] = ""
-		case ast.SimpleMessage:
+		case parse.SimpleMessage:
 			dst[msg.ID] = patternsToSimpleMsg(mf2Msg)
-		case ast.ComplexMessage:
+		case parse.ComplexMessage:
 			return nil, errors.New("complex message not supported")
 		}
 	}
