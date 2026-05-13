@@ -35,7 +35,7 @@ jobs:
         run: earth --ci +test-unit
       - name: Test Integration
         env:
-          earth_SECRET_FILES: google_account_key=google_account_key.json
+          EARTHLY_SECRET_FILES: google_account_key=google_account_key.json
         run: |
           echo ${{ secrets.GOOGLE_ACCOUNT_KEY }} | base64 -d > google_account_key.json
           earth --ci --allow-privileged \
