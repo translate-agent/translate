@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mysql:9.7.0
+    image: mysql:9.7.0@sha256:c11782aa2a96624c1efc121768641d96954faa136d6aa82751b032d8c426ffbc
     container_name: mysql
     hostname: mysql
     networks:
@@ -18,7 +18,7 @@ services:
     restart: always
 
   jaeger:
-    image: jaegertracing/all-in-one:1.76.0
+    image: jaegertracing/all-in-one:1.76.0@sha256:ab6f1a1f0fb49ea08bcd19f6b84f6081d0d44b364b6de148e1798eb5816bacac
     container_name: jaeger
     hostname: jaeger
     networks:
@@ -38,7 +38,7 @@ services:
     restart: always
 
   envoy:
-    image: envoyproxy/envoy:v1.38.0
+    image: envoyproxy/envoy:v1.38.0@sha256:8146b97ee61a42cd216514709e4e3198af75f014974e3d9f310aef9c901fcbdf
     ports:
       - "8080:8080"
     volumes:
