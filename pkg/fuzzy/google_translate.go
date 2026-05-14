@@ -67,7 +67,7 @@ func WithDefaultGoogleClient(ctx context.Context) GoogleTranslateOption {
 
 		// Create new Google Cloud service transport with the base of OpenTelemetry HTTP transport.
 		g.client, err = translate.NewTranslationClient(ctx,
-			option.WithCredentialsFile(viper.GetString("other.google.account_key")),
+			option.WithAuthCredentialsFile(option.ServiceAccount, viper.GetString("other.google.account_key")),
 			option.WithGRPCDialOption(grpc.WithStatsHandler(otelgrpc.NewClientHandler())),
 		)
 		if err != nil {
