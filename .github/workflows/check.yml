@@ -10,7 +10,7 @@ jobs:
   check:
     runs-on: ubuntu-24.04
     steps:
-      - uses: earthbuild/actions-setup@5d323543fa1d7b963384b46b2cbaef0bf6d88216 # main
+      - uses: earthbuild/actions-setup@8879d7e06ecdf2251dbf1db2c7271d6ccba6f9ec # main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
