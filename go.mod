@@ -8,7 +8,7 @@ require (
 	github.com/XSAM/otelsql v0.42.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.17
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.16
-	github.com/aws/aws-sdk-go-v2/service/translate v1.33.23
+	github.com/aws/aws-sdk-go-v2/service/translate v1.34.0
 	github.com/brianvoe/gofakeit/v7 v7.15.0
 	github.com/dgraph-io/badger/v4 v4.9.1
 	github.com/fatih/color v1.19.0
