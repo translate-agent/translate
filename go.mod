@@ -5,7 +5,7 @@ go 1.26.3
 require (
 	cloud.google.com/go/translate v1.17.0
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/XSAM/otelsql v0.42.0
+	github.com/XSAM/otelsql v0.43.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.30
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.29
 	github.com/aws/aws-sdk-go-v2/service/translate v1.35.1
