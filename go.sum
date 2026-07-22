@@ -494,6 +494,8 @@ go.expect.digital/mf2 v0.0.0-20260508073900-556acc863824 h1:XT4g2+h26gb+wbSPWsPD
 go.expect.digital/mf2 v0.0.0-20260508073900-556acc863824/go.mod h1:/IIj0KMfyoB+OLvulYMOt3aQsF0HElOzjdvqnrHl7rg=
 go.expect.digital/mf2 v0.0.0-20260603082918-4d9673514eaa h1:cv/yiBKIEmVrEW6Dn1wNVZamWzgsxuGcxSEYadz0m9k=
 go.expect.digital/mf2 v0.0.0-20260603082918-4d9673514eaa/go.mod h1:QDAW7k6VLzbmtFD7yNPQAq6eKl/yXYD1S8s6NvhjATQ=
+go.expect.digital/mf2 v0.0.0-20260721083826-0b3e676b6b18 h1:yBfs1olvQ0xTqhsVqTxDq6ShTRoSfHFMXxUv0DXNIDw=
+go.expect.digital/mf2 v0.0.0-20260721083826-0b3e676b6b18/go.mod h1:ZpkabzDQj5aU8jONp38s7VPrqFI1MHGwUxnzP8aVnww=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=
 go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.63.0 h1:YH4g8lQroajqUwWbq/tr2QX1JFmEXaDLgG+ew9bLMWo=
