@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mysql:9.7.2
+    image: mysql:26.7.0
     container_name: mysql
     hostname: mysql
     networks:
@@ -11,7 +11,7 @@ services:
       - MYSQL_DATABASE=translate
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
     healthcheck:
-      test: "mysqladmin status"
+      test: 'mysqladmin status'
       interval: 1s
       timeout: 60s
       retries: 60
@@ -24,15 +24,15 @@ services:
     networks:
       - translate
     ports:
-      - "6831:6831/udp"
-      - "6832:6832/udp"
-      - "5778:5778"
-      - "16686:16686"
-      - "4317:4317"
-      - "4318:4318"
-      - "14250:14250"
-      - "14268:14268"
-      - "14269:14269"
+      - '6831:6831/udp'
+      - '6832:6832/udp'
+      - '5778:5778'
+      - '16686:16686'
+      - '4317:4317'
+      - '4318:4318'
+      - '14250:14250'
+      - '14268:14268'
+      - '14269:14269'
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     restart: always
@@ -40,7 +40,7 @@ services:
   envoy:
     image: envoyproxy/envoy:v1.39.0
     ports:
-      - "8080:8080"
+      - '8080:8080'
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
     networks:
