@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"uuid"
 
-	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
@@ -60,7 +60,7 @@ func (u *uploadParams) validate() error {
 		return errors.New("'schema' is required")
 	}
 
-	if u.serviceID == uuid.Nil {
+	if u.serviceID == uuid.Nil() {
 		return errors.New("'service_id' is required")
 	}
 
@@ -212,7 +212,7 @@ func (d *downloadParams) validate() error {
 		return errors.New("'schema' is required")
 	}
 
-	if d.serviceID == uuid.Nil {
+	if d.serviceID == uuid.Nil() {
 		return errors.New("'service_id' is required")
 	}
 

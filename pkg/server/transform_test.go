@@ -7,9 +7,9 @@ import (
 	"slices"
 	"testing"
 	"testing/quick"
+	"uuid"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"golang.org/x/text/language"
@@ -43,7 +43,7 @@ func Test_TransformUUID(t *testing.T) {
 	t.Run("Nil UUID to string to UUID", func(t *testing.T) {
 		t.Parallel()
 
-		wantID := uuid.Nil
+		wantID := uuid.Nil()
 
 		restoredID, err := uuidFromProto(uuidToProto(wantID))
 		if err != nil {

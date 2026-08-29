@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"slices"
 	"testing"
+	"uuid"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"go.expect.digital/translate/pkg/testutil"
@@ -31,7 +31,7 @@ func Test_SaveService(t *testing.T) {
 			},
 			{
 				name:    "Without UUID",
-				service: rand.ModelService(rand.WithID(uuid.Nil)),
+				service: rand.ModelService(rand.WithID(uuid.Nil())),
 			},
 		}
 		for _, test := range tests {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"io"
+	"uuid"
 
-	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	"golang.org/x/text/language"
 )

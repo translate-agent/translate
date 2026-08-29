@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"uuid"
 
-	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 )
@@ -14,11 +14,11 @@ import (
 func (r *Repo) SaveService(ctx context.Context, service *model.Service) error {
 	query := `INSERT INTO service (id, name) VALUES (UUID_TO_BIN(?), ?) ON DUPLICATE KEY UPDATE name = VALUES (name)`
 
-	if service.ID == uuid.Nil {
+	if service.ID == uuid.Nil() {
 		service.ID = uuid.New()
 	}
 
-	_, err := r.db.ExecContext(ctx, query, service.ID, service.Name)
+	_, err := r.db.ExecContext(ctx, query, service.ID.String(), service.Name)
 	if err != nil {
 		return fmt.Errorf("repo: insert service: %w", err)
 	}
@@ -28,7 +28,7 @@ func (r *Repo) SaveService(ctx context.Context, service *model.Service) error {
 
 func (r *Repo) LoadService(ctx context.Context, serviceID uuid.UUID) (*model.Service, error) {
 	query := `SELECT id, name FROM service WHERE id = UUID_TO_BIN(?)`
-	row := r.db.QueryRowContext(ctx, query, serviceID)
+	row := r.db.QueryRowContext(ctx, query, serviceID.String())
 
 	var service model.Service
 
@@ -75,7 +75,7 @@ func (r *Repo) LoadServices(ctx context.Context) ([]model.Service, error) {
 func (r *Repo) DeleteService(ctx context.Context, serviceID uuid.UUID) error {
 	query := `DELETE FROM service WHERE id = UUID_TO_BIN(?)`
 
-	result, err := r.db.ExecContext(ctx, query, serviceID)
+	result, err := r.db.ExecContext(ctx, query, serviceID.String())
 	if err != nil {
 		return fmt.Errorf("repo: delete service: %w", err)
 	}

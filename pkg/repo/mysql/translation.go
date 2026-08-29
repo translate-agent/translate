@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"uuid"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 	"golang.org/x/text/language"
@@ -26,7 +26,7 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 		row := r.db.QueryRowContext(
 			ctx,
 			`SELECT id FROM translation WHERE service_id = UUID_TO_BIN(?) AND language = ?`,
-			serviceID,
+			serviceID.String(),
 			translation.Language.String(),
 		)
 
@@ -43,8 +43,8 @@ func (r *Repo) SaveTranslation(ctx context.Context, serviceID uuid.UUID, transla
 			_, err = r.db.ExecContext(
 				ctx,
 				`INSERT INTO translation (id, service_id, language, original) VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`,
-				translationID,
-				serviceID,
+				translationID.String(),
+				serviceID.String(),
 				translation.Language.String(),
 				translation.Original,
 			)
@@ -80,7 +80,7 @@ ON DUPLICATE KEY UPDATE
 		for _, m := range translation.Messages {
 			_, err = stmt.ExecContext(
 				ctx,
-				translationID,
+				translationID.String(),
 				m.ID,
 				m.Message,
 				m.Description,
@@ -102,7 +102,7 @@ func (r *Repo) LoadTranslations(ctx context.Context, serviceID uuid.UUID, opts r
 		Select("m.id, m.message, m.description, m.positions, m.status, t.language, t.original").
 		From("message m").
 		Join("translation t ON t.id = m.translation_id").
-		Where("t.service_id = UUID_TO_BIN(?)", serviceID).
+		Where("t.service_id = UUID_TO_BIN(?)", serviceID.String()).
 		Where(eq("t.language", langToStringSlice(opts.FilterLanguages))).
 		RunWith(r.db).
 		QueryContext(ctx)

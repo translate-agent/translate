@@ -2,9 +2,9 @@ package server
 
 import (
 	"testing"
+	"uuid"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/testutil/rand"
@@ -52,7 +52,7 @@ func Test_ParseUploadParams(t *testing.T) {
 		{
 			name:    "Malformed service ID",
 			request: malformedServiceIDReq,
-			wantErr: "parse service_id: parse uuid: invalid UUID length: 41",
+			wantErr: "parse service_id: parse uuid: invalid uuid",
 		},
 	}
 
@@ -105,7 +105,7 @@ func Test_ValidateUploadParams(t *testing.T) {
 	unspecifiedSchemaParams.schema = translatev1.Schema_UNSPECIFIED
 
 	unspecifiedServiceIDParams := randParams()
-	unspecifiedServiceIDParams.serviceID = uuid.Nil
+	unspecifiedServiceIDParams.serviceID = uuid.Nil()
 
 	tests := []struct {
 		params  *uploadParams
@@ -286,7 +286,7 @@ func Test_ParseDownloadParams(t *testing.T) {
 		{
 			name:    "Malformed service ID",
 			request: malformedServiceIDReq,
-			wantErr: "parse service_id: parse uuid: invalid UUID length: 41",
+			wantErr: "parse service_id: parse uuid: invalid uuid",
 		},
 		{
 			name:    "Malformed language",
@@ -337,7 +337,7 @@ func Test_ValidateDownloadParams(t *testing.T) {
 	unspecifiedSchemaParams.schema = translatev1.Schema_UNSPECIFIED
 
 	unspecifiedServiceIDParams := randParams()
-	unspecifiedServiceIDParams.serviceID = uuid.Nil
+	unspecifiedServiceIDParams.serviceID = uuid.Nil()
 
 	unspecifiedLanguageTagReq := randParams()
 	unspecifiedLanguageTagReq.languageTag = language.Und

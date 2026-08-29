@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"uuid"
 
-	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"go.expect.digital/translate/pkg/repo"
@@ -30,7 +30,7 @@ func parseGetServiceRequestParams(req *translatev1.GetServiceRequest) (*getServi
 }
 
 func (g *getServiceParams) validate() error {
-	if g.id == uuid.Nil {
+	if g.id == uuid.Nil() {
 		return errors.New("'id' is required")
 	}
 
@@ -155,7 +155,7 @@ func (u *updateServiceParams) validate() error {
 		return errors.New("'service' is required")
 	}
 
-	if u.service.ID == uuid.Nil {
+	if u.service.ID == uuid.Nil() {
 		return errors.New("'service.id' is required")
 	}
 
@@ -214,7 +214,7 @@ func parseDeleteServiceRequest(req *translatev1.DeleteServiceRequest) (*deleteSe
 }
 
 func (d *deleteServiceParams) validate() error {
-	if d.id == uuid.Nil {
+	if d.id == uuid.Nil() {
 		return errors.New("'id' is required")
 	}
 

@@ -1,8 +1,9 @@
 package rand
 
 import (
+	"uuid"
+
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
 	"go.expect.digital/mf2/builder"
 	"go.expect.digital/mf2/parse"
 	"go.expect.digital/translate/pkg/model"

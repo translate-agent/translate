@@ -1,6 +1,6 @@
 module go.expect.digital/translate
 
-go 1.26.3
+go 1.27.0
 
 require (
 	cloud.google.com/go/translate v1.18.0
@@ -14,7 +14,6 @@ require (
 	github.com/fatih/color v1.19.0
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/google/go-cmp v0.7.0
-	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.23.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0
 	github.com/mitchellh/mapstructure v1.5.0
@@ -67,6 +66,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.17 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
