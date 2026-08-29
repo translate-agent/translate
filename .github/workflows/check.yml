@@ -37,7 +37,7 @@ jobs:
         run: earth --ci +test-migrate
       - name: Test Integration
         env:
-          EARTHLY_SECRET_FILES: google_account_key=google_account_key.json
+          EARTH_SECRET_FILES: google_account_key=google_account_key.json
         run: |
           echo ${{ secrets.GOOGLE_ACCOUNT_KEY }} | base64 -d > google_account_key.json
           earth --ci --allow-privileged \

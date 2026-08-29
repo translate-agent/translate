@@ -113,10 +113,10 @@ client.createService({
 
 ## Development
 
-The project uses [Earthly](https://earthly.dev) to automate all development tasks that can be run locally and in CI/CD environments.
+The project uses [EarthBuild](https://earthbuild.dev) to automate all development tasks that can be run locally and in CI/CD environments.
 
 ```shell
-✗ earthly doc
+✗ earth doc
 TARGETS:
   +init [--USERARCH] [--go_version=1.23.3]
       init sets up the project for local development.
