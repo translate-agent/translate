@@ -3,7 +3,7 @@ PROJECT expect.digital/translate-agent
 
 ARG --global USERARCH # Arch of the user running the build
 # renovate datasource=docker packageName=golang
-ARG --global go_version=1.26.3
+ARG --global go_version=1.27.0
 
 FROM --platform=linux/$USERARCH golang:$go_version-alpine
 
@@ -152,7 +152,7 @@ lint-migrate:
 # lint-go analyses golang code for errors, bugs and stylistic issues (golangci-lint).
 lint-go:
   # renovate datasource=docker packageName=golangci/golangci-lint
-  ARG golangci_lint_version=v2.12.2
+  ARG golangci_lint_version=v2.13.2
   FROM golangci/golangci-lint:$golangci_lint_version
   WORKDIR translate
   COPY +go/translate .

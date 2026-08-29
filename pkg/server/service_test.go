@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"uuid"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -48,13 +48,13 @@ func Test_ParseGetServiceParams(t *testing.T) {
 			name:    "Happy Path Empty ID",
 			request: happyReqWithoutID,
 			want: &getServiceParams{
-				id: uuid.Nil,
+				id: uuid.Nil(),
 			},
 		},
 		{
 			name:    "Malformed UUID",
 			request: malformedIDReq,
-			wantErr: "parse id: parse uuid: invalid UUID length: 41",
+			wantErr: "parse id: parse uuid: invalid uuid",
 		},
 	}
 
@@ -98,7 +98,7 @@ func Test_ValidateGetServiceParams(t *testing.T) {
 		},
 		{
 			name:    "Empty ID",
-			params:  &getServiceParams{id: uuid.Nil},
+			params:  &getServiceParams{id: uuid.Nil()},
 			wantErr: "'id' is required",
 		},
 	}
@@ -184,7 +184,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 			want: &updateServiceParams{
 				mask: []string{"name"},
 				service: &model.Service{
-					ID:   uuid.Nil,
+					ID:   uuid.Nil(),
 					Name: happyReqWithoutServiceID.GetService().GetName(),
 				},
 			},
@@ -212,7 +212,7 @@ func Test_ParseUpdateServiceParams(t *testing.T) {
 		{
 			name:    "Malformed Service ID",
 			request: malformedIDReq,
-			wantErr: "parse service: transform id: parse uuid: invalid UUID length: 41",
+			wantErr: "parse service: transform id: parse uuid: invalid uuid",
 		},
 		{
 			name:    "Invalid Update Mask Path",
@@ -270,7 +270,7 @@ func Test_ValidateUpdateServiceParams(t *testing.T) {
 
 	// when updating a service, the service.ID is required and validation fails without it.
 	missingServiceIDParams := randParams()
-	missingServiceIDParams.service.ID = uuid.Nil
+	missingServiceIDParams.service.ID = uuid.Nil()
 
 	tests := []struct {
 		params  *updateServiceParams
@@ -351,12 +351,12 @@ func Test_ParseDeleteServiceParams(t *testing.T) {
 		{
 			name:    "Happy Path Without ID",
 			request: happyReqWithoutID,
-			want:    &deleteServiceParams{id: uuid.Nil},
+			want:    &deleteServiceParams{id: uuid.Nil()},
 		},
 		{
 			name:    "Malformed UUID",
 			request: malformedIDReq,
-			wantErr: "parse id: parse uuid: invalid UUID length: 41",
+			wantErr: "parse id: parse uuid: invalid uuid",
 		},
 	}
 
@@ -396,7 +396,7 @@ func Test_ValidateDeleteServiceParams(t *testing.T) {
 	happyParams := randParams()
 
 	emptyIDParams := randParams()
-	emptyIDParams.id = uuid.Nil
+	emptyIDParams.id = uuid.Nil()
 
 	tests := []struct {
 		params  *deleteServiceParams
@@ -478,7 +478,7 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 			request: happyReqWithoutServiceID,
 			want: &createServiceParams{
 				service: &model.Service{
-					ID:   uuid.Nil,
+					ID:   uuid.Nil(),
 					Name: happyReqWithoutServiceID.GetService().GetName(),
 				},
 			},
@@ -493,7 +493,7 @@ func Test_ParseCreateServiceParams(t *testing.T) {
 		{
 			name:    "Malformed Service ID",
 			request: malformedServiceIDReq,
-			wantErr: "parse service: transform id: parse uuid: invalid UUID length: 41",
+			wantErr: "parse service: transform id: parse uuid: invalid uuid",
 		},
 	}
 
@@ -534,7 +534,7 @@ func Test_ValidateCreateServiceParams(t *testing.T) {
 
 	// when creating a service, the service.ID is optional and validation passes.
 	happyParamsEmptyServiceID := randParams()
-	happyParamsEmptyServiceID.service.ID = uuid.Nil
+	happyParamsEmptyServiceID.service.ID = uuid.Nil()
 
 	emptyServiceParams := randParams()
 	emptyServiceParams.service = nil

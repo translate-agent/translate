@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"uuid"
 
 	"github.com/dgraph-io/badger/v4"
-	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	"go.expect.digital/translate/pkg/repo"
 )
@@ -20,7 +20,7 @@ func getServiceKey(id uuid.UUID) []byte {
 }
 
 func (r *Repo) SaveService(_ context.Context, service *model.Service) error {
-	if service.ID == uuid.Nil {
+	if service.ID == uuid.Nil() {
 		service.ID = uuid.New()
 	}
 

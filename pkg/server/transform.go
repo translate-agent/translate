@@ -4,11 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"uuid"
 
-	"github.com/google/uuid"
 	"go.expect.digital/translate/pkg/model"
 	translatev1 "go.expect.digital/translate/pkg/pb/translate/v1"
-
 	"golang.org/x/text/language"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -18,7 +17,7 @@ import (
 
 // uuidToProto converts uuid.UUID to string.
 func uuidToProto(u uuid.UUID) string {
-	if u == uuid.Nil {
+	if u == uuid.Nil() {
 		return ""
 	}
 
@@ -28,12 +27,12 @@ func uuidToProto(u uuid.UUID) string {
 // uuidFromProto converts string to uuid.UUID.
 func uuidFromProto(s string) (uuid.UUID, error) {
 	if s == "" {
-		return uuid.Nil, nil
+		return uuid.Nil(), nil
 	}
 
 	id, err := uuid.Parse(s)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("parse uuid: %w", err)
+		return uuid.Nil(), fmt.Errorf("parse uuid: %w", err)
 	}
 
 	return id, nil

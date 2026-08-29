@@ -1,6 +1,6 @@
 package model
 
-import "github.com/google/uuid"
+import "uuid"
 
 type Service struct {
 	Name string    `json:"name"`
