@@ -42,8 +42,8 @@ init:
     echo "TRANSLATE_OTHER_GOOGLE_ACCOUNT_KEY=$(pwd)/google_account_key.json" >> .env.test && \
     echo "" >> .env.test && \
     echo "# AWS Translate API" >> .env.test && \
-    echo "TRANSLATE_OTHER_AWS_ACCESS_KEY_ID=$(earthly secret --org expect.digital --project translate-agent get aws_access_key_id)" >> .env.test && \
-    echo "TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY=$(earthly secret --org expect.digital --project translate-agent get aws_secret_access_key)" >> .env.test && \
+    echo "TRANSLATE_OTHER_AWS_ACCESS_KEY_ID=$(earth secret --org expect.digital --project translate-agent get aws_access_key_id)" >> .env.test && \
+    echo "TRANSLATE_OTHER_AWS_SECRET_ACCESS_KEY=$(earth secret --org expect.digital --project translate-agent get aws_secret_access_key)" >> .env.test && \
     echo "TRANSLATE_OTHER_AWS_REGION=eu-west-2" >> .env.test
   RUN \
     echo "db=mysql" > .arg && \
