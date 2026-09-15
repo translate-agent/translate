@@ -17,7 +17,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.23.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/rodaine/table v1.3.1
+	github.com/rodaine/table v1.4.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	go.expect.digital/mf2 v0.1.0

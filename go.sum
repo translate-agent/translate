@@ -211,6 +211,8 @@ github.com/prashantv/gostub v1.1.0 h1:BTyx3RfQjRHnUWaGF9oQos79AlQ5k8WNktv7VGvVH4
 github.com/prashantv/gostub v1.1.0/go.mod h1:A5zLQHz7ieHGG7is6LLXLz7I8+3LZzsrV0P1IAHhP5U=
 github.com/rodaine/table v1.3.1 h1:jBVgg1bEu5EzEdYSrwUUlQpayDtkvtTmgFS0FPAxOq8=
 github.com/rodaine/table v1.3.1/go.mod h1:VYCJRCHa2DpD25uFALcB6hi5ECF3eEJQVhCXRjHgXc4=
+github.com/rodaine/table v1.4.0 h1:sbGLYXgrc15Db32nuFRamNXP3QdfTxTxXIvdM3fsjEA=
+github.com/rodaine/table v1.4.0/go.mod h1:2XS7TM7slleLUM1km5Zsr9Ks+F2p7Y8F5ycDQq2Z7hk=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
