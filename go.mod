@@ -3,7 +3,7 @@ module go.expect.digital/translate
 go 1.27.0
 
 require (
-	cloud.google.com/go/translate v1.19.0
+	cloud.google.com/go/translate v1.20.0
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/XSAM/otelsql v0.44.0
 	github.com/aws/aws-sdk-go-v2/config v1.33.12
@@ -14,7 +14,7 @@ require (
 	github.com/fatih/color v1.19.0
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/google/go-cmp v0.7.0
-	github.com/googleapis/gax-go/v2 v2.23.0
+	github.com/googleapis/gax-go/v2 v2.26.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.32.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rodaine/table v1.4.1
@@ -29,8 +29,8 @@ require (
 	go.opentelemetry.io/otel/trace v1.47.0
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/text v0.43.0
-	google.golang.org/api v0.287.1
-	google.golang.org/genproto v0.0.0-20260519071638-aa98bba5eb94
+	google.golang.org/api v0.288.0
+	google.golang.org/genproto v0.0.0-20260715232425-e75dac1f907d
 	google.golang.org/genproto/googleapis/api v0.0.0-20261012220534-4341edf3f941
 	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
