@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.33.18
 	github.com/aws/aws-sdk-go-v2/credentials v1.21.0
 	github.com/aws/aws-sdk-go-v2/service/translate v1.43.9
-	github.com/brianvoe/gofakeit/v7 v7.18.2
+	github.com/brianvoe/gofakeit/v7 v7.18.3
 	github.com/dgraph-io/badger/v4 v4.9.6
 	github.com/fatih/color v1.19.0
 	github.com/go-sql-driver/mysql v1.10.1
