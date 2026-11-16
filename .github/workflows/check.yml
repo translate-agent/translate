@@ -14,6 +14,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       # Check if Generated Go files are up to date
       - name: GO proto up-to-date
         run: |
@@ -30,6 +32,10 @@ jobs:
         run: earth --ci +lint-migrate
       - name: Lint GO
         run: earth --ci +lint-go
+      - name: Lint GHA
+        env:
+          EARTH_SECRETS: GH_TOKEN=${{ secrets.GITHUB_TOKEN }}
+        run: earth --ci +lint-gha --online=true
         # TEST
       - name: Test Unit
         run: earth --ci +test-unit

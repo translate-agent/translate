@@ -172,11 +172,26 @@ lint-proto:
   COPY +proto/proto .
   RUN buf lint
 
-# lint runs all linters for golang, proto and migrate scripts.
+# lint-gha analyses GitHub Actions workflows for security issues.
+lint-gha:
+  # renovate: datasource=docker packageName=ghcr.io/zizmorcore/zizmor
+  ARG zizmor_version=1.32.0
+  FROM ghcr.io/zizmorcore/zizmor:$zizmor_version
+  ARG online=false
+  WORKDIR gha
+  COPY --dir .github .
+  IF [ "$online" = "true" ]
+    RUN --secret GH_TOKEN zizmor .
+  ELSE
+    RUN zizmor --offline .
+  END
+
+# lint runs all linters for golang, proto, migrate scripts and GitHub Actions.
 lint:
   BUILD +lint-go
   BUILD +lint-proto
   BUILD +lint-migrate
+  BUILD +lint-gha
 
 # -----------------------Testing-----------------------
 
