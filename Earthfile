@@ -175,7 +175,7 @@ lint-proto:
 # lint-gha analyses GitHub Actions workflows for security issues.
 lint-gha:
   # renovate: datasource=docker packageName=ghcr.io/zizmorcore/zizmor
-  ARG zizmor_version=1.32.0
+  ARG zizmor_version=1.33.1
   FROM ghcr.io/zizmorcore/zizmor:$zizmor_version
   ARG online=false
   WORKDIR gha
