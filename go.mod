@@ -12,7 +12,7 @@ require (
 	github.com/brianvoe/gofakeit/v7 v7.18.7
 	github.com/dgraph-io/badger/v4 v4.9.6
 	github.com/fatih/color v1.19.0
-	github.com/go-sql-driver/mysql v1.10.1
+	github.com/go-sql-driver/mysql v1.10.2
 	github.com/google/go-cmp v0.7.0
 	github.com/googleapis/gax-go/v2 v2.27.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.34.0
