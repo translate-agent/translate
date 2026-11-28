@@ -12,7 +12,7 @@ require (
 	github.com/brianvoe/gofakeit/v7 v7.18.11
 	github.com/dgraph-io/badger/v4 v4.9.6
 	github.com/fatih/color v1.19.0
-	github.com/go-sql-driver/mysql v1.10.2
+	github.com/go-sql-driver/mysql v1.11.0
 	github.com/google/go-cmp v0.7.0
 	github.com/googleapis/gax-go/v2 v2.27.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.34.0
@@ -69,7 +69,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.23 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/klauspost/compress v1.18.7 // indirect
+	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
